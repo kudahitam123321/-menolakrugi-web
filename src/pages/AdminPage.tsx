@@ -65,6 +65,18 @@ export default function AdminPage() {
   const [revealPass, setRevealPass] = useState<Record<string, boolean>>({});
   const [tolakId, setTolakId] = useState<string | null>(null);
   const [alasanTolak, setAlasanTolak] = useState('');
+
+  // Edit member states
+  const [editMemberId, setEditMemberId] = useState<string | null>(null);
+  const [editMNama, setEditMNama] = useState('');
+  const [editMTier, setEditMTier] = useState('');
+  const [editMPassword, setEditMPassword] = useState('');
+  const [editMAdvance, setEditMAdvance] = useState(false);
+
+  // Filter member states
+  const [filterTier, setFilterTier] = useState('');
+  const [filterKelas, setFilterKelas] = useState('');
+  const [filterSearch, setFilterSearch] = useState('');
   const [editVideoId, setEditVideoId] = useState<string | null>(null);
   const [editVJudul, setEditVJudul] = useState('');
   const [editVDesc, setEditVDesc] = useState('');
@@ -134,6 +146,25 @@ export default function AdminPage() {
     if (!confirm('Hapus member ini?')) return;
     await supabase.from('members').delete().eq('id', id);
     loadData();
+  }
+
+  function startEditMember(m: any) {
+    setEditMemberId(m.id);
+    setEditMNama(m.nama);
+    setEditMTier(m.tier);
+    setEditMPassword(m.password);
+    setEditMAdvance(m.is_advance);
+  }
+
+  async function saveEditMember() {
+    if (!editMemberId || !editMNama || !editMTier || !editMPassword) { notify('Semua field wajib diisi.', 'err'); return; }
+    setLoading(true);
+    const { error } = await supabase.from('members').update({
+      nama: editMNama, tier: editMTier, password: editMPassword, is_advance: editMAdvance, session_token: null,
+    }).eq('id', editMemberId);
+    if (error) notify('Error: ' + error.message, 'err');
+    else { notify('Member berhasil diupdate!'); setEditMemberId(null); loadData(); }
+    setLoading(false);
   }
 
   function normalizeTier(raw: string) {
@@ -459,8 +490,33 @@ export default function AdminPage() {
             </div>
 
             <div className="bg-[#111827] border border-gray-700/50 rounded-2xl overflow-hidden">
-              <div className="px-6 py-4 border-b border-gray-700/50">
+              <div className="px-6 py-4 border-b border-gray-700/50 space-y-3">
                 <h2 className="text-white font-bold text-lg">Daftar Member ({members.length})</h2>
+                {/* Filter */}
+                <div className="flex flex-wrap gap-2">
+                  <input
+                    type="text" value={filterSearch} onChange={e => setFilterSearch(e.target.value)}
+                    placeholder="🔍 Cari nama..."
+                    className="bg-[#0d1325] border border-gray-700 rounded-xl px-3 py-2 text-white text-sm placeholder-gray-600 focus:outline-none focus:border-yellow-500/50 w-44"
+                  />
+                  <select value={filterTier} onChange={e => setFilterTier(e.target.value)}
+                    className="bg-[#0d1325] border border-gray-700 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-yellow-500/50">
+                    <option value="">Semua Tier</option>
+                    {TIERS.map(t => <option key={t} value={t}>{t}</option>)}
+                  </select>
+                  <select value={filterKelas} onChange={e => setFilterKelas(e.target.value)}
+                    className="bg-[#0d1325] border border-gray-700 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-yellow-500/50">
+                    <option value="">Basic & Advanced</option>
+                    <option value="basic">Basic (belum advance)</option>
+                    <option value="advance">Advanced</option>
+                  </select>
+                  {(filterSearch || filterTier || filterKelas) && (
+                    <button onClick={() => { setFilterSearch(''); setFilterTier(''); setFilterKelas(''); }}
+                      className="text-xs text-gray-500 hover:text-red-400 border border-gray-700 px-3 py-2 rounded-xl transition-colors">
+                      Reset Filter
+                    </button>
+                  )}
+                </div>
               </div>
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
@@ -472,37 +528,92 @@ export default function AdminPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {members.map(m => (
-                      <tr key={m.id} className="border-b border-gray-800/50 hover:bg-gray-800/20">
-                        <td className="text-white px-6 py-4 font-medium">{m.nama}</td>
-                        <td className="px-6 py-4"><span className="text-xs bg-yellow-500/20 text-yellow-400 px-2 py-1 rounded-lg">{m.tier}</span></td>
-                        <td className="px-6 py-4">
-                          <div className="flex items-center gap-2">
-                            <span className="text-gray-300 font-mono text-xs">{revealPass[m.id] ? m.password : '••••••••'}</span>
-                            <button onClick={() => setRevealPass(p => ({ ...p, [m.id]: !p[m.id] }))} className="text-gray-600 hover:text-gray-400">
-                              {revealPass[m.id] ? <EyeOff size={14} /> : <Eye size={14} />}
-                            </button>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <span className={`text-xs px-2 py-1 rounded-lg font-semibold ${m.is_advance ? 'bg-purple-500/20 text-purple-400' : 'bg-gray-800 text-gray-600'}`}>
-                            {m.is_advance ? 'Ya' : 'Tidak'}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4">
-                          <button onClick={() => toggleActive(m.id, m.is_active)}
-                            className={`text-xs px-3 py-1 rounded-lg font-semibold transition-all ${m.is_active ? 'bg-green-500/20 text-green-400 hover:bg-red-500/20 hover:text-red-400' : 'bg-red-500/20 text-red-400 hover:bg-green-500/20 hover:text-green-400'}`}>
-                            {m.is_active ? 'Aktif' : 'Nonaktif'}
-                          </button>
-                        </td>
-                        <td className="px-6 py-4">
-                          <button onClick={() => deleteMember(m.id)} className="text-gray-600 hover:text-red-400 transition-colors"><Trash2 size={16} /></button>
-                        </td>
-                      </tr>
-                    ))}
+                    {members
+                      .filter(m => {
+                        if (filterSearch && !m.nama.toLowerCase().includes(filterSearch.toLowerCase())) return false;
+                        if (filterTier && m.tier !== filterTier) return false;
+                        if (filterKelas === 'advance' && !m.is_advance) return false;
+                        if (filterKelas === 'basic' && m.is_advance) return false;
+                        return true;
+                      })
+                      .map(m => (
+                        <>
+                          <tr key={m.id} className="border-b border-gray-800/50 hover:bg-gray-800/20">
+                            <td className="text-white px-6 py-4 font-medium">{m.nama}</td>
+                            <td className="px-6 py-4"><span className="text-xs bg-yellow-500/20 text-yellow-400 px-2 py-1 rounded-lg">{m.tier}</span></td>
+                            <td className="px-6 py-4">
+                              <div className="flex items-center gap-2">
+                                <span className="text-gray-300 font-mono text-xs">{revealPass[m.id] ? m.password : '••••••••'}</span>
+                                <button onClick={() => setRevealPass(p => ({ ...p, [m.id]: !p[m.id] }))} className="text-gray-600 hover:text-gray-400">
+                                  {revealPass[m.id] ? <EyeOff size={14} /> : <Eye size={14} />}
+                                </button>
+                              </div>
+                            </td>
+                            <td className="px-6 py-4">
+                              <span className={`text-xs px-2 py-1 rounded-lg font-semibold ${m.is_advance ? 'bg-purple-500/20 text-purple-400' : 'bg-gray-800 text-gray-600'}`}>
+                                {m.is_advance ? 'Ya' : 'Tidak'}
+                              </span>
+                            </td>
+                            <td className="px-6 py-4">
+                              <button onClick={() => toggleActive(m.id, m.is_active)}
+                                className={`text-xs px-3 py-1 rounded-lg font-semibold transition-all ${m.is_active ? 'bg-green-500/20 text-green-400 hover:bg-red-500/20 hover:text-red-400' : 'bg-red-500/20 text-red-400 hover:bg-green-500/20 hover:text-green-400'}`}>
+                                {m.is_active ? 'Aktif' : 'Nonaktif'}
+                              </button>
+                            </td>
+                            <td className="px-6 py-4">
+                              <div className="flex gap-2">
+                                <button onClick={() => editMemberId === m.id ? setEditMemberId(null) : startEditMember(m)}
+                                  className="text-gray-500 hover:text-yellow-400 text-xs border border-gray-700 hover:border-yellow-500/40 px-2 py-1 rounded-lg transition-all">
+                                  Edit
+                                </button>
+                                <button onClick={() => deleteMember(m.id)} className="text-gray-600 hover:text-red-400 transition-colors"><Trash2 size={16} /></button>
+                              </div>
+                            </td>
+                          </tr>
+                          {editMemberId === m.id && (
+                            <tr key={m.id + '_edit'} className="border-b border-gray-800/50">
+                              <td colSpan={6} className="px-6 py-4 bg-[#0d1325]">
+                                <p className="text-yellow-400 text-xs font-semibold mb-3">✏️ Edit Member</p>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-3">
+                                  <input type="text" value={editMNama} onChange={e => setEditMNama(e.target.value)} placeholder="Nama Lengkap"
+                                    className="bg-[#111827] border border-gray-700 rounded-xl px-4 py-2.5 text-white text-sm placeholder-gray-600 focus:outline-none focus:border-yellow-500/50" />
+                                  <select value={editMTier} onChange={e => setEditMTier(e.target.value)}
+                                    className="bg-[#111827] border border-gray-700 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-yellow-500/50">
+                                    {TIERS.map(t => <option key={t} value={t}>{t}</option>)}
+                                  </select>
+                                  <div className="relative">
+                                    <input type="text" value={editMPassword} onChange={e => setEditMPassword(e.target.value)} placeholder="Password"
+                                      className="w-full bg-[#111827] border border-gray-700 rounded-xl px-4 py-2.5 pr-16 text-white text-sm placeholder-gray-600 focus:outline-none focus:border-yellow-500/50 font-mono" />
+                                    <button onClick={() => setEditMPassword(generatePassword())}
+                                      className="absolute right-2 top-1/2 -translate-y-1/2 text-yellow-500 text-xs font-bold px-1">Auto</button>
+                                  </div>
+                                  <select value={editMAdvance ? 'ya' : 'tidak'} onChange={e => setEditMAdvance(e.target.value === 'ya')}
+                                    className="bg-[#111827] border border-gray-700 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-yellow-500/50">
+                                    <option value="tidak">Basic (belum advance)</option>
+                                    <option value="ya">Advanced</option>
+                                  </select>
+                                </div>
+                                <div className="flex gap-2">
+                                  <button onClick={saveEditMember} disabled={loading}
+                                    className="bg-yellow-500 hover:bg-yellow-400 text-[#0a0f1e] font-bold px-4 py-2 rounded-xl text-sm transition-all disabled:opacity-50">
+                                    Simpan
+                                  </button>
+                                  <button onClick={() => setEditMemberId(null)} className="text-gray-500 hover:text-gray-300 px-4 py-2 rounded-xl text-sm">Batal</button>
+                                </div>
+                              </td>
+                            </tr>
+                          )}
+                        </>
+                      ))}
                   </tbody>
                 </table>
-                {!members.length && <p className="text-gray-600 text-center py-8">Belum ada member.</p>}
+                {!members.filter(m => {
+                  if (filterSearch && !m.nama.toLowerCase().includes(filterSearch.toLowerCase())) return false;
+                  if (filterTier && m.tier !== filterTier) return false;
+                  if (filterKelas === 'advance' && !m.is_advance) return false;
+                  if (filterKelas === 'basic' && m.is_advance) return false;
+                  return true;
+                }).length && <p className="text-gray-600 text-center py-8">Tidak ada member yang sesuai filter.</p>}
               </div>
             </div>
           </div>

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { ArrowLeft, LogIn, Eye, EyeOff, Lock, Shield, KeyRound } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
-const TIERS = ['SMC Trial', 'SMC Silver', 'SMC Bronze', 'SMC Gold Mentorship', 'SMC Platinum 1 on 1'];
+const TIERS = ['SMC Trial', 'SMC Bronze', 'SMC Gold Mentorship', 'SMC Platinum 1 on 1'];
 
 function generatePassword() {
   const chars = 'ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
@@ -32,6 +32,7 @@ export default function LoginPage() {
   const [forgotTier, setForgotTier] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [forgotDone, setForgotDone] = useState(false);
+  const [forgotNotFound, setForgotNotFound] = useState(false);
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -67,15 +68,17 @@ export default function LoginPage() {
   }
 
   async function handleForgotPassword() {
-    if (!forgotNama.trim() || !forgotTier) { setError('Semua field wajib diisi.'); return; }
-    setLoading(true); setError('');
-    const { data: member } = await supabase
-      .from('members').select('*').ilike('nama', forgotNama.trim()).eq('tier', forgotTier).single();
-    if (!member) { setError('Data tidak ditemukan. Pastikan nama dan tier sesuai pendaftaran.'); setLoading(false); return; }
+    if (!forgotNama.trim() || !forgotTier) { setError('Nama lengkap dan tier wajib diisi.'); return; }
+    setLoading(true); setError(''); setForgotNotFound(false);
+    const { data: members } = await supabase
+      .from('members').select('*').ilike('nama', forgotNama.trim()).eq('tier', forgotTier);
+    if (!members || members.length === 0) {
+      setForgotNotFound(true); setLoading(false); return;
+    }
+    const member = members[0];
     if (!member.is_active) { setError('Akun tidak aktif. Hubungi admin.'); setLoading(false); return; }
-    const pass = generatePassword();
-    await supabase.from('members').update({ password: pass, session_token: null }).eq('id', member.id);
-    setNewPassword(pass);
+    // Tampilkan password yang sudah ada di database — tidak generate baru
+    setNewPassword(member.password);
     setForgotDone(true);
     setLoading(false);
   }
@@ -190,17 +193,31 @@ export default function LoginPage() {
               <>
                 <div>
                   <label className="text-gray-400 text-sm block mb-2">Nama Lengkap</label>
-                  <input type="text" value={forgotNama} onChange={e => setForgotNama(e.target.value)} placeholder="Sesuai data pendaftaran"
+                  <input type="text" value={forgotNama} onChange={e => { setForgotNama(e.target.value); setForgotNotFound(false); }} placeholder="Sesuai data pendaftaran"
                     className="w-full bg-[#0d1325] border border-gray-700 rounded-xl px-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:border-blue-500/50 transition-colors" />
                 </div>
                 <div>
                   <label className="text-gray-400 text-sm block mb-2">Tier Kelas</label>
-                  <select value={forgotTier} onChange={e => setForgotTier(e.target.value)}
+                  <select value={forgotTier} onChange={e => { setForgotTier(e.target.value); setForgotNotFound(false); }}
                     className="w-full bg-[#0d1325] border border-gray-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-blue-500/50 transition-colors">
                     <option value="">Pilih tier kelas kamu</option>
                     {TIERS.map(t => <option key={t} value={t}>{t}</option>)}
                   </select>
                 </div>
+
+                {/* Nama tidak ditemukan */}
+                {forgotNotFound && (
+                  <div className="bg-red-500/10 border border-red-500/30 rounded-xl px-4 py-4 space-y-3">
+                    <p className="text-red-400 text-sm font-semibold">❌ Data tidak ditemukan di database.</p>
+                    <p className="text-gray-400 text-xs">Pastikan nama dan tier sesuai data pendaftaran, atau hubungi admin langsung.</p>
+                    <a
+                      href={`https://wa.me/6281242224939?text=${encodeURIComponent(`Halo Admin Menolak Rugi, saya ingin minta password untuk akun saya.\n\nNama Lengkap: ${forgotNama.trim()}\nTier Kelas: ${forgotTier || '(tidak diisi)'}\n\nMohon bantuannya. Terima kasih!`)}`}
+                      target="_blank" rel="noopener noreferrer"
+                      className="flex items-center justify-center gap-2 bg-green-600 hover:bg-green-500 text-white font-semibold px-4 py-2.5 rounded-xl transition-all text-sm w-full">
+                      💬 Chat Admin via WhatsApp
+                    </a>
+                  </div>
+                )}
               </>
             )}
 
@@ -210,12 +227,12 @@ export default function LoginPage() {
                 <div className="w-16 h-16 bg-green-500/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
                   <KeyRound size={32} className="text-green-400" />
                 </div>
-                <h3 className="text-white font-bold text-lg mb-2">Password Baru Kamu</h3>
+                <h3 className="text-white font-bold text-lg mb-2">Password Kamu</h3>
                 <div className="bg-[#0d1325] border border-green-500/30 rounded-xl px-6 py-4 mb-4">
                   <p className="text-green-400 font-mono text-2xl font-bold tracking-widest">{newPassword}</p>
                 </div>
-                <p className="text-gray-400 text-sm mb-4">Catat password ini baik-baik, lalu login dengan password baru.</p>
-                <button onClick={() => { setMode('member'); setForgotDone(false); setForgotNama(''); setForgotTier(''); setNewPassword(''); }}
+                <p className="text-gray-400 text-sm mb-4">Gunakan password ini untuk login. Jika ingin ganti, bisa dari menu Password di dashboard.</p>
+                <button onClick={() => { setMode('member'); setForgotDone(false); setForgotNama(''); setForgotTier(''); setNewPassword(''); setForgotNotFound(false); }}
                   className="text-yellow-400 hover:text-yellow-300 text-sm font-semibold transition-colors">
                   Kembali ke Login →
                 </button>
@@ -230,7 +247,7 @@ export default function LoginPage() {
             )}
 
             {/* Submit Button */}
-            {!(mode === 'forgot' && forgotDone) && (
+            {!(mode === 'forgot' && forgotDone) && !(mode === 'forgot' && forgotNotFound) && (
               <button
                 onClick={mode === 'member' ? handleMemberLogin : mode === 'admin' ? handleAdminLogin : handleForgotPassword}
                 disabled={loading}
@@ -258,7 +275,7 @@ export default function LoginPage() {
             )}
 
             {mode === 'forgot' && !forgotDone && (
-              <button onClick={() => { setMode('member'); setError(''); }}
+              <button onClick={() => { setMode('member'); setError(''); setForgotNotFound(false); setForgotNama(''); }}
                 className="w-full text-gray-500 hover:text-gray-300 text-sm transition-colors flex items-center justify-center gap-1">
                 <ArrowLeft size={14} /> Kembali ke Login
               </button>
