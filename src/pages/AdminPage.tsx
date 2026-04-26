@@ -16,7 +16,10 @@ function generatePassword() {
 
 export default function AdminPage() {
   const [currentAdmin, setCurrentAdmin] = useState<Admin | null>(null);
-  const [tab, setTab] = useState<'member' | 'video' | 'advance' | 'admins' | 'settings'>('member');
+  const [tab, setTab] = useState<'member' | 'video' | 'advance' | 'admins' | 'settings' | 'announce'>('member');
+  const [announceChannel, setAnnounceChannel] = useState('');
+  const [announceMsg, setAnnounceMsg] = useState('');
+  const [announceSending, setAnnounceSending] = useState(false);
   const [members, setMembers] = useState<Member[]>([]);
   const [videos, setVideos] = useState<VideoItem[]>([]);
   const [requests, setRequests] = useState<AdvanceRequest[]>([]);
@@ -307,6 +310,22 @@ export default function AdminPage() {
     setOldPass(''); setNewPass(''); setConfirmPass('');
   }
 
+  async function sendAnnounce() {
+    if (!announceChannel || !announceMsg.trim()) { notify('Channel dan pesan wajib diisi.', 'err'); return; }
+    setAnnounceSending(true);
+    try {
+      const res = await fetch('https://menolakrugi-bot-production.up.railway.app/discord/announce', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ channel_id: announceChannel, message: announceMsg }),
+      });
+      const data = await res.json();
+      if (data.success) { notify('Pengumuman berhasil dikirim ke Discord! ✅'); setAnnounceMsg(''); }
+      else notify('Gagal kirim: ' + data.error, 'err');
+    } catch { notify('Tidak bisa terhubung ke bot.', 'err'); }
+    setAnnounceSending(false);
+  }
+
   function startEditVideo(v: any) {
     setEditVideoId(v.id); setEditVJudul(v.judul);
     setEditVDesc(v.deskripsi || ''); setEditVUrl(v.youtube_url || '');
@@ -432,6 +451,7 @@ export default function AdminPage() {
             { id: 'member', label: `Member (${members.length})`, icon: <Users size={16} /> },
             { id: 'video', label: `Video (${videos.length})`, icon: <Video size={16} /> },
             { id: 'advance', label: 'Request Advance', icon: <ChevronUp size={16} />, badge: pendingRequests.length },
+            { id: 'announce', label: 'Pengumuman', icon: <span>📢</span> },
             { id: 'settings', label: 'Password Saya', icon: <KeyRound size={16} /> },
             ...(isSuperAdmin ? [{ id: 'admins', label: `Admin (${admins.length})`, icon: <Shield size={16} /> }] : []),
           ].map(t => (
@@ -975,6 +995,63 @@ export default function AdminPage() {
                   </div>
                 ))}
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* Tab Pengumuman */}
+        {tab === 'announce' && (
+          <div className="max-w-2xl space-y-6">
+            <div className="bg-[#111827] border border-indigo-500/20 rounded-2xl p-6">
+              <h2 className="text-white font-bold text-lg mb-1 flex items-center gap-2">📢 Kirim Pengumuman ke Discord</h2>
+              <p className="text-gray-500 text-sm mb-6">Pesan akan dikirim oleh bot langsung ke channel Discord yang dipilih.</p>
+              <div className="space-y-4">
+                <div>
+                  <label className="text-gray-400 text-sm block mb-2">Pilih Channel</label>
+                  <select value={announceChannel} onChange={e => setAnnounceChannel(e.target.value)}
+                    className="w-full bg-[#0d1325] border border-gray-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-indigo-500/50">
+                    <option value="">— Pilih channel tujuan —</option>
+                    <optgroup label="📢 Pengumuman">
+                      <option value="1056938665688969321">📢 pengumuman</option>
+                    </optgroup>
+                    <optgroup label="📚 Kelas">
+                      <option value="1390888552367132674">📚 class-basic</option>
+                      <option value="1390888679123189761">🚀 class-advanced</option>
+                    </optgroup>
+                    <optgroup label="💬 Umum">
+                      <option value="1056938665688969318">💬 general</option>
+                    </optgroup>
+                  </select>
+                  <p className="text-gray-600 text-xs mt-1">⚠️ Pastikan Channel ID sesuai dengan channel Discord kamu.</p>
+                </div>
+                <div>
+                  <label className="text-gray-400 text-sm block mb-2">Pesan Pengumuman</label>
+                  <textarea value={announceMsg} onChange={e => setAnnounceMsg(e.target.value)}
+                    rows={10} placeholder={`Tulis pengumuman di sini...\n\nSupport markdown Discord:\n# Heading Besar\n## Heading Sedang\n**teks tebal**\n> quote`}
+                    className="w-full bg-[#0d1325] border border-gray-700 rounded-xl px-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:border-indigo-500/50 resize-none font-mono text-sm" />
+                  <p className="text-gray-600 text-xs mt-1">{announceMsg.length} karakter</p>
+                </div>
+                {announceMsg && (
+                  <div className="bg-[#0d1325] border border-gray-700/50 rounded-xl p-4">
+                    <p className="text-gray-500 text-xs mb-2 font-semibold">Preview:</p>
+                    <pre className="text-gray-300 text-xs whitespace-pre-wrap font-sans">{announceMsg}</pre>
+                  </div>
+                )}
+                <button onClick={sendAnnounce} disabled={announceSending || !announceChannel || !announceMsg.trim()}
+                  className="w-full flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3.5 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed">
+                  {announceSending ? '⏳ Mengirim...' : '📢 Kirim ke Discord'}
+                </button>
+              </div>
+            </div>
+
+            <div className="bg-[#111827] border border-gray-700/50 rounded-2xl p-5">
+              <p className="text-gray-400 text-sm font-semibold mb-3">⚙️ Cara cek Channel ID yang benar:</p>
+              <ol className="text-gray-500 text-sm space-y-1.5 list-decimal list-inside">
+                <li>Buka Discord → Settings → Advanced → aktifkan <strong className="text-gray-300">Developer Mode</strong></li>
+                <li>Klik kanan channel yang dituju</li>
+                <li>Klik <strong className="text-gray-300">Copy Channel ID</strong></li>
+                <li>Paste di sini atau update di kode admin</li>
+              </ol>
             </div>
           </div>
         )}
