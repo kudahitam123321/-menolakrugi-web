@@ -123,26 +123,57 @@ export default function MemberPage() {
   const [jurnal1, setJurnal1] = useState('');
   const [jurnal2, setJurnal2] = useState('');
   const [jurnal3, setJurnal3] = useState('');
+  const [jFile1, setJFile1] = useState<File | null>(null);
+  const [jFile2, setJFile2] = useState<File | null>(null);
+  const [jFile3, setJFile3] = useState<File | null>(null);
+
+  async function uploadJurnalFile(file: File): Promise<string> {
+    const fileName = `jurnal/${Date.now()}_${file.name.replace(/\s/g, '_')}`;
+    const { error } = await supabase.storage.from('materi').upload(fileName, file, { upsert: false });
+    if (error) throw new Error(error.message);
+    const { data } = supabase.storage.from('materi').getPublicUrl(fileName);
+    return data.publicUrl;
+  }
 
   async function handleRequestAdvance() {
     if (!session) return;
-    if (!jurnal1.trim() || !jurnal2.trim() || !jurnal3.trim()) {
-      setRequestMsg('Ketiga link jurnal wajib diisi.');
+    // Cek minimal salah satu dari link atau file per jurnal
+    const j1Valid = jurnal1.trim() || jFile1;
+    const j2Valid = jurnal2.trim() || jFile2;
+    const j3Valid = jurnal3.trim() || jFile3;
+    if (!j1Valid || !j2Valid || !j3Valid) {
+      setRequestMsg('Ketiga jurnal wajib diisi (link atau upload file).');
       return;
     }
     setRequesting(true); setRequestMsg('');
-    const catatan = `Jurnal 1: ${jurnal1.trim()}\nJurnal 2: ${jurnal2.trim()}\nJurnal 3: ${jurnal3.trim()}`;
-    const { error } = await supabase.from('advance_requests').insert({
-      member_id: session.member_id, member_nama: session.nama,
-      member_tier: session.tier, status: 'pending', alasan_tolak: catatan,
-    });
-    if (error) setRequestMsg('Gagal mengirim request. Coba lagi.');
-    else {
-      setRequestMsg('Request berhasil dikirim! Tunggu review dari mentor.');
-      setShowJurnalForm(false);
-      setJurnal1(''); setJurnal2(''); setJurnal3('');
-      const { data: req } = await supabase.from('advance_requests').select('*').eq('member_id', session.member_id).order('created_at', { ascending: false }).limit(1).single();
-      if (req) setAdvanceRequest(req);
+    try {
+      const links: string[] = [];
+      // Jurnal 1
+      if (jFile1) links.push(await uploadJurnalFile(jFile1));
+      else links.push(jurnal1.trim());
+      // Jurnal 2
+      if (jFile2) links.push(await uploadJurnalFile(jFile2));
+      else links.push(jurnal2.trim());
+      // Jurnal 3
+      if (jFile3) links.push(await uploadJurnalFile(jFile3));
+      else links.push(jurnal3.trim());
+
+      const catatan = `Jurnal 1: ${links[0]}\nJurnal 2: ${links[1]}\nJurnal 3: ${links[2]}`;
+      const { error } = await supabase.from('advance_requests').insert({
+        member_id: session.member_id, member_nama: session.nama,
+        member_tier: session.tier, status: 'pending', alasan_tolak: catatan,
+      });
+      if (error) setRequestMsg('Gagal mengirim request. Coba lagi.');
+      else {
+        setRequestMsg('Request berhasil dikirim! Tunggu review dari mentor.');
+        setShowJurnalForm(false);
+        setJurnal1(''); setJurnal2(''); setJurnal3('');
+        setJFile1(null); setJFile2(null); setJFile3(null);
+        const { data: req } = await supabase.from('advance_requests').select('*').eq('member_id', session.member_id).order('created_at', { ascending: false }).limit(1).single();
+        if (req) setAdvanceRequest(req);
+      }
+    } catch (e: any) {
+      setRequestMsg('Gagal upload file: ' + e.message);
     }
     setRequesting(false);
   }
@@ -311,7 +342,7 @@ export default function MemberPage() {
                   <p className="text-gray-400 text-sm leading-relaxed mb-4">
                     Syarat untuk naik ke kelas Advanced:<br />
                     ✅ Minimal tier <strong className="text-white">SMC Silver</strong><br />
-                    ✅ Penjurnalan selama <strong className="text-white">3 bulan</strong><br />
+                    ✅ Penjurnalan selama <strong className="text-white">1 bulan</strong><br />
                     ✅ Direview dan disetujui mentor
                   </p>
                   {advanceRequest?.status === 'pending' && (
@@ -342,18 +373,39 @@ export default function MemberPage() {
                           <ChevronUp size={18} /> Request Naik Advanced
                         </button>
                       ) : (
-                        <div className="bg-[#0d1325] border border-purple-500/20 rounded-xl p-4 space-y-3">
-                          <p className="text-purple-300 text-sm font-semibold">📓 Lampirkan 3 Link Jurnal Trading kamu</p>
-                          <p className="text-gray-500 text-xs">Bisa link Google Sheets, Notion, atau platform jurnal lainnya.</p>
-                          <input type="text" value={jurnal1} onChange={e => setJurnal1(e.target.value)}
-                            placeholder="Link Jurnal 1 (wajib)"
-                            className="w-full bg-[#111827] border border-gray-700 rounded-xl px-4 py-2.5 text-white text-sm placeholder-gray-600 focus:outline-none focus:border-purple-500/50" />
-                          <input type="text" value={jurnal2} onChange={e => setJurnal2(e.target.value)}
-                            placeholder="Link Jurnal 2 (wajib)"
-                            className="w-full bg-[#111827] border border-gray-700 rounded-xl px-4 py-2.5 text-white text-sm placeholder-gray-600 focus:outline-none focus:border-purple-500/50" />
-                          <input type="text" value={jurnal3} onChange={e => setJurnal3(e.target.value)}
-                            placeholder="Link Jurnal 3 (wajib)"
-                            className="w-full bg-[#111827] border border-gray-700 rounded-xl px-4 py-2.5 text-white text-sm placeholder-gray-600 focus:outline-none focus:border-purple-500/50" />
+                        <div className="bg-[#0d1325] border border-purple-500/20 rounded-xl p-4 space-y-4">
+                          <p className="text-purple-300 text-sm font-semibold">📓 Lampirkan 3 Jurnal Trading kamu</p>
+                          <p className="text-gray-500 text-xs">Tiap jurnal bisa berupa link (Google Sheets, Notion, dll) <strong className="text-gray-400">atau</strong> upload file (Excel, PDF, dll).</p>
+                          {[
+                            { label: 'Jurnal 1', val: jurnal1, setVal: setJurnal1, file: jFile1, setFile: setJFile1 },
+                            { label: 'Jurnal 2', val: jurnal2, setVal: setJurnal2, file: jFile2, setFile: setJFile2 },
+                            { label: 'Jurnal 3', val: jurnal3, setVal: setJurnal3, file: jFile3, setFile: setJFile3 },
+                          ].map((j, i) => (
+                            <div key={i} className="bg-[#111827] border border-gray-700/50 rounded-xl p-3 space-y-2">
+                              <p className="text-gray-400 text-xs font-semibold">{j.label}</p>
+                              {!j.file ? (
+                                <input type="text" value={j.val} onChange={e => j.setVal(e.target.value)}
+                                  placeholder="Paste link jurnal (Google Sheets, Notion, dll)"
+                                  className="w-full bg-[#0d1325] border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-600 focus:outline-none focus:border-purple-500/50" />
+                              ) : (
+                                <div className="flex items-center gap-2 bg-[#0d1325] rounded-lg px-3 py-2">
+                                  <span className="text-purple-400 text-xs flex-1 truncate">📎 {j.file.name}</span>
+                                  <button onClick={() => j.setFile(null)} className="text-gray-500 hover:text-red-400 text-xs">Hapus</button>
+                                </div>
+                              )}
+                              {!j.val.trim() && (
+                                <div className="flex items-center gap-2">
+                                  <span className="text-gray-600 text-xs">atau</span>
+                                  <label className="cursor-pointer text-purple-400 hover:text-purple-300 text-xs font-semibold border border-purple-500/30 px-3 py-1.5 rounded-lg hover:bg-purple-500/10 transition-all">
+                                    📂 Upload File
+                                    <input type="file" accept=".xlsx,.xls,.pdf,.csv,.doc,.docx,.png,.jpg" className="hidden"
+                                      onChange={e => { j.setFile(e.target.files?.[0] || null); j.setVal(''); }} />
+                                  </label>
+                                  <span className="text-gray-700 text-xs">(.xlsx, .pdf, .csv, dll)</span>
+                                </div>
+                              )}
+                            </div>
+                          ))}
                           {requestMsg && <p className="text-red-400 text-xs">{requestMsg}</p>}
                           <div className="flex gap-2">
                             <button onClick={handleRequestAdvance} disabled={requesting}
