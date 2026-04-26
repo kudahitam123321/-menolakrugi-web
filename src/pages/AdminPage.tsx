@@ -16,7 +16,21 @@ function generatePassword() {
 
 export default function AdminPage() {
   const [currentAdmin, setCurrentAdmin] = useState<Admin | null>(null);
-  const [tab, setTab] = useState<'member' | 'video' | 'advance' | 'admins' | 'settings' | 'announce'>('member');
+  const [tab, setTab] = useState<'member' | 'video' | 'advance' | 'admins' | 'settings' | 'announce' | 'broker'>('member');
+
+  // Broker states
+  const [brokers, setBrokers] = useState<any[]>([]);
+  const [bNama, setBNama] = useState('');
+  const [bLink, setBLink] = useState('');
+  const [bDiskon, setBDiskon] = useState('');
+  const [bDesc, setBDesc] = useState('');
+  const [bUrutan, setBUrutan] = useState('');
+  const [editBrokerId, setEditBrokerId] = useState<string | null>(null);
+  const [editBNama, setEditBNama] = useState('');
+  const [editBLink, setEditBLink] = useState('');
+  const [editBDiskon, setEditBDiskon] = useState('');
+  const [editBDesc, setEditBDesc] = useState('');
+  const [editBUrutan, setEditBUrutan] = useState('');
   const [announceChannel, setAnnounceChannel] = useState('');
   const [announceMsg, setAnnounceMsg] = useState('');
   const [announceSending, setAnnounceSending] = useState(false);
@@ -118,11 +132,40 @@ export default function AdminPage() {
     const { data: r } = await supabase.from('advance_requests').select('*').order('created_at', { ascending: false });
     const { data: a } = await supabase.from('admins').select('*').order('created_at', { ascending: true });
     const { data: fi } = await supabase.from('files').select('*').order('urutan', { ascending: true });
+    const { data: br } = await supabase.from('brokers').select('*').order('urutan', { ascending: true });
     if (m) setMembers(m);
     if (v) setVideos(v);
     if (r) setRequests(r);
     if (a) setAdmins(a);
     if (fi) setFileItems(fi);
+    if (br) setBrokers(br);
+  }
+
+  // Broker CRUD
+  async function addBroker() {
+    if (!bNama || !bLink) { notify('Nama dan link wajib diisi.', 'err'); return; }
+    setLoading(true);
+    const { error } = await supabase.from('brokers').insert({ nama: bNama, link: bLink, diskon: bDiskon || null, deskripsi: bDesc || null, urutan: parseInt(bUrutan) || 0 });
+    if (error) notify('Error: ' + error.message, 'err');
+    else { notify('Broker berhasil ditambahkan!'); setBNama(''); setBLink(''); setBDiskon(''); setBDesc(''); setBUrutan(''); loadData(); }
+    setLoading(false);
+  }
+  async function deleteBroker(id: string) {
+    if (!confirm('Hapus broker ini?')) return;
+    await supabase.from('brokers').delete().eq('id', id);
+    loadData();
+  }
+  function startEditBroker(b: any) {
+    setEditBrokerId(b.id); setEditBNama(b.nama); setEditBLink(b.link);
+    setEditBDiskon(b.diskon || ''); setEditBDesc(b.deskripsi || ''); setEditBUrutan(String(b.urutan || 0));
+  }
+  async function saveEditBroker() {
+    if (!editBrokerId || !editBNama || !editBLink) { notify('Nama dan link wajib diisi.', 'err'); return; }
+    setLoading(true);
+    const { error } = await supabase.from('brokers').update({ nama: editBNama, link: editBLink, diskon: editBDiskon || null, deskripsi: editBDesc || null, urutan: parseInt(editBUrutan) || 0 }).eq('id', editBrokerId);
+    if (error) notify('Error: ' + error.message, 'err');
+    else { notify('Broker berhasil diupdate!'); setEditBrokerId(null); loadData(); }
+    setLoading(false);
   }
 
   function handleLogout() {
@@ -452,6 +495,7 @@ export default function AdminPage() {
             { id: 'video', label: `Video (${videos.length})`, icon: <Video size={16} /> },
             { id: 'advance', label: 'Request Advance', icon: <ChevronUp size={16} />, badge: pendingRequests.length },
             { id: 'announce', label: 'Pengumuman', icon: <span>📢</span> },
+            { id: 'broker', label: `Broker (${brokers.length})`, icon: <span>🏦</span> },
             { id: 'settings', label: 'Password Saya', icon: <KeyRound size={16} /> },
             ...(isSuperAdmin ? [{ id: 'admins', label: `Admin (${admins.length})`, icon: <Shield size={16} /> }] : []),
           ].map(t => (
@@ -991,6 +1035,82 @@ export default function AdminPage() {
                     </div>
                     {a.role !== 'superadmin' && (
                       <button onClick={() => deleteAdmin(a.id)} className="text-gray-600 hover:text-red-400 transition-colors"><Trash2 size={16} /></button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Tab Broker */}
+        {tab === 'broker' && (
+          <div className="space-y-6">
+            {/* Form Tambah */}
+            <div className="bg-[#111827] border border-yellow-500/20 rounded-2xl p-6">
+              <h2 className="text-white font-bold text-lg mb-5 flex items-center gap-2">🏦 Tambah Prop Firm / Broker</h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+                <input type="text" value={bNama} onChange={e => setBNama(e.target.value)} placeholder="Nama Prop Firm / Broker *"
+                  className="bg-[#0d1325] border border-gray-700 rounded-xl px-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:border-yellow-500/50" />
+                <input type="text" value={bLink} onChange={e => setBLink(e.target.value)} placeholder="Link Daftar (https://...) *"
+                  className="bg-[#0d1325] border border-gray-700 rounded-xl px-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:border-yellow-500/50" />
+                <input type="text" value={bDiskon} onChange={e => setBDiskon(e.target.value)} placeholder="Diskon (opsional, misal: Diskon 10%)"
+                  className="bg-[#0d1325] border border-gray-700 rounded-xl px-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:border-yellow-500/50" />
+                <input type="number" value={bUrutan} onChange={e => setBUrutan(e.target.value)} placeholder="Urutan tampil (angka)"
+                  className="bg-[#0d1325] border border-gray-700 rounded-xl px-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:border-yellow-500/50" />
+              </div>
+              <textarea value={bDesc} onChange={e => setBDesc(e.target.value)} placeholder="Deskripsi singkat (opsional)" rows={2}
+                className="w-full bg-[#0d1325] border border-gray-700 rounded-xl px-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:border-yellow-500/50 resize-none mb-3" />
+              <button onClick={addBroker} disabled={loading}
+                className="bg-yellow-500 hover:bg-yellow-400 text-[#0a0f1e] font-bold px-6 py-3 rounded-xl transition-all disabled:opacity-50">
+                + Tambah Broker
+              </button>
+            </div>
+
+            {/* Daftar Broker */}
+            <div className="bg-[#111827] border border-gray-700/50 rounded-2xl overflow-hidden">
+              <div className="px-6 py-4 border-b border-gray-700/50">
+                <h2 className="text-white font-bold text-lg">Daftar Broker ({brokers.length})</h2>
+              </div>
+              {!brokers.length && <p className="text-gray-600 text-center py-8">Belum ada broker.</p>}
+              <div className="divide-y divide-gray-800/50">
+                {brokers.map(b => (
+                  <div key={b.id}>
+                    <div className="flex items-center gap-3 px-5 py-4 hover:bg-gray-800/20">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <p className="text-white font-semibold">{b.nama}</p>
+                          {b.diskon && <span className="text-xs bg-green-500/20 text-green-400 border border-green-500/30 px-2 py-0.5 rounded-full">🎁 {b.diskon}</span>}
+                        </div>
+                        {b.deskripsi && <p className="text-gray-500 text-xs mt-0.5">{b.deskripsi}</p>}
+                        <p className="text-blue-400 text-xs truncate mt-0.5">{b.link}</p>
+                      </div>
+                      <div className="flex gap-2 flex-shrink-0">
+                        <button onClick={() => editBrokerId === b.id ? setEditBrokerId(null) : startEditBroker(b)}
+                          className="text-gray-500 hover:text-yellow-400 text-xs border border-gray-700 hover:border-yellow-500/40 px-2 py-1 rounded-lg transition-all">Edit</button>
+                        <button onClick={() => deleteBroker(b.id)} className="text-gray-600 hover:text-red-400 transition-colors"><Trash2 size={15} /></button>
+                      </div>
+                    </div>
+                    {editBrokerId === b.id && (
+                      <div className="px-5 pb-5 bg-[#0d1325] border-t border-gray-700/50">
+                        <p className="text-yellow-400 text-xs font-semibold py-3">✏️ Edit Broker</p>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+                          <input type="text" value={editBNama} onChange={e => setEditBNama(e.target.value)} placeholder="Nama *"
+                            className="bg-[#111827] border border-gray-700 rounded-xl px-4 py-2.5 text-white text-sm placeholder-gray-600 focus:outline-none focus:border-yellow-500/50" />
+                          <input type="text" value={editBLink} onChange={e => setEditBLink(e.target.value)} placeholder="Link *"
+                            className="bg-[#111827] border border-gray-700 rounded-xl px-4 py-2.5 text-white text-sm placeholder-gray-600 focus:outline-none focus:border-yellow-500/50" />
+                          <input type="text" value={editBDiskon} onChange={e => setEditBDiskon(e.target.value)} placeholder="Diskon (opsional)"
+                            className="bg-[#111827] border border-gray-700 rounded-xl px-4 py-2.5 text-white text-sm placeholder-gray-600 focus:outline-none focus:border-yellow-500/50" />
+                          <input type="number" value={editBUrutan} onChange={e => setEditBUrutan(e.target.value)} placeholder="Urutan"
+                            className="bg-[#111827] border border-gray-700 rounded-xl px-4 py-2.5 text-white text-sm placeholder-gray-600 focus:outline-none focus:border-yellow-500/50" />
+                        </div>
+                        <textarea value={editBDesc} onChange={e => setEditBDesc(e.target.value)} placeholder="Deskripsi (opsional)" rows={2}
+                          className="w-full bg-[#111827] border border-gray-700 rounded-xl px-4 py-2.5 text-white text-sm placeholder-gray-600 focus:outline-none focus:border-yellow-500/50 resize-none mb-3" />
+                        <div className="flex gap-2">
+                          <button onClick={saveEditBroker} disabled={loading} className="bg-yellow-500 hover:bg-yellow-400 text-[#0a0f1e] font-bold px-4 py-2 rounded-xl text-sm disabled:opacity-50">Simpan</button>
+                          <button onClick={() => setEditBrokerId(null)} className="text-gray-500 hover:text-gray-300 px-4 py-2 rounded-xl text-sm">Batal</button>
+                        </div>
+                      </div>
                     )}
                   </div>
                 ))}

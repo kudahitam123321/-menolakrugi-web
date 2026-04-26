@@ -11,6 +11,9 @@ interface FileItem {
   id: string; judul: string; deskripsi: string; file_url: string;
   file_name: string; file_type: string; kategori: string; tier_akses: string[]; level: string; urutan: number;
 }
+interface Broker {
+  id: string; nama: string; link: string; diskon: string | null; deskripsi: string | null; urutan: number;
+}
 interface Session { token: string; member_id: string; nama: string; tier: string; }
 interface AdvanceRequest { id: string; status: string; alasan_tolak: string | null; created_at: string; }
 
@@ -30,6 +33,7 @@ const TABS = [
   { id: 'file-basic', label: 'File Basic', icon: <FileText size={15} />, desc: 'Dokumen materi basic' },
   { id: 'file-advanced', label: 'File Advanced', icon: <FileText size={15} />, desc: 'Dokumen materi advanced', locked: true },
   { id: 'komunitas', label: 'Komunitas', icon: <span className="text-base">🌐</span> },
+  { id: 'broker', label: 'Funded Broker', icon: <span className="text-base">🏦</span> },
   { id: 'settings', label: 'Password', icon: <KeyRound size={15} /> },
 ];
 
@@ -55,6 +59,7 @@ export default function MemberPage() {
   const [requestMsg, setRequestMsg] = useState('');
   const [discordConnected, setDiscordConnected] = useState(false);
   const [discordUsername, setDiscordUsername] = useState('');
+  const [brokers, setBrokers] = useState<Broker[]>([]);
   const [oldPass, setOldPass] = useState('');
   const [newPass, setNewPass] = useState('');
   const [confirmPass, setConfirmPass] = useState('');
@@ -80,6 +85,8 @@ export default function MemberPage() {
       const { data: fileData } = await supabase.from('files').select('*').order('urutan', { ascending: true });
       if (member.discord_id) { setDiscordConnected(true); setDiscordUsername(member.discord_username || ''); }
       if (fileData) setFiles(fileData);
+      const { data: brokerData } = await supabase.from('brokers').select('*').order('urutan', { ascending: true });
+      if (brokerData) setBrokers(brokerData);
       setLoading(false);
     }
     init();
@@ -468,6 +475,42 @@ export default function MemberPage() {
                   </div>
                 ))}
               </div>
+            </div>
+          )}
+
+          {/* Funded Broker */}
+          {activeTab === 'broker' && (
+            <div>
+              <h1 className="text-2xl font-bold text-white mb-2">🏦 Funded Broker</h1>
+              <p className="text-gray-400 text-sm mb-6">Prop firm & broker rekomendasian mentor. Klik untuk daftar.</p>
+              {!brokers.length ? (
+                <div className="bg-[#111827] border border-gray-700/50 rounded-2xl p-10 text-center">
+                  <p className="text-4xl mb-3">🏦</p>
+                  <p className="text-gray-500">Belum ada broker yang ditambahkan. Pantau terus ya!</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+                  {brokers.map(b => (
+                    <div key={b.id} className="bg-[#111827] border border-yellow-500/20 rounded-2xl p-6 flex flex-col gap-3 hover:border-yellow-500/40 transition-all">
+                      <div className="flex items-start justify-between gap-2">
+                        <div>
+                          <h3 className="text-white font-bold text-lg">{b.nama}</h3>
+                          {b.deskripsi && <p className="text-gray-400 text-xs mt-1 leading-relaxed">{b.deskripsi}</p>}
+                        </div>
+                        {b.diskon && (
+                          <span className="flex-shrink-0 bg-green-500/20 text-green-400 border border-green-500/30 text-xs font-bold px-2 py-1 rounded-lg whitespace-nowrap">
+                            🎁 {b.diskon}
+                          </span>
+                        )}
+                      </div>
+                      <a href={b.link} target="_blank" rel="noopener noreferrer"
+                        className="mt-auto w-full flex items-center justify-center gap-2 bg-yellow-500 hover:bg-yellow-400 text-[#0a0f1e] font-bold py-3 rounded-xl transition-all text-sm">
+                        Daftar Sekarang →
+                      </a>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 
