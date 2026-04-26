@@ -77,6 +77,13 @@ export default function AdminPage() {
   const [editFKategori, setEditFKategori] = useState('');
   const [editFUrutan, setEditFUrutan] = useState('');
 
+  // Coming Soon image
+  const [csFile, setCsFile] = useState<File | null>(null);
+  const csUploadRef = useRef<HTMLInputElement>(null);
+  const [editCsFile, setEditCsFile] = useState<File | null>(null);
+  const editCsUploadRef = useRef<HTMLInputElement>(null);
+  const [editCsExisting, setEditCsExisting] = useState<string>('');
+
   function notify(text: string, type: 'ok' | 'err' = 'ok') {
     setMsg(text); setMsgType(type);
     setTimeout(() => setMsg(''), 4000);
@@ -172,16 +179,31 @@ export default function AdminPage() {
 
   // Video functions
   async function addVideo() {
-    if (!vJudul || !vUrl) { notify('Judul dan URL wajib diisi.', 'err'); return; }
-    // Advanced tidak perlu pilih tier manual
+    if (!vJudul) { notify('Judul wajib diisi.', 'err'); return; }
+    if (!vUrl && !csFile) { notify('Isi URL YouTube atau upload gambar Coming Soon.', 'err'); return; }
     setLoading(true);
+    let csImgUrl = '';
+    if (csFile) {
+      const csFileName = Date.now() + '_cs_' + csFile.name.replace(/\s/g, '_');
+      const { error: csErr } = await supabase.storage.from('materi').upload(csFileName, csFile, { upsert: false });
+      if (csErr) { notify('Gagal upload gambar coming soon: ' + csErr.message, 'err'); setLoading(false); return; }
+      const { data: csPublic } = supabase.storage.from('materi').getPublicUrl(csFileName);
+      csImgUrl = csPublic.publicUrl;
+    }
     const { error } = await supabase.from('videos').insert({
       judul: vJudul, deskripsi: vDesc, youtube_url: vUrl,
       tier_akses: vLevel === 'advance' ? ['SMC Silver'] : ['SMC Trial'],
       level: vLevel, kategori: vKategori, urutan: parseInt(vUrutan) || 0,
+      coming_soon_img: csImgUrl || null,
     });
     if (error) notify('Error: ' + error.message, 'err');
-    else { notify('Video berhasil ditambahkan!'); setVJudul(''); setVDesc(''); setVUrl(''); setVLevel('basic'); setVKategori('intro'); setVUrutan(''); loadData(); }
+    else {
+      notify('Video berhasil ditambahkan!');
+      setVJudul(''); setVDesc(''); setVUrl(''); setVLevel('basic'); setVKategori('intro'); setVUrutan('');
+      setCsFile(null);
+      if (csUploadRef.current) csUploadRef.current.value = '';
+      loadData();
+    }
     setLoading(false);
   }
 
@@ -256,21 +278,37 @@ export default function AdminPage() {
 
   function startEditVideo(v: any) {
     setEditVideoId(v.id); setEditVJudul(v.judul);
-    setEditVDesc(v.deskripsi || ''); setEditVUrl(v.youtube_url);
+    setEditVDesc(v.deskripsi || ''); setEditVUrl(v.youtube_url || '');
     setEditVKategori(v.kategori || 'basic'); setEditVUrutan(String(v.urutan || 0));
+    setEditCsExisting(v.coming_soon_img || '');
+    setEditCsFile(null);
   }
 
   async function saveEditVideo() {
-    if (!editVideoId || !editVJudul || !editVUrl) { notify('Judul dan URL wajib diisi.', 'err'); return; }
+    if (!editVideoId || !editVJudul) { notify('Judul wajib diisi.', 'err'); return; }
+    if (!editVUrl && !editCsExisting && !editCsFile) { notify('Isi URL YouTube atau pertahankan / upload gambar Coming Soon.', 'err'); return; }
     setLoading(true);
+    let csImgUrl = editCsExisting;
+    if (editCsFile) {
+      const csFileName = Date.now() + '_cs_' + editCsFile.name.replace(/\s/g, '_');
+      const { error: csErr } = await supabase.storage.from('materi').upload(csFileName, editCsFile, { upsert: false });
+      if (csErr) { notify('Gagal upload gambar: ' + csErr.message, 'err'); setLoading(false); return; }
+      const { data: csPublic } = supabase.storage.from('materi').getPublicUrl(csFileName);
+      csImgUrl = csPublic.publicUrl;
+    }
     const isAdv = editVKategori.includes('advanced');
     const { error } = await supabase.from('videos').update({
       judul: editVJudul, deskripsi: editVDesc, youtube_url: editVUrl,
       kategori: editVKategori, level: isAdv ? 'advance' : 'basic',
       urutan: parseInt(editVUrutan) || 0,
+      coming_soon_img: csImgUrl || null,
     }).eq('id', editVideoId);
     if (error) notify('Error: ' + error.message, 'err');
-    else { notify('Video berhasil diupdate!'); setEditVideoId(null); loadData(); }
+    else {
+      notify('Video berhasil diupdate!');
+      setEditVideoId(null); setEditCsFile(null); setEditCsExisting('');
+      loadData();
+    }
     setLoading(false);
   }
 
@@ -503,6 +541,14 @@ export default function AdminPage() {
                   className="w-full bg-[#0d1325] border border-gray-700 rounded-xl px-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:border-yellow-500/50" />
                 <input type="number" value={vUrutan} onChange={e => setVUrutan(e.target.value)} placeholder="Urutan tampil (angka)"
                   className="w-full bg-[#0d1325] border border-gray-700 rounded-xl px-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:border-yellow-500/50" />
+                {/* Coming Soon Image */}
+                <div className="bg-[#0d1325] border border-dashed border-orange-500/40 rounded-xl p-4">
+                  <p className="text-orange-400 text-xs font-semibold mb-1">🕐 Gambar Coming Soon (opsional)</p>
+                  <p className="text-gray-600 text-xs mb-3">Kosongkan URL YouTube di atas + upload gambar ini → video tampil sebagai "Coming Soon" di member area.</p>
+                  <input ref={csUploadRef} type="file" accept="image/*" onChange={e => setCsFile(e.target.files?.[0] || null)}
+                    className="block text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:bg-orange-500/20 file:text-orange-400 file:font-semibold hover:file:bg-orange-500/30 cursor-pointer" />
+                  {csFile && <p className="text-orange-400 text-xs mt-2">📎 {csFile.name}</p>}
+                </div>
               </div>
               <button onClick={addVideo} disabled={loading} className="mt-4 bg-yellow-500 hover:bg-yellow-400 text-[#0a0f1e] font-bold px-6 py-3 rounded-xl transition-all disabled:opacity-50">
                 {loading ? 'Menyimpan...' : 'Tambah Video'}
@@ -627,6 +673,22 @@ export default function AdminPage() {
                                   className="w-full bg-[#111827] border border-gray-700 rounded-xl px-4 py-2.5 text-white text-sm placeholder-gray-600 focus:outline-none focus:border-yellow-500/50" />
                                 <input type="number" value={editVUrutan} onChange={e => setEditVUrutan(e.target.value)} placeholder="Urutan (angka)"
                                   className="w-full bg-[#111827] border border-gray-700 rounded-xl px-4 py-2.5 text-white text-sm placeholder-gray-600 focus:outline-none focus:border-yellow-500/50" />
+                                {/* Coming Soon Image di Edit */}
+                                <div className="bg-[#0a0f1e] border border-dashed border-orange-500/30 rounded-xl p-3">
+                                  <p className="text-orange-400 text-xs font-semibold mb-2">🕐 Gambar Coming Soon</p>
+                                  {editCsExisting && (
+                                    <div className="flex items-center gap-3 mb-2">
+                                      <img src={editCsExisting} alt="cs" className="w-20 h-12 object-cover rounded-lg" />
+                                      <div>
+                                        <p className="text-gray-400 text-xs">Gambar aktif</p>
+                                        <button onClick={() => setEditCsExisting('')} className="text-red-400 text-xs hover:text-red-300">Hapus gambar ini</button>
+                                      </div>
+                                    </div>
+                                  )}
+                                  <input ref={editCsUploadRef} type="file" accept="image/*" onChange={e => setEditCsFile(e.target.files?.[0] || null)}
+                                    className="block text-xs text-gray-400 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:bg-orange-500/20 file:text-orange-400 file:font-semibold hover:file:bg-orange-500/30 cursor-pointer" />
+                                  {editCsFile && <p className="text-orange-400 text-xs mt-1">📎 {editCsFile.name}</p>}
+                                </div>
                                 <div className="flex gap-2">
                                   <button onClick={saveEditVideo} disabled={loading} className="bg-yellow-500 hover:bg-yellow-400 text-[#0a0f1e] font-bold px-4 py-2 rounded-xl text-sm transition-all disabled:opacity-50">Simpan</button>
                                   <button onClick={() => setEditVideoId(null)} className="text-gray-500 hover:text-gray-300 px-4 py-2 rounded-xl text-sm">Batal</button>
