@@ -1007,22 +1007,17 @@ export default function AdminPage() {
               <p className="text-gray-500 text-sm mb-6">Pesan akan dikirim oleh bot langsung ke channel Discord yang dipilih.</p>
               <div className="space-y-4">
                 <div>
-                  <label className="text-gray-400 text-sm block mb-2">Pilih Channel</label>
-                  <select value={announceChannel} onChange={e => setAnnounceChannel(e.target.value)}
-                    className="w-full bg-[#0d1325] border border-gray-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-indigo-500/50">
-                    <option value="">— Pilih channel tujuan —</option>
-                    <optgroup label="📢 Pengumuman">
-                      <option value="1056938665688969321">📢 pengumuman</option>
-                    </optgroup>
-                    <optgroup label="📚 Kelas">
-                      <option value="1390888552367132674">📚 class-basic</option>
-                      <option value="1390888679123189761">🚀 class-advanced</option>
-                    </optgroup>
-                    <optgroup label="💬 Umum">
-                      <option value="1056938665688969318">💬 general</option>
-                    </optgroup>
-                  </select>
-                  <p className="text-gray-600 text-xs mt-1">⚠️ Pastikan Channel ID sesuai dengan channel Discord kamu.</p>
+                  <label className="text-gray-400 text-sm block mb-2">Channel ID</label>
+                  <input
+                    type="text"
+                    value={announceChannel}
+                    onChange={e => setAnnounceChannel(e.target.value.trim())}
+                    placeholder="Paste Channel ID Discord di sini..."
+                    className="w-full bg-[#0d1325] border border-gray-700 rounded-xl px-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:border-indigo-500/50 font-mono"
+                  />
+                  <p className="text-gray-600 text-xs mt-1.5">
+                    Cara dapat Channel ID: klik kanan channel di Discord → <strong className="text-gray-400">Copy Channel ID</strong> (Developer Mode harus aktif)
+                  </p>
                 </div>
                 <div>
                   <label className="text-gray-400 text-sm block mb-2">Pesan Pengumuman</label>
@@ -1045,12 +1040,13 @@ export default function AdminPage() {
             </div>
 
             <div className="bg-[#111827] border border-gray-700/50 rounded-2xl p-5">
-              <p className="text-gray-400 text-sm font-semibold mb-3">⚙️ Cara cek Channel ID yang benar:</p>
+              <p className="text-gray-400 text-sm font-semibold mb-3">⚙️ Cara aktifkan Developer Mode di Discord:</p>
               <ol className="text-gray-500 text-sm space-y-1.5 list-decimal list-inside">
-                <li>Buka Discord → Settings → Advanced → aktifkan <strong className="text-gray-300">Developer Mode</strong></li>
-                <li>Klik kanan channel yang dituju</li>
-                <li>Klik <strong className="text-gray-300">Copy Channel ID</strong></li>
-                <li>Paste di sini atau update di kode admin</li>
+                <li>Buka Discord → <strong className="text-gray-300">Settings</strong> (ikon gear)</li>
+                <li>Klik <strong className="text-gray-300">Advanced</strong></li>
+                <li>Aktifkan <strong className="text-gray-300">Developer Mode</strong></li>
+                <li>Klik kanan channel mana saja → <strong className="text-gray-300">Copy Channel ID</strong></li>
+                <li>Paste ID di kolom Channel ID di atas</li>
               </ol>
             </div>
           </div>
