@@ -36,7 +36,6 @@ export default function AdminPage() {
   const [vJudul, setVJudul] = useState('');
   const [vDesc, setVDesc] = useState('');
   const [vUrl, setVUrl] = useState('');
-  const [vTiers, setVTiers] = useState<string[]>([]);
   const [vLevel, setVLevel] = useState<'basic' | 'advance'>('basic');
   const [vUrutan, setVUrutan] = useState('');
   const [vKategori, setVKategori] = useState('intro');
@@ -182,7 +181,7 @@ export default function AdminPage() {
       level: vLevel, kategori: vKategori, urutan: parseInt(vUrutan) || 0,
     });
     if (error) notify('Error: ' + error.message, 'err');
-    else { notify('Video berhasil ditambahkan!'); setVJudul(''); setVDesc(''); setVUrl(''); setVTiers([]); setVLevel('basic'); setVKategori('intro'); setVUrutan(''); loadData(); }
+    else { notify('Video berhasil ditambahkan!'); setVJudul(''); setVDesc(''); setVUrl(''); setVLevel('basic'); setVKategori('intro'); setVUrutan(''); loadData(); }
     setLoading(false);
   }
 
@@ -281,9 +280,8 @@ export default function AdminPage() {
     if (!fJudul || !fFile) { notify('Judul dan file wajib diisi.', 'err'); return; }
     setLoading(true);
     setUploadProgress('Mengupload file...');
-    const ext = fFile.name.split('.').pop();
     const fileName = Date.now() + '_' + fFile.name.replace(/\s/g, '_');
-    const { data: storageData, error: storageError } = await supabase.storage
+    const { error: storageError } = await supabase.storage
       .from('materi').upload(fileName, fFile, { cacheControl: '3600', upsert: false });
     if (storageError) { notify('Gagal upload: ' + storageError.message, 'err'); setLoading(false); setUploadProgress(''); return; }
     const { data: urlData } = supabase.storage.from('materi').getPublicUrl(fileName);
@@ -307,9 +305,7 @@ export default function AdminPage() {
     loadData();
   }
 
-  function toggleTier(t: string) {
-    setVTiers(prev => prev.includes(t) ? prev.filter(x => x !== t) : [...prev, t]);
-  }
+  
 
   const pendingRequests = requests.filter(r => r.status === 'pending');
   const isSuperAdmin = currentAdmin?.role === 'superadmin';
@@ -363,7 +359,7 @@ export default function AdminPage() {
                   : 'bg-[#111827] text-gray-400 border border-gray-700 hover:text-white'
               }`}>
               {t.icon} {t.label}
-              {'badge' in t && t.badge > 0 && <span className="bg-red-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center">{t.badge}</span>}
+              {!!t.badge && <span className="bg-red-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center">{t.badge}</span>}
             </button>
           ))}
         </div>

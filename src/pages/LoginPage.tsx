@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { ArrowLeft, LogIn, Eye, EyeOff, Lock, Shield, KeyRound } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
-const TIERS = ['SMC Trial', 'SMC Bronze', 'SMC Gold Mentorship', 'SMC Platinum 1 on 1'];
+const TIERS = ['SMC Trial', 'SMC Silver', 'SMC Bronze', 'SMC Gold Mentorship', 'SMC Platinum 1 on 1'];
 
 function generatePassword() {
   const chars = 'ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
