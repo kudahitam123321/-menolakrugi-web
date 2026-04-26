@@ -188,8 +188,30 @@ export default function MemberPage() {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 pt-28 pb-16 flex gap-6">
-        {/* Sidebar Tabs */}
+      <div className="max-w-7xl mx-auto px-4 pt-28 pb-16">
+        {/* Mobile Tabs — di atas konten, full width */}
+        <div className="lg:hidden mb-4">
+          <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+            {TABS.map(t => {
+              const tabLocked = isTabLocked(t.id);
+              return (
+                <button key={t.id} onClick={() => { setActiveTab(t.id); setActiveVideo(null); }}
+                  className={`flex-shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold transition-all ${
+                    activeTab === t.id
+                      ? t.id.includes('advanced') ? 'bg-purple-600 text-white'
+                      : t.id === 'settings' ? 'bg-gray-600 text-white'
+                      : 'bg-yellow-500 text-[#0a0f1e]'
+                      : 'bg-[#111827] text-gray-400 border border-gray-700'
+                  }`}>
+                  {t.icon} {t.label} {tabLocked && <Lock size={11} />}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        <div className="flex gap-6">
+        {/* Sidebar Tabs — desktop only */}
         <div className="w-52 flex-shrink-0 hidden lg:block">
           <div className="bg-[#111827] border border-gray-700/50 rounded-2xl p-3 sticky top-28">
             <p className="text-gray-500 text-xs font-semibold uppercase tracking-widest px-2 mb-3">Menu</p>
@@ -212,26 +234,6 @@ export default function MemberPage() {
                 );
               })}
             </div>
-          </div>
-        </div>
-
-        {/* Mobile Tabs */}
-        <div className="lg:hidden w-full mb-6">
-          <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-            {TABS.map(t => {
-              const tabLocked = isTabLocked(t.id);
-              return (
-                <button key={t.id} onClick={() => { setActiveTab(t.id); setActiveVideo(null); }}
-                  className={`flex-shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold transition-all ${
-                    activeTab === t.id
-                      ? t.id.includes('advanced') ? 'bg-purple-600 text-white'
-                      : 'bg-yellow-500 text-[#0a0f1e]'
-                      : 'bg-[#111827] text-gray-400 border border-gray-700'
-                  }`}>
-                  {t.icon} {t.label} {tabLocked && <Lock size={11} />}
-                </button>
-              );
-            })}
           </div>
         </div>
 
@@ -499,6 +501,7 @@ export default function MemberPage() {
             </div>
           )}
         </div>
+        </div> {/* end flex gap-6 */}
       </div>
     </div>
   );
