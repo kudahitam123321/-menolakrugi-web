@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Plus, Trash2, Users, Video, ArrowLeft, Eye, EyeOff, Upload, RefreshCw, ChevronUp, CheckCircle, XCircle, KeyRound, Shield } from 'lucide-react';
+import { Plus, Trash2, Users, Video, ArrowLeft, Eye, EyeOff, Upload, RefreshCw, ChevronUp, ChevronDown, CheckCircle, XCircle, KeyRound, Shield } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
 const TIERS = ['SMC Trial', 'SMC Bronze', 'SMC Gold Mentorship', 'SMC Platinum 1 on 1'];
@@ -188,6 +188,23 @@ export default function AdminPage() {
   async function deleteVideo(id: string) {
     if (!confirm('Hapus video ini?')) return;
     await supabase.from('videos').delete().eq('id', id);
+    loadData();
+  }
+
+  async function moveVideo(kategori: string, index: number, direction: 'up' | 'down') {
+    const group = videos
+      .filter(v => (v as any).kategori === kategori)
+      .sort((a, b) => a.urutan - b.urutan);
+    const targetIndex = direction === 'up' ? index - 1 : index + 1;
+    if (targetIndex < 0 || targetIndex >= group.length) return;
+    const a = group[index];
+    const b = group[targetIndex];
+    if (a.urutan === b.urutan) {
+      await supabase.from('videos').update({ urutan: direction === 'up' ? b.urutan - 1 : b.urutan + 1 }).eq('id', a.id);
+    } else {
+      await supabase.from('videos').update({ urutan: b.urutan }).eq('id', a.id);
+      await supabase.from('videos').update({ urutan: a.urutan }).eq('id', b.id);
+    }
     loadData();
   }
 
@@ -531,61 +548,98 @@ export default function AdminPage() {
               </button>
             </div>
 
-            {/* Daftar Video */}
-            <div className="bg-[#111827] border border-gray-700/50 rounded-2xl overflow-hidden">
-              <div className="px-6 py-4 border-b border-gray-700/50"><h2 className="text-white font-bold text-lg">Daftar Video ({videos.length})</h2></div>
-              <div className="divide-y divide-gray-800/50">
-                {videos.map(v => (
-                  <div key={v.id}>
-                    <div className="flex items-start justify-between px-6 py-4 hover:bg-gray-800/20">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1 flex-wrap">
-                          <p className="text-white font-medium">{v.judul}</p>
-                          <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${(v as any).kategori?.includes('advanced') ? 'bg-purple-500/20 text-purple-400' : 'bg-yellow-500/20 text-yellow-400'}`}>
-                            {(v as any).kategori || v.level}
-                          </span>
-                        </div>
-                        <p className="text-gray-500 text-xs break-all">{v.youtube_url}</p>
-                      </div>
-                      <div className="flex gap-2 ml-4 flex-shrink-0">
-                        <button onClick={() => editVideoId === v.id ? setEditVideoId(null) : startEditVideo(v)}
-                          className="text-gray-500 hover:text-yellow-400 text-xs border border-gray-700 hover:border-yellow-500/40 px-2 py-1 rounded-lg transition-all">
-                          Edit
-                        </button>
-                        <button onClick={() => deleteVideo(v.id)} className="text-gray-600 hover:text-red-400 transition-colors"><Trash2 size={16} /></button>
-                      </div>
+            {/* Daftar Video — dikelompokkan per kategori */}
+            <div className="space-y-4">
+              <h2 className="text-white font-bold text-lg">Daftar Video ({videos.length})</h2>
+              {[
+                { id: 'intro', label: '🎬 Intro', color: 'border-teal-500/30', badgeClass: 'bg-teal-500/20 text-teal-400' },
+                { id: 'basic', label: '📚 Basic', color: 'border-yellow-500/30', badgeClass: 'bg-yellow-500/20 text-yellow-400' },
+                { id: 'tips-basic', label: '💡 Tips Basic', color: 'border-blue-500/30', badgeClass: 'bg-blue-500/20 text-blue-400' },
+                { id: 'advanced', label: '🚀 Advanced', color: 'border-purple-500/30', badgeClass: 'bg-purple-500/20 text-purple-400' },
+                { id: 'tips-advanced', label: '💡 Tips Advanced', color: 'border-pink-500/30', badgeClass: 'bg-pink-500/20 text-pink-400' },
+              ].map(kat => {
+                const group = videos.filter(v => (v as any).kategori === kat.id).sort((a, b) => a.urutan - b.urutan);
+                return (
+                  <div key={kat.id} className={`bg-[#111827] border ${kat.color} rounded-2xl overflow-hidden`}>
+                    <div className="px-6 py-3 border-b border-gray-700/50 flex items-center justify-between">
+                      <h3 className="text-white font-semibold flex items-center gap-2">
+                        <span>{kat.label}</span>
+                        <span className="text-gray-500 text-xs font-normal">({group.length} video)</span>
+                      </h3>
+                      <span className="text-gray-600 text-xs">Gunakan ↑↓ untuk ubah urutan</span>
                     </div>
-                    {editVideoId === v.id && (
-                      <div className="px-6 pb-5 bg-[#0d1325] border-t border-gray-700/50">
-                        <p className="text-yellow-400 text-xs font-semibold py-3">✏️ Edit Video</p>
-                        <div className="space-y-3">
-                          <div className="grid grid-cols-3 gap-2">
-                            {[{id:'intro',label:'🎬 Intro'},{id:'basic',label:'📚 Basic'},{id:'tips-basic',label:'💡 Tips Basic'},{id:'advanced',label:'🚀 Advanced'},{id:'tips-advanced',label:'💡 Tips Advanced'}].map(k => (
-                              <button key={k.id} onClick={() => setEditVKategori(k.id)}
-                                className={`py-1.5 px-2 rounded-lg text-xs font-medium transition-all ${editVKategori === k.id ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/40' : 'bg-[#111827] text-gray-500 border border-gray-700'}`}>
-                                {k.label}
-                              </button>
-                            ))}
-                          </div>
-                          <input type="text" value={editVJudul} onChange={e => setEditVJudul(e.target.value)} placeholder="Judul"
-                            className="w-full bg-[#111827] border border-gray-700 rounded-xl px-4 py-2.5 text-white text-sm placeholder-gray-600 focus:outline-none focus:border-yellow-500/50" />
-                          <textarea value={editVDesc} onChange={e => setEditVDesc(e.target.value)} placeholder="Deskripsi (opsional)" rows={2}
-                            className="w-full bg-[#111827] border border-gray-700 rounded-xl px-4 py-2.5 text-white text-sm placeholder-gray-600 focus:outline-none focus:border-yellow-500/50 resize-none" />
-                          <input type="text" value={editVUrl} onChange={e => setEditVUrl(e.target.value)} placeholder="URL YouTube"
-                            className="w-full bg-[#111827] border border-gray-700 rounded-xl px-4 py-2.5 text-white text-sm placeholder-gray-600 focus:outline-none focus:border-yellow-500/50" />
-                          <input type="number" value={editVUrutan} onChange={e => setEditVUrutan(e.target.value)} placeholder="Urutan"
-                            className="w-full bg-[#111827] border border-gray-700 rounded-xl px-4 py-2.5 text-white text-sm placeholder-gray-600 focus:outline-none focus:border-yellow-500/50" />
-                          <div className="flex gap-2">
-                            <button onClick={saveEditVideo} disabled={loading} className="bg-yellow-500 hover:bg-yellow-400 text-[#0a0f1e] font-bold px-4 py-2 rounded-xl text-sm transition-all disabled:opacity-50">Simpan</button>
-                            <button onClick={() => setEditVideoId(null)} className="text-gray-500 hover:text-gray-300 px-4 py-2 rounded-xl text-sm">Batal</button>
-                          </div>
-                        </div>
-                      </div>
+                    {!group.length && (
+                      <p className="text-gray-700 text-center py-6 text-sm">Belum ada video di kategori ini.</p>
                     )}
+                    <div className="divide-y divide-gray-800/50">
+                      {group.map((v, idx) => (
+                        <div key={v.id}>
+                          <div className="flex items-center gap-3 px-4 py-3 hover:bg-gray-800/20">
+                            {/* Tombol urutan */}
+                            <div className="flex flex-col gap-0.5 flex-shrink-0">
+                              <button
+                                onClick={() => moveVideo(kat.id, idx, 'up')}
+                                disabled={idx === 0}
+                                className="text-gray-600 hover:text-yellow-400 disabled:opacity-20 disabled:cursor-not-allowed transition-colors"
+                              ><ChevronUp size={16} /></button>
+                              <button
+                                onClick={() => moveVideo(kat.id, idx, 'down')}
+                                disabled={idx === group.length - 1}
+                                className="text-gray-600 hover:text-yellow-400 disabled:opacity-20 disabled:cursor-not-allowed transition-colors"
+                              ><ChevronDown size={16} /></button>
+                            </div>
+                            {/* Nomor urut */}
+                            <span className="text-gray-700 text-xs w-5 text-center flex-shrink-0 font-mono">{idx + 1}</span>
+                            {/* Info video */}
+                            <div className="flex-1 min-w-0">
+                              <p className="text-white text-sm font-medium truncate">{v.judul}</p>
+                              <p className="text-gray-600 text-xs truncate">{v.youtube_url}</p>
+                            </div>
+                            {/* Aksi */}
+                            <div className="flex gap-2 flex-shrink-0">
+                              <button onClick={() => editVideoId === v.id ? setEditVideoId(null) : startEditVideo(v)}
+                                className="text-gray-500 hover:text-yellow-400 text-xs border border-gray-700 hover:border-yellow-500/40 px-2 py-1 rounded-lg transition-all">
+                                Edit
+                              </button>
+                              <button onClick={() => deleteVideo(v.id)} className="text-gray-600 hover:text-red-400 transition-colors">
+                                <Trash2 size={15} />
+                              </button>
+                            </div>
+                          </div>
+                          {/* Form Edit */}
+                          {editVideoId === v.id && (
+                            <div className="px-6 pb-5 bg-[#0d1325] border-t border-gray-700/50">
+                              <p className="text-yellow-400 text-xs font-semibold py-3">✏️ Edit Video</p>
+                              <div className="space-y-3">
+                                <div className="grid grid-cols-3 gap-2">
+                                  {[{id:'intro',label:'🎬 Intro'},{id:'basic',label:'📚 Basic'},{id:'tips-basic',label:'💡 Tips Basic'},{id:'advanced',label:'🚀 Advanced'},{id:'tips-advanced',label:'💡 Tips Advanced'}].map(k => (
+                                    <button key={k.id} onClick={() => setEditVKategori(k.id)}
+                                      className={`py-1.5 px-2 rounded-lg text-xs font-medium transition-all ${editVKategori === k.id ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/40' : 'bg-[#111827] text-gray-500 border border-gray-700'}`}>
+                                      {k.label}
+                                    </button>
+                                  ))}
+                                </div>
+                                <input type="text" value={editVJudul} onChange={e => setEditVJudul(e.target.value)} placeholder="Judul"
+                                  className="w-full bg-[#111827] border border-gray-700 rounded-xl px-4 py-2.5 text-white text-sm placeholder-gray-600 focus:outline-none focus:border-yellow-500/50" />
+                                <textarea value={editVDesc} onChange={e => setEditVDesc(e.target.value)} placeholder="Deskripsi (opsional)" rows={2}
+                                  className="w-full bg-[#111827] border border-gray-700 rounded-xl px-4 py-2.5 text-white text-sm placeholder-gray-600 focus:outline-none focus:border-yellow-500/50 resize-none" />
+                                <input type="text" value={editVUrl} onChange={e => setEditVUrl(e.target.value)} placeholder="URL YouTube"
+                                  className="w-full bg-[#111827] border border-gray-700 rounded-xl px-4 py-2.5 text-white text-sm placeholder-gray-600 focus:outline-none focus:border-yellow-500/50" />
+                                <input type="number" value={editVUrutan} onChange={e => setEditVUrutan(e.target.value)} placeholder="Urutan (angka)"
+                                  className="w-full bg-[#111827] border border-gray-700 rounded-xl px-4 py-2.5 text-white text-sm placeholder-gray-600 focus:outline-none focus:border-yellow-500/50" />
+                                <div className="flex gap-2">
+                                  <button onClick={saveEditVideo} disabled={loading} className="bg-yellow-500 hover:bg-yellow-400 text-[#0a0f1e] font-bold px-4 py-2 rounded-xl text-sm transition-all disabled:opacity-50">Simpan</button>
+                                  <button onClick={() => setEditVideoId(null)} className="text-gray-500 hover:text-gray-300 px-4 py-2 rounded-xl text-sm">Batal</button>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                ))}
-                {!videos.length && <p className="text-gray-600 text-center py-8">Belum ada video.</p>}
-              </div>
+                );
+              })}
             </div>
 
             {/* Daftar File */}
