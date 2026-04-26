@@ -16,7 +16,8 @@ function generatePassword() {
 
 export default function AdminPage() {
   const [currentAdmin, setCurrentAdmin] = useState<Admin | null>(null);
-  const [tab, setTab] = useState<'member' | 'video' | 'advance' | 'admins' | 'settings' | 'announce' | 'broker'>('member');
+  const [tab, setTab] = useState<'member' | 'video' | 'advance' | 'admins' | 'settings' | 'announce' | 'broker' | 'ulasan'>('member');
+  const [ulasanList, setUlasanList] = useState<any[]>([]);
 
   // Broker states
   const [brokers, setBrokers] = useState<any[]>([]);
@@ -133,12 +134,14 @@ export default function AdminPage() {
     const { data: a } = await supabase.from('admins').select('*').order('created_at', { ascending: true });
     const { data: fi } = await supabase.from('files').select('*').order('urutan', { ascending: true });
     const { data: br } = await supabase.from('brokers').select('*').order('urutan', { ascending: true });
+    const { data: ul } = await supabase.from('testimonials').select('*').order('created_at', { ascending: false });
     if (m) setMembers(m);
     if (v) setVideos(v);
     if (r) setRequests(r);
     if (a) setAdmins(a);
     if (fi) setFileItems(fi);
     if (br) setBrokers(br);
+    if (ul) setUlasanList(ul);
   }
 
   // Broker CRUD
@@ -496,6 +499,7 @@ export default function AdminPage() {
             { id: 'advance', label: 'Request Advance', icon: <ChevronUp size={16} />, badge: pendingRequests.length },
             { id: 'announce', label: 'Pengumuman', icon: <span>📢</span> },
             { id: 'broker', label: `Broker (${brokers.length})`, icon: <span>🏦</span> },
+            { id: 'ulasan', label: `Ulasan (${ulasanList.filter(u => u.status === 'pending').length})`, icon: <span>⭐</span>, badge: ulasanList.filter(u => u.status === 'pending').length },
             { id: 'settings', label: 'Password Saya', icon: <KeyRound size={16} /> },
             ...(isSuperAdmin ? [{ id: 'admins', label: `Admin (${admins.length})`, icon: <Shield size={16} /> }] : []),
           ].map(t => (
@@ -1056,6 +1060,70 @@ export default function AdminPage() {
                     )}
                   </div>
                 ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Tab Ulasan */}
+        {tab === 'ulasan' && (
+          <div className="space-y-6">
+            {/* Pending */}
+            <div className="bg-[#111827] border border-yellow-500/20 rounded-2xl overflow-hidden">
+              <div className="px-6 py-4 border-b border-gray-700/50">
+                <h2 className="text-white font-bold text-lg">⭐ Ulasan Menunggu Persetujuan ({ulasanList.filter(u => u.status === 'pending').length})</h2>
+              </div>
+              <div className="divide-y divide-gray-800/50">
+                {ulasanList.filter(u => u.status === 'pending').map(u => (
+                  <div key={u.id} className="px-6 py-5">
+                    <div className="flex items-start justify-between gap-4 flex-wrap mb-3">
+                      <div>
+                        <p className="text-white font-semibold">{u.nama}</p>
+                        <p className="text-yellow-400 text-xs">{u.kelas}</p>
+                        <div className="flex gap-0.5 mt-1">{[1,2,3,4,5].map(s => <span key={s} className={s <= u.bintang ? 'text-yellow-400' : 'text-gray-700'}>★</span>)}</div>
+                      </div>
+                      <div className="flex gap-2">
+                        <button onClick={async () => { await supabase.from('testimonials').update({ status: 'disetujui' }).eq('id', u.id); notify('Ulasan disetujui! ✅'); loadData(); }}
+                          className="flex items-center gap-1 bg-green-500/20 hover:bg-green-500/30 text-green-400 border border-green-500/30 font-semibold px-3 py-2 rounded-xl text-sm">
+                          <CheckCircle size={15} /> Setujui
+                        </button>
+                        <button onClick={async () => { await supabase.from('testimonials').update({ status: 'ditolak' }).eq('id', u.id); notify('Ulasan ditolak.'); loadData(); }}
+                          className="flex items-center gap-1 bg-red-500/20 hover:bg-red-500/30 text-red-400 border border-red-500/30 font-semibold px-3 py-2 rounded-xl text-sm">
+                          <XCircle size={15} /> Tolak
+                        </button>
+                      </div>
+                    </div>
+                    <p className="text-gray-300 text-sm bg-[#0d1325] rounded-xl px-4 py-3 leading-relaxed">"{u.ulasan}"</p>
+                    <p className="text-gray-600 text-xs mt-2">{new Date(u.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
+                  </div>
+                ))}
+                {!ulasanList.filter(u => u.status === 'pending').length && <p className="text-gray-600 text-center py-8">Tidak ada ulasan yang menunggu.</p>}
+              </div>
+            </div>
+
+            {/* Riwayat */}
+            <div className="bg-[#111827] border border-gray-700/50 rounded-2xl overflow-hidden">
+              <div className="px-6 py-4 border-b border-gray-700/50">
+                <h2 className="text-white font-bold text-lg">Riwayat Ulasan</h2>
+              </div>
+              <div className="divide-y divide-gray-800/50">
+                {ulasanList.filter(u => u.status !== 'pending').map(u => (
+                  <div key={u.id} className="px-6 py-4 flex items-start gap-4">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <p className="text-white font-medium">{u.nama}</p>
+                        <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${u.status === 'disetujui' ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
+                          {u.status === 'disetujui' ? '✅ Tampil' : '❌ Ditolak'}
+                        </span>
+                      </div>
+                      <p className="text-gray-500 text-xs mt-0.5">{u.kelas} · {new Date(u.created_at).toLocaleDateString('id-ID')}</p>
+                      <p className="text-gray-400 text-sm mt-1 line-clamp-2">"{u.ulasan}"</p>
+                    </div>
+                    <button onClick={async () => { await supabase.from('testimonials').delete().eq('id', u.id); loadData(); }}
+                      className="text-gray-600 hover:text-red-400 transition-colors flex-shrink-0"><Trash2 size={15} /></button>
+                  </div>
+                ))}
+                {!ulasanList.filter(u => u.status !== 'pending').length && <p className="text-gray-600 text-center py-6">Belum ada riwayat.</p>}
               </div>
             </div>
           </div>

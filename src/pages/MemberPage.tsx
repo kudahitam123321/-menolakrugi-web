@@ -34,6 +34,7 @@ const TABS = [
   { id: 'file-advanced', label: 'File Advanced', icon: <FileText size={15} />, desc: 'Dokumen materi advanced', locked: true },
   { id: 'komunitas', label: 'Komunitas', icon: <span className="text-base">🌐</span> },
   { id: 'broker', label: 'Funded Broker', icon: <span className="text-base">🏦</span> },
+  { id: 'ulasan', label: 'Tulis Ulasan', icon: <span className="text-base">⭐</span> },
   { id: 'settings', label: 'Password', icon: <KeyRound size={15} /> },
 ];
 
@@ -60,6 +61,11 @@ export default function MemberPage() {
   const [discordConnected, setDiscordConnected] = useState(false);
   const [discordUsername, setDiscordUsername] = useState('');
   const [brokers, setBrokers] = useState<Broker[]>([]);
+  const [ulasanTeks, setUlasanTeks] = useState('');
+  const [ulasanBintang, setUlasanBintang] = useState(5);
+  const [ulasanSent, setUlasanSent] = useState(false);
+  const [ulasanLoading, setUlasanLoading] = useState(false);
+  const [ulasanErr, setUlasanErr] = useState('');
   const [oldPass, setOldPass] = useState('');
   const [newPass, setNewPass] = useState('');
   const [confirmPass, setConfirmPass] = useState('');
@@ -139,6 +145,23 @@ export default function MemberPage() {
       if (req) setAdvanceRequest(req);
     }
     setRequesting(false);
+  }
+
+  async function handleKirimUlasan() {
+    if (!session) return;
+    if (!ulasanTeks.trim()) { setUlasanErr('Ulasan tidak boleh kosong.'); return; }
+    setUlasanLoading(true); setUlasanErr('');
+    const { error } = await supabase.from('testimonials').insert({
+      member_id: session.member_id,
+      nama: session.nama,
+      kelas: session.tier,
+      ulasan: ulasanTeks.trim(),
+      bintang: ulasanBintang,
+      status: 'pending',
+    });
+    if (error) setUlasanErr('Gagal mengirim. Coba lagi.');
+    else setUlasanSent(true);
+    setUlasanLoading(false);
   }
 
   async function handleGantiPassword() {
@@ -551,6 +574,55 @@ export default function MemberPage() {
                       </a>
                     </div>
                   ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Tulis Ulasan */}
+          {activeTab === 'ulasan' && (
+            <div className="max-w-xl">
+              <h1 className="text-2xl font-bold text-white mb-2">⭐ Tulis Ulasan</h1>
+              <p className="text-gray-400 text-sm mb-6">Bagikan pengalaman kamu belajar di Menolak Rugi. Ulasan akan ditampilkan setelah disetujui mentor.</p>
+              {ulasanSent ? (
+                <div className="bg-green-500/10 border border-green-500/30 rounded-2xl p-8 text-center">
+                  <div className="text-5xl mb-4">🎉</div>
+                  <h3 className="text-white font-bold text-lg mb-2">Ulasan Terkirim!</h3>
+                  <p className="text-gray-400 text-sm">Terima kasih! Ulasan kamu sedang direview oleh mentor dan akan segera ditampilkan di website.</p>
+                </div>
+              ) : (
+                <div className="bg-[#111827] border border-gray-700/50 rounded-2xl p-6 space-y-5">
+                  <div>
+                    <label className="text-gray-400 text-sm block mb-2">Nama</label>
+                    <div className="bg-[#0d1325] border border-gray-700 rounded-xl px-4 py-3 text-gray-400 text-sm">{session?.nama}</div>
+                  </div>
+                  <div>
+                    <label className="text-gray-400 text-sm block mb-2">Kelas</label>
+                    <div className="bg-[#0d1325] border border-gray-700 rounded-xl px-4 py-3 text-gray-400 text-sm">{session?.tier}</div>
+                  </div>
+                  <div>
+                    <label className="text-gray-400 text-sm block mb-3">Rating</label>
+                    <div className="flex gap-2">
+                      {[1,2,3,4,5].map(s => (
+                        <button key={s} onClick={() => setUlasanBintang(s)}
+                          className={`text-3xl transition-all ${s <= ulasanBintang ? 'opacity-100 scale-110' : 'opacity-30'}`}>
+                          ⭐
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-gray-400 text-sm block mb-2">Ulasan Kamu</label>
+                    <textarea value={ulasanTeks} onChange={e => setUlasanTeks(e.target.value)} rows={5}
+                      placeholder="Ceritakan pengalaman belajar kamu di Menolak Rugi..."
+                      className="w-full bg-[#0d1325] border border-gray-700 rounded-xl px-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:border-yellow-500/50 resize-none" />
+                    <p className="text-gray-600 text-xs mt-1">{ulasanTeks.length} karakter</p>
+                  </div>
+                  {ulasanErr && <p className="text-red-400 text-sm">{ulasanErr}</p>}
+                  <button onClick={handleKirimUlasan} disabled={ulasanLoading}
+                    className="w-full flex items-center justify-center gap-2 bg-yellow-500 hover:bg-yellow-400 text-[#0a0f1e] font-bold py-3.5 rounded-xl transition-all disabled:opacity-50">
+                    {ulasanLoading ? 'Mengirim...' : '⭐ Kirim Ulasan'}
+                  </button>
                 </div>
               )}
             </div>
