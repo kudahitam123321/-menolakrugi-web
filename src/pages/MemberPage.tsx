@@ -447,7 +447,7 @@ export default function MemberPage() {
 
                 {/* Platform lain */}
                 {[
-                  { name: 'Telegram', icon: '✈️', color: 'bg-blue-500/10 border-blue-500/30 text-blue-400', btn: 'bg-blue-500 hover:bg-blue-400', url: 'https://t.me/menolakrugi', desc: 'Channel update & info terbaru' },
+                  { name: 'Telegram', icon: '✈️', color: 'bg-blue-500/10 border-blue-500/30 text-blue-400', btn: 'bg-blue-500 hover:bg-blue-400', url: 'https://t.me/+_azyX2h9oFhmNjNl', desc: 'Channel update & info terbaru' },
                   { name: 'TikTok', icon: '🎵', color: 'bg-gray-800/50 border-gray-700 text-gray-300', btn: 'bg-gray-700 hover:bg-gray-600', url: 'https://tiktok.com/@menolakrugi', desc: 'Konten edukasi trading' },
                   { name: 'YouTube', icon: '▶️', color: 'bg-red-500/10 border-red-500/30 text-red-400', btn: 'bg-red-600 hover:bg-red-500', url: 'https://youtube.com/@MENOLAKRUGI', desc: 'Live session & materi publik' },
                 ].map(p => (
