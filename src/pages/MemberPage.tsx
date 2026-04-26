@@ -113,13 +113,28 @@ export default function MemberPage() {
     return files.filter(f => f.kategori === tabId);
   }
 
+  const [showJurnalForm, setShowJurnalForm] = useState(false);
+  const [jurnal1, setJurnal1] = useState('');
+  const [jurnal2, setJurnal2] = useState('');
+  const [jurnal3, setJurnal3] = useState('');
+
   async function handleRequestAdvance() {
     if (!session) return;
+    if (!jurnal1.trim() || !jurnal2.trim() || !jurnal3.trim()) {
+      setRequestMsg('Ketiga link jurnal wajib diisi.');
+      return;
+    }
     setRequesting(true); setRequestMsg('');
-    const { error } = await supabase.from('advance_requests').insert({ member_id: session.member_id, member_nama: session.nama, member_tier: session.tier, status: 'pending' });
+    const catatan = `Jurnal 1: ${jurnal1.trim()}\nJurnal 2: ${jurnal2.trim()}\nJurnal 3: ${jurnal3.trim()}`;
+    const { error } = await supabase.from('advance_requests').insert({
+      member_id: session.member_id, member_nama: session.nama,
+      member_tier: session.tier, status: 'pending', alasan_tolak: catatan,
+    });
     if (error) setRequestMsg('Gagal mengirim request. Coba lagi.');
     else {
       setRequestMsg('Request berhasil dikirim! Tunggu review dari mentor.');
+      setShowJurnalForm(false);
+      setJurnal1(''); setJurnal2(''); setJurnal3('');
       const { data: req } = await supabase.from('advance_requests').select('*').eq('member_id', session.member_id).order('created_at', { ascending: false }).limit(1).single();
       if (req) setAdvanceRequest(req);
     }
@@ -296,11 +311,38 @@ export default function MemberPage() {
                       <div className="flex items-center gap-2"><CheckCircle size={18} className="text-green-400" /><p className="text-green-400 text-sm">{requestMsg}</p></div>
                     </div>
                   )}
-                  {(!advanceRequest || advanceRequest.status === 'ditolak') && !requestMsg && (
-                    <button onClick={handleRequestAdvance} disabled={requesting}
-                      className="flex items-center gap-2 bg-purple-600 hover:bg-purple-500 text-white font-semibold px-6 py-3 rounded-xl transition-all disabled:opacity-50">
-                      <ChevronUp size={18} />{requesting ? 'Mengirim...' : 'Request Naik Advanced'}
-                    </button>
+                  {(!advanceRequest || advanceRequest.status === 'ditolak' || advanceRequest.status === 'disetujui') && !requestMsg && (
+                    <div>
+                      {!showJurnalForm ? (
+                        <button onClick={() => setShowJurnalForm(true)}
+                          className="flex items-center gap-2 bg-purple-600 hover:bg-purple-500 text-white font-semibold px-6 py-3 rounded-xl transition-all">
+                          <ChevronUp size={18} /> Request Naik Advanced
+                        </button>
+                      ) : (
+                        <div className="bg-[#0d1325] border border-purple-500/20 rounded-xl p-4 space-y-3">
+                          <p className="text-purple-300 text-sm font-semibold">📓 Lampirkan 3 Link Jurnal Trading kamu</p>
+                          <p className="text-gray-500 text-xs">Bisa link Google Sheets, Notion, atau platform jurnal lainnya.</p>
+                          <input type="text" value={jurnal1} onChange={e => setJurnal1(e.target.value)}
+                            placeholder="Link Jurnal 1 (wajib)"
+                            className="w-full bg-[#111827] border border-gray-700 rounded-xl px-4 py-2.5 text-white text-sm placeholder-gray-600 focus:outline-none focus:border-purple-500/50" />
+                          <input type="text" value={jurnal2} onChange={e => setJurnal2(e.target.value)}
+                            placeholder="Link Jurnal 2 (wajib)"
+                            className="w-full bg-[#111827] border border-gray-700 rounded-xl px-4 py-2.5 text-white text-sm placeholder-gray-600 focus:outline-none focus:border-purple-500/50" />
+                          <input type="text" value={jurnal3} onChange={e => setJurnal3(e.target.value)}
+                            placeholder="Link Jurnal 3 (wajib)"
+                            className="w-full bg-[#111827] border border-gray-700 rounded-xl px-4 py-2.5 text-white text-sm placeholder-gray-600 focus:outline-none focus:border-purple-500/50" />
+                          {requestMsg && <p className="text-red-400 text-xs">{requestMsg}</p>}
+                          <div className="flex gap-2">
+                            <button onClick={handleRequestAdvance} disabled={requesting}
+                              className="flex items-center gap-2 bg-purple-600 hover:bg-purple-500 text-white font-semibold px-5 py-2.5 rounded-xl transition-all disabled:opacity-50 text-sm">
+                              <ChevronUp size={16} />{requesting ? 'Mengirim...' : 'Kirim Request'}
+                            </button>
+                            <button onClick={() => { setShowJurnalForm(false); setRequestMsg(''); }}
+                              className="text-gray-500 hover:text-gray-300 px-4 py-2.5 rounded-xl text-sm">Batal</button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   )}
                 </div>
               </div>

@@ -947,6 +947,24 @@ export default function AdminPage() {
                         <p className="text-white font-semibold text-lg">{req.member_nama}</p>
                         <p className="text-yellow-400 text-sm">{req.member_tier}</p>
                         <p className="text-gray-500 text-xs mt-1">{new Date(req.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
+                        {/* Tampilkan link jurnal */}
+                        {req.alasan_tolak && req.alasan_tolak.startsWith('Jurnal') && (
+                          <div className="mt-2 bg-[#0d1325] border border-purple-500/20 rounded-xl p-3 space-y-1">
+                            <p className="text-purple-300 text-xs font-semibold mb-1">📓 Link Jurnal:</p>
+                            {req.alasan_tolak.split('\n').map((line: string, i: number) => {
+                              const parts = line.split(': ');
+                              const label = parts[0];
+                              const link = parts.slice(1).join(': ');
+                              return (
+                                <div key={i} className="flex items-center gap-2">
+                                  <span className="text-gray-500 text-xs w-16 flex-shrink-0">{label}:</span>
+                                  <a href={link} target="_blank" rel="noopener noreferrer"
+                                    className="text-blue-400 hover:text-blue-300 text-xs truncate underline">{link}</a>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
                       </div>
                       <div className="flex gap-2">
                         <button onClick={() => approveRequest(req)} className="flex items-center gap-2 bg-green-500/20 hover:bg-green-500/30 text-green-400 border border-green-500/30 font-semibold px-4 py-2 rounded-xl text-sm">
