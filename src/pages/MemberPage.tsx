@@ -134,7 +134,7 @@ export default function MemberPage() {
 
   function handleConnectDiscord() {
     const CLIENT_ID = '1497825707173347409';
-    const REDIRECT_URI = encodeURIComponent('https://menolakrugi.netlify.app/discord-callback');
+    const REDIRECT_URI = encodeURIComponent('https://menolakrugi.pages.dev/discord-callback');
     const SCOPE = encodeURIComponent('identify guilds.join');
     const url = `https://discord.com/oauth2/authorize?client_id=${CLIENT_ID}&redirect_uri=${REDIRECT_URI}&response_type=code&scope=${SCOPE}`;
     window.location.href = url;
