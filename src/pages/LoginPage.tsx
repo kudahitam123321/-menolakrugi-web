@@ -4,11 +4,6 @@ import { supabase } from '../lib/supabase';
 
 const TIERS = ['SMC Trial', 'SMC Bronze', 'SMC Gold Mentorship', 'SMC Platinum 1 on 1'];
 
-function generatePassword() {
-  const chars = 'ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
-  return Array.from({ length: 8 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
-}
-
 function generateToken() {
   return Math.random().toString(36).substring(2) + Date.now().toString(36);
 }
