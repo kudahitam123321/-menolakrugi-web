@@ -5,6 +5,7 @@ import { supabase } from '../lib/supabase';
 interface Video {
   id: string; judul: string; deskripsi: string;
   youtube_url: string; tier_akses: string[]; level: string; kategori: string; urutan: number;
+  coming_soon_img?: string;
 }
 interface FileItem {
   id: string; judul: string; deskripsi: string; file_url: string;
@@ -321,9 +322,38 @@ export default function MemberPage() {
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
                 {currentVideos.map(video => {
-                  const ytId = getYoutubeId(video.youtube_url);
+                  const isComingSoon = !video.youtube_url;
+                  const ytId = !isComingSoon ? getYoutubeId(video.youtube_url) : null;
                   const thumb = ytId ? `https://img.youtube.com/vi/${ytId}/mqdefault.jpg` : null;
                   const isActive = activeVideo?.id === video.id;
+
+                  if (isComingSoon) {
+                    return (
+                      <div key={video.id}
+                        className="bg-[#111827] border border-gray-700/50 rounded-2xl overflow-hidden relative select-none">
+                        <div className="relative aspect-video bg-[#0d1325]">
+                          {video.coming_soon_img
+                            ? <img src={video.coming_soon_img} alt={video.judul} className="w-full h-full object-cover opacity-70" />
+                            : <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-[#0d1325] to-[#1a1f35]">
+                                <span className="text-5xl">🕐</span>
+                              </div>
+                          }
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+                          <div className="absolute top-3 left-3">
+                            <span className="bg-orange-500 text-white text-xs font-bold px-3 py-1 rounded-full tracking-widest shadow-lg">
+                              🕐 COMING SOON
+                            </span>
+                          </div>
+                        </div>
+                        <div className="p-4">
+                          <h3 className="text-gray-300 font-semibold text-sm leading-snug">{video.judul}</h3>
+                          {video.deskripsi && <p className="text-gray-600 text-xs mt-1 line-clamp-2">{video.deskripsi}</p>}
+                          <p className="text-orange-400/70 text-xs mt-2 font-medium">Segera hadir — pantau terus!</p>
+                        </div>
+                      </div>
+                    );
+                  }
+
                   return (
                     <div key={video.id} onClick={() => setActiveVideo(video)}
                       className={`bg-[#111827] border rounded-2xl overflow-hidden cursor-pointer transition-all duration-200 hover:-translate-y-1 ${isActive ? 'border-yellow-500/60 shadow-lg shadow-yellow-500/10' : 'border-gray-700/50 hover:border-yellow-500/30'}`}>
