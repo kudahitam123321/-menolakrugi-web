@@ -5,7 +5,7 @@ import { supabase } from '../lib/supabase';
 const TIERS = ['SMC Trial', 'SMC Bronze', 'SMC Gold Mentorship', 'SMC Platinum 1 on 1'];
 
 interface Admin { id: string; username: string; password: string; role: string; }
-interface Member { id: string; nama: string; tier: string; password: string; is_active: boolean; is_advance: boolean; }
+interface Member { id: string; nama: string; tier: string; password: string; is_active: boolean; is_advance: boolean; last_seen?: string; }
 interface VideoItem { id: string; judul: string; deskripsi: string; youtube_url: string; tier_akses: string[]; level: string; urutan: number; }
 interface AdvanceRequest { id: string; member_id: string; member_nama: string; member_tier: string; status: string; alasan_tolak: string | null; created_at: string; }
 
