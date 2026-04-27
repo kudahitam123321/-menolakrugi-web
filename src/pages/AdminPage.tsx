@@ -559,7 +559,13 @@ export default function AdminPage() {
 
             <div className="bg-[#111827] border border-gray-700/50 rounded-2xl overflow-hidden">
               <div className="px-6 py-4 border-b border-gray-700/50 space-y-3">
-                <h2 className="text-white font-bold text-lg">Daftar Member ({members.length})</h2>
+                <div className="flex items-center justify-between">
+                  <h2 className="text-white font-bold text-lg">Daftar Member ({members.length})</h2>
+                  <div className="flex items-center gap-2 text-xs text-gray-500">
+                    <span className="w-2 h-2 rounded-full bg-green-400 inline-block animate-pulse"></span>
+                    Online: {members.filter(m => m.last_seen && (Date.now() - new Date(m.last_seen).getTime()) < 5 * 60 * 1000).length} member
+                  </div>
+                </div>
                 {/* Filter */}
                 <div className="flex flex-wrap gap-2">
                   <input
@@ -607,7 +613,14 @@ export default function AdminPage() {
                       .map(m => (
                         <>
                           <tr key={m.id} className="border-b border-gray-800/50 hover:bg-gray-800/20">
-                            <td className="text-white px-6 py-4 font-medium">{m.nama}</td>
+                            <td className="text-white px-6 py-4 font-medium">
+                      <div className="flex items-center gap-2">
+                        {m.last_seen && (Date.now() - new Date(m.last_seen).getTime()) < 5 * 60 * 1000 && (
+                          <span className="w-2 h-2 rounded-full bg-green-400 flex-shrink-0 animate-pulse" title="Online sekarang"></span>
+                        )}
+                        {m.nama}
+                      </div>
+                    </td>
                             <td className="px-6 py-4"><span className="text-xs bg-yellow-500/20 text-yellow-400 px-2 py-1 rounded-lg">{m.tier}</span></td>
                             <td className="px-6 py-4">
                               <div className="flex items-center gap-2">

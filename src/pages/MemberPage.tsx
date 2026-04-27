@@ -93,9 +93,22 @@ export default function MemberPage() {
       if (fileData) setFiles(fileData);
       const { data: brokerData } = await supabase.from('brokers').select('*').order('urutan', { ascending: true });
       if (brokerData) setBrokers(brokerData);
+
+      // Update last_seen
+      await supabase.from('members').update({ last_seen: new Date().toISOString() }).eq('id', sess.member_id);
       setLoading(false);
     }
     init();
+
+    // Ping last_seen setiap 2 menit
+    const pingInterval = setInterval(async () => {
+      const raw = localStorage.getItem('mr_session');
+      if (!raw) return;
+      const sess = JSON.parse(raw);
+      await supabase.from('members').update({ last_seen: new Date().toISOString() }).eq('id', sess.member_id);
+    }, 2 * 60 * 1000);
+
+    return () => clearInterval(pingInterval);
   }, []);
 
   function canAccessAdvance() {
