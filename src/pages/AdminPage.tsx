@@ -314,7 +314,21 @@ export default function AdminPage() {
   async function approveRequest(req: AdvanceRequest) {
     await supabase.from('advance_requests').update({ status: 'disetujui', updated_at: new Date().toISOString() }).eq('id', req.id);
     await supabase.from('members').update({ is_advance: true }).eq('id', req.member_id);
-    notify(`${req.member_nama} berhasil di-approve ke kelas Advance!`);
+
+    // Auto sync Discord role
+    try {
+      const res = await fetch('https://menolakrugi-bot-production.up.railway.app/discord/sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ member_id: req.member_id }),
+      });
+      const data = await res.json();
+      if (data.success) notify(`${req.member_nama} di-approve! Role Discord Advanced otomatis ditambahkan ✅`);
+      else notify(`${req.member_nama} di-approve! (Role Discord gagal sync: ${data.error})`);
+    } catch {
+      notify(`${req.member_nama} di-approve! (Bot Discord tidak terhubung)`);
+    }
+
     loadData();
   }
 
