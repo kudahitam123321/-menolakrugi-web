@@ -5,7 +5,7 @@ import { supabase } from '../lib/supabase';
 const TIERS = ['SMC Trial', 'SMC Bronze', 'SMC Gold Mentorship', 'SMC Platinum 1 on 1'];
 
 interface Admin { id: string; username: string; password: string; role: string; }
-interface Member { id: string; nama: string; tier: string; password: string; is_active: boolean; is_advance: boolean; last_seen?: string; }
+interface Member { id: string; nama: string; tier: string; password: string; is_active: boolean; is_advance: boolean; last_seen?: string; discord_id?: string; discord_username?: string; }
 interface VideoItem { id: string; judul: string; deskripsi: string; youtube_url: string; tier_akses: string[]; level: string; urutan: number; }
 interface AdvanceRequest { id: string; member_id: string; member_nama: string; member_tier: string; status: string; alasan_tolak: string | null; created_at: string; }
 
@@ -535,6 +535,117 @@ export default function AdminPage() {
         {/* Tab Member */}
         {tab === 'member' && (
           <div className="space-y-8">
+
+            {/* Statistik Login */}
+            {(() => {
+              const sudahLogin = members.filter(m => m.last_seen);
+              const belumLogin = members.filter(m => !m.last_seen);
+              const online = members.filter(m => m.last_seen && (Date.now() - new Date(m.last_seen).getTime()) < 5 * 60 * 1000);
+              return (
+                <div className="space-y-4">
+                  <h2 className="text-white font-bold text-lg">📊 Statistik Login Member</h2>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div className="bg-[#111827] border border-green-500/20 rounded-2xl p-5">
+                      <p className="text-green-400 text-xs font-semibold uppercase tracking-widest mb-1">🟢 Online Sekarang</p>
+                      <p className="text-white text-4xl font-bold">{online.length}</p>
+                      <p className="text-gray-500 text-xs mt-1">dalam 5 menit terakhir</p>
+                    </div>
+                    <div className="bg-[#111827] border border-yellow-500/20 rounded-2xl p-5">
+                      <p className="text-yellow-400 text-xs font-semibold uppercase tracking-widest mb-1">✅ Pernah Login</p>
+                      <p className="text-white text-4xl font-bold">{sudahLogin.length}</p>
+                      <p className="text-gray-500 text-xs mt-1">dari {members.length} total member</p>
+                    </div>
+                    <div className="bg-[#111827] border border-red-500/20 rounded-2xl p-5">
+                      <p className="text-red-400 text-xs font-semibold uppercase tracking-widest mb-1">❌ Belum Pernah Login</p>
+                      <p className="text-white text-4xl font-bold">{belumLogin.length}</p>
+                      <p className="text-gray-500 text-xs mt-1">member belum pernah masuk</p>
+                    </div>
+                  </div>
+
+                  {/* Daftar yang sudah login */}
+                  {sudahLogin.length > 0 && (
+                    <div className="bg-[#111827] border border-yellow-500/20 rounded-2xl overflow-hidden">
+                      <div className="px-6 py-4 border-b border-gray-800/50 flex items-center justify-between">
+                        <h3 className="text-white font-semibold flex items-center gap-2">
+                          ✅ Member yang Pernah Login
+                          <span className="text-xs bg-yellow-500/20 text-yellow-400 px-2 py-0.5 rounded-full">{sudahLogin.length} member</span>
+                        </h3>
+                      </div>
+                      <div className="overflow-x-auto max-h-80 overflow-y-auto">
+                        <table className="w-full text-sm">
+                          <thead className="sticky top-0 bg-[#0d1325]">
+                            <tr className="border-b border-gray-700/50">
+                              <th className="text-left text-gray-500 px-4 py-2 text-xs">#</th>
+                              <th className="text-left text-gray-500 px-4 py-2 text-xs">Nama</th>
+                              <th className="text-left text-gray-500 px-4 py-2 text-xs">Tier</th>
+                              <th className="text-left text-gray-500 px-4 py-2 text-xs">Discord</th>
+                              <th className="text-left text-gray-500 px-4 py-2 text-xs">Terakhir Login</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {sudahLogin
+                              .sort((a, b) => new Date(b.last_seen!).getTime() - new Date(a.last_seen!).getTime())
+                              .map((m, i) => {
+                                const isOnline = (Date.now() - new Date(m.last_seen!).getTime()) < 5 * 60 * 1000;
+                                const lastSeen = new Date(m.last_seen!);
+                                const diffMin = Math.floor((Date.now() - lastSeen.getTime()) / 60000);
+                                const diffHour = Math.floor(diffMin / 60);
+                                const diffDay = Math.floor(diffHour / 24);
+                                const timeAgo = isOnline ? '🟢 Online' : diffMin < 60 ? `${diffMin} menit lalu` : diffHour < 24 ? `${diffHour} jam lalu` : `${diffDay} hari lalu`;
+                                return (
+                                  <tr key={m.id} className="border-b border-gray-800/30 hover:bg-gray-800/20">
+                                    <td className="text-gray-600 px-4 py-3 text-xs">{i + 1}</td>
+                                    <td className="px-4 py-3">
+                                      <div className="flex items-center gap-2">
+                                        {isOnline && <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse flex-shrink-0"></span>}
+                                        <span className="text-white font-medium">{m.nama}</span>
+                                      </div>
+                                    </td>
+                                    <td className="px-4 py-3"><span className="text-xs bg-yellow-500/20 text-yellow-400 px-2 py-0.5 rounded-lg">{m.tier}</span></td>
+                                    <td className="px-4 py-3">
+                                      {m.discord_username
+                                        ? <span className="text-indigo-400 text-xs font-mono">@{m.discord_username}</span>
+                                        : <span className="text-gray-600 text-xs">Belum terhubung</span>
+                                      }
+                                    </td>
+                                    <td className="px-4 py-3 text-xs text-gray-400">{timeAgo}</td>
+                                  </tr>
+                                );
+                              })}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Daftar yang belum login */}
+                  {belumLogin.length > 0 && (
+                    <div className="bg-[#111827] border border-red-500/20 rounded-2xl overflow-hidden">
+                      <div className="px-6 py-4 border-b border-gray-800/50 flex items-center justify-between">
+                        <h3 className="text-white font-semibold flex items-center gap-2">
+                          ❌ Member yang Belum Pernah Login
+                          <span className="text-xs bg-red-500/20 text-red-400 px-2 py-0.5 rounded-full">{belumLogin.length} member</span>
+                        </h3>
+                      </div>
+                      <div className="divide-y divide-gray-800/50 max-h-64 overflow-y-auto">
+                        {belumLogin.map((m, i) => (
+                          <div key={m.id} className="flex items-center gap-3 px-6 py-3 hover:bg-gray-800/20">
+                            <span className="text-gray-600 text-xs w-6">{i + 1}</span>
+                            <div className="flex-1">
+                              <p className="text-white text-sm font-medium">{m.nama}</p>
+                              <p className="text-gray-500 text-xs">{m.tier}</p>
+                            </div>
+                            <span className={`text-xs px-2 py-0.5 rounded-full ${m.is_active ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
+                              {m.is_active ? 'Aktif' : 'Nonaktif'}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
             <div className="bg-[#111827] border border-yellow-500/20 rounded-2xl p-6">
               <h2 className="text-white font-bold text-lg mb-2 flex items-center gap-2"><Upload size={18} className="text-yellow-400" /> Import Member dari File</h2>
               <p className="text-gray-500 text-sm mb-4">Upload CSV atau Excel. Kolom: <span className="text-yellow-400">Nama</span> dan <span className="text-yellow-400">Tier</span>. Password digenerate otomatis.</p>
