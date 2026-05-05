@@ -311,25 +311,60 @@ export default function AdminPage() {
   }
 
   // Advance request functions
+  const [congratsChannelId, setCongratsChannelId] = useState('');
+  const [sendingBulk, setSendingBulk] = useState(false);
+
   async function approveRequest(req: AdvanceRequest) {
     await supabase.from('advance_requests').update({ status: 'disetujui', updated_at: new Date().toISOString() }).eq('id', req.id);
     await supabase.from('members').update({ is_advance: true }).eq('id', req.member_id);
 
+    // Ambil discord_id member
+    const { data: member } = await supabase.from('members').select('discord_id, discord_username').eq('id', req.member_id).single();
+
     // Auto sync Discord role
     try {
-      const res = await fetch('https://menolakrugi-bot-production.up.railway.app/discord/sync', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      await fetch('https://menolakrugi-bot-production.up.railway.app/discord/sync', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ member_id: req.member_id }),
       });
-      const data = await res.json();
-      if (data.success) notify(`${req.member_nama} di-approve! Role Discord Advanced otomatis ditambahkan ✅`);
-      else notify(`${req.member_nama} di-approve! (Role Discord gagal sync: ${data.error})`);
-    } catch {
-      notify(`${req.member_nama} di-approve! (Bot Discord tidak terhubung)`);
+    } catch {}
+
+    // Kirim ucapan selamat ke Discord
+    if (member?.discord_id && congratsChannelId) {
+      try {
+        const res = await fetch('https://menolakrugi-bot-production.up.railway.app/discord/congrats-advanced', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ discord_id: member.discord_id, discord_username: member.discord_username, nama: req.member_nama, channel_id: congratsChannelId }),
+        });
+        const data = await res.json();
+        if (data.success) notify(`${req.member_nama} di-approve! Ucapan selamat terkirim ke Discord ✅`);
+        else notify(`${req.member_nama} di-approve! (Gagal kirim ucapan: ${data.error})`);
+      } catch {
+        notify(`${req.member_nama} di-approve! (Bot tidak terhubung)`);
+      }
+    } else if (!congratsChannelId) {
+      notify(`${req.member_nama} di-approve! ⚠️ Isi Channel ID dulu agar ucapan terkirim otomatis.`);
+    } else {
+      notify(`${req.member_nama} di-approve! (Member belum hubungkan Discord)`);
     }
 
     loadData();
+  }
+
+  async function sendBulkCongrats() {
+    if (!congratsChannelId) { notify('Isi Channel ID dulu!', 'err'); return; }
+    if (!confirm('Kirim ucapan selamat ke SEMUA member advanced yang sudah hubungkan Discord?')) return;
+    setSendingBulk(true);
+    try {
+      const res = await fetch('https://menolakrugi-bot-production.up.railway.app/discord/congrats-all-advanced', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ channel_id: congratsChannelId }),
+      });
+      const data = await res.json();
+      if (data.success) notify(`Ucapan selamat terkirim ke ${data.sent} dari ${data.total} member advanced ✅`);
+      else notify('Gagal: ' + data.error, 'err');
+    } catch { notify('Bot tidak terhubung.', 'err'); }
+    setSendingBulk(false);
   }
 
   async function tolakRequest(req: AdvanceRequest) {
@@ -1077,6 +1112,23 @@ export default function AdminPage() {
         {/* Tab Request Advance */}
         {tab === 'advance' && (
           <div className="space-y-6">
+
+            {/* Setting Channel Ucapan */}
+            <div className="bg-[#111827] border border-indigo-500/20 rounded-2xl p-5">
+              <h3 className="text-white font-semibold mb-1 flex items-center gap-2">⚙️ Setting Ucapan Selamat Discord</h3>
+              <p className="text-gray-500 text-xs mb-3">Channel ID tujuan ucapan selamat saat member di-approve. Dipakai juga untuk kirim bulk ke member advanced lama.</p>
+              <div className="flex gap-3 flex-wrap">
+                <input type="text" value={congratsChannelId} onChange={e => setCongratsChannelId(e.target.value.trim())}
+                  placeholder="Paste Channel ID Discord..."
+                  className="flex-1 bg-[#0d1325] border border-gray-700 rounded-xl px-4 py-2.5 text-white text-sm placeholder-gray-600 focus:outline-none focus:border-indigo-500/50 font-mono min-w-48" />
+                <button onClick={sendBulkCongrats} disabled={sendingBulk || !congratsChannelId}
+                  className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold px-4 py-2.5 rounded-xl text-sm transition-all disabled:opacity-50">
+                  {sendingBulk ? '⏳ Mengirim...' : '🚀 Kirim ke Semua Advanced Lama'}
+                </button>
+              </div>
+              <p className="text-gray-600 text-xs mt-2">⚠️ Tombol di atas akan kirim ucapan satu per satu ke semua member advanced yang sudah hubungkan Discord.</p>
+            </div>
+
             <div className="bg-[#111827] border border-purple-500/20 rounded-2xl overflow-hidden">
               <div className="px-6 py-4 border-b border-gray-700/50">
                 <h2 className="text-white font-bold text-lg flex items-center gap-2"><ChevronUp size={18} className="text-purple-400" /> Request Menunggu ({pendingRequests.length})</h2>
