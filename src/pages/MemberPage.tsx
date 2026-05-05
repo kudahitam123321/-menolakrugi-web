@@ -104,22 +104,22 @@ export default function MemberPage() {
       // Tunggu font load lalu render
       document.fonts.load('80px "Great Vibes"').then(() => {
 
-        // ── Nama member (Great Vibes) ──
-        ctx.font = `${Math.round(H * 0.1)}px "Great Vibes"`;
+        // ── Nama member (Great Vibes) — posisi di bawah banner "Diberikan kepada:" ──
+        ctx.font = `${Math.round(H * 0.095)}px "Great Vibes"`;
         ctx.fillStyle = '#1a3a30';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillText(session!.nama, W * 0.55, H * 0.44);
+        ctx.fillText(session!.nama, W * 0.55, H * 0.49);
 
-        // ── Tanggal ──
+        // ── Tanggal — pojok kiri bawah (area dekat tanda tangan) ──
         const tgl = approveDate
           ? new Date(approveDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })
           : new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
-        ctx.font = `bold ${Math.round(H * 0.022)}px Arial`;
-        ctx.fillStyle = '#2d5a4a';
+        ctx.font = `${Math.round(H * 0.018)}px Arial`;
+        ctx.fillStyle = '#4a5568';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillText(tgl, W * 0.55, H * 0.36);
+        ctx.fillText(tgl, W * 0.3, H * 0.88);
 
         // ── Download ──
         if (format === 'png') {
