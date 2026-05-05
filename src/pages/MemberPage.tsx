@@ -32,6 +32,7 @@ const TABS = [
   { id: 'tips-advanced', label: 'Tips Advanced', icon: <Lightbulb size={15} />, desc: 'Tips & trik materi advanced', locked: true },
   { id: 'file-basic', label: 'File Basic', icon: <FileText size={15} />, desc: 'Dokumen materi basic' },
   { id: 'file-advanced', label: 'File Advanced', icon: <FileText size={15} />, desc: 'Dokumen materi advanced', locked: true },
+  { id: 'funded', label: 'Status Trading', icon: <span className="text-base">🚀</span> },
   { id: 'komunitas', label: 'Komunitas', icon: <span className="text-base">🌐</span> },
   { id: 'broker', label: 'Funded Broker', icon: <span className="text-base">🏦</span> },
   { id: 'ulasan', label: 'Tulis Ulasan', icon: <span className="text-base">⭐</span> },
@@ -68,6 +69,11 @@ export default function MemberPage() {
   const [ulasanLoading, setUlasanLoading] = useState(false);
   const [ulasanErr, setUlasanErr] = useState('');
   const [approveDate, setApproveDate] = useState<string>('');
+  const [fundedStatus, setFundedStatus] = useState<string | null>(null);
+  const [fundedLoading, setFundedLoading] = useState(false);
+  const [fundedMsg, setFundedMsg] = useState('');
+  const [fundedErr, setFundedErr] = useState('');
+  const [selectedFunded, setSelectedFunded] = useState<string | null>(null);
 
   // Fetch tanggal approve dari advance_requests
   useEffect(() => {
@@ -152,12 +158,13 @@ export default function MemberPage() {
       const raw = localStorage.getItem('mr_session');
       if (!raw) { window.location.href = '/login'; return; }
       const sess: Session = JSON.parse(raw);
-      const { data: member } = await supabase.from('members').select('session_token, is_active, is_advance, discord_id, discord_username').eq('id', sess.member_id).single();
+      const { data: member } = await supabase.from('members').select('session_token, is_active, is_advance, discord_id, discord_username, funded_status').eq('id', sess.member_id).single();
       if (!member || !member.is_active || member.session_token !== sess.token) {
         localStorage.removeItem('mr_session'); window.location.href = '/login'; return;
       }
       setSession(sess);
       setIsAdvance(member.is_advance || false);
+      if (member.funded_status) { setFundedStatus(member.funded_status); setSelectedFunded(member.funded_status); }
       const { data: req } = await supabase.from('advance_requests').select('*').eq('member_id', sess.member_id).order('created_at', { ascending: false }).limit(1).single();
       if (req) setAdvanceRequest(req);
       const { data: vids } = await supabase.from('videos').select('*').order('urutan', { ascending: true });
@@ -294,6 +301,31 @@ export default function MemberPage() {
     if (error) { setPassErr('Gagal menyimpan. Coba lagi.'); }
     else { setPassMsg('Password berhasil diubah!'); setOldPass(''); setNewPass(''); setConfirmPass(''); }
     setChangingPass(false);
+  }
+
+  async function handleUpdateFundedStatus() {
+    if (!session) return;
+    setFundedLoading(true); setFundedMsg(''); setFundedErr('');
+    try {
+      const BOT_URL = import.meta.env.VITE_BOT_URL || 'https://menolakrugi-bot-production.up.railway.app';
+      const res = await fetch(`${BOT_URL}/discord/funded-status`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ member_id: session.member_id, funded_status: selectedFunded }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setFundedStatus(selectedFunded);
+        setFundedMsg(data.discord_updated
+          ? `✅ Status berhasil diupdate! Nickname Discord kamu sudah berubah menjadi: ${data.nickname}`
+          : '✅ Status berhasil disimpan! Hubungkan Discord untuk update nickname otomatis.');
+      } else {
+        setFundedErr('Gagal update status. Coba lagi.');
+      }
+    } catch {
+      setFundedErr('Gagal menghubungi server. Coba lagi.');
+    }
+    setFundedLoading(false);
   }
 
   function handleConnectDiscord() {
@@ -813,6 +845,96 @@ export default function MemberPage() {
                     {ulasanLoading ? 'Mengirim...' : '⭐ Kirim Ulasan'}
                   </button>
                 </div>
+              )}
+            </div>
+          )}
+
+          {/* Status Trading */}
+          {activeTab === 'funded' && (
+            <div className="max-w-xl">
+              <h1 className="text-2xl font-bold text-white mb-2">🚀 Status Trading</h1>
+              <p className="text-gray-400 text-sm mb-6">Pilih status funded trader kamu. Nickname Discord akan otomatis diupdate sesuai pilihanmu.</p>
+
+              {/* Status saat ini */}
+              {fundedStatus && (
+                <div className="bg-green-500/10 border border-green-500/30 rounded-2xl px-5 py-4 mb-6 flex items-center gap-3">
+                  <span className="text-2xl">✅</span>
+                  <div>
+                    <p className="text-green-400 font-semibold text-sm">Status Aktif</p>
+                    <p className="text-white font-bold">
+                      {fundedStatus === 'P1' && 'Funded Phase 1'}
+                      {fundedStatus === 'P2' && 'Funded Phase 2'}
+                      {fundedStatus === 'Master' && 'Funded Master'}
+                      {fundedStatus === 'MPAID' && 'Master Paidout'}
+                      {fundedStatus === 'Ap' && 'Akun Pribadi'}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Pilihan status */}
+              <div className="space-y-3 mb-6">
+                {[
+                  { key: 'P1',    label: 'Funded Phase 1',  emoji: '🥊', desc: 'Sedang menjalani challenge phase 1 prop firm' },
+                  { key: 'P2',    label: 'Funded Phase 2',  emoji: '🥋', desc: 'Sudah lulus phase 1, sekarang di phase 2' },
+                  { key: 'Master',label: 'Funded Master',   emoji: '🏅', desc: 'Sudah lulus semua fase — menjadi funded trader' },
+                  { key: 'MPAID', label: 'Master Paidout',  emoji: '💰', desc: 'Sudah berhasil payout dari prop firm' },
+                  { key: 'Ap',    label: 'Akun Pribadi',    emoji: '💼', desc: 'Trading menggunakan akun modal sendiri' },
+                ].map(opt => (
+                  <button
+                    key={opt.key}
+                    onClick={() => setSelectedFunded(opt.key)}
+                    className={`w-full flex items-center gap-4 px-5 py-4 rounded-xl border transition-all text-left ${
+                      selectedFunded === opt.key
+                        ? 'bg-yellow-500/10 border-yellow-500/60 ring-1 ring-yellow-500/30'
+                        : 'bg-[#111827] border-gray-700/50 hover:border-gray-600'
+                    }`}
+                  >
+                    <span className="text-2xl flex-shrink-0">{opt.emoji}</span>
+                    <div className="flex-1">
+                      <p className={`font-bold text-sm ${selectedFunded === opt.key ? 'text-yellow-400' : 'text-white'}`}>{opt.label}</p>
+                      <p className="text-gray-500 text-xs mt-0.5">{opt.desc}</p>
+                    </div>
+                    <div className={`w-4 h-4 rounded-full border-2 flex-shrink-0 transition-all ${
+                      selectedFunded === opt.key ? 'border-yellow-500 bg-yellow-500' : 'border-gray-600'
+                    }`} />
+                  </button>
+                ))}
+
+                {/* Reset status */}
+                <button
+                  onClick={() => setSelectedFunded(null)}
+                  className={`w-full flex items-center gap-4 px-5 py-4 rounded-xl border transition-all text-left ${
+                    selectedFunded === null
+                      ? 'bg-gray-500/10 border-gray-500/60'
+                      : 'bg-[#111827] border-gray-700/50 hover:border-gray-600'
+                  }`}
+                >
+                  <span className="text-2xl flex-shrink-0">🔄</span>
+                  <div className="flex-1">
+                    <p className="text-gray-300 font-bold text-sm">Tidak Ada / Reset</p>
+                    <p className="text-gray-500 text-xs mt-0.5">Hapus status funded dari nickname kamu</p>
+                  </div>
+                  <div className={`w-4 h-4 rounded-full border-2 flex-shrink-0 ${
+                    selectedFunded === null ? 'border-gray-400 bg-gray-400' : 'border-gray-600'
+                  }`} />
+                </button>
+              </div>
+
+              {fundedMsg && <div className="bg-green-500/10 border border-green-500/30 rounded-xl px-4 py-3 mb-4"><p className="text-green-400 text-sm">{fundedMsg}</p></div>}
+              {fundedErr && <div className="bg-red-500/10 border border-red-500/30 rounded-xl px-4 py-3 mb-4"><p className="text-red-400 text-sm">{fundedErr}</p></div>}
+
+              <button
+                onClick={handleUpdateFundedStatus}
+                disabled={fundedLoading || selectedFunded === fundedStatus}
+                className="w-full bg-yellow-500 hover:bg-yellow-400 disabled:opacity-50 disabled:cursor-not-allowed text-[#0a0f1e] font-bold py-3.5 rounded-xl transition-all"
+              >
+                {fundedLoading ? 'Menyimpan...' : '💾 Simpan & Update Nickname Discord'}
+              </button>
+              {!discordConnected && (
+                <p className="text-gray-600 text-xs text-center mt-3">
+                  ⚠️ Discord belum terhubung — status tersimpan tapi nickname tidak akan berubah otomatis.
+                </p>
               )}
             </div>
           )}
