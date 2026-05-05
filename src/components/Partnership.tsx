@@ -1,4 +1,5 @@
 import { ExternalLink, Gift } from 'lucide-react';
+import PartnershipClaimForm from './PartnershipClaimForm';
 
 const brokers = [
   {
@@ -16,7 +17,9 @@ const brokers = [
 export default function Partnership() {
   return (
     <section className="bg-[#0d1325] py-24">
-      <div className="max-w-4xl mx-auto px-4">
+      <div className="max-w-4xl mx-auto px-4 space-y-8">
+
+        {/* Card Join Gratis */}
         <div className="rounded-2xl border border-yellow-500/20 bg-gradient-to-br from-yellow-500/5 to-transparent p-8 sm:p-12">
           <div className="flex items-start gap-4 mb-8">
             <div className="w-12 h-12 bg-yellow-500/20 rounded-xl flex items-center justify-center flex-shrink-0">
@@ -27,6 +30,24 @@ export default function Partnership() {
               <p className="text-gray-400">
                 Dapatkan akses kelas <span className="text-yellow-400 font-semibold">GRATIS</span> cukup dengan mendaftar melalui broker partner kami. Tidak ada biaya tersembunyi.
               </p>
+            </div>
+          </div>
+
+          {/* Step indicator */}
+          <div className="flex items-center gap-3 mb-6">
+            <div className="flex items-center gap-2 text-sm text-gray-400">
+              <span className="w-6 h-6 bg-yellow-500 text-[#0a0f1e] rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0">1</span>
+              Daftar broker di bawah
+            </div>
+            <div className="flex-1 h-px bg-gray-700"></div>
+            <div className="flex items-center gap-2 text-sm text-gray-400">
+              <span className="w-6 h-6 bg-yellow-500/30 text-yellow-400 border border-yellow-500/40 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0">2</span>
+              Isi form konfirmasi
+            </div>
+            <div className="flex-1 h-px bg-gray-700"></div>
+            <div className="flex items-center gap-2 text-sm text-gray-400">
+              <span className="w-6 h-6 bg-yellow-500/30 text-yellow-400 border border-yellow-500/40 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0">3</span>
+              Akses diaktifkan
             </div>
           </div>
 
@@ -48,6 +69,10 @@ export default function Partnership() {
             ))}
           </div>
         </div>
+
+        {/* Form Konfirmasi */}
+        <PartnershipClaimForm />
+
       </div>
     </section>
   );

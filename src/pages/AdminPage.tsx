@@ -16,8 +16,12 @@ function generatePassword() {
 
 export default function AdminPage() {
   const [currentAdmin, setCurrentAdmin] = useState<Admin | null>(null);
-  const [tab, setTab] = useState<'member' | 'video' | 'advance' | 'admins' | 'settings' | 'announce' | 'broker' | 'ulasan'>('member');
+  const [tab, setTab] = useState<'member' | 'video' | 'advance' | 'admins' | 'settings' | 'announce' | 'broker' | 'ulasan' | 'claim'>('member');
   const [ulasanList, setUlasanList] = useState<any[]>([]);
+  const [claims, setClaims] = useState<any[]>([]);
+  const [claimActionLoading, setClaimActionLoading] = useState<string | null>(null);
+  const [claimCatatanMap, setClaimCatatanMap] = useState<Record<string, string>>({});
+  const [claimFilter, setClaimFilter] = useState<'pending' | 'approved' | 'rejected' | 'all'>('pending');
 
   // Broker states
   const [brokers, setBrokers] = useState<any[]>([]);
@@ -135,6 +139,7 @@ export default function AdminPage() {
     const { data: fi } = await supabase.from('files').select('*').order('urutan', { ascending: true });
     const { data: br } = await supabase.from('brokers').select('*').order('urutan', { ascending: true });
     const { data: ul } = await supabase.from('testimonials').select('*').order('created_at', { ascending: false });
+    const { data: cl } = await supabase.from('partnership_claims').select('*').order('created_at', { ascending: false });
     if (m) setMembers(m);
     if (v) setVideos(v);
     if (r) setRequests(r);
@@ -142,6 +147,7 @@ export default function AdminPage() {
     if (fi) setFileItems(fi);
     if (br) setBrokers(br);
     if (ul) setUlasanList(ul);
+    if (cl) setClaims(cl);
   }
 
   // Broker CRUD
@@ -169,6 +175,32 @@ export default function AdminPage() {
     if (error) notify('Error: ' + error.message, 'err');
     else { notify('Broker berhasil diupdate!'); setEditBrokerId(null); loadData(); }
     setLoading(false);
+  }
+
+  async function handleClaimAction(id: string, action: 'approved' | 'rejected') {
+    setClaimActionLoading(id);
+    const catatan = claimCatatanMap[id] || null;
+    const { error } = await supabase
+      .from('partnership_claims')
+      .update({ status: action, catatan_admin: catatan, reviewed_at: new Date().toISOString() })
+      .eq('id', id);
+    if (!error) {
+      if (action === 'approved') {
+        const claim = claims.find(c => c.id === id);
+        if (claim) {
+          await supabase.from('members').insert({
+            nama: claim.nama_lengkap,
+            tier: 'SMC Trial',
+            password: generatePassword(),
+            is_active: true,
+            is_advance: false,
+          });
+        }
+      }
+      notify(action === 'approved' ? '✅ Klaim disetujui & member dibuat!' : '❌ Klaim ditolak.', action === 'approved' ? 'ok' : 'err');
+      loadData();
+    }
+    setClaimActionLoading(null);
   }
 
   function handleLogout() {
@@ -549,6 +581,7 @@ export default function AdminPage() {
             { id: 'announce', label: 'Pengumuman', icon: <span>📢</span> },
             { id: 'broker', label: `Broker (${brokers.length})`, icon: <span>🏦</span> },
             { id: 'ulasan', label: `Ulasan (${ulasanList.filter(u => u.status === 'pending').length})`, icon: <span>⭐</span>, badge: ulasanList.filter(u => u.status === 'pending').length },
+            { id: 'claim', label: `Klaim Partnership`, icon: <span>🤝</span>, badge: claims.filter(c => c.status === 'pending').length },
             { id: 'settings', label: 'Password Saya', icon: <KeyRound size={16} /> },
             ...(isSuperAdmin ? [{ id: 'admins', label: `Admin (${admins.length})`, icon: <Shield size={16} /> }] : []),
           ].map(t => (
@@ -1445,6 +1478,113 @@ export default function AdminPage() {
                 <li>Paste ID di kolom Channel ID di atas</li>
               </ol>
             </div>
+          </div>
+        )}
+
+        {/* Tab Klaim Partnership */}
+        {tab === 'claim' && (
+          <div className="space-y-6">
+            <div>
+              <h2 className="text-white font-bold text-xl mb-1">🤝 Klaim Partnership</h2>
+              <p className="text-gray-500 text-sm">Verifikasi pendaftaran broker dari calon member gratis.</p>
+            </div>
+
+            {/* Filter */}
+            <div className="flex gap-2 flex-wrap">
+              {(['all', 'pending', 'approved', 'rejected'] as const).map(s => (
+                <button key={s} onClick={() => setClaimFilter(s)}
+                  className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all ${
+                    claimFilter === s ? 'bg-yellow-500 text-[#0a0f1e]' : 'bg-[#111827] text-gray-400 border border-gray-700 hover:text-white'
+                  }`}>
+                  {s === 'all' ? 'Semua' : s === 'pending' ? '⏳ Pending' : s === 'approved' ? '✅ Disetujui' : '❌ Ditolak'}
+                  <span className="ml-1 text-xs opacity-70">({claims.filter(c => s === 'all' ? true : c.status === s).length})</span>
+                </button>
+              ))}
+            </div>
+
+            {claims.filter(c => claimFilter === 'all' || c.status === claimFilter).length === 0 ? (
+              <div className="bg-[#111827] border border-gray-700/50 rounded-2xl p-10 text-center text-gray-500">
+                Tidak ada klaim dengan status ini.
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {claims
+                  .filter(c => claimFilter === 'all' || c.status === claimFilter)
+                  .map(claim => (
+                    <div key={claim.id} className="bg-[#111827] border border-gray-700/50 rounded-2xl overflow-hidden">
+                      <div className="p-5">
+                        <div className="flex items-start justify-between mb-4">
+                          <div>
+                            <p className="text-white font-bold">{claim.nama_lengkap}</p>
+                            <p className="text-gray-400 text-sm">{claim.email} · 📱 {claim.whatsapp}</p>
+                          </div>
+                          <span className={`text-xs font-bold px-3 py-1 rounded-full ${
+                            claim.status === 'pending' ? 'bg-yellow-500/20 text-yellow-400' :
+                            claim.status === 'approved' ? 'bg-green-500/20 text-green-400' :
+                            'bg-red-500/20 text-red-400'
+                          }`}>
+                            {claim.status === 'pending' ? '⏳ Pending' : claim.status === 'approved' ? '✅ Disetujui' : '❌ Ditolak'}
+                          </span>
+                        </div>
+
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-4">
+                          <div className="bg-[#0d1325] rounded-xl px-4 py-2.5">
+                            <p className="text-gray-500 text-xs">Broker</p>
+                            <p className="text-yellow-400 font-bold">{claim.broker}</p>
+                          </div>
+                          <div className="bg-[#0d1325] rounded-xl px-4 py-2.5">
+                            <p className="text-gray-500 text-xs">Nomor Akun</p>
+                            <p className="text-white font-mono text-sm">{claim.nomor_akun}</p>
+                          </div>
+                          <div className="bg-[#0d1325] rounded-xl px-4 py-2.5">
+                            <p className="text-gray-500 text-xs">Tanggal Submit</p>
+                            <p className="text-white text-xs">{new Date(claim.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}</p>
+                          </div>
+                        </div>
+
+                        {claim.screenshot_url && (
+                          <a href={claim.screenshot_url} target="_blank" rel="noopener noreferrer"
+                            className="inline-flex items-center gap-2 text-blue-400 hover:text-blue-300 text-sm mb-4 transition-colors">
+                            🖼️ Lihat Screenshot Bukti
+                          </a>
+                        )}
+
+                        {claim.catatan_admin && (
+                          <div className="bg-gray-800/50 rounded-xl px-4 py-2 mb-4">
+                            <p className="text-gray-400 text-xs">📝 Catatan: {claim.catatan_admin}</p>
+                          </div>
+                        )}
+
+                        {claim.status === 'pending' && (
+                          <div className="space-y-3 pt-3 border-t border-gray-700/50">
+                            <textarea
+                              placeholder="Catatan untuk member (opsional)..."
+                              value={claimCatatanMap[claim.id] || ''}
+                              onChange={e => setClaimCatatanMap(prev => ({ ...prev, [claim.id]: e.target.value }))}
+                              rows={2}
+                              className="w-full bg-[#0d1325] border border-gray-700 rounded-xl px-4 py-2.5 text-white text-sm placeholder-gray-600 focus:outline-none focus:border-yellow-500/50 resize-none"
+                            />
+                            <div className="flex gap-2">
+                              <button
+                                onClick={() => handleClaimAction(claim.id, 'approved')}
+                                disabled={claimActionLoading === claim.id}
+                                className="flex-1 bg-green-600 hover:bg-green-500 text-white font-bold py-2.5 rounded-xl text-sm transition-all disabled:opacity-50">
+                                {claimActionLoading === claim.id ? 'Memproses...' : '✅ Approve & Buat Member'}
+                              </button>
+                              <button
+                                onClick={() => handleClaimAction(claim.id, 'rejected')}
+                                disabled={claimActionLoading === claim.id}
+                                className="flex-1 bg-red-600/20 hover:bg-red-600/40 text-red-400 font-bold py-2.5 rounded-xl text-sm border border-red-500/30 transition-all disabled:opacity-50">
+                                {claimActionLoading === claim.id ? 'Memproses...' : '❌ Reject'}
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+              </div>
+            )}
           </div>
         )}
 
