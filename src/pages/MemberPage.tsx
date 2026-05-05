@@ -78,229 +78,67 @@ export default function MemberPage() {
 
   function generateSertifikat(format: 'png' | 'pdf') {
     if (!session) return;
-    const canvas = document.createElement('canvas');
-    const W = 1400, H = 990;
-    canvas.width = W; canvas.height = H;
-    const ctx = canvas.getContext('2d')!;
 
-    // ── Background gradient biru gelap ──
-    const bg = ctx.createRadialGradient(W * 0.4, H * 0.3, 50, W * 0.4, H * 0.3, W * 0.85);
-    bg.addColorStop(0, '#0d2150');
-    bg.addColorStop(0.5, '#071535');
-    bg.addColorStop(1, '#020b20');
-    ctx.fillStyle = bg;
-    ctx.fillRect(0, 0, W, H);
+    // Load Great Vibes font
+    const fontLink = document.createElement('link');
+    fontLink.rel = 'stylesheet';
+    fontLink.href = 'https://fonts.googleapis.com/css2?family=Great+Vibes&display=swap';
+    if (!document.head.querySelector('link[href*="Great+Vibes"]')) {
+      document.head.appendChild(fontLink);
+    }
 
-    // ── Glowing particles (bintang kecil) ──
-    const particles = [
-      [120,180],[300,90],[480,220],[650,130],[820,200],[980,80],[1150,160],[1280,220],
-      [200,350],[450,400],[700,320],[950,380],[1100,300],[1350,350],
-      [80,520],[350,480],[600,550],[850,490],[1050,530],[1300,470],
-      [150,650],[400,700],[700,660],[900,720],[1200,680],
-    ];
-    particles.forEach(([x, y]) => {
-      const r = Math.random() * 2.5 + 0.5;
-      const glow = ctx.createRadialGradient(x, y, 0, x, y, r * 4);
-      glow.addColorStop(0, 'rgba(100,200,255,0.9)');
-      glow.addColorStop(1, 'rgba(100,200,255,0)');
-      ctx.fillStyle = glow;
-      ctx.beginPath(); ctx.arc(x, y, r * 4, 0, Math.PI * 2); ctx.fill();
-      ctx.fillStyle = 'rgba(200,240,255,0.95)';
-      ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
-    });
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.src = 'https://pogjfldmmzcphjwgzofb.supabase.co/storage/v1/object/public/materi/ss.png';
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = img.width;
+      canvas.height = img.height;
+      const ctx = canvas.getContext('2d')!;
+      const W = img.width;
+      const H = img.height;
 
-    // ── Geometric network di bagian bawah ──
-    const nodes = [
-      [80,750],[180,820],[300,760],[420,840],[550,780],[650,860],[750,800],
-      [870,840],[980,770],[1100,830],[1220,760],[1320,840],[1400,790],
-      [150,920],[350,890],[500,940],[700,900],[900,950],[1100,900],[1280,930],
-      [240,990],[450,970],[650,990],[850,960],[1050,980],[1250,965],
-    ];
-    // Garis koneksi
-    ctx.strokeStyle = 'rgba(64,180,255,0.25)';
-    ctx.lineWidth = 1;
-    for (let i = 0; i < nodes.length; i++) {
-      for (let j = i + 1; j < nodes.length; j++) {
-        const dx = nodes[i][0] - nodes[j][0];
-        const dy = nodes[i][1] - nodes[j][1];
-        const dist = Math.sqrt(dx * dx + dy * dy);
-        if (dist < 220) {
-          ctx.beginPath();
-          ctx.moveTo(nodes[i][0], nodes[i][1]);
-          ctx.lineTo(nodes[j][0], nodes[j][1]);
-          ctx.stroke();
+      // Gambar template sebagai background
+      ctx.drawImage(img, 0, 0);
+
+      // Tunggu font load lalu render
+      document.fonts.load('80px "Great Vibes"').then(() => {
+
+        // ── Nama member (Great Vibes) ──
+        ctx.font = `${Math.round(H * 0.1)}px "Great Vibes"`;
+        ctx.fillStyle = '#1a3a30';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(session!.nama, W * 0.55, H * 0.44);
+
+        // ── Tanggal ──
+        const tgl = approveDate
+          ? new Date(approveDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })
+          : new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+        ctx.font = `bold ${Math.round(H * 0.022)}px Arial`;
+        ctx.fillStyle = '#2d5a4a';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(tgl, W * 0.55, H * 0.36);
+
+        // ── Download ──
+        if (format === 'png') {
+          const link = document.createElement('a');
+          link.download = `Sertifikat_Advanced_${session!.nama.replace(/\s/g, '_')}.png`;
+          link.href = canvas.toDataURL('image/png');
+          link.click();
+        } else {
+          const imgData = canvas.toDataURL('image/png');
+          const win = window.open('');
+          if (win) {
+            win.document.write(`<html><head><title>Sertifikat ${session!.nama}</title></head><body style="margin:0;background:#fff;display:flex;align-items:center;justify-content:center;min-height:100vh"><img src="${imgData}" style="max-width:100%;display:block"/></body></html>`);
+            win.document.close();
+            setTimeout(() => win.print(), 800);
+          }
         }
-      }
-    }
-    // Node dots
-    nodes.forEach(([x, y]) => {
-      const g = ctx.createRadialGradient(x, y, 0, x, y, 8);
-      g.addColorStop(0, 'rgba(100,220,255,1)');
-      g.addColorStop(0.4, 'rgba(64,180,255,0.6)');
-      g.addColorStop(1, 'rgba(64,180,255,0)');
-      ctx.fillStyle = g;
-      ctx.beginPath(); ctx.arc(x, y, 8, 0, Math.PI * 2); ctx.fill();
-      ctx.fillStyle = 'rgba(200,240,255,0.95)';
-      ctx.beginPath(); ctx.arc(x, y, 2.5, 0, Math.PI * 2); ctx.fill();
-    });
-
-    // ── Overlay gradient bawah (fade network ke atas) ──
-    const fade = ctx.createLinearGradient(0, 680, 0, H);
-    fade.addColorStop(0, 'rgba(2,11,32,0)');
-    fade.addColorStop(0.3, 'rgba(2,11,32,0.2)');
-    fade.addColorStop(1, 'rgba(2,11,32,0.7)');
-    ctx.fillStyle = fade;
-    ctx.fillRect(0, 680, W, H - 680);
-
-    // ── Logo MR kiri atas ──
-    ctx.fillStyle = 'rgba(255,255,255,0.08)';
-    ctx.beginPath(); ctx.roundRect(52, 48, 80, 80, 14); ctx.fill();
-    ctx.strokeStyle = 'rgba(100,180,255,0.4)';
-    ctx.lineWidth = 1.5;
-    ctx.beginPath(); ctx.roundRect(52, 48, 80, 80, 14); ctx.stroke();
-    ctx.fillStyle = '#FFFFFF';
-    ctx.font = 'bold 30px Arial';
-    ctx.textAlign = 'center';
-    ctx.fillText('MR', 92, 98);
-
-    // ── Teks kiri atas ──
-    ctx.fillStyle = 'rgba(255,255,255,0.85)';
-    ctx.font = 'bold 28px Arial';
-    ctx.textAlign = 'left';
-    ctx.fillText('SERTIFIKAT', 150, 80);
-    ctx.fillStyle = 'rgba(100,180,255,0.8)';
-    ctx.font = '16px Arial';
-    ctx.fillText('KELULUSAN KELAS ADVANCED', 150, 105);
-
-    // ── Badge kanan atas ──
-    const badgeCX = W - 130, badgeCY = 100;
-    // Lingkaran luar
-    ctx.strokeStyle = 'rgba(100,180,255,0.4)';
-    ctx.lineWidth = 1.5;
-    ctx.beginPath(); ctx.arc(badgeCX, badgeCY, 72, 0, Math.PI * 2); ctx.stroke();
-    ctx.beginPath(); ctx.arc(badgeCX, badgeCY, 60, 0, Math.PI * 2); ctx.stroke();
-    // Daun laurel kiri kanan (simplified)
-    ctx.fillStyle = 'rgba(100,180,255,0.5)';
-    for (let i = 0; i < 5; i++) {
-      const angle = -0.8 + i * 0.35;
-      ctx.save();
-      ctx.translate(badgeCX - 48 + Math.cos(angle + Math.PI) * 20, badgeCY + Math.sin(angle + Math.PI) * 20);
-      ctx.rotate(angle + Math.PI / 2);
-      ctx.beginPath(); ctx.ellipse(0, 0, 5, 11, 0, 0, Math.PI * 2); ctx.fill();
-      ctx.restore();
-      ctx.save();
-      ctx.translate(badgeCX + 48 - Math.cos(angle + Math.PI) * 20, badgeCY + Math.sin(angle + Math.PI) * 20);
-      ctx.rotate(-angle - Math.PI / 2);
-      ctx.beginPath(); ctx.ellipse(0, 0, 5, 11, 0, 0, Math.PI * 2); ctx.fill();
-      ctx.restore();
-    }
-    ctx.fillStyle = 'rgba(255,255,255,0.9)';
-    ctx.font = 'bold 22px Arial';
-    ctx.textAlign = 'center';
-    ctx.fillText('2025', badgeCX, badgeCY - 6);
-    ctx.fillStyle = 'rgba(100,180,255,0.9)';
-    ctx.font = 'bold 12px Arial';
-    ctx.fillText('ADVANCED', badgeCX, badgeCY + 12);
-
-    // ── Judul tengah ──
-    ctx.fillStyle = '#4FC3F7';
-    ctx.font = 'bold 36px Arial';
-    ctx.textAlign = 'center';
-    ctx.fillText('KELAS ADVANCED — SMART MONEY CONCEPT', W / 2, 220);
-
-    // Garis dekoratif
-    const lineGrad = ctx.createLinearGradient(200, 0, W - 200, 0);
-    lineGrad.addColorStop(0, 'transparent');
-    lineGrad.addColorStop(0.3, 'rgba(79,195,247,0.6)');
-    lineGrad.addColorStop(0.7, 'rgba(79,195,247,0.6)');
-    lineGrad.addColorStop(1, 'transparent');
-    ctx.strokeStyle = lineGrad;
-    ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.moveTo(200, 238); ctx.lineTo(W - 200, 238); ctx.stroke();
-
-    // ── "SERTIFIKAT INI DIBERIKAN KEPADA" ──
-    ctx.fillStyle = 'rgba(255,255,255,0.7)';
-    ctx.font = 'bold 18px Arial';
-    ctx.textAlign = 'center';
-    ctx.letterSpacing = '4px';
-    ctx.fillText('SERTIFIKAT INI DIBERIKAN KEPADA', W / 2, 300);
-
-    // ── Nama member (script style) ──
-    ctx.fillStyle = '#FFFFFF';
-    ctx.font = 'italic bold 82px Georgia';
-    ctx.textAlign = 'center';
-    ctx.fillText(session.nama, W / 2, 410);
-
-    // ── Garis bawah nama ──
-    const nw = ctx.measureText(session.nama).width;
-    const lineGrad2 = ctx.createLinearGradient(W/2 - nw/2, 0, W/2 + nw/2, 0);
-    lineGrad2.addColorStop(0, 'transparent');
-    lineGrad2.addColorStop(0.2, '#4FC3F7');
-    lineGrad2.addColorStop(0.8, '#4FC3F7');
-    lineGrad2.addColorStop(1, 'transparent');
-    ctx.strokeStyle = lineGrad2;
-    ctx.lineWidth = 1.5;
-    ctx.beginPath(); ctx.moveTo(W/2 - nw/2, 425); ctx.lineTo(W/2 + nw/2, 425); ctx.stroke();
-
-    // ── Tier label ──
-    ctx.fillStyle = '#4FC3F7';
-    ctx.font = 'bold 16px Arial';
-    ctx.textAlign = 'center';
-    ctx.fillText(session.tier.toUpperCase(), W / 2, 460);
-
-    // ── Deskripsi ──
-    ctx.fillStyle = 'rgba(255,255,255,0.65)';
-    ctx.font = '17px Arial';
-    ctx.fillText('Telah berhasil memenuhi seluruh persyaratan dan dinyatakan lulus', W / 2, 510);
-    ctx.fillText('untuk mengikuti Kelas Advanced dalam program mentoring Menolak Rugi.', W / 2, 535);
-    ctx.fillStyle = 'rgba(255,255,255,0.45)';
-    ctx.font = '15px Arial';
-    ctx.fillText('Semoga menjadi bekal untuk menjadi trader yang konsisten, disiplin, dan profesional.', W / 2, 568);
-
-    // ── DATE & SIGNATURE ──
-    const tgl = approveDate
-      ? new Date(approveDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })
-      : new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
-
-    // DATE kiri
-    ctx.strokeStyle = 'rgba(255,255,255,0.3)';
-    ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.moveTo(140, 650); ctx.lineTo(420, 650); ctx.stroke();
-    ctx.fillStyle = 'rgba(255,255,255,0.55)';
-    ctx.font = '15px Arial';
-    ctx.textAlign = 'center';
-    ctx.fillText(tgl, 280, 640);
-    ctx.fillStyle = 'rgba(255,255,255,0.4)';
-    ctx.font = 'bold 13px Arial';
-    ctx.fillText('TANGGAL', 280, 672);
-
-    // SIGNATURE kanan
-    ctx.strokeStyle = 'rgba(255,255,255,0.3)';
-    ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.moveTo(W - 420, 650); ctx.lineTo(W - 140, 650); ctx.stroke();
-    ctx.fillStyle = 'rgba(255,255,255,0.85)';
-    ctx.font = 'italic bold 32px Georgia';
-    ctx.textAlign = 'center';
-    ctx.fillText('Fauzan', W - 280, 645);
-    ctx.fillStyle = 'rgba(255,255,255,0.4)';
-    ctx.font = 'bold 13px Arial';
-    ctx.fillText('FOUNDER & MENTOR — MENOLAK RUGI', W - 280, 672);
-
-    // ── Download ──
-    if (format === 'png') {
-      const link = document.createElement('a');
-      link.download = `Sertifikat_Advanced_${session.nama.replace(/\s/g, '_')}.png`;
-      link.href = canvas.toDataURL('image/png');
-      link.click();
-    } else {
-      const imgData = canvas.toDataURL('image/png');
-      const win = window.open('');
-      if (win) {
-        win.document.write(`<html><head><title>Sertifikat</title></head><body style="margin:0;background:#000;display:flex;align-items:center;justify-content:center;min-height:100vh"><img src="${imgData}" style="max-width:100%;display:block"/></body></html>`);
-        win.document.close();
-        setTimeout(() => win.print(), 800);
-      }
-    }
+      });
+    };
+    img.onerror = () => alert('Gagal memuat template. Coba refresh halaman.');
   }
   const [oldPass, setOldPass] = useState('');
   const [newPass, setNewPass] = useState('');
