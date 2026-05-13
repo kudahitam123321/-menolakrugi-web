@@ -189,14 +189,20 @@ export default function LoginPage() {
     if (admin) { try { JSON.parse(admin); window.location.href = '/admin'; } catch {} }
   }, []);
   return (
-    <div style={{fontFamily:'"Geist",system-ui,sans-serif',background:'#080808',minHeight:'100vh',color:'#e7e5e4',display:'grid',gridTemplateColumns:'1fr 520px',WebkitFontSmoothing:'antialiased'}}>
+    <div className='mr-lp-outer' style={{fontFamily:'"Geist",system-ui,sans-serif',background:'#080808',minHeight:'100vh',color:'#e7e5e4',WebkitFontSmoothing:'antialiased',overflowX:'hidden',display:'grid',gridTemplateColumns:'1fr 520px'}}>
+      <style>{`@media(max-width:767px){
+        .mr-lp-outer{display:flex!important;flex-direction:column;grid-template-columns:unset}
+        .mr-lp-left{display:none!important}
+        .mr-lp-right{padding:32px 20px!important;border-left:none!important;min-height:100vh;align-items:flex-start!important}
+        .mr-lp-form{max-width:100%!important}
+      }`}</style>
       {/* Kiri */}
-      <div style={{position:'relative',padding:'48px 56px',display:'flex',flexDirection:'column',justifyContent:'space-between',overflow:'hidden'}}>
+      <div className='mr-lp-left' style={{position:'relative',padding:'48px 56px',display:'flex',flexDirection:'column',justifyContent:'space-between',overflow:'hidden'}}>
         <div style={{position:'absolute',inset:0,opacity:0.3,...CANDLE_GRID_STYLE}}/>
         <div style={{position:'absolute',inset:0,background:'radial-gradient(ellipse at 30% 60%, rgba(234,179,8,0.06) 0%, transparent 60%)'}}/>
         <div style={{position:'relative'}}>
           <div style={{display:'flex',alignItems:'center',gap:12,marginBottom:64}}>
-            <div style={{width:40,height:40,background:'#eab308',display:'flex',alignItems:'center',justifyContent:'center',fontWeight:900,fontSize:14,color:'#000',borderRadius:8}}>MR</div>
+            <div style={{width:44,height:44}}><img src='/logo.png' alt='MR' style={{width:'100%',height:'100%',objectFit:'contain'}}/></div>
             <div>
               <div style={{fontWeight:800,letterSpacing:1,fontSize:14}}>MENOLAK RUGI</div>
               <div style={{fontFamily:'"Geist Mono",monospace',color:'#555',fontSize:10,letterSpacing:1.5}}>PRIVATE TRADING ENVIRONMENT</div>
@@ -222,8 +228,8 @@ export default function LoginPage() {
       </div>
 
       {/* Kanan */}
-      <div style={{background:'#0d0d0d',borderLeft:'1px solid #1a1a1a',display:'flex',alignItems:'center',justifyContent:'center',padding:'48px 40px'}}>
-        <div style={{width:'100%',maxWidth:400}}>
+      <div className='mr-lp-right' style={{background:'#0d0d0d',borderLeft:'1px solid #1a1a1a',display:'flex',alignItems:'center',justifyContent:'center',padding:'48px 40px'}}>
+        <div className='mr-lp-form' style={{width:'100%',maxWidth:400}}>
           {view==='forgot' ? (
             <>
               <div style={{textAlign:'center',marginBottom:36}}>

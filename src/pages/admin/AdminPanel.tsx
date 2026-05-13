@@ -195,7 +195,7 @@ export default function AdminPanel() {
       {/* Top bar */}
       <div style={{ borderBottom: `1px solid ${C.border}`, padding: '0 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: C.sidebar, height: 56, flexShrink: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-          <div style={{ width: 34, height: 34, background: G.gold, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: 12, color: '#000' }}>MR</div>
+          <div style={{ width: 36, height: 36 }}><img src='/logo.png' alt='MR' style={{ width: '100%', height: '100%', objectFit: 'contain' }}/></div>
           <span style={{ fontWeight: 800, fontSize: 14 }}>MENOLAK RUGI</span>
           <span style={{ fontFamily: C.mono, color: G.gold, fontSize: 11, border: '1px solid #3a2e00', padding: '2px 8px', borderRadius: 4 }}>ADMIN PANEL</span>
         </div>

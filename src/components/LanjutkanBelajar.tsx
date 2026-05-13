@@ -69,9 +69,9 @@ export default function LanjutkanBelajar({ memberId, memberTier }: Props) {
         <div style={{ fontFamily: C.mono, color: C.gold, fontSize: 10, letterSpacing: 1, marginBottom: 10 }}>
           // MEMUAT LANJUTKAN BELAJAR
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: window.innerWidth < 768 ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)', gap: window.innerWidth < 768 ? 10 : 14 }}>
           {[0, 1, 2, 3].map((item) => (
-            <div key={item} style={{ height: 160, background: C.panel, border: `1px solid ${C.border}`, borderRadius: 12 }} />
+            <div key={item} style={{ height: window.innerWidth < 768 ? 130 : 160, background: C.panel, border: `1px solid ${C.border}`, borderRadius: 12 }} />
           ))}
         </div>
       </section>
@@ -110,7 +110,7 @@ export default function LanjutkanBelajar({ memberId, memberTier }: Props) {
         </button>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: window.innerWidth < 768 ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)', gap: window.innerWidth < 768 ? 10 : 14 }}>
         {videos.map((video) => (
           <button
             key={video.id}

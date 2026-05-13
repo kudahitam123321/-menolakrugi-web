@@ -146,6 +146,32 @@ const AdvancedChartWidget = memo(function AdvancedChartWidget() {
           Track all markets on TradingView
         </a>
       </div>
+
+      {/* ── Mobile Bottom Nav ── */}
+      <nav className='mr-bottom-nav' style={{ position: 'fixed', bottom: 0, left: 0, right: 0, height: 60, background: C.sidebar, borderTop: `1px solid ${C.border}`, display: 'flex', alignItems: 'center', zIndex: 39, padding: '0 4px' }}>
+          {[
+            { id: 'dashboard', icon: '⊞', label: 'Home' },
+            { id: 'kelas',     icon: '▶', label: 'Kelas' },
+            { id: 'materi',    icon: '📁', label: 'Materi' },
+            { id: 'funded',    icon: '🚀', label: 'Trading' },
+            { id: 'menu',      icon: '☰',  label: 'Menu' },
+          ].map(item => {
+            const isA = item.id === 'menu' ? false : active === item.id;
+            return (
+              <button key={item.id}
+                onClick={() => {
+                  if (item.id === 'menu') setMobileMenuOpen(true);
+                  else setActive(item.id);
+                }}
+                style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 3, background: 'none', border: 'none', cursor: 'pointer', color: isA ? G.gold : '#555', padding: '4px 0' }}>
+                <span style={{ fontSize: 18 }}>{item.icon}</span>
+                <span style={{ fontFamily: C.mono, fontSize: 9, fontWeight: isA ? 700 : 400 }}>{item.label}</span>
+              </button>
+            );
+          })}
+        </nav>
+      <div className='mr-bottom-spacer'/>
+
     </div>
   );
 });
@@ -198,6 +224,32 @@ function LotCalculator() {
         Formula: Lot = (Balance × Risk%) ÷ (SL pips × Pip Value)<br/>
         Pip value {pair}: ${pipVal}/lot/pip
       </div>
+
+      {/* ── Mobile Bottom Nav ── */}
+      <nav className='mr-bottom-nav' style={{ position: 'fixed', bottom: 0, left: 0, right: 0, height: 60, background: C.sidebar, borderTop: `1px solid ${C.border}`, display: 'flex', alignItems: 'center', zIndex: 39, padding: '0 4px' }}>
+          {[
+            { id: 'dashboard', icon: '⊞', label: 'Home' },
+            { id: 'kelas',     icon: '▶', label: 'Kelas' },
+            { id: 'materi',    icon: '📁', label: 'Materi' },
+            { id: 'funded',    icon: '🚀', label: 'Trading' },
+            { id: 'menu',      icon: '☰',  label: 'Menu' },
+          ].map(item => {
+            const isA = item.id === 'menu' ? false : active === item.id;
+            return (
+              <button key={item.id}
+                onClick={() => {
+                  if (item.id === 'menu') setMobileMenuOpen(true);
+                  else setActive(item.id);
+                }}
+                style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 3, background: 'none', border: 'none', cursor: 'pointer', color: isA ? G.gold : '#555', padding: '4px 0' }}>
+                <span style={{ fontSize: 18 }}>{item.icon}</span>
+                <span style={{ fontFamily: C.mono, fontSize: 9, fontWeight: isA ? 700 : 400 }}>{item.label}</span>
+              </button>
+            );
+          })}
+        </nav>
+      <div className='mr-bottom-spacer'/>
+
     </div>
   );
 }
@@ -233,6 +285,25 @@ export default function DashboardPage() {
   const [jurnalMode, setJurnalMode]         = useState<('link'|'file')[]>(['link','link','link']);
   const [statusSaving, setStatusSaving]     = useState(false);
   const [watchRefreshKey, setWatchRefreshKey] = useState(0);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
+    return localStorage.getItem('mr_sidebar_collapsed') === '1';
+  });
+  const [mobileMenuOpen, setMobileMenuOpen]     = useState(false);
+  const [isMobile, setIsMobile]                 = useState(() => window.innerWidth < 768);
+
+  useEffect(() => {
+    const onResize = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
+
+  function toggleSidebar() {
+    setSidebarCollapsed(prev => {
+      const next = !prev;
+      localStorage.setItem('mr_sidebar_collapsed', next ? '1' : '0');
+      return next;
+    });
+  }
   const [statusMsg, setStatusMsg]           = useState('');
   const [selectedStatus, setSelectedStatus] = useState<string|null>(null);
 
@@ -324,12 +395,13 @@ export default function DashboardPage() {
 
   async function submitAdvanceRequest() {
     if (!member) return;
-    // Validate: each jurnal must have either link or file
+    // Validate: minimal 1 jurnal harus diisi
     const links = [jurnal1, jurnal2, jurnal3];
-    for (let i = 0; i < 3; i++) {
-      if (jurnalMode[i] === 'link' && !links[i].trim()) { setAdvMsg(`Link Jurnal ${i+1} wajib diisi.`); return; }
-      if (jurnalMode[i] === 'file' && !jurnalFiles[i])  { setAdvMsg(`File Jurnal ${i+1} wajib dipilih.`); return; }
-    }
+    const hasAtLeastOne = links.some((l, i) =>
+      (jurnalMode[i] === 'link' && l.trim()) ||
+      (jurnalMode[i] === 'file' && jurnalFiles[i])
+    );
+    if (!hasAtLeastOne) { setAdvMsg('Minimal 1 jurnal wajib dilampirkan.'); return; }
     setAdvSubmitting(true);
     // Upload files to Supabase Storage if any
     const jurnalValues: string[] = [];
@@ -346,10 +418,27 @@ export default function DashboardPage() {
       }
     }
     const alasan = `Jurnal 1: ${jurnalValues[0]}\nJurnal 2: ${jurnalValues[1]}\nJurnal 3: ${jurnalValues[2]}`;
-    const { error } = await supabase.from('advance_requests').upsert({
-      member_id: member.id, member_nama: member.nama, member_tier: member.tier,
-      status: 'pending', alasan_tolak: alasan, created_at: new Date().toISOString(),
-    }, { onConflict: 'member_id' });
+    // Cek apakah sudah ada request
+    const { data: existing } = await supabase
+      .from('advance_requests')
+      .select('id')
+      .eq('member_id', member.id)
+      .maybeSingle();
+
+    let reqError;
+    if (existing?.id) {
+      // Update request yang ada
+      const { error } = await supabase.from('advance_requests')
+        .update({ member_nama: member.nama, member_tier: member.tier, status: 'pending', alasan_tolak: alasan, created_at: new Date().toISOString() })
+        .eq('id', existing.id);
+      reqError = error;
+    } else {
+      // Insert baru
+      const { error } = await supabase.from('advance_requests')
+        .insert({ member_id: member.id, member_nama: member.nama, member_tier: member.tier, status: 'pending', alasan_tolak: alasan, created_at: new Date().toISOString() });
+      reqError = error;
+    }
+    const error = reqError;
     if (error) { setAdvMsg('Gagal mengirim: ' + error.message); }
     else {
       setAdvMsg(''); setShowAdvModal(false);
@@ -396,34 +485,111 @@ export default function DashboardPage() {
   };
 
   return (
-    <div style={{ fontFamily: C.sans, background: C.bg, minHeight: '100vh', color: C.text, display: 'flex', flexDirection: 'column' }}>
+    <div style={{ fontFamily: C.sans, background: C.bg, minHeight: '100vh', color: C.text, display: 'flex', flexDirection: 'column', overflowX: 'hidden' }}>
+      <style>{`
+        .mr-sidebar { display: flex; width: 200px; }
+        .mr-main { flex: 1; overflow-y: auto; min-width: 0; }
+        .mr-topbar-brand { display: flex; }
+        .mr-topbar-right-full { display: flex; }
+        .mr-content-pad { padding: 24px; }
+        .mr-grid-4 { grid-template-columns: repeat(4, 1fr); gap: 14px; }
+        .mr-grid-3 { grid-template-columns: repeat(3, 1fr); gap: 14px; }
+        .mr-grid-2 { grid-template-columns: 1fr 1fr; gap: 14px; }
+        .mr-grid-announce { grid-template-columns: 1fr 1fr; gap: 16px; }
+        .mr-kelas-grid { grid-template-columns: 1fr 1fr; gap: 14px; }
+        .mr-funded-grid { grid-template-columns: repeat(3, 1fr); gap: 12px; }
+        .mr-bottom-nav { display: none; }
+        .mr-bottom-spacer { display: none; }
+        .mr-welcome-h1 { font-size: 32px; }
+
+        @media (max-width: 767px) {
+          .mr-sidebar { display: none !important; }
+          .mr-bottom-nav { display: flex !important; }
+          .mr-bottom-spacer { display: block !important; height: 60px; }
+          .mr-topbar-brand { display: none !important; }
+          .mr-topbar-right-full > span { display: none !important; }
+          .mr-content-pad { padding: 14px !important; }
+          .mr-grid-4 { grid-template-columns: repeat(2, 1fr) !important; gap: 10px !important; }
+          .mr-grid-3 { grid-template-columns: 1fr !important; gap: 10px !important; }
+          .mr-grid-2 { grid-template-columns: 1fr !important; gap: 10px !important; }
+          .mr-grid-announce { grid-template-columns: 1fr !important; gap: 12px !important; }
+          .mr-kelas-grid { grid-template-columns: 1fr !important; gap: 10px !important; }
+          .mr-funded-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 10px !important; }
+          .mr-welcome-h1 { font-size: 22px !important; }
+        }
+      `}</style>
 
       {/* ── Topbar ── */}
-      <div style={{ borderBottom: `1px solid ${C.border}`, padding: '0 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: 56, background: C.sidebar, flexShrink: 0 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <div style={{ width: 32, height: 32, background: G.gold, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: 11, color: '#000' }}>MR</div>
-          <div>
-            <div style={{ fontWeight: 800, fontSize: 13, letterSpacing: 0.3 }}>MENOLAK RUGI</div>
-            <div style={{ fontFamily: C.mono, fontSize: 9, color: C.dim, letterSpacing: 1 }}>ELITE TRADING ENVIRONMENT</div>
+      <div style={{ borderBottom: `1px solid ${C.border}`, padding: '0 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: 56, background: C.sidebar, flexShrink: 0, position: 'sticky' as const, top: 0, zIndex: 40 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          {/* Hamburger / collapse toggle */}
+          <button onClick={() => isMobile ? setMobileMenuOpen(o => !o) : toggleSidebar()}
+            style={{ width: 36, height: 36, background: 'transparent', border: `1px solid ${C.border}`, borderRadius: 7, cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 4, flexShrink: 0 }}>
+            {[0,1,2].map(i => <span key={i} style={{ display: 'block', width: i === 1 ? 12 : 16, height: 1.5, background: C.dim, borderRadius: 2, transition: 'width 0.2s' }}/>)}
+          </button>
+          <div style={{ width: 32, height: 32, flexShrink: 0 }}><img src='/logo.png' alt='MR' style={{ width: '100%', height: '100%', objectFit: 'contain' }}/></div>
+          <div className='mr-topbar-brand'>
+            <div style={{ fontWeight: 800, fontSize: 12, letterSpacing: 0.3 }}>MENOLAK RUGI</div>
+            <div style={{ fontFamily: C.mono, fontSize: 8, color: C.dim, letterSpacing: 1 }}>ELITE TRADING ENVIRONMENT</div>
           </div>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-          <div style={{ fontFamily: C.mono, fontSize: 11, color: C.dim }}>{member.tier.replace('SMC ', '').toUpperCase()}</div>
-          {member.is_advance && <span style={{ fontFamily: C.mono, fontSize: 9, background: '#1a1500', border: `1px solid #3a2e00`, color: G.gold, padding: '2px 8px', borderRadius: 4 }}>ADVANCE</span>}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <div style={{ width: 30, height: 30, background: `linear-gradient(135deg,${G.gold},${G.gold2})`, borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: 11, color: '#000' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? 8 : 14 }}>
+          {!isMobile && <div style={{ fontFamily: C.mono, fontSize: 10, color: C.dim }}>{member.tier.replace('SMC ', '').toUpperCase()}</div>}
+          {member.is_advance && <span style={{ fontFamily: C.mono, fontSize: 8, background: '#1a1500', border: `1px solid #3a2e00`, color: G.gold, padding: '2px 6px', borderRadius: 4 }}>ADVANCE</span>}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+            <div style={{ width: 28, height: 28, background: `linear-gradient(135deg,${G.gold},${G.gold2})`, borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: 11, color: '#000' }}>
               {member.nama[0].toUpperCase()}
             </div>
-            <span style={{ fontSize: 13, fontWeight: 600 }}>{member.nama}</span>
+            {!isMobile && <span style={{ fontSize: 13, fontWeight: 600 }}>{member.nama}</span>}
           </div>
-          <button onClick={() => window.location.href = '/'} style={{ fontFamily: C.mono, fontSize: 11, color: C.dim, background: 'none', border: `1px solid ${C.border2}`, padding: '5px 12px', cursor: 'pointer', borderRadius: 5 }}>Website ↗</button>
+          {!isMobile && <button onClick={() => window.location.href = '/'} style={{ fontFamily: C.mono, fontSize: 10, color: C.dim, background: 'none', border: `1px solid ${C.border2}`, padding: '4px 10px', cursor: 'pointer', borderRadius: 5 }}>Web ↗</button>}
         </div>
       </div>
 
+      {/* ── Mobile Overlay ── */}
+      {isMobile && mobileMenuOpen && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 50, display: 'flex' }}>
+          <div style={{ flex: 1, background: 'rgba(0,0,0,0.7)' }} onClick={() => setMobileMenuOpen(false)}/>
+          <div style={{ width: 240, background: C.sidebar, borderLeft: `1px solid ${C.border}`, display: 'flex', flexDirection: 'column', overflowY: 'auto' }}>
+            <div style={{ padding: '14px 16px', borderBottom: `1px solid ${C.border}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <span style={{ fontWeight: 700, fontSize: 13 }}>{member.nama}</span>
+              <button onClick={() => setMobileMenuOpen(false)} style={{ background: 'none', border: 'none', color: C.dim, cursor: 'pointer', fontSize: 20, padding: '0 4px' }}>×</button>
+            </div>
+            <div style={{ flex: 1, paddingTop: 8 }}>
+              {SIDEBAR.map(item => {
+                const isA = active === item.id;
+                return (
+                  <button key={item.id}
+                    onClick={() => {
+                      if ((item as any).href) { window.open((item as any).href, '_blank'); }
+                      else { setActive(item.id); setMobileMenuOpen(false); }
+                    }}
+                    style={{ display: 'flex', alignItems: 'center', gap: 12, width: '100%', padding: '12px 20px', border: 'none', background: isA ? '#1a1500' : 'transparent', borderLeft: isA ? `3px solid ${G.gold}` : '3px solid transparent', color: isA ? G.gold : C.dim, cursor: 'pointer', fontSize: 14, textAlign: 'left' as const }}>
+                    <span style={{ fontSize: 18 }}>{item.icon}</span>
+                    <span style={{ flex: 1 }}>{item.label}</span>
+                    {(item as any).badge && <span style={{ fontFamily: C.mono, fontSize: 8, background: C.down, color: '#fff', padding: '1px 5px', borderRadius: 3, fontWeight: 700 }}>{(item as any).badge}</span>}
+                  </button>
+                );
+              })}
+            </div>
+            <div style={{ margin: '0 12px 12px', background: '#0d0c00', border: `1px solid #2a2200`, borderRadius: 10, padding: '12px' }}>
+              <div style={{ fontFamily: C.mono, color: '#555', fontSize: 9, marginBottom: 4 }}>AKSES MEMBERSHIP</div>
+              <div style={{ fontWeight: 700, color: G.gold, fontSize: 12 }}>{member.tier}</div>
+              {isTrial && expiryDate && (
+                <div style={{ fontFamily: C.mono, fontSize: 10, color: daysLeft! <= 7 ? '#f97316' : C.dim, marginTop: 4 }}>{daysLeft} hari lagi</div>
+              )}
+            </div>
+            <button onClick={logout} style={{ margin: '0 12px 16px', display: 'flex', alignItems: 'center', gap: 8, padding: '9px 12px', background: 'none', border: `1px solid ${C.border}`, color: '#555', cursor: 'pointer', borderRadius: 6, fontSize: 12, fontFamily: C.mono }}>
+              <span>⏻</span> Logout
+            </button>
+          </div>
+        </div>
+      )}
+
       <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
 
-        {/* ── Sidebar ── */}
-        <aside style={{ width: 200, background: C.sidebar, borderRight: `1px solid ${C.border}`, flexShrink: 0, display: 'flex', flexDirection: 'column', overflowY: 'auto' }}>
+        {/* ── Desktop Sidebar ── */}
+        <aside className='mr-sidebar' style={{ width: sidebarCollapsed ? 58 : 200, background: C.sidebar, borderRight: `1px solid ${C.border}`, flexShrink: 0, display: 'flex', flexDirection: 'column', overflowY: 'auto', transition: 'width 0.2s ease', overflow: 'hidden' }}>
           <div style={{ flex: 1, paddingTop: 10 }}>
             {SIDEBAR.map(item => {
               const isA = active === item.id;
@@ -433,17 +599,18 @@ export default function DashboardPage() {
                     if ((item as any).href) { window.open((item as any).href, '_blank'); }
                     else { setActive(item.id); }
                   }}
-                  style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '10px 18px', border: 'none', background: isA ? '#1a1500' : 'transparent', borderLeft: isA ? `3px solid ${G.gold}` : '3px solid transparent', color: isA ? G.gold : C.dim, cursor: 'pointer', fontSize: 13, textAlign: 'left' as const }}>
-                  <span style={{ fontSize: 16 }}>{item.icon}</span>
-                  <span style={{ flex: 1 }}>{item.label}</span>
-                  {(item as any).badge && <span style={{ fontFamily: C.mono, fontSize: 8, background: C.down, color: '#fff', padding: '1px 5px', borderRadius: 3, fontWeight: 700 }}>{(item as any).badge}</span>}
+                  title={sidebarCollapsed ? item.label : undefined}
+                  style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: sidebarCollapsed ? '11px 0' : '10px 18px', justifyContent: sidebarCollapsed ? 'center' : 'flex-start', border: 'none', background: isA ? '#1a1500' : 'transparent', borderLeft: isA ? `3px solid ${G.gold}` : '3px solid transparent', color: isA ? G.gold : C.dim, cursor: 'pointer', fontSize: 13, textAlign: 'left' as const, transition: 'padding 0.2s' }}>
+                  <span style={{ fontSize: 17, flexShrink: 0 }}>{item.icon}</span>
+                  {!sidebarCollapsed && <span style={{ flex: 1, whiteSpace: 'nowrap' as const }}>{item.label}</span>}
+                  {!sidebarCollapsed && (item as any).badge && <span style={{ fontFamily: C.mono, fontSize: 8, background: C.down, color: '#fff', padding: '1px 5px', borderRadius: 3, fontWeight: 700 }}>{(item as any).badge}</span>}
                 </button>
               );
             })}
           </div>
 
-          {/* Membership card */}
-          <div style={{ margin: '0 12px 12px', background: '#0d0c00', border: `1px solid #2a2200`, borderRadius: 10, padding: '14px' }}>
+          {/* Membership card - only when expanded */}
+          {!sidebarCollapsed && <div style={{ margin: '0 12px 12px', background: '#0d0c00', border: `1px solid #2a2200`, borderRadius: 10, padding: '14px' }}>
             <div style={{ fontFamily: C.mono, color: '#555', fontSize: 9, letterSpacing: 1, marginBottom: 6 }}>AKSES MEMBERSHIP</div>
             <div style={{ fontWeight: 700, color: G.gold, fontSize: 13 }}>{member.tier}</div>
             <div style={{ fontFamily: C.mono, color: C.dim, fontSize: 10, marginTop: 2 }}>{member.is_advance ? '(Advance)' : '(Basic)'}</div>
@@ -470,33 +637,35 @@ export default function DashboardPage() {
             ) : (
               <div style={{ fontSize: 13, fontWeight: 600, marginTop: 2 }}>Seumur Hidup</div>
             )}
-          </div>
+          </div>}
 
-          <button onClick={logout} style={{ margin: '0 12px 16px', display: 'flex', alignItems: 'center', gap: 8, padding: '9px 12px', background: 'none', border: `1px solid ${C.border}`, color: '#555', cursor: 'pointer', borderRadius: 6, fontSize: 12, fontFamily: C.mono }}>
-            <span>⏻</span> Logout
+          <button onClick={logout}
+            title={sidebarCollapsed ? 'Logout' : undefined}
+            style={{ margin: sidebarCollapsed ? '0 6px 16px' : '0 12px 16px', display: 'flex', alignItems: 'center', justifyContent: sidebarCollapsed ? 'center' : 'flex-start', gap: 8, padding: '9px 12px', background: 'none', border: `1px solid ${C.border}`, color: '#555', cursor: 'pointer', borderRadius: 6, fontSize: 12, fontFamily: C.mono }}>
+            <span>⏻</span> {!sidebarCollapsed && 'Logout'}
           </button>
         </aside>
 
         {/* ── Main Content ── */}
-        <main style={{ flex: 1, overflowY: 'auto' }}>
+        <main className='mr-main' style={{ flex: 1, overflowY: 'auto', minWidth: 0 }}>
 
           {/* ══ DASHBOARD ══ */}
           {active === 'dashboard' && (
-            <div style={{ padding: 24, display: 'flex', flexDirection: 'column', gap: 20 }}>
+            <div className='mr-content-pad' style={{ padding: 24, display: 'flex', flexDirection: 'column', gap: isMobile ? 14 : 20 }}>
               {/* Welcome */}
-              <div style={{ background: 'linear-gradient(135deg,#0f0c00,#0a0a0a)', border: `1px solid #2a2200`, borderRadius: 14, padding: '28px 32px', position: 'relative', overflow: 'hidden' }}>
+              <div style={{ background: 'linear-gradient(135deg,#0f0c00,#0a0a0a)', border: `1px solid #2a2200`, borderRadius: 14, padding: isMobile ? '20px 18px' : '28px 32px', position: 'relative', overflow: 'hidden' }}>
                 <div style={{ position: 'absolute', right: 0, top: 0, bottom: 0, width: '45%', opacity: 0.07 }}>
                   <svg viewBox="0 0 400 160" width="100%" height="100%">
                     <polyline points="0,120 40,100 80,110 120,70 160,90 200,50 240,80 280,40 320,60 360,30 400,50" fill="none" stroke={G.gold} strokeWidth="2.5"/>
                   </svg>
                 </div>
                 <div style={{ fontFamily: C.mono, color: '#555', fontSize: 11, letterSpacing: 1, marginBottom: 8 }}>SELAMAT DATANG KEMBALI,</div>
-                <h1 style={{ fontSize: 32, fontWeight: 700, letterSpacing: -1, margin: '0 0 8px' }}>{member.nama}</h1>
+                <h1 className='mr-welcome-h1' style={{ fontSize: 32, fontWeight: 700, letterSpacing: -1, margin: '0 0 8px' }}>{member.nama}</h1>
                 <p style={{ color: C.dim, fontSize: 14, margin: 0 }}>Terus belajar dan kuasai market dengan konsep SMC.</p>
               </div>
 
               {/* KPI cards */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 14 }}>
+              <div className='mr-grid-4' style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 14 }}>
                 {[
                   { l: 'PROGRESS BELAJAR', v: `${progressPct}%`,          sub: `${completedVideos} video selesai`, color: G.gold, ring: progressPct },
                   { l: 'MATERI SELESAI',   v: `${completedVideos} / ${totalVideos}`, sub: 'Video',          color: C.up },
@@ -515,7 +684,7 @@ export default function DashboardPage() {
               </div>
 
               {/* ── Status Member Row ── */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 14 }}>
+              <div className='mr-grid-3' style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10 }}>
 
                 {/* Status Trading */}
                 <div style={{ background: C.panel, border: `1px solid ${member.funded_status ? '#3a2e00' : C.border}`, borderRadius: 12, padding: '16px 18px', cursor: 'pointer' }}
@@ -691,7 +860,7 @@ export default function DashboardPage() {
                     <div style={{ fontFamily: C.mono, color: G.gold, fontSize: 10, letterSpacing: 1, marginBottom: 6 }}>// REQUEST NAIK KELAS ADVANCED</div>
                     <h3 style={{ fontSize: 18, fontWeight: 700, margin: '0 0 8px' }}>Ajukan Naik Kelas</h3>
                     <p style={{ color: C.dim, fontSize: 13, margin: '0 0 20px', lineHeight: 1.6 }}>
-                      Lampirkan 3 link jurnal trading kamu sebagai syarat naik kelas Advanced. Admin akan mereview dan memberikan keputusan.
+                      Lampirkan minimal 1 jurnal trading (link atau file) sebagai syarat naik kelas Advanced. Admin akan mereview dan memberikan keputusan.
                     </p>
                     {([
                       { l: 'Jurnal 1', v: jurnal1, s: setJurnal1, idx: 0 },
@@ -748,7 +917,7 @@ export default function DashboardPage() {
                 </div>
               )}
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+              <div className='mr-kelas-grid' style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                 {['intro','basic','tips-basic','advanced','tips-advanced'].map(kat => {
                   const isAdvancedKat = kat === 'advanced' || kat === 'tips-advanced';
                   const locked = isAdvancedKat && !member.is_advance;
@@ -1121,7 +1290,7 @@ export default function DashboardPage() {
               </div>
 
               {/* Status grid */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 20 }}>
+              <div className='mr-funded-grid' style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10, marginBottom: 16 }}>
                 {([
                   { key: 'DA',     label: 'Demo Account',  desc: 'Sedang trading di akun demo',   color: '#3b82f6' },
                   { key: 'P1',     label: 'Phase 1',       desc: 'Challenge phase pertama',       color: '#a855f7' },
@@ -1217,6 +1386,32 @@ export default function DashboardPage() {
 
         </main>
       </div>
+
+      {/* ── Mobile Bottom Nav ── */}
+      <nav className='mr-bottom-nav' style={{ position: 'fixed', bottom: 0, left: 0, right: 0, height: 60, background: C.sidebar, borderTop: `1px solid ${C.border}`, display: 'flex', alignItems: 'center', zIndex: 39, padding: '0 4px' }}>
+          {[
+            { id: 'dashboard', icon: '⊞', label: 'Home' },
+            { id: 'kelas',     icon: '▶', label: 'Kelas' },
+            { id: 'materi',    icon: '📁', label: 'Materi' },
+            { id: 'funded',    icon: '🚀', label: 'Trading' },
+            { id: 'menu',      icon: '☰',  label: 'Menu' },
+          ].map(item => {
+            const isA = item.id === 'menu' ? false : active === item.id;
+            return (
+              <button key={item.id}
+                onClick={() => {
+                  if (item.id === 'menu') setMobileMenuOpen(true);
+                  else setActive(item.id);
+                }}
+                style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 3, background: 'none', border: 'none', cursor: 'pointer', color: isA ? G.gold : '#555', padding: '4px 0' }}>
+                <span style={{ fontSize: 18 }}>{item.icon}</span>
+                <span style={{ fontFamily: C.mono, fontSize: 9, fontWeight: isA ? 700 : 400 }}>{item.label}</span>
+              </button>
+            );
+          })}
+        </nav>
+      <div className='mr-bottom-spacer'/>
+
     </div>
   );
 }

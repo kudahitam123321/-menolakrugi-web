@@ -95,6 +95,8 @@ const FAQ = [
 function NavBar() {
   const [active, setActive] = React.useState('KELAS');
   const [isLoggedIn, setIsLoggedIn] = React.useState(false);
+  const [isMobile, setIsMobile] = React.useState(() => window.matchMedia('(max-width: 767px)').matches);
+  React.useEffect(() => { const mq = window.matchMedia('(max-width: 767px)'); const h = (e: MediaQueryListEvent) => setIsMobile(e.matches); mq.addEventListener('change',h); return ()=>mq.removeEventListener('change',h); }, []);
 
   React.useEffect(() => {
     const member = localStorage.getItem('mr_member') || sessionStorage.getItem('mr_member');
@@ -130,15 +132,10 @@ function NavBar() {
       <div style={{ position: 'absolute', top: 0, left: '50%', transform: 'translateX(-50%)', width: 300, height: 1, background: 'linear-gradient(90deg, transparent, rgba(234,179,8,0.6), transparent)' }} />
 
       {/* Logo */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+      <div className='mr-nav-links' style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
         {/* MR Logo custom */}
-        <div style={{ position: 'relative', width: 48, height: 48, background: 'linear-gradient(135deg, #0d0d0d, #1a1a1a)', border: '1px solid #2a2a2a', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow: '0 0 20px rgba(20,184,166,0.15)' }}>
-          <svg viewBox="0 0 36 36" width="36" height="36">
-            <path d="M6 28 L6 10 L3 13 M6 10 L9 13" stroke="#14b8a6" strokeWidth="2" fill="none" strokeLinecap="square"/>
-            <text x="5" y="26" fontFamily="Geist, sans-serif" fontWeight="900" fontSize="14" fill="#14b8a6">M</text>
-            <text x="19" y="26" fontFamily="Geist, sans-serif" fontWeight="900" fontSize="14" fill="#ef4444">R</text>
-            <path d="M30 10 L30 28 L27 25 M30 28 L33 25" stroke="#ef4444" strokeWidth="2" fill="none" strokeLinecap="square"/>
-          </svg>
+        <div style={{ position: 'relative', width: 48, height: 48, flexShrink: 0 }}>
+          <img src="/logo.png" alt="Menolak Rugi" style={{ width: '100%', height: '100%', objectFit: 'contain' }}/>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1 }}>
           <span style={{ fontWeight: 800, letterSpacing: 1, fontSize: 15, color: '#e7e5e4' }}>MENOLAK RUGI</span>
@@ -229,14 +226,14 @@ function Hero({ memberCount, fundedCount, newThisMonth }: { memberCount: number;
   return (
     <section id="kelas" style={{ position: 'relative', padding: '64px 40px 48px', borderBottom: `1px solid ${MR.border}` }}>
       <div style={{ position: 'absolute', inset: 0, opacity: 0.5, ...CANDLE_GRID_STYLE }} />
-      <div style={{ position: 'relative', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 32, alignItems: 'stretch' }}>
+      <div className='mr-hero-grid' style={{ position: 'relative', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 32, alignItems: 'stretch' }}>
         {/* Left */}
         <div>
           <div style={{ fontFamily: MR.mono, display: 'inline-flex', gap: 8, alignItems: 'center', padding: '6px 10px', border: `1px solid ${MR.border}`, color: MR.dim, fontSize: 11, letterSpacing: 0.6 }}>
             <span className="mr-blink" style={{ color: MR.up }}>●</span>
             {memberCount}+ MEMBER · FUNDED CASES TIAP MINGGU
           </div>
-          <h1 style={{ fontSize: 84, lineHeight: 0.96, letterSpacing: -3, margin: '26px 0 24px', fontWeight: 700, textWrap: 'balance' } as React.CSSProperties}>
+          <h1 className='mr-hero-h1' style={{ fontSize: 84, lineHeight: 0.96, letterSpacing: -3, margin: '26px 0 24px', fontWeight: 700 } as React.CSSProperties}>
             <span>Berhenti trading</span><br />
             <span style={{ color: MR.dim }}>tanpa arah.</span><br />
             <span>Mulai pahami</span><br />
@@ -277,7 +274,7 @@ function Hero({ memberCount, fundedCount, newThisMonth }: { memberCount: number;
 
 function Manifesto() {
   return (
-    <section style={{ padding: '32px 40px', borderBottom: `1px solid ${MR.border}`, display: 'flex', justifyContent: 'space-between', gap: 32, alignItems: 'center' }}>
+    <section className='mr-stats-row' style={{ padding: '32px 40px', borderBottom: `1px solid ${MR.border}`, display: 'flex', justifyContent: 'space-between', gap: 32, alignItems: 'center' }}>
       <div style={{ fontFamily: MR.mono, color: MR.dim, fontSize: 11, letterSpacing: 0.8, flexShrink: 0 }}>// MANIFESTO</div>
       <div style={{ fontSize: 22, lineHeight: 1.35, letterSpacing: -0.5, maxWidth: 1080 }}>
         Pasar bukan bergerak secara random. Setiap pergerakan membentuk <span style={{ color: MR.up }}>struktur</span>, dan struktur selalu memberi petunjuk arah berikutnya. Kami ngajarin cara membaca <em style={{ fontStyle: 'normal', color: MR.gold }}>market structure</em> dengan benar — memahami kapan trend berlanjut, kapan melemah, dan kapan market mulai <span style={{ color: MR.down }}>berubah arah</span>.
@@ -335,7 +332,7 @@ function Curriculum() {
       </div>
 
       {/* Two-column layout */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr' }}>
+      <div className='mr-curriculum-grid' style={{ display: 'grid', gridTemplateColumns: '1fr 1fr' }}>
 
         {/* BASIC */}
         <div style={{ borderRight: `1px solid ${MR.border}` }}>
@@ -725,7 +722,26 @@ export default function LandingPage() {
   const { tiers }        = usePricing();
 
   return (
-    <div style={{ fontFamily: MR.sans, color: MR.text, background: MR.bg, minHeight: '100vh', WebkitFontSmoothing: 'antialiased' }}>
+    <div style={{ fontFamily: MR.sans, color: MR.text, background: MR.bg, minHeight: '100vh', WebkitFontSmoothing: 'antialiased', overflowX: 'hidden' }}>
+      <style>{`
+        @media (max-width: 767px) {
+          .mr-nav-links { display: none !important; }
+          .mr-hero-grid { grid-template-columns: 1fr !important; }
+          .mr-hero-text h1 { font-size: 40px !important; letter-spacing: -1px !important; }
+          .mr-hero-text p { font-size: 15px !important; }
+          .mr-hero-section { padding: 48px 16px 40px !important; }
+          .mr-hero-widget { display: none !important; }
+          .mr-stats-row { flex-wrap: wrap; gap: 16px !important; padding: 20px 16px !important; }
+          .mr-curriculum-grid { grid-template-columns: 1fr !important; }
+          .mr-pricing-grid { grid-template-columns: 1fr !important; }
+          .mr-section { padding: 40px 16px !important; }
+          .mr-section-lg { padding: 48px 16px !important; }
+          .mr-topbar { padding: 0 16px !important; }
+          .mr-cta-btns { flex-direction: column !important; }
+          .mr-login-btn span { display: none !important; }
+          .mr-hero-h1 { font-size: 40px !important; letter-spacing: -1px !important; line-height: 1.1 !important; }
+        }
+      `}</style>
       <TVTickerTape />
       <StatusBar />
       <NavBar />
