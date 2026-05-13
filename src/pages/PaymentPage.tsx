@@ -1,166 +1,207 @@
-import { useState } from 'react';
-import { ArrowLeft, Copy, CheckCircle, MessageCircle } from 'lucide-react';
+// pages/PaymentPage.tsx — Halaman pembayaran transfer bank (Direction A · Terminal)
+// URL: /payment?tier=gold&name=Adi+Pramana&method=qris
 
-const WA_NUMBER = '081242224939';
-const BANK = {
-  nama: 'BRI',
-  rekening: '516601021807533',
-  atas_nama: 'MUHAMAD FAUZAN AMIN',
-};
+import React, { useEffect, useState } from 'react';
+
+import { MR } from '../lib/theme';
+import { MRLogo, Ticker } from '../components/mr';
+import { usePricing } from '../hooks';
+
+// ─── Config rekening — GANTI sesuai data asli ────────────────────────────────
+const BANK_INFO = {
+  bank:       'BRI',
+  accountNo:  '5166 0102 1807 533',
+  accountName:'MUHAMAD FAUZAN AMIN',
+  code:       'BRI · 002',
+} as const;
+
+const WHATSAPP_ADMIN = '6281242224939';
+
+// ─── Countdown timer ─────────────────────────────────────────────────────────
+
+function useCountdown(minutes = 30) {
+  const [secs, setSecs] = useState(minutes * 60);
+  useEffect(() => {
+    const id = setInterval(() => setSecs(s => Math.max(0, s - 1)), 1000);
+    return () => clearInterval(id);
+  }, []);
+  const mm = String(Math.floor(secs / 60)).padStart(2, '0');
+  const ss = String(secs % 60).padStart(2, '0');
+  return `T-${mm}:${ss}`;
+}
+
+// ─── Main ─────────────────────────────────────────────────────────────────────
 
 export default function PaymentPage() {
+
   const params = new URLSearchParams(window.location.search);
-  const kelas = params.get('kelas') || '-';
-  const harga = params.get('harga') || '-';
-  const hargaAsli = params.get('hargaAsli') || '';
-  const diskon = params.get('diskon') || '';
+  const { tiers }        = usePricing();
+  const countdown        = useCountdown(30);
+
+  const tierId   = params.get('tier') ?? 'gold';
+  const userName = params.get('name') ?? '';
+
+  const tier = tiers.find(t => t.id === tierId) ?? tiers.find(t => t.id === 'gold');
+  const fmt  = (n: number) => new Intl.NumberFormat('id-ID').format(n);
 
   const [copied, setCopied] = useState(false);
-  const [nama, setNama] = useState('');
-  const [noHp, setNoHp] = useState('');
-
-  function copyRekening() {
-    navigator.clipboard.writeText(BANK.rekening);
+  function copyAccNo() {
+    navigator.clipboard.writeText(BANK_INFO.accountNo.replace(/\s/g, ''));
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   }
 
-  function handleKonfirmasi() {
-    if (!nama.trim() || !noHp.trim()) {
-      alert('Mohon isi nama lengkap dan nomor HP terlebih dahulu.');
-      return;
-    }
-    const diskonInfo = diskon ? `Kupon Diskon: ${diskon}\nHarga Asli: ${hargaAsli}\n` : '';
-    const msg = encodeURIComponent(
-      `Halo Admin Menolak Rugi, saya ingin konfirmasi pembayaran:\n\n` +
-      `Nama: ${nama}\n` +
-      `No HP: ${noHp}\n` +
-      `Kelas: ${kelas}\n` +
-      `${diskonInfo}` +
-      `Total Bayar: ${harga}\n` +
-      `Bank: ${BANK.nama} - ${BANK.rekening} a.n ${BANK.atas_nama}\n\n` +
-      `Terlampir bukti transfer saya. Mohon segera dikonfirmasi. Terima kasih!`
-    );
-    window.open(`https://wa.me/62${WA_NUMBER.slice(1)}?text=${msg}`, '_blank');
-  }
+  const orderNo = `MR-${new Date().toISOString().slice(2, 10).replace(/-/g, '')}-${Math.floor(Math.random() * 9000 + 1000)}`;
+
+  const waMsg = encodeURIComponent(
+    `Halo admin, saya sudah transfer untuk ${tier?.name ?? ''} atas nama ${userName}. Order: #${orderNo}. Berikut bukti transfernya.`
+  );
 
   return (
-    <div className="min-h-screen bg-[#0a0f1e]">
-      {/* Navbar */}
-      <div className="fixed top-0 left-0 right-0 z-50 bg-[#0a0f1e]/90 backdrop-blur-md border-b border-yellow-500/20">
-        <div className="max-w-6xl mx-auto px-4 py-4 flex items-center gap-4">
-          <a href="/checkout" className="text-gray-400 hover:text-white transition-colors">
-            <ArrowLeft size={20} />
-          </a>
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-gradient-to-br from-yellow-400 to-yellow-600 rounded-lg flex items-center justify-center">
-              <span className="text-[#0a0f1e] font-bold text-sm">MR</span>
-            </div>
-            <span className="text-white font-bold text-xl tracking-wide">MENOLAK RUGI</span>
-          </div>
+    <div style={{ fontFamily: MR.sans, color: MR.text, background: MR.bg, minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+      <Ticker />
+
+      {/* Header */}
+      <div style={{ borderBottom: `1px solid ${MR.border}`, padding: '16px 40px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+          <button onClick={() => window.history.back()} style={{ fontFamily: MR.mono, fontSize: 12, color: MR.dim, background: 'none', border: 'none', cursor: 'pointer', marginRight: 4 }}>← KEMBALI</button>
+          <MRLogo size={26} />
+          <span style={{ fontWeight: 800, letterSpacing: -0.3 }}>MENOLAK RUGI</span>
+          <span style={{ fontFamily: MR.mono, color: MR.dimmer, fontSize: 11, marginLeft: 12, paddingLeft: 12, borderLeft: `1px solid ${MR.border}` }}>PEMBAYARAN</span>
         </div>
+        <div style={{ fontFamily: MR.mono, fontSize: 11, color: MR.dim }}>STEP 02 / 03 · TRANSFER</div>
       </div>
 
-      <div className="max-w-lg mx-auto px-4 pt-32 pb-24">
-        <div className="text-center mb-10">
-          <span className="text-yellow-500 text-sm font-semibold uppercase tracking-widest">Pembayaran</span>
-          <h1 className="text-3xl font-bold text-white mt-3 mb-2">Detail Pembayaran</h1>
-          <p className="text-gray-400 text-sm">Selesaikan pembayaran dan kirim bukti transfer via WhatsApp.</p>
-        </div>
+      {/* Content */}
+      <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '1fr 440px', gap: 0, padding: '40px' }}>
+        {/* Left — detail transfer */}
+        <div style={{ paddingRight: 40 }}>
+          <div style={{ fontFamily: MR.mono, color: MR.dim, fontSize: 11, letterSpacing: 0.6, marginBottom: 8 }}>// ORDER #{orderNo}</div>
+          <h2 style={{ fontSize: 38, fontWeight: 700, letterSpacing: -1, margin: '0 0 10px' }}>Detail Pembayaran</h2>
+          <p style={{ color: MR.dim, fontSize: 14, lineHeight: 1.55, marginBottom: 28, maxWidth: 480 }}>
+            Transfer tepat sesuai nominal di bawah, lalu konfirmasi via WhatsApp dengan bukti transfer. Akses dibuka maks 10 menit setelah verifikasi.
+          </p>
 
-        {/* Ringkasan Pesanan */}
-        <div className="bg-[#111827] border border-gray-700/50 rounded-2xl p-6 mb-6">
-          <h3 className="text-white font-semibold mb-4">Ringkasan Pesanan</h3>
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-gray-400">{kelas}</span>
-            <span className={diskon ? 'line-through text-gray-500' : 'text-yellow-400 font-bold'}>
-              {hargaAsli || harga}
-            </span>
-          </div>
-          {diskon && (
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-green-400 text-sm">Diskon ({diskon})</span>
-              <span className="text-green-400 font-semibold">{harga}</span>
+          {/* Bank info */}
+          <div style={{ border: `1px solid ${MR.border}`, background: MR.panel, marginBottom: 16 }}>
+            <div style={{ fontFamily: MR.mono, display: 'flex', justifyContent: 'space-between', padding: '10px 16px', borderBottom: `1px solid ${MR.border}`, fontSize: 11, color: MR.dim, background: MR.darker }}>
+              <span>◉ TRANSFER KE REKENING</span>
+              <span style={{ color: MR.text }}>BANK · {BANK_INFO.bank}</span>
             </div>
-          )}
-          <div className="border-t border-gray-700/50 mt-4 pt-4 flex items-center justify-between">
-            <span className="text-white font-semibold">Total</span>
-            <span className="text-white font-bold text-xl">{harga}</span>
-          </div>
-        </div>
-
-        {/* Detail Rekening */}
-        <div className="bg-[#111827] border border-yellow-500/20 rounded-2xl p-6 mb-6">
-          <h3 className="text-white font-semibold mb-5">Transfer ke Rekening</h3>
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <span className="text-gray-400 text-sm">Bank</span>
-              <span className="text-white font-bold text-lg">{BANK.nama}</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-gray-400 text-sm">Atas Nama</span>
-              <span className="text-white font-semibold">{BANK.atas_nama}</span>
-            </div>
-            <div className="flex items-center justify-between gap-4">
-              <span className="text-gray-400 text-sm">No. Rekening</span>
-              <div className="flex items-center gap-2">
-                <span className="text-white font-bold font-mono text-lg">{BANK.rekening}</span>
-                <button
-                  onClick={copyRekening}
-                  className="text-yellow-400 hover:text-yellow-300 transition-colors"
-                  title="Salin nomor rekening"
-                >
-                  {copied ? <CheckCircle size={18} className="text-green-400" /> : <Copy size={18} />}
+            <div style={{ padding: '20px 20px 16px' }}>
+              <div style={{ fontFamily: MR.mono, color: MR.dimmer, fontSize: 10, letterSpacing: 0.8, marginBottom: 8 }}>NO. REKENING</div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                <span style={{ fontSize: 28, fontWeight: 700, letterSpacing: 2, fontFamily: MR.mono }}>{BANK_INFO.accountNo}</span>
+                <button onClick={copyAccNo} style={{ fontFamily: MR.mono, border: `1px solid ${MR.border}`, background: copied ? MR.up : 'transparent', color: copied ? '#000' : MR.text, padding: '8px 14px', fontSize: 11, letterSpacing: 0.6, cursor: 'pointer' }}>
+                  {copied ? 'TERSALIN ✓' : 'SALIN ▸'}
                 </button>
               </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+                <div>
+                  <div style={{ fontFamily: MR.mono, color: MR.dimmer, fontSize: 10, letterSpacing: 0.8 }}>ATAS NAMA</div>
+                  <div style={{ fontWeight: 600, marginTop: 4 }}>{BANK_INFO.accountName}</div>
+                </div>
+                <div>
+                  <div style={{ fontFamily: MR.mono, color: MR.dimmer, fontSize: 10, letterSpacing: 0.8 }}>BANK</div>
+                  <div style={{ fontWeight: 600, marginTop: 4 }}>{BANK_INFO.code}</div>
+                </div>
+              </div>
+            </div>
+            <div style={{ margin: '0 20px 16px', padding: '12px', background: '#1a0f00', border: `1px solid #3a2800`, fontSize: 12, color: '#d4a853', fontFamily: MR.mono, lineHeight: 1.55 }}>
+              ⚠ Transfer tepat sampai 3 digit terakhir nominal. Sertakan bukti transfer waktu konfirmasi ke WhatsApp.
             </div>
           </div>
-          {copied && <p className="text-green-400 text-xs mt-3 text-right">Nomor rekening disalin!</p>}
-          <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-xl p-4 mt-5">
-            <p className="text-yellow-400 text-sm font-medium">
-              ⚠️ Pastikan transfer tepat sesuai nominal. Simpan bukti transfer untuk dikirim ke WhatsApp.
-            </p>
-          </div>
-        </div>
 
-        {/* Form Data Pembeli */}
-        <div className="bg-[#111827] border border-gray-700/50 rounded-2xl p-6 mb-6">
-          <h3 className="text-white font-semibold mb-5">Data Kamu</h3>
-          <div className="space-y-4">
-            <div>
-              <label className="text-gray-400 text-sm block mb-2">Nama Lengkap</label>
-              <input
-                type="text"
-                value={nama}
-                onChange={(e) => setNama(e.target.value)}
-                placeholder="Masukkan nama lengkap"
-                className="w-full bg-[#0d1325] border border-gray-700 rounded-xl px-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:border-yellow-500/50 transition-colors"
-              />
-            </div>
-            <div>
-              <label className="text-gray-400 text-sm block mb-2">Nomor HP / WhatsApp</label>
-              <input
-                type="tel"
-                value={noHp}
-                onChange={(e) => setNoHp(e.target.value)}
-                placeholder="Contoh: 08123456789"
-                className="w-full bg-[#0d1325] border border-gray-700 rounded-xl px-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:border-yellow-500/50 transition-colors"
-              />
+          {/* Personal data */}
+          <div style={{ border: `1px solid ${MR.border}`, background: MR.panel }}>
+            <div style={{ fontFamily: MR.mono, padding: '10px 16px', borderBottom: `1px solid ${MR.border}`, fontSize: 11, color: MR.dim, background: MR.darker }}>◉ DATA KAMU</div>
+            <div style={{ padding: '20px', display: 'grid', gap: 16 }}>
+              {[
+                { l: 'NAMA LENGKAP',      v: userName || '—'    },
+                { l: 'PAKET DIPILIH',     v: tier?.name ?? '—'  },
+              ].map(f => (
+                <div key={f.l}>
+                  <div style={{ fontFamily: MR.mono, color: MR.dimmer, fontSize: 10, letterSpacing: 0.8, marginBottom: 6 }}>{f.l}</div>
+                  <div style={{ border: `1px solid ${MR.borderHot}`, padding: '12px 14px', fontSize: 14, color: MR.text, background: MR.panel }}>{f.v}</div>
+                </div>
+              ))}
             </div>
           </div>
         </div>
 
-        {/* Tombol Konfirmasi */}
-        <button
-          onClick={handleKonfirmasi}
-          className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-400 hover:to-yellow-500 text-[#0a0f1e] font-bold py-4 rounded-xl transition-all duration-200 hover:shadow-xl hover:shadow-yellow-500/30 text-lg"
-        >
-          <MessageCircle size={20} />
-          Konfirmasi Pembayaran via WA
-        </button>
-        <p className="text-gray-600 text-xs text-center mt-3">
-          Kamu akan diarahkan ke WhatsApp dengan detail pesanan. Jangan lupa lampirkan bukti transfer.
-        </p>
+        {/* Right — order summary + status */}
+        <div style={{ border: `1px solid ${MR.gold}`, background: '#0a0800', padding: 28, display: 'flex', flexDirection: 'column', gap: 20, alignSelf: 'start', position: 'sticky', top: 20 }}>
+          <div style={{ fontFamily: MR.mono, display: 'flex', justifyContent: 'space-between', color: MR.dim, fontSize: 11 }}>
+            <span>◉ RINGKASAN PESANAN</span>
+            <span style={{ color: MR.gold }}>#{orderNo}</span>
+          </div>
+
+          <div>
+            <div style={{ fontFamily: MR.mono, color: MR.dimmer, fontSize: 10, letterSpacing: 0.8, marginBottom: 6 }}>KELAS DIPILIH</div>
+            <div style={{ fontSize: 22, fontWeight: 700, letterSpacing: -0.5 }}>{tier?.name ?? '—'}</div>
+            <div style={{ fontFamily: MR.mono, color: MR.dim, fontSize: 11, marginTop: 4 }}>AKSES SEUMUR HIDUP · GRUP MENTORING</div>
+          </div>
+
+          <div style={{ borderTop: `1px solid ${MR.border}`, paddingTop: 16, display: 'grid', gap: 10, fontSize: 13, fontFamily: MR.mono }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', color: MR.dim }}>
+              <span>Harga kelas</span>
+              <span>Rp {fmt(tier?.original_price ?? tier?.price ?? 0)}</span>
+            </div>
+            {tier?.original_price && (
+              <div style={{ display: 'flex', justifyContent: 'space-between', color: MR.up }}>
+                <span>Diskon early-bird</span>
+                <span>− Rp {fmt(tier.original_price - tier.price)}</span>
+              </div>
+            )}
+            <div style={{ display: 'flex', justifyContent: 'space-between', color: MR.dim }}>
+              <span>Biaya admin</span><span>Rp 0</span>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: 12, borderTop: `1px solid ${MR.border}`, fontSize: 18 }}>
+              <span>TOTAL TRANSFER</span>
+              <span style={{ color: MR.gold, fontWeight: 700 }}>Rp {fmt(tier?.price ?? 0)}</span>
+            </div>
+            <div style={{ color: MR.dimmer, fontSize: 10 }}>3 digit unik akan ditambah otomatis di akhir nominal.</div>
+          </div>
+
+          <div style={{ borderTop: `1px solid ${MR.border}`, paddingTop: 16, fontFamily: MR.mono }}>
+            <div style={{ color: MR.dimmer, fontSize: 10, letterSpacing: 0.8, marginBottom: 12 }}>// STATUS PEMBAYARAN</div>
+            {[
+              { l: 'PESANAN DIBUAT',     done: true,  active: false, t: new Date().toLocaleString('id-ID', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) },
+              { l: 'MENUNGGU TRANSFER',  done: false,  active: true,  t: countdown },
+              { l: 'VERIFIKASI ADMIN',   done: false, active: false, t: '—' },
+              { l: 'AKSES MEMBER AKTIF', done: false, active: false, t: '—' },
+            ].map(s => (
+              <div key={s.l} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: s.done ? MR.up : s.active ? MR.text : MR.dimmer, padding: '4px 0' }}>
+                <span>{s.done ? '✓' : s.active ? '●' : '○'} {s.l}</span>
+                <span style={{ color: s.active ? MR.down : 'inherit' }}>{s.t}</span>
+              </div>
+            ))}
+          </div>
+
+          <a href={`https://wa.me/${WHATSAPP_ADMIN}?text=${waMsg}`} target="_blank" rel="noreferrer" style={{ textDecoration: 'none' }}>
+            <button style={{ width: '100%', fontFamily: MR.mono, background: MR.gold, color: '#181000', padding: '16px', fontSize: 13, fontWeight: 700, letterSpacing: 0.4, border: 'none', cursor: 'pointer' }}>
+              KONFIRMASI VIA WHATSAPP ▸
+            </button>
+          </a>
+          <div style={{ fontFamily: MR.mono, fontSize: 10, color: MR.dimmer, textAlign: 'center', lineHeight: 1.5 }}>
+            Diarahkan ke WhatsApp Admin. Lampirkan bukti transfer.
+          </div>
+
+          {/* Divider */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '8px 0' }}>
+            <div style={{ flex: 1, height: 1, background: MR.border }} />
+            <span style={{ fontFamily: MR.mono, fontSize: 10, color: MR.dim }}>SETELAH DIVERIFIKASI ADMIN</span>
+            <div style={{ flex: 1, height: 1, background: MR.border }} />
+          </div>
+
+          <button onClick={() => window.location.href = '/login'}
+            style={{ width: '100%', fontFamily: MR.mono, background: 'transparent', border: `1px solid ${MR.up}`, color: MR.up, padding: '14px', fontSize: 12, fontWeight: 700, letterSpacing: 0.4, cursor: 'pointer' }}>
+            MASUK KE AKUN MEMBER ▸
+          </button>
+          <div style={{ fontFamily: MR.mono, fontSize: 10, color: MR.dimmer, textAlign: 'center' as const, lineHeight: 1.5 }}>
+            Akses dibuka admin dalam 10 menit setelah konfirmasi diterima.
+          </div>
+        </div>
       </div>
     </div>
   );

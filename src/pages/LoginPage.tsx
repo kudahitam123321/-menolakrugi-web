@@ -1,281 +1,261 @@
-import { useState } from 'react';
-import { ArrowLeft, LogIn, Eye, EyeOff, Lock, Shield, KeyRound } from 'lucide-react';
+// pages/LoginPage.tsx — Custom auth (nama + tier + password, no email)
+import React, { useState } from 'react';
 import { supabase } from '../lib/supabase';
+import { CANDLE_GRID_STYLE } from '../components/mr';
 
-const TIERS = ['SMC Trial', 'SMC Bronze', 'SMC Gold Mentorship', 'SMC Platinum 1 on 1'];
+type View = 'member' | 'admin' | 'forgot';
+const TIERS = ['SMC Trial','SMC Bronze','SMC Silver','SMC Gold Mentorship','SMC Platinum 1-on-1'];
 
-function generateToken() {
-  return Math.random().toString(36).substring(2) + Date.now().toString(36);
+function Field({ label, type='text', value, onChange, placeholder, icon }: {
+  label:string; type?:string; value:string; onChange:(v:string)=>void; placeholder?:string; icon?:React.ReactNode;
+}) {
+  const [show, setShow] = useState(false);
+  const isPass = type==='password';
+  return (
+    <div>
+      <label style={{display:'block',fontSize:13,color:'#a0a0a0',marginBottom:8,fontWeight:500}}>{label}</label>
+      <div style={{position:'relative'}}>
+        {icon&&<span style={{position:'absolute',left:14,top:'50%',transform:'translateY(-50%)',color:'#555'}}>{icon}</span>}
+        <input type={isPass&&show?'text':type} value={value} onChange={e=>onChange(e.target.value)} placeholder={placeholder}
+          style={{width:'100%',background:'#1a1a1a',border:'1px solid #2a2a2a',color:'#e7e5e4',padding:`13px 14px 13px ${icon?'40px':'14px'}`,fontSize:14,outline:'none',boxSizing:'border-box' as const,fontFamily:'inherit',borderRadius:8}}
+          onFocus={e=>e.target.style.borderColor='#eab308'} onBlur={e=>e.target.style.borderColor='#2a2a2a'}/>
+        {isPass&&<button onClick={()=>setShow(s=>!s)} style={{position:'absolute',right:14,top:'50%',transform:'translateY(-50%)',background:'none',border:'none',color:'#555',cursor:'pointer',fontSize:16}}>{show?'🙈':'👁'}</button>}
+      </div>
+    </div>
+  );
 }
 
-export default function LoginPage() {
-  const [mode, setMode] = useState<'member' | 'admin' | 'forgot'>('member');
-
-  // Member login
-  const [nama, setNama] = useState('');
-  const [tier, setTier] = useState('');
-  const [password, setPassword] = useState('');
-  const [showPass, setShowPass] = useState(false);
-
-  // Admin login
-  const [adminUsername, setAdminUsername] = useState('');
-  const [adminPass, setAdminPass] = useState('');
-  const [showAdminPass, setShowAdminPass] = useState(false);
-
-  // Lupa password
-  const [forgotNama, setForgotNama] = useState('');
-  const [forgotTier, setForgotTier] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [forgotDone, setForgotDone] = useState(false);
-  const [forgotNotFound, setForgotNotFound] = useState(false);
-
-  const [loading, setLoading] = useState(false);
+function MemberForm({ onForgot }: { onForgot:()=>void }) {
+  const [nama, setNama]   = useState('');
+  const [tier, setTier]   = useState('');
+  const [pass, setPass]   = useState('');
   const [error, setError] = useState('');
+  const [loading, setLoad] = useState(false);
+  const [remember, setRemember] = useState(true);
 
-  async function handleMemberLogin() {
-    if (!nama.trim() || !tier || !password.trim()) { setError('Semua field wajib diisi.'); return; }
-    setLoading(true); setError('');
+  async function handleLogin() {
+    if (!nama||!tier||!pass) { setError('Semua field wajib diisi.'); return; }
+    setLoad(true); setError('');
     try {
-      const { data: member } = await supabase
-        .from('members').select('*').ilike('nama', nama.trim()).eq('tier', tier).single();
-      if (!member) { setError('Nama atau tier tidak ditemukan.'); setLoading(false); return; }
-      if (member.password !== password) { setError('Password salah.'); setLoading(false); return; }
-      if (!member.is_active) { setError('Akun kamu tidak aktif. Hubungi admin.'); setLoading(false); return; }
-      const token = generateToken();
-      await supabase.from('members').update({ session_token: token }).eq('id', member.id);
-      localStorage.setItem('mr_session', JSON.stringify({ token, member_id: member.id, nama: member.nama, tier: member.tier }));
+      const { data, error: rpcErr } = await supabase.rpc('login_member', {
+        p_nama: nama.trim(), p_tier: tier, p_password: pass,
+      });
+      if (rpcErr) throw rpcErr;
+      if (!data) throw new Error('Nama, tier, atau password salah.');
+
+      // Simpan session - localStorage jika ingat, sessionStorage jika tidak
+      if (remember) {
+        localStorage.setItem('mr_member', JSON.stringify(data));
+        sessionStorage.removeItem('mr_member');
+      } else {
+        sessionStorage.setItem('mr_member', JSON.stringify(data));
+        localStorage.removeItem('mr_member');
+      }
       window.location.href = '/member';
-    } catch { setError('Terjadi kesalahan. Coba lagi.'); }
-    setLoading(false);
-  }
-
-  async function handleAdminLogin() {
-    if (!adminUsername.trim() || !adminPass.trim()) { setError('Username dan password wajib diisi.'); return; }
-    setLoading(true); setError('');
-    const { data: admin } = await supabase
-      .from('admins').select('*').eq('username', adminUsername.trim().toLowerCase()).single();
-    if (!admin || admin.password !== adminPass) {
-      setError('Username atau password salah.'); setLoading(false); return;
-    }
-    localStorage.setItem('mr_admin', JSON.stringify({ id: admin.id, username: admin.username, role: admin.role }));
-    window.location.href = '/admin';
-    setLoading(false);
-  }
-
-  async function handleForgotPassword() {
-    if (!forgotNama.trim() || !forgotTier) { setError('Nama lengkap dan tier wajib diisi.'); return; }
-    setLoading(true); setError(''); setForgotNotFound(false);
-    const { data: members } = await supabase
-      .from('members').select('*').ilike('nama', forgotNama.trim()).eq('tier', forgotTier);
-    if (!members || members.length === 0) {
-      setForgotNotFound(true); setLoading(false); return;
-    }
-    const member = members[0];
-    if (!member.is_active) { setError('Akun tidak aktif. Hubungi admin.'); setLoading(false); return; }
-    // Tampilkan password yang sudah ada di database — tidak generate baru
-    setNewPassword(member.password);
-    setForgotDone(true);
-    setLoading(false);
+    } catch(e:unknown) {
+      setError(e instanceof Error ? e.message : 'Login gagal.');
+    } finally { setLoad(false); }
   }
 
   return (
-    <div className="min-h-screen bg-[#0a0f1e] flex flex-col">
-      <div className="fixed top-0 left-0 right-0 z-50 bg-[#0a0f1e]/90 backdrop-blur-md border-b border-yellow-500/20">
-        <div className="max-w-6xl mx-auto px-4 py-4 flex items-center gap-4">
-          <a href="/" className="text-gray-400 hover:text-white transition-colors"><ArrowLeft size={20} /></a>
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-gradient-to-br from-yellow-400 to-yellow-600 rounded-lg flex items-center justify-center">
-              <span className="text-[#0a0f1e] font-bold text-sm">MR</span>
+    <div style={{display:'flex',flexDirection:'column',gap:18}}>
+      <Field label="Nama Lengkap" value={nama} onChange={setNama} placeholder="Sesuai data pendaftaran"
+        icon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>}/>
+      <div>
+        <label style={{display:'block',fontSize:13,color:'#a0a0a0',marginBottom:8,fontWeight:500}}>Tier Kelas</label>
+        <select value={tier} onChange={e=>setTier(e.target.value)} style={{width:'100%',background:'#1a1a1a',border:'1px solid #2a2a2a',color:tier?'#e7e5e4':'#666',padding:'13px 14px',fontSize:14,outline:'none',fontFamily:'inherit',borderRadius:8,appearance:'none' as const,cursor:'pointer',boxSizing:'border-box' as const}}
+          onFocus={e=>e.target.style.borderColor='#eab308'} onBlur={e=>e.target.style.borderColor='#2a2a2a'}>
+          <option value="">Pilih tier kelas kamu</option>
+          {TIERS.map(t=><option key={t} value={t}>{t}</option>)}
+        </select>
+      </div>
+      <Field label="Password" type="password" value={pass} onChange={setPass} placeholder="Password akun member"/>
+      {/* Ingat Saya */}
+      <label style={{display:'flex',alignItems:'center',gap:10,cursor:'pointer',userSelect:'none' as const}}>
+        <div onClick={()=>setRemember(r=>!r)} style={{width:20,height:20,borderRadius:5,border:`2px solid ${remember?'#eab308':'#2a2a2a'}`,background:remember?'#eab308':'transparent',display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',flexShrink:0,transition:'all 0.15s'}}>
+          {remember&&<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#000" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>}
+        </div>
+        <span style={{fontSize:13,color:remember?'#e7e5e4':'#666'}}>Ingat saya di perangkat ini</span>
+      </label>
+      {error&&<div style={{color:'#ef4444',fontSize:13,fontFamily:'"Geist Mono",monospace'}}>⚠ {error}</div>}
+      <button onClick={handleLogin} disabled={loading} style={{background:'#eab308',color:'#000',fontWeight:700,padding:'16px',fontSize:14,border:'none',cursor:loading?'not-allowed':'pointer',opacity:loading?0.7:1,display:'flex',alignItems:'center',justifyContent:'center',gap:8,marginTop:4,borderRadius:10}}>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+        {loading?'MEMPROSES...':'Masuk ke Trading Room'}
+      </button>
+      <div style={{display:'flex',justifyContent:'space-between',fontSize:13}}>
+        <button onClick={onForgot} style={{color:'#eab308',background:'none',border:'none',cursor:'pointer',textDecoration:'underline',fontSize:13}}>Lupa Password?</button>
+        <a href="https://wa.me/6281242224939" target="_blank" rel="noreferrer" style={{color:'#666',textDecoration:'none',fontSize:13}}>Hubungi Admin</a>
+      </div>
+      <div style={{textAlign:'center',color:'#444',fontSize:12,fontFamily:'"Geist Mono",monospace',paddingTop:8,borderTop:'1px solid #1a1a1a'}}>
+        🔒 Secure Login · Your data is protected
+      </div>
+    </div>
+  );
+}
+
+function AdminForm() {
+  const [nama, setNama]   = useState('');
+  const [pass, setPass]   = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoad] = useState(false);
+  const [remember, setRemember] = useState(true);
+
+  async function handleLogin() {
+    if (!nama||!pass) { setError('Semua field wajib diisi.'); return; }
+    setLoad(true); setError('');
+    try {
+      // Admin login — query ke tabel admins
+      const { data, error: rpcErr } = await supabase.rpc('login_admin', {
+        p_username: nama.trim(),
+        p_password: pass,
+      });
+      if (rpcErr) throw rpcErr;
+      if (!data) throw new Error('Username atau password salah.');
+      localStorage.setItem('mr_admin', JSON.stringify(data));
+      window.location.href = '/admin';
+    } catch(e:unknown) {
+      setError(e instanceof Error ? e.message : 'Login gagal.');
+    } finally { setLoad(false); }
+  }
+
+  return (
+    <div style={{display:'flex',flexDirection:'column',gap:18}}>
+      <Field label="Username" value={nama} onChange={setNama} placeholder="fauzan"
+        icon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>}/>
+      <Field label="Password" type="password" value={pass} onChange={setPass} placeholder="Password admin"/>
+      {/* Ingat Saya */}
+      <label style={{display:'flex',alignItems:'center',gap:10,cursor:'pointer',userSelect:'none' as const}}>
+        <div onClick={()=>setRemember(r=>!r)} style={{width:20,height:20,borderRadius:5,border:`2px solid ${remember?'#eab308':'#2a2a2a'}`,background:remember?'#eab308':'transparent',display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',flexShrink:0,transition:'all 0.15s'}}>
+          {remember&&<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#000" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>}
+        </div>
+        <span style={{fontSize:13,color:remember?'#e7e5e4':'#666'}}>Ingat saya di perangkat ini</span>
+      </label>
+      {error&&<div style={{color:'#ef4444',fontSize:13,fontFamily:'"Geist Mono",monospace'}}>⚠ {error}</div>}
+      <button onClick={handleLogin} disabled={loading} style={{background:'#ef4444',color:'#fff',fontWeight:700,padding:'16px',fontSize:14,border:'none',cursor:loading?'not-allowed':'pointer',opacity:loading?0.7:1,display:'flex',alignItems:'center',justifyContent:'center',gap:8,marginTop:4,borderRadius:10}}>
+        {loading?'MEMPROSES...':'Masuk ke Control Center'}
+      </button>
+    </div>
+  );
+}
+
+function ForgotForm({ onBack }: { onBack:()=>void }) {
+  const [nama, setNama] = useState('');
+  const [tier, setTier] = useState('');
+  const [sent, setSent] = useState(false);
+
+  function handleReset() {
+    if (!nama||!tier) return;
+    const msg = encodeURIComponent(`Halo admin, saya ${nama} (${tier}) ingin reset password akun Menolak Rugi saya.`);
+    window.open(`https://wa.me/6281242224939?text=${msg}`, '_blank');
+    setSent(true);
+  }
+
+  if (sent) return (
+    <div style={{textAlign:'center',padding:'20px 0'}}>
+      <div style={{fontSize:40,marginBottom:16}}>✅</div>
+      <div style={{fontWeight:700,fontSize:18,marginBottom:8}}>WhatsApp Terbuka!</div>
+      <div style={{color:'#666',fontSize:14,lineHeight:1.6,marginBottom:24}}>Kirim pesan ke admin untuk proses reset password.</div>
+      <button onClick={onBack} style={{color:'#eab308',background:'none',border:'none',cursor:'pointer',fontSize:14}}>← Kembali ke Login</button>
+    </div>
+  );
+
+  return (
+    <div style={{display:'flex',flexDirection:'column',gap:18}}>
+      <Field label="Nama Lengkap" value={nama} onChange={setNama} placeholder="Sesuai data pendaftaran"
+        icon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>}/>
+      <div>
+        <label style={{display:'block',fontSize:13,color:'#a0a0a0',marginBottom:8,fontWeight:500}}>Tier Kelas</label>
+        <select value={tier} onChange={e=>setTier(e.target.value)} style={{width:'100%',background:'#1a1a1a',border:'1px solid #2a2a2a',color:tier?'#e7e5e4':'#666',padding:'13px 14px',fontSize:14,outline:'none',fontFamily:'inherit',borderRadius:8,appearance:'none' as const,boxSizing:'border-box' as const}}>
+          <option value="">Pilih tier kelas kamu</option>
+          {TIERS.map(t=><option key={t} value={t}>{t}</option>)}
+        </select>
+      </div>
+      <button onClick={handleReset} style={{background:'#1a1a1a',color:'#e7e5e4',fontWeight:700,padding:'16px',fontSize:14,border:'1px solid #333',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:8,marginTop:4,borderRadius:10}}>
+        Reset Password via WhatsApp
+      </button>
+      <button onClick={onBack} style={{color:'#666',background:'none',border:'none',cursor:'pointer',fontSize:13,textAlign:'center' as const}}>← Kembali ke Login</button>
+    </div>
+  );
+}
+
+export default function LoginPage() {
+  const [view, setView] = useState<View>('member');
+
+  // Auto-redirect jika sudah login
+  React.useEffect(() => {
+    const stored = localStorage.getItem('mr_member') || sessionStorage.getItem('mr_member');
+    if (stored) { try { JSON.parse(stored); window.location.href = '/member'; } catch {} }
+    const admin = localStorage.getItem('mr_admin');
+    if (admin) { try { JSON.parse(admin); window.location.href = '/admin'; } catch {} }
+  }, []);
+  return (
+    <div style={{fontFamily:'"Geist",system-ui,sans-serif',background:'#080808',minHeight:'100vh',color:'#e7e5e4',display:'grid',gridTemplateColumns:'1fr 520px',WebkitFontSmoothing:'antialiased'}}>
+      {/* Kiri */}
+      <div style={{position:'relative',padding:'48px 56px',display:'flex',flexDirection:'column',justifyContent:'space-between',overflow:'hidden'}}>
+        <div style={{position:'absolute',inset:0,opacity:0.3,...CANDLE_GRID_STYLE}}/>
+        <div style={{position:'absolute',inset:0,background:'radial-gradient(ellipse at 30% 60%, rgba(234,179,8,0.06) 0%, transparent 60%)'}}/>
+        <div style={{position:'relative'}}>
+          <div style={{display:'flex',alignItems:'center',gap:12,marginBottom:64}}>
+            <div style={{width:40,height:40,background:'#eab308',display:'flex',alignItems:'center',justifyContent:'center',fontWeight:900,fontSize:14,color:'#000',borderRadius:8}}>MR</div>
+            <div>
+              <div style={{fontWeight:800,letterSpacing:1,fontSize:14}}>MENOLAK RUGI</div>
+              <div style={{fontFamily:'"Geist Mono",monospace',color:'#555',fontSize:10,letterSpacing:1.5}}>PRIVATE TRADING ENVIRONMENT</div>
             </div>
-            <span className="text-white font-bold text-xl tracking-wide">MENOLAK RUGI</span>
+            <div style={{marginLeft:'auto',display:'flex',alignItems:'center',gap:6,fontFamily:'"Geist Mono",monospace',fontSize:10,color:'#555'}}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+              SECURE ACCESS
+            </div>
           </div>
+          <div style={{fontFamily:'"Geist Mono",monospace',color:'#eab308',fontSize:11,letterSpacing:2,marginBottom:20}}>//  ACCESS GATEWAY</div>
+          <h1 style={{fontSize:56,fontWeight:700,letterSpacing:-2,lineHeight:1.05,margin:'0 0 20px'}}>Access<br/><span style={{color:'#eab308'}}>Trading Room</span></h1>
+          <p style={{color:'#666',fontSize:16,lineHeight:1.65,maxWidth:380,marginBottom:48}}>Masuk ke dashboard mentorship & trading environment eksklusif Menolak Rugi.</p>
+          <div style={{width:48,height:2,background:'#eab308'}}/>
+        </div>
+        <div style={{position:'relative'}}>
+          <div style={{border:'1px solid #1a1a1a',background:'#0d0d0d',padding:'20px 24px',maxWidth:360}}>
+            <div style={{fontSize:28,color:'#eab308',fontFamily:'serif',lineHeight:1,marginBottom:12}}>"</div>
+            <div style={{fontSize:16,fontStyle:'italic',color:'#ccc',lineHeight:1.6}}>Disiplin hari ini, freedom di masa depan.</div>
+            <div style={{fontFamily:'"Geist Mono",monospace',color:'#eab308',fontSize:11,marginTop:14}}>— Menolak Rugi</div>
+          </div>
+          <div style={{fontFamily:'"Geist Mono",monospace',color:'#333',fontSize:11,marginTop:32}}>© 2026 MENOLAK RUGI. All rights reserved.</div>
         </div>
       </div>
 
-      <div className="flex-1 flex items-center justify-center px-4 pt-24 pb-12">
-        <div className="w-full max-w-md">
-          {/* Header */}
-          <div className="text-center mb-8">
-            <div className={`w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4 ${
-              mode === 'member' ? 'bg-gradient-to-br from-yellow-400 to-yellow-600' :
-              mode === 'admin' ? 'bg-gradient-to-br from-purple-500 to-purple-700' :
-              'bg-gradient-to-br from-blue-500 to-blue-700'
-            }`}>
-              {mode === 'member' ? <Lock size={28} className="text-[#0a0f1e]" /> :
-               mode === 'admin' ? <Shield size={28} className="text-white" /> :
-               <KeyRound size={28} className="text-white" />}
-            </div>
-            <h1 className="text-3xl font-bold text-white mb-2">
-              {mode === 'member' ? 'Member Area' : mode === 'admin' ? 'Admin Panel' : 'Lupa Password'}
-            </h1>
-            <p className="text-gray-400 text-sm">
-              {mode === 'member' ? 'Login dengan data keanggotaan kamu' :
-               mode === 'admin' ? 'Login sebagai administrator' :
-               'Reset password dengan data pendaftaran'}
-            </p>
-          </div>
-
-          {/* Toggle Member/Admin */}
-          {mode !== 'forgot' && (
-            <div className="flex bg-[#111827] border border-gray-700/50 rounded-xl p-1 mb-6">
-              <button onClick={() => { setMode('member'); setError(''); }}
-                className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold transition-all ${mode === 'member' ? 'bg-yellow-500 text-[#0a0f1e]' : 'text-gray-400 hover:text-white'}`}>
-                <LogIn size={16} /> Member
-              </button>
-              <button onClick={() => { setMode('admin'); setError(''); }}
-                className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold transition-all ${mode === 'admin' ? 'bg-purple-600 text-white' : 'text-gray-400 hover:text-white'}`}>
-                <Shield size={16} /> Admin
-              </button>
-            </div>
+      {/* Kanan */}
+      <div style={{background:'#0d0d0d',borderLeft:'1px solid #1a1a1a',display:'flex',alignItems:'center',justifyContent:'center',padding:'48px 40px'}}>
+        <div style={{width:'100%',maxWidth:400}}>
+          {view==='forgot' ? (
+            <>
+              <div style={{textAlign:'center',marginBottom:36}}>
+                <div style={{width:64,height:64,background:'#1a1a1a',borderRadius:'50%',display:'flex',alignItems:'center',justifyContent:'center',margin:'0 auto 20px',fontSize:28}}>🔑</div>
+                <h2 style={{fontSize:28,fontWeight:700,margin:'0 0 8px'}}>Recover Access</h2>
+                <p style={{color:'#666',fontSize:14,margin:0}}>Verifikasi data membership untuk reset password.</p>
+              </div>
+              <ForgotForm onBack={()=>setView('member')}/>
+            </>
+          ) : (
+            <>
+              <div style={{textAlign:'center',marginBottom:28}}>
+                <div style={{width:64,height:64,background:'#1a1a1a',borderRadius:'50%',display:'flex',alignItems:'center',justifyContent:'center',margin:'0 auto 20px',fontSize:28}}>
+                  {view==='admin'?'🛡':'🔒'}
+                </div>
+                <h2 style={{fontSize:26,fontWeight:700,margin:'0 0 6px'}}>Welcome Back</h2>
+                <p style={{color:'#666',fontSize:14,margin:0}}>{view==='admin'?'Login sebagai administrator.':'Gunakan akun membership kamu untuk masuk.'}</p>
+              </div>
+              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:28,background:'#111',padding:4,borderRadius:8}}>
+                <button onClick={()=>setView('member')} style={{padding:'10px',fontWeight:600,fontSize:14,border:'none',borderRadius:6,background:view==='member'?'#eab308':'transparent',color:view==='member'?'#000':'#666',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:6}}>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+                  Member
+                </button>
+                <button onClick={()=>setView('admin')} style={{padding:'10px',fontWeight:600,fontSize:14,border:'none',borderRadius:6,background:view==='admin'?'#ef4444':'transparent',color:view==='admin'?'#fff':'#666',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:6}}>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                  Admin
+                </button>
+              </div>
+              {view==='member'&&<MemberForm onForgot={()=>setView('forgot')}/>}
+              {view==='admin'&&<AdminForm/>}
+            </>
           )}
-
-          <div className="bg-[#111827] border border-gray-700/50 rounded-2xl p-8 space-y-5">
-
-            {/* Form Member Login */}
-            {mode === 'member' && (
-              <>
-                <div>
-                  <label className="text-gray-400 text-sm block mb-2">Nama Lengkap</label>
-                  <input type="text" value={nama} onChange={e => setNama(e.target.value)} placeholder="Sesuai data pendaftaran"
-                    className="w-full bg-[#0d1325] border border-gray-700 rounded-xl px-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:border-yellow-500/50 transition-colors" />
-                </div>
-                <div>
-                  <label className="text-gray-400 text-sm block mb-2">Tier Kelas</label>
-                  <select value={tier} onChange={e => setTier(e.target.value)}
-                    className="w-full bg-[#0d1325] border border-gray-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-yellow-500/50 transition-colors">
-                    <option value="">Pilih tier kelas kamu</option>
-                    {TIERS.map(t => <option key={t} value={t}>{t}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label className="text-gray-400 text-sm block mb-2">Password</label>
-                  <div className="relative">
-                    <input type={showPass ? 'text' : 'password'} value={password} onChange={e => setPassword(e.target.value)}
-                      onKeyDown={e => e.key === 'Enter' && handleMemberLogin()} placeholder="Password dari admin"
-                      className="w-full bg-[#0d1325] border border-gray-700 rounded-xl px-4 py-3 pr-12 text-white placeholder-gray-600 focus:outline-none focus:border-yellow-500/50 transition-colors" />
-                    <button type="button" onClick={() => setShowPass(!showPass)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300">
-                      {showPass ? <EyeOff size={18} /> : <Eye size={18} />}
-                    </button>
-                  </div>
-                </div>
-              </>
-            )}
-
-            {/* Form Admin Login */}
-            {mode === 'admin' && (
-              <>
-                <div>
-                  <label className="text-gray-400 text-sm block mb-2">Username</label>
-                  <input type="text" value={adminUsername} onChange={e => setAdminUsername(e.target.value)} placeholder="Username admin"
-                    className="w-full bg-[#0d1325] border border-gray-700 rounded-xl px-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:border-purple-500/50 transition-colors" />
-                </div>
-                <div>
-                  <label className="text-gray-400 text-sm block mb-2">Password</label>
-                  <div className="relative">
-                    <input type={showAdminPass ? 'text' : 'password'} value={adminPass} onChange={e => setAdminPass(e.target.value)}
-                      onKeyDown={e => e.key === 'Enter' && handleAdminLogin()} placeholder="Password admin"
-                      className="w-full bg-[#0d1325] border border-gray-700 rounded-xl px-4 py-3 pr-12 text-white placeholder-gray-600 focus:outline-none focus:border-purple-500/50 transition-colors" />
-                    <button type="button" onClick={() => setShowAdminPass(!showAdminPass)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300">
-                      {showAdminPass ? <EyeOff size={18} /> : <Eye size={18} />}
-                    </button>
-                  </div>
-                </div>
-              </>
-            )}
-
-            {/* Form Lupa Password */}
-            {mode === 'forgot' && !forgotDone && (
-              <>
-                <div>
-                  <label className="text-gray-400 text-sm block mb-2">Nama Lengkap</label>
-                  <input type="text" value={forgotNama} onChange={e => { setForgotNama(e.target.value); setForgotNotFound(false); }} placeholder="Sesuai data pendaftaran"
-                    className="w-full bg-[#0d1325] border border-gray-700 rounded-xl px-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:border-blue-500/50 transition-colors" />
-                </div>
-                <div>
-                  <label className="text-gray-400 text-sm block mb-2">Tier Kelas</label>
-                  <select value={forgotTier} onChange={e => { setForgotTier(e.target.value); setForgotNotFound(false); }}
-                    className="w-full bg-[#0d1325] border border-gray-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-blue-500/50 transition-colors">
-                    <option value="">Pilih tier kelas kamu</option>
-                    {TIERS.map(t => <option key={t} value={t}>{t}</option>)}
-                  </select>
-                </div>
-
-                {/* Nama tidak ditemukan */}
-                {forgotNotFound && (
-                  <div className="bg-red-500/10 border border-red-500/30 rounded-xl px-4 py-4 space-y-3">
-                    <p className="text-red-400 text-sm font-semibold">❌ Data tidak ditemukan di database.</p>
-                    <p className="text-gray-400 text-xs">Pastikan nama dan tier sesuai data pendaftaran, atau hubungi admin langsung.</p>
-                    <a
-                      href={`https://wa.me/6281242224939?text=${encodeURIComponent(`Halo Admin Menolak Rugi, saya ingin minta password untuk akun saya.\n\nNama Lengkap: ${forgotNama.trim()}\nTier Kelas: ${forgotTier || '(tidak diisi)'}\n\nMohon bantuannya. Terima kasih!`)}`}
-                      target="_blank" rel="noopener noreferrer"
-                      className="flex items-center justify-center gap-2 bg-green-600 hover:bg-green-500 text-white font-semibold px-4 py-2.5 rounded-xl transition-all text-sm w-full">
-                      💬 Chat Admin via WhatsApp
-                    </a>
-                  </div>
-                )}
-              </>
-            )}
-
-            {/* Hasil Reset Password */}
-            {mode === 'forgot' && forgotDone && (
-              <div className="text-center py-4">
-                <div className="w-16 h-16 bg-green-500/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                  <KeyRound size={32} className="text-green-400" />
-                </div>
-                <h3 className="text-white font-bold text-lg mb-2">Password Kamu</h3>
-                <div className="bg-[#0d1325] border border-green-500/30 rounded-xl px-6 py-4 mb-4">
-                  <p className="text-green-400 font-mono text-2xl font-bold tracking-widest">{newPassword}</p>
-                </div>
-                <p className="text-gray-400 text-sm mb-4">Gunakan password ini untuk login. Jika ingin ganti, bisa dari menu Password di dashboard.</p>
-                <button onClick={() => { setMode('member'); setForgotDone(false); setForgotNama(''); setForgotTier(''); setNewPassword(''); setForgotNotFound(false); }}
-                  className="text-yellow-400 hover:text-yellow-300 text-sm font-semibold transition-colors">
-                  Kembali ke Login →
-                </button>
-              </div>
-            )}
-
-            {/* Error */}
-            {error && (
-              <div className="bg-red-500/10 border border-red-500/30 rounded-xl px-4 py-3">
-                <p className="text-red-400 text-sm">{error}</p>
-              </div>
-            )}
-
-            {/* Submit Button */}
-            {!(mode === 'forgot' && forgotDone) && !(mode === 'forgot' && forgotNotFound) && (
-              <button
-                onClick={mode === 'member' ? handleMemberLogin : mode === 'admin' ? handleAdminLogin : handleForgotPassword}
-                disabled={loading}
-                className={`w-full flex items-center justify-center gap-2 font-bold py-4 rounded-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed ${
-                  mode === 'member' ? 'bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-400 hover:to-yellow-500 text-[#0a0f1e]' :
-                  mode === 'admin' ? 'bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-500 hover:to-purple-600 text-white' :
-                  'bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 text-white'
-                }`}>
-                {mode === 'member' ? <LogIn size={20} /> : mode === 'admin' ? <Shield size={20} /> : <KeyRound size={20} />}
-                {loading ? 'Memproses...' : mode === 'member' ? 'Masuk ke Member Area' : mode === 'admin' ? 'Masuk ke Admin Panel' : 'Reset Password'}
-              </button>
-            )}
-
-            {/* Footer links */}
-            {mode === 'member' && (
-              <div className="flex items-center justify-between text-xs">
-                <button onClick={() => { setMode('forgot'); setError(''); }}
-                  className="text-blue-400 hover:text-blue-300 transition-colors">
-                  Lupa Password?
-                </button>
-                <a href="https://wa.me/6281242224939" target="_blank" rel="noopener noreferrer" className="text-yellow-500 hover:text-yellow-400">
-                  Hubungi Admin
-                </a>
-              </div>
-            )}
-
-            {mode === 'forgot' && !forgotDone && (
-              <button onClick={() => { setMode('member'); setError(''); setForgotNotFound(false); setForgotNama(''); }}
-                className="w-full text-gray-500 hover:text-gray-300 text-sm transition-colors flex items-center justify-center gap-1">
-                <ArrowLeft size={14} /> Kembali ke Login
-              </button>
-            )}
-          </div>
         </div>
       </div>
     </div>

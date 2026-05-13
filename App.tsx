@@ -23,7 +23,7 @@ import CurriculumPage from './pages/member/CurriculumPage';
 import AdminPanel        from './pages/admin/AdminPanel';
 import PartnershipPage   from './pages/PartnershipPage';
 import CalendarPage      from './pages/CalendarPage';
-import KomunitasPage   from './pages/KomunitasPage';
+import KomunitasPage    from './pages/KomunitasPage';
 
 function getPage() {
   const path = window.location.pathname;
