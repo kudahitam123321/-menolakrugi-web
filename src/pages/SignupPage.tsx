@@ -41,11 +41,13 @@ function AInput({ label, value, onChange, type = 'text', placeholder = '' }: {
 // ─── Tier selector (right panel) ─────────────────────────────────────────────
 
 function TierSelector({ tiers, selected, onSelect }: { tiers: PricingTier[]; selected: string; onSelect: (id: string) => void }) {
+  const [isMobile, setIsMobile] = React.useState(() => window.matchMedia('(max-width: 767px)').matches);
+  React.useEffect(() => { const mq = window.matchMedia('(max-width: 767px)'); const h = (e: MediaQueryListEvent) => setIsMobile(e.matches); mq.addEventListener('change',h); return ()=>mq.removeEventListener('change',h); }, []);
   const sel = tiers.find(p => p.id === selected) ?? tiers[0];
   const fmt = (n: number) => new Intl.NumberFormat('id-ID').format(n);
 
   return (
-    <div style={{ background: MR.dark, padding: 32, overflow: 'auto', borderLeft: `1px solid ${MR.border}` }}>
+    <div style={{ background: MR.dark, padding: isMobile ? 16 : 32, overflow: 'auto', borderLeft: isMobile ? 'none' : `1px solid ${MR.border}`, borderTop: isMobile ? `1px solid ${MR.border}` : 'none' }}>
       <div style={{ fontFamily: MR.mono, display: 'flex', justifyContent: 'space-between', color: MR.dim, fontSize: 11, letterSpacing: 0.6, marginBottom: 18 }}>
         <span>// ORDER TICKET</span>
         <span>#MR-{Date.now().toString().slice(-9, -3)}</span>
@@ -112,6 +114,12 @@ export default function SignupPage() {
 
   const params = new URLSearchParams(window.location.search);
   const { tiers, loading }   = usePricing();
+  const [isMobile, setIsMobile] = React.useState(() => window.matchMedia('(max-width: 767px)').matches);
+  React.useEffect(() => {
+    const mq = window.matchMedia('(max-width: 767px)');
+    const h = (e: MediaQueryListEvent) => setIsMobile(e.matches);
+    mq.addEventListener('change', h); return () => mq.removeEventListener('change', h);
+  }, []);
 
   const [step, setStep]       = useState(1);
   const [tier, setTier]       = useState(params.get('tier') ?? 'gold');
@@ -160,17 +168,17 @@ export default function SignupPage() {
   }
 
   return (
-    <div style={{ fontFamily: MR.sans, color: MR.text, background: MR.bg, minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ fontFamily: MR.sans, color: MR.text, background: MR.bg, minHeight: '100vh', display: 'flex', flexDirection: 'column', overflowX: 'hidden' }}>
       <Ticker />
 
       {/* Header */}
-      <div style={{ borderBottom: `1px solid ${MR.border}`, padding: '16px 40px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <div style={{ borderBottom: `1px solid ${MR.border}`, padding: isMobile ? '12px 16px' : '16px 40px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
           <MRLogo size={28} />
           <span style={{ fontWeight: 800, letterSpacing: -0.3 }}>MENOLAK RUGI</span>
           <span style={{ fontFamily: MR.mono, color: MR.dimmer, fontSize: 11, marginLeft: 12, paddingLeft: 12, borderLeft: `1px solid ${MR.border}` }}>CHECKOUT</span>
         </div>
-        <div style={{ fontFamily: MR.mono, fontSize: 11, color: MR.dim }}>SSL · 256-BIT · AMAN</div>
+        {!isMobile && <div style={{ fontFamily: MR.mono, fontSize: 11, color: MR.dim }}>SSL · 256-BIT · AMAN</div>}
       </div>
 
       {/* Step indicator */}
@@ -180,22 +188,22 @@ export default function SignupPage() {
           const active = idx === step;
           const done   = idx < step;
           return (
-            <div key={s} style={{ flex: 1, padding: '14px 24px', borderRight: i < 2 ? `1px solid ${MR.border}` : 0, display: 'flex', alignItems: 'center', gap: 12, color: active ? MR.text : MR.dim, background: active ? MR.panel : 'transparent', fontFamily: MR.mono }}>
+            <div key={s} style={{ flex: 1, padding: isMobile ? '10px 12px' : '14px 24px', borderRight: i < 2 ? `1px solid ${MR.border}` : 0, display: 'flex', alignItems: 'center', gap: isMobile ? 6 : 12, color: active ? MR.text : MR.dim, background: active ? MR.panel : 'transparent', fontFamily: MR.mono }}>
               <span style={{ width: 22, height: 22, border: `1px solid ${active ? MR.gold : MR.borderHot}`, color: active ? MR.gold : done ? MR.up : MR.dim, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 11 }}>
                 {done ? '✓' : idx}
               </span>
-              <span style={{ fontSize: 12, letterSpacing: 0.6 }}>{s}</span>
+              <span style={{ fontSize: isMobile ? 10 : 12, letterSpacing: 0.6 }}>{s}</span>
             </div>
           );
         })}
       </div>
 
       {/* Content */}
-      <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '1fr 460px', minHeight: 0 }}>
+      <div style={{ flex: 1, display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 460px', minHeight: 0 }}>
         {/* Form */}
-        <div style={{ padding: '40px 56px', borderRight: `1px solid ${MR.border}`, overflow: 'auto' }}>
+        <div style={{ padding: isMobile ? '20px 16px' : '40px 56px', borderRight: isMobile ? 'none' : `1px solid ${MR.border}`, overflow: 'auto' }}>
           <div style={{ fontFamily: MR.mono, color: MR.dim, fontSize: 11, letterSpacing: 0.6 }}>// LANGKAH {step}/3</div>
-          <h2 style={{ fontSize: 38, fontWeight: 700, letterSpacing: -1, margin: '10px 0 6px' }}>Daftar akun kamu.</h2>
+          <h2 style={{ fontSize: isMobile ? 24 : 38, fontWeight: 700, letterSpacing: -1, margin: '10px 0 6px' }}>Daftar akun kamu.</h2>
           <p style={{ color: MR.dim, fontSize: 14, lineHeight: 1.55, marginBottom: 28 }}>Email dipakai untuk akses materi & login ke dashboard. Nomor WhatsApp untuk invite ke channel komunitas.</p>
 
           <div style={{ display: 'grid', gap: 20, maxWidth: 560 }}>
@@ -211,8 +219,8 @@ export default function SignupPage() {
 
             {error && <div style={{ color: MR.down, fontSize: 13, fontFamily: MR.mono }}>⚠ {error}</div>}
 
-            <div style={{ display: 'flex', gap: 10, marginTop: 8 }}>
-              <button onClick={handleSubmit} disabled={submitting} style={{ fontFamily: MR.mono, background: MR.gold, color: '#181000', padding: '16px 22px', fontSize: 13, fontWeight: 700, letterSpacing: 0.4, border: 'none', cursor: submitting ? 'not-allowed' : 'pointer', opacity: submitting ? 0.7 : 1 }}>
+            <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row' as const, gap: 10, marginTop: 8 }}>
+              <button onClick={handleSubmit} disabled={submitting} style={{ fontFamily: MR.mono, background: MR.gold, color: '#181000', padding: '16px 22px', fontSize: 13, fontWeight: 700, letterSpacing: 0.4, border: 'none', cursor: submitting ? 'not-allowed' : 'pointer', opacity: submitting ? 0.7 : 1, width: isMobile ? '100%' : 'auto' }}>
                 {submitting ? 'MEMPROSES...' : 'LANJUT KE PEMBAYARAN ▸'}
               </button>
               <button onClick={() => window.location.href = '/login'} style={{ fontFamily: MR.mono, padding: '16px 22px', fontSize: 13, color: MR.dim, letterSpacing: 0.4, background: 'none', border: 'none', cursor: 'pointer' }}>Sudah punya akun? Login</button>
@@ -222,7 +230,7 @@ export default function SignupPage() {
           {/* Payment method preview */}
           <div style={{ marginTop: 40, borderTop: `1px dashed ${MR.borderHot}`, paddingTop: 28 }}>
             <div style={{ fontFamily: MR.mono, color: MR.dim, fontSize: 11, letterSpacing: 0.6, marginBottom: 12 }}>// METODE PEMBAYARAN — STEP 2</div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)', gap: 10 }}>
               {PAY_METHODS.map(m => {
                 const active = method === m.id;
                 return (

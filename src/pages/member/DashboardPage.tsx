@@ -25,6 +25,7 @@ const SIDEBAR = [
   { id: 'pengaturan',  label: 'Pengaturan',   icon: '⚙' },
   { id: 'bantuan',     label: 'Bantuan',      icon: '❓' },
   { id: 'funded',      label: 'Status Trading', icon: '🚀' },
+  { id: 'sertifikat',  label: 'Sertifikat',     icon: '🏆' },
 ];
 
 // ── Mini sparkline ──────────────────────────────────────────────────────────
@@ -256,6 +257,124 @@ function LotCalculator() {
 
 // ── Halaman utama ──────────────────────────────────────────────────────────
 interface Member { id: string; nama: string; tier: string; is_advance: boolean; discord_username?: string; created_at?: string; funded_status?: string | null; discord_id?: string; }
+
+// ── Certificate Canvas Component ──────────────────────────────
+function CertificateCanvas({ nama, tier, tanggal }: { nama: string; tier: string; tanggal: string }) {
+  const canvasRef = React.useRef<HTMLCanvasElement>(null);
+
+  React.useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const W = 900, H = 636;
+    canvas.width = W; canvas.height = H;
+    canvas.id = 'mr-cert-canvas';
+
+    // Background
+    ctx.fillStyle = '#0a0800';
+    ctx.fillRect(0, 0, W, H);
+
+    // Gold border outer
+    ctx.strokeStyle = '#eab308';
+    ctx.lineWidth = 3;
+    ctx.strokeRect(12, 12, W - 24, H - 24);
+
+    // Gold border inner
+    ctx.strokeStyle = '#3a2e00';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(22, 22, W - 44, H - 44);
+
+    // Top decorative line
+    ctx.fillStyle = '#eab308';
+    ctx.fillRect(40, 40, W - 80, 2);
+    ctx.fillRect(40, H - 42, W - 80, 2);
+
+    // Brand
+    ctx.fillStyle = '#eab308';
+    ctx.font = 'bold 13px "Geist Mono", monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText('MENOLAK RUGI · ELITE TRADING ENVIRONMENT', W / 2, 80);
+
+    // Certificate title
+    ctx.fillStyle = '#e7e5e4';
+    ctx.font = 'bold 36px "Geist", system-ui, sans-serif';
+    ctx.fillText('SERTIFIKAT', W / 2, 148);
+
+    ctx.fillStyle = '#a855f7';
+    ctx.font = 'bold 22px "Geist", system-ui, sans-serif';
+    ctx.fillText('NAIK KELAS ADVANCED', W / 2, 186);
+
+    // Divider
+    ctx.fillStyle = '#2a2a2a';
+    ctx.fillRect(W / 2 - 120, 206, 240, 1);
+
+    // "Diberikan kepada"
+    ctx.fillStyle = '#666';
+    ctx.font = '14px "Geist", system-ui, sans-serif';
+    ctx.fillText('Diberikan kepada', W / 2, 240);
+
+    // Member name
+    ctx.fillStyle = '#eab308';
+    ctx.font = 'bold 42px "Geist", system-ui, sans-serif';
+    ctx.fillText(nama, W / 2, 300);
+
+    // Tier
+    ctx.fillStyle = '#888';
+    ctx.font = '15px "Geist Mono", monospace';
+    ctx.fillText(tier.toUpperCase(), W / 2, 330);
+
+    // Description
+    ctx.fillStyle = '#666';
+    ctx.font = '14px "Geist", system-ui, sans-serif';
+    ctx.fillText('Telah menyelesaikan materi Basic dan berhasil naik ke kelas', W / 2, 375);
+    ctx.fillStyle = '#a855f7';
+    ctx.font = 'bold 14px "Geist", system-ui, sans-serif';
+    ctx.fillText('Advanced — Smart Money Concept (SMC) Trading Education', W / 2, 398);
+
+    // Date + signature line
+    ctx.fillStyle = '#444';
+    ctx.fillRect(100, 476, 200, 1);
+    ctx.fillRect(W - 300, 476, 200, 1);
+
+    ctx.fillStyle = '#555';
+    ctx.font = '12px "Geist Mono", monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText(tanggal, 200, 500);
+    ctx.fillText('Mentor — Menolak Rugi', W - 200, 500);
+
+    ctx.fillStyle = '#333';
+    ctx.font = '11px "Geist Mono", monospace';
+    ctx.fillText('TANGGAL DITERBITKAN', 200, 518);
+    ctx.fillText('IKHSAN · FOUNDER', W - 200, 518);
+
+    // Footer
+    ctx.fillStyle = '#2a2200';
+    ctx.fillRect(40, H - 68, W - 80, 24);
+    ctx.fillStyle = '#eab308';
+    ctx.font = '10px "Geist Mono", monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText('menolakrugi.pages.dev  ·  SMART MONEY CONCEPT EDUCATION  ·  VALID & VERIFIED', W / 2, H - 51);
+
+    // Corner ornaments
+    const corners = [[44, 44], [W - 44, 44], [44, H - 44], [W - 44, H - 44]];
+    corners.forEach(([x, y]) => {
+      ctx.beginPath();
+      ctx.arc(x, y, 6, 0, Math.PI * 2);
+      ctx.fillStyle = '#eab308';
+      ctx.fill();
+    });
+
+  }, [nama, tier, tanggal]);
+
+  return (
+    <canvas
+      ref={canvasRef}
+      style={{ maxWidth: '100%', height: 'auto', display: 'block', margin: '0 auto', borderRadius: 8 }}
+    />
+  );
+}
 
 export default function DashboardPage() {
   const [member, setMember]           = useState<Member | null>(null);
@@ -1345,6 +1464,68 @@ export default function DashboardPage() {
               )}
             </div>
           )}
+
+          {/* ══ SERTIFIKAT ══ */}
+          {active === 'sertifikat' && (() => {
+            const isAdvanced = member.is_advance;
+            const certDate = advanceReq?.updated_at
+              ? new Date(advanceReq.updated_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })
+              : new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+
+            function downloadCertificate() {
+              const canvas = document.getElementById('mr-cert-canvas') as HTMLCanvasElement;
+              if (!canvas) return;
+              const link = document.createElement('a');
+              link.download = `Sertifikat_Advanced_${member.nama.replace(/\s+/g,'_')}.png`;
+              link.href = canvas.toDataURL('image/png');
+              link.click();
+            }
+
+            return (
+              <div className='mr-content-pad' style={{ padding: 24 }}>
+                <div style={{ fontFamily: C.mono, color: G.gold, fontSize: 10, letterSpacing: 1, marginBottom: 6 }}>// SERTIFIKAT</div>
+                <h2 style={{ fontSize: 22, fontWeight: 700, margin: '0 0 6px' }}>Sertifikat Naik Kelas</h2>
+                <p style={{ color: C.dim, fontSize: 13, margin: '0 0 24px' }}>
+                  {isAdvanced ? 'Selamat! Kamu sudah naik kelas Advanced. Download sertifikat kamu di bawah.' : 'Sertifikat tersedia setelah kamu naik kelas Advanced.'}
+                </p>
+
+                {!isAdvanced ? (
+                  /* Locked state */
+                  <div style={{ background: C.panel, border: `1px solid ${C.border}`, borderRadius: 14, padding: '48px 24px', textAlign: 'center' as const }}>
+                    <div style={{ fontSize: 56, marginBottom: 16 }}>🔒</div>
+                    <div style={{ fontSize: 18, fontWeight: 700, marginBottom: 8 }}>Belum Bisa Diakses</div>
+                    <div style={{ color: C.dim, fontSize: 14, marginBottom: 24, lineHeight: 1.6 }}>
+                      Sertifikat ini hanya untuk member yang sudah naik kelas <strong style={{ color: '#a855f7' }}>Advanced</strong>.<br/>
+                      Selesaikan materi Basic dan ajukan request naik kelas.
+                    </div>
+                    <button onClick={() => setActive('kelas')}
+                      style={{ fontFamily: C.mono, fontSize: 12, fontWeight: 700, color: '#000', background: '#a855f7', padding: '10px 24px', border: 'none', cursor: 'pointer', borderRadius: 8 }}>
+                      LIHAT KELAS SAYA →
+                    </button>
+                  </div>
+                ) : (
+                  /* Certificate */
+                  <div>
+                    {/* Canvas certificate */}
+                    <div style={{ background: '#0a0a0a', border: `1px solid #2a2a2a`, borderRadius: 14, padding: 24, marginBottom: 20, overflow: 'auto' }}>
+                      <CertificateCanvas
+                        nama={member.nama}
+                        tier={member.tier}
+                        tanggal={certDate}
+                      />
+                    </div>
+                    <button onClick={downloadCertificate}
+                      style={{ display: 'flex', alignItems: 'center', gap: 10, fontFamily: C.mono, fontSize: 13, fontWeight: 700, color: '#000', background: G.gold, padding: '13px 28px', border: 'none', cursor: 'pointer', borderRadius: 8 }}>
+                      ⬇ DOWNLOAD SERTIFIKAT (PNG)
+                    </button>
+                    <p style={{ fontFamily: C.mono, fontSize: 11, color: C.dim, marginTop: 10 }}>
+                      File PNG berkualitas tinggi, bisa dishare di sosial media.
+                    </p>
+                  </div>
+                )}
+              </div>
+            );
+          })()}
 
           {/* ══ BANTUAN ══ */}
           {active === 'bantuan' && (

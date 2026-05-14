@@ -33,6 +33,13 @@ function useCountdown(minutes = 30) {
 // ─── Main ─────────────────────────────────────────────────────────────────────
 
 export default function PaymentPage() {
+  const [isMobile, setIsMobile] = React.useState(() => window.matchMedia('(max-width: 767px)').matches);
+  React.useEffect(() => {
+    const mq = window.matchMedia('(max-width: 767px)');
+    const h = (e: MediaQueryListEvent) => setIsMobile(e.matches);
+    mq.addEventListener('change', h);
+    return () => mq.removeEventListener('change', h);
+  }, []);
 
   const params = new URLSearchParams(window.location.search);
   const { tiers }        = usePricing();
@@ -58,26 +65,26 @@ export default function PaymentPage() {
   );
 
   return (
-    <div style={{ fontFamily: MR.sans, color: MR.text, background: MR.bg, minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ fontFamily: MR.sans, color: MR.text, background: MR.bg, minHeight: '100vh', display: 'flex', flexDirection: 'column', overflowX: 'hidden' }}>
       <Ticker />
 
       {/* Header */}
-      <div style={{ borderBottom: `1px solid ${MR.border}`, padding: '16px 40px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <div style={{ borderBottom: `1px solid ${MR.border}`, padding: isMobile ? '12px 16px' : '16px 40px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
           <button onClick={() => window.history.back()} style={{ fontFamily: MR.mono, fontSize: 12, color: MR.dim, background: 'none', border: 'none', cursor: 'pointer', marginRight: 4 }}>← KEMBALI</button>
           <MRLogo size={26} />
           <span style={{ fontWeight: 800, letterSpacing: -0.3 }}>MENOLAK RUGI</span>
           <span style={{ fontFamily: MR.mono, color: MR.dimmer, fontSize: 11, marginLeft: 12, paddingLeft: 12, borderLeft: `1px solid ${MR.border}` }}>PEMBAYARAN</span>
         </div>
-        <div style={{ fontFamily: MR.mono, fontSize: 11, color: MR.dim }}>STEP 02 / 03 · TRANSFER</div>
+        {!isMobile && <div style={{ fontFamily: MR.mono, fontSize: 11, color: MR.dim }}>STEP 02 / 03 · TRANSFER</div>}
       </div>
 
       {/* Content */}
-      <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '1fr 440px', gap: 0, padding: '40px' }}>
+      <div style={{ flex: 1, display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 440px', gap: 0, padding: isMobile ? '16px' : '40px' }}>
         {/* Left — detail transfer */}
-        <div style={{ paddingRight: 40 }}>
+        <div style={{ paddingRight: isMobile ? 0 : 40 }}>
           <div style={{ fontFamily: MR.mono, color: MR.dim, fontSize: 11, letterSpacing: 0.6, marginBottom: 8 }}>// ORDER #{orderNo}</div>
-          <h2 style={{ fontSize: 38, fontWeight: 700, letterSpacing: -1, margin: '0 0 10px' }}>Detail Pembayaran</h2>
+          <h2 style={{ fontSize: isMobile ? 24 : 38, fontWeight: 700, letterSpacing: -1, margin: '0 0 10px' }}>Detail Pembayaran</h2>
           <p style={{ color: MR.dim, fontSize: 14, lineHeight: 1.55, marginBottom: 28, maxWidth: 480 }}>
             Transfer tepat sesuai nominal di bawah, lalu konfirmasi via WhatsApp dengan bukti transfer. Akses dibuka maks 10 menit setelah verifikasi.
           </p>
@@ -91,12 +98,12 @@ export default function PaymentPage() {
             <div style={{ padding: '20px 20px 16px' }}>
               <div style={{ fontFamily: MR.mono, color: MR.dimmer, fontSize: 10, letterSpacing: 0.8, marginBottom: 8 }}>NO. REKENING</div>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-                <span style={{ fontSize: 28, fontWeight: 700, letterSpacing: 2, fontFamily: MR.mono }}>{BANK_INFO.accountNo}</span>
+                <span style={{ fontSize: isMobile ? 18 : 28, fontWeight: 700, letterSpacing: isMobile ? 1 : 2, fontFamily: MR.mono }}>{BANK_INFO.accountNo}</span>
                 <button onClick={copyAccNo} style={{ fontFamily: MR.mono, border: `1px solid ${MR.border}`, background: copied ? MR.up : 'transparent', color: copied ? '#000' : MR.text, padding: '8px 14px', fontSize: 11, letterSpacing: 0.6, cursor: 'pointer' }}>
                   {copied ? 'TERSALIN ✓' : 'SALIN ▸'}
                 </button>
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: isMobile ? 12 : 20 }}>
                 <div>
                   <div style={{ fontFamily: MR.mono, color: MR.dimmer, fontSize: 10, letterSpacing: 0.8 }}>ATAS NAMA</div>
                   <div style={{ fontWeight: 600, marginTop: 4 }}>{BANK_INFO.accountName}</div>
@@ -130,7 +137,7 @@ export default function PaymentPage() {
         </div>
 
         {/* Right — order summary + status */}
-        <div style={{ border: `1px solid ${MR.gold}`, background: '#0a0800', padding: 28, display: 'flex', flexDirection: 'column', gap: 20, alignSelf: 'start', position: 'sticky', top: 20 }}>
+        <div style={{ border: `1px solid ${MR.gold}`, background: '#0a0800', padding: isMobile ? 20 : 28, display: 'flex', flexDirection: 'column', gap: 20, alignSelf: 'start', position: isMobile ? 'static' : 'sticky' as const, top: 20, marginTop: isMobile ? 20 : 0 }}>
           <div style={{ fontFamily: MR.mono, display: 'flex', justifyContent: 'space-between', color: MR.dim, fontSize: 11 }}>
             <span>◉ RINGKASAN PESANAN</span>
             <span style={{ color: MR.gold }}>#{orderNo}</span>

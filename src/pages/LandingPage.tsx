@@ -93,10 +93,9 @@ const FAQ = [
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
 function NavBar() {
-  const [active, setActive] = React.useState('KELAS');
+  const [active, setActive]       = React.useState('KELAS');
   const [isLoggedIn, setIsLoggedIn] = React.useState(false);
-  const [isMobile, setIsMobile] = React.useState(() => window.matchMedia('(max-width: 767px)').matches);
-  React.useEffect(() => { const mq = window.matchMedia('(max-width: 767px)'); const h = (e: MediaQueryListEvent) => setIsMobile(e.matches); mq.addEventListener('change',h); return ()=>mq.removeEventListener('change',h); }, []);
+  const [menuOpen, setMenuOpen]   = React.useState(false);
 
   React.useEffect(() => {
     const member = localStorage.getItem('mr_member') || sessionStorage.getItem('mr_member');
@@ -104,136 +103,152 @@ function NavBar() {
   }, []);
 
   const NAV_ITEMS = [
-    {
-      l: 'KELAS', href: '#kelas',
-      icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>,
-    },
-    {
-      l: 'KURIKULUM', href: '#kurikulum',
-      icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>,
-    },
-    {
-      l: 'KOMUNITAS', href: '/komunitas',
-      icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>,
-    },
-    {
-      l: 'PARTNERSHIP', href: '/partnership',
-      icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><path d="M12 22V7M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7zM12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg>,
-    },
-    {
-      l: 'KALENDER', href: '/calendar',
-      icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>,
-    },
+    { l: 'KELAS',       href: '#kelas',       icon: '📚' },
+    { l: 'KURIKULUM',   href: '#kurikulum',   icon: '🎓' },
+    { l: 'KOMUNITAS',   href: '/komunitas',   icon: '💬' },
+    { l: 'PARTNERSHIP', href: '/partnership', icon: '🤝' },
+    { l: 'KALENDER',    href: '/calendar',    icon: '📅' },
   ];
 
   return (
-    <nav style={{ background: 'linear-gradient(180deg, #0a0a0a 0%, #060606 100%)', padding: '16px 32px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'relative', borderBottom: '1px solid #1a1a1a' }}>
-      {/* Glow top */}
-      <div style={{ position: 'absolute', top: 0, left: '50%', transform: 'translateX(-50%)', width: 300, height: 1, background: 'linear-gradient(90deg, transparent, rgba(234,179,8,0.6), transparent)' }} />
+    <>
+    <nav className='mr-nav-topbar' style={{ background: 'linear-gradient(180deg, #0a0a0a 0%, #060606 100%)', padding: '12px 32px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'sticky', top: 0, zIndex: 50, borderBottom: '1px solid #1a1a1a' }}>
 
-      {/* Logo */}
-      <div className='mr-nav-links' style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-        {/* MR Logo custom */}
-        <div style={{ position: 'relative', width: 48, height: 48, flexShrink: 0 }}>
-          <img src="/logo.png" alt="Menolak Rugi" style={{ width: '100%', height: '100%', objectFit: 'contain' }}/>
+      {/* Logo — always visible */}
+      <a href="/" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none', flexShrink: 0 }}>
+        <div style={{ width: 38, height: 38, flexShrink: 0 }}>
+          <img src="/logo.png" alt="MR" style={{ width: '100%', height: '100%', objectFit: 'contain' }}/>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1 }}>
-          <span style={{ fontWeight: 800, letterSpacing: 1, fontSize: 15, color: '#e7e5e4' }}>MENOLAK RUGI</span>
-          <span style={{ color: '#555', fontSize: 10, marginTop: 3, fontFamily: MR.mono, letterSpacing: 1 }}>SMC TERMINAL · V3.0</span>
-          <span style={{ color: '#eab30860', fontSize: 9, marginTop: 2, fontFamily: MR.mono, letterSpacing: 1.5 }}>ELITE TRADING ENVIRONMENT</span>
+          <span style={{ fontWeight: 800, letterSpacing: 0.5, fontSize: 13, color: '#e7e5e4' }}>MENOLAK RUGI</span>
+          <span style={{ color: '#555', fontSize: 9, marginTop: 2, fontFamily: MR.mono, letterSpacing: 1 }}>SMC EDUCATION</span>
         </div>
-      </div>
+      </a>
 
-      {/* Nav items */}
-      <div style={{ display: 'flex', alignItems: 'center', background: '#0d0d0d', border: '1px solid #222', borderRadius: 12, padding: '6px', gap: 2, boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)' }}>
+      {/* Desktop nav tabs */}
+      <div className='mr-nav-links' style={{ display: 'flex', alignItems: 'center', background: '#0d0d0d', border: '1px solid #222', borderRadius: 12, padding: '6px', gap: 2 }}>
         {NAV_ITEMS.map(item => {
           const isActive = active === item.l;
           return (
-            <a
-              key={item.l}
-              href={item.href}
-              onClick={() => setActive(item.l)}
-              style={{
-                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
-                padding: '10px 24px', borderRadius: 9, textDecoration: 'none',
+            <a key={item.l} href={item.href} onClick={() => setActive(item.l)}
+              style={{ display: 'flex', flexDirection: 'column' as const, alignItems: 'center', gap: 3, padding: '8px 18px', borderRadius: 9, textDecoration: 'none',
                 color: isActive ? MR.gold : '#666',
-                background: isActive ? 'linear-gradient(180deg, #1a1500 0%, #0f0c00 100%)' : 'transparent',
+                background: isActive ? 'linear-gradient(180deg,#1a1500,#0f0c00)' : 'transparent',
                 border: isActive ? '1px solid #3a2e00' : '1px solid transparent',
-                boxShadow: isActive ? '0 0 20px rgba(234,179,8,0.15), inset 0 1px 0 rgba(234,179,8,0.1)' : 'none',
-                transition: 'all .2s',
-                position: 'relative',
-              }}
-              onMouseEnter={e => {
-                if (!isActive) (e.currentTarget as HTMLAnchorElement).style.color = '#999';
-              }}
-              onMouseLeave={e => {
-                if (!isActive) (e.currentTarget as HTMLAnchorElement).style.color = '#666';
-              }}
-            >
-              {/* Gold underline glow for active */}
-              {isActive && (
-                <div style={{ position: 'absolute', bottom: 0, left: '50%', transform: 'translateX(-50%)', width: 40, height: 2, background: 'linear-gradient(90deg, transparent, #eab308, transparent)', borderRadius: 2 }} />
-              )}
-              <span style={{ opacity: isActive ? 1 : 0.6 }}>{item.icon}</span>
-              <span style={{ fontFamily: MR.mono, fontSize: 10, fontWeight: 700, letterSpacing: 1 }}>{item.l}</span>
+                transition: 'all .2s' }}>
+              <span style={{ fontFamily: MR.mono, fontSize: 10, fontWeight: 700, letterSpacing: 0.8 }}>{item.l}</span>
             </a>
           );
         })}
       </div>
 
-      {/* CTA Buttons */}
-      <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+      {/* Desktop CTA */}
+      <div className='mr-nav-links' style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
         {isLoggedIn ? (
-          <button
-            onClick={() => window.location.href = '/member'}
-            style={{ fontFamily: MR.mono, fontSize: 12, color: '#22ab94', padding: '10px 18px', border: '1px solid #0f2a1f', background: '#0a1a14', cursor: 'pointer', borderRadius: 8, display: 'flex', alignItems: 'center', gap: 7, letterSpacing: 0.6, fontWeight: 700 }}
-            onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = '#22ab94'; }}
-            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = '#0f2a1f'; }}
-          >
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+          <button onClick={() => window.location.href = '/member'}
+            style={{ fontFamily: MR.mono, fontSize: 11, color: '#22ab94', padding: '9px 16px', border: '1px solid #0f2a1f', background: '#0a1a14', cursor: 'pointer', borderRadius: 7, fontWeight: 700 }}>
             DASHBOARD ›
           </button>
         ) : (
-          <button
-            onClick={() => window.location.href = '/login'}
-            style={{ fontFamily: MR.mono, fontSize: 12, color: '#888', padding: '10px 18px', border: '1px solid #2a2a2a', background: '#0d0d0d', cursor: 'pointer', borderRadius: 8, display: 'flex', alignItems: 'center', gap: 7, letterSpacing: 0.6, fontWeight: 600 }}
-            onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = '#444'; (e.currentTarget as HTMLButtonElement).style.color = '#bbb'; }}
-            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = '#2a2a2a'; (e.currentTarget as HTMLButtonElement).style.color = '#888'; }}
-          >
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          <button onClick={() => window.location.href = '/login'}
+            style={{ fontFamily: MR.mono, fontSize: 11, color: '#888', padding: '9px 16px', border: '1px solid #2a2a2a', background: '#0d0d0d', cursor: 'pointer', borderRadius: 7 }}>
             LOG IN
           </button>
         )}
-        <button
-          onClick={() => window.location.href = '/signup'}
-          style={{ fontFamily: MR.mono, fontSize: 12, padding: '10px 20px', background: 'linear-gradient(135deg, #eab308, #ca9e00)', color: '#000', fontWeight: 700, letterSpacing: 0.6, border: 'none', cursor: 'pointer', borderRadius: 8, display: 'flex', alignItems: 'center', gap: 7, boxShadow: '0 0 20px rgba(234,179,8,0.3)' }}
-          onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.boxShadow = '0 0 30px rgba(234,179,8,0.5)'; }}
-          onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.boxShadow = '0 0 20px rgba(234,179,8,0.3)'; }}
-        >
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        <button onClick={() => window.location.href = '/signup'}
+          style={{ fontFamily: MR.mono, fontSize: 11, padding: '9px 16px', background: 'linear-gradient(135deg,#eab308,#ca9e00)', color: '#000', fontWeight: 700, border: 'none', cursor: 'pointer', borderRadius: 7 }}>
           BUKA AKUN ›
         </button>
       </div>
 
-      {/* Glow bottom */}
-      <div style={{ position: 'absolute', bottom: 0, left: '50%', transform: 'translateX(-50%)', width: 200, height: 1, background: 'linear-gradient(90deg, transparent, rgba(234,179,8,0.3), transparent)' }} />
+      {/* Mobile right side: CTA + hamburger */}
+      <div className='mr-mobile-nav-right' style={{ display: 'none', alignItems: 'center', gap: 8 }}>
+        {isLoggedIn ? (
+          <button onClick={() => window.location.href = '/member'}
+            style={{ fontFamily: MR.mono, fontSize: 11, color: '#22ab94', padding: '8px 12px', border: '1px solid #0f2a1f', background: '#0a1a14', cursor: 'pointer', borderRadius: 7, fontWeight: 700, whiteSpace: 'nowrap' as const }}>
+            DASHBOARD ›
+          </button>
+        ) : (
+          <button onClick={() => window.location.href = '/login'}
+            style={{ fontFamily: MR.mono, fontSize: 11, color: '#888', padding: '8px 12px', border: '1px solid #2a2a2a', background: '#0d0d0d', cursor: 'pointer', borderRadius: 7, whiteSpace: 'nowrap' as const }}>
+            LOG IN
+          </button>
+        )}
+        <button onClick={() => window.location.href = '/signup'}
+          style={{ fontFamily: MR.mono, fontSize: 11, padding: '8px 12px', background: 'linear-gradient(135deg,#eab308,#ca9e00)', color: '#000', fontWeight: 700, border: 'none', cursor: 'pointer', borderRadius: 7, whiteSpace: 'nowrap' as const }}>
+          DAFTAR
+        </button>
+        {/* Hamburger */}
+        <button onClick={() => setMenuOpen(o => !o)}
+          style={{ width: 38, height: 38, background: '#111', border: '1px solid #2a2a2a', borderRadius: 8, cursor: 'pointer', display: 'flex', flexDirection: 'column' as const, alignItems: 'center', justifyContent: 'center', gap: 5, flexShrink: 0 }}>
+          <span style={{ display: 'block', width: 16, height: 1.5, background: '#888', borderRadius: 2 }}/>
+          <span style={{ display: 'block', width: 16, height: 1.5, background: '#888', borderRadius: 2 }}/>
+          <span style={{ display: 'block', width: 12, height: 1.5, background: '#888', borderRadius: 2 }}/>
+        </button>
+      </div>
     </nav>
+
+    {/* Mobile menu overlay */}
+    {menuOpen && (
+      <div style={{ position: 'fixed', inset: 0, zIndex: 100, display: 'flex', flexDirection: 'column' as const }}>
+        <div style={{ flex: 1, background: 'rgba(0,0,0,0.7)' }} onClick={() => setMenuOpen(false)}/>
+        <div style={{ background: '#0a0a0a', borderTop: '1px solid #2a2a2a', padding: '20px 24px 32px' }}>
+          {/* Close bar */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+            <span style={{ fontFamily: MR.mono, color: '#eab308', fontSize: 11, letterSpacing: 1 }}>MENU</span>
+            <button onClick={() => setMenuOpen(false)} style={{ background: 'none', border: 'none', color: '#666', fontSize: 24, cursor: 'pointer', padding: '0 4px' }}>×</button>
+          </div>
+          {/* Nav links */}
+          <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 4, marginBottom: 20 }}>
+            {NAV_ITEMS.map(item => (
+              <a key={item.l} href={item.href} onClick={() => setMenuOpen(false)}
+                style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 16px', background: '#111', borderRadius: 10, textDecoration: 'none', color: '#e7e5e4', fontSize: 15, fontWeight: 600, border: '1px solid #1a1a1a' }}>
+                <span style={{ fontSize: 20 }}>{item.icon}</span>
+                {item.l}
+              </a>
+            ))}
+          </div>
+          {/* Action buttons */}
+          <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 10 }}>
+            {isLoggedIn ? (
+              <button onClick={() => window.location.href = '/member'}
+                style={{ width: '100%', fontFamily: MR.mono, fontSize: 13, fontWeight: 700, color: '#22ab94', padding: '14px', background: '#0a1a14', border: '1px solid #22ab94', cursor: 'pointer', borderRadius: 10 }}>
+                BUKA DASHBOARD →
+              </button>
+            ) : (
+              <button onClick={() => window.location.href = '/login'}
+                style={{ width: '100%', fontFamily: MR.mono, fontSize: 13, fontWeight: 700, color: '#e7e5e4', padding: '14px', background: '#111', border: '1px solid #2a2a2a', cursor: 'pointer', borderRadius: 10 }}>
+                LOG IN
+              </button>
+            )}
+            <button onClick={() => window.location.href = '/signup'}
+              style={{ width: '100%', fontFamily: MR.mono, fontSize: 13, fontWeight: 700, color: '#000', padding: '14px', background: 'linear-gradient(135deg,#eab308,#ca9e00)', border: 'none', cursor: 'pointer', borderRadius: 10 }}>
+              BUKA AKUN ›
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
+    </>
   );
 }
 
+
 function Hero({ memberCount, fundedCount, newThisMonth }: { memberCount: number; fundedCount: number; newThisMonth: number }) {
+  const [isMobile, setIsMobile] = React.useState(() => window.matchMedia('(max-width: 767px)').matches);
+  React.useEffect(() => { const mq = window.matchMedia('(max-width: 767px)'); const h = (e: MediaQueryListEvent) => setIsMobile(e.matches); mq.addEventListener('change',h); return ()=>mq.removeEventListener('change',h); }, []);
   
   return (
     <section id="kelas" style={{ position: 'relative', padding: '64px 40px 48px', borderBottom: `1px solid ${MR.border}` }}>
       <div style={{ position: 'absolute', inset: 0, opacity: 0.5, ...CANDLE_GRID_STYLE }} />
-      <div className='mr-hero-grid' style={{ position: 'relative', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 32, alignItems: 'stretch' }}>
+      <div className='mr-hero-grid' style={{ position: 'relative', display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 32, alignItems: 'stretch' }}>
         {/* Left */}
         <div>
           <div style={{ fontFamily: MR.mono, display: 'inline-flex', gap: 8, alignItems: 'center', padding: '6px 10px', border: `1px solid ${MR.border}`, color: MR.dim, fontSize: 11, letterSpacing: 0.6 }}>
             <span className="mr-blink" style={{ color: MR.up }}>●</span>
             {memberCount}+ MEMBER · FUNDED CASES TIAP MINGGU
           </div>
-          <h1 className='mr-hero-h1' style={{ fontSize: 84, lineHeight: 0.96, letterSpacing: -3, margin: '26px 0 24px', fontWeight: 700 } as React.CSSProperties}>
+          <h1 className='mr-hero-h1' style={{ fontSize: isMobile ? 36 : 84, lineHeight: isMobile ? 1.1 : 0.96, letterSpacing: isMobile ? -1 : -3, margin: '26px 0 24px', fontWeight: 700 } as React.CSSProperties}>
             <span>Berhenti trading</span><br />
             <span style={{ color: MR.dim }}>tanpa arah.</span><br />
             <span>Mulai pahami</span><br />
@@ -246,7 +261,7 @@ function Hero({ memberCount, fundedCount, newThisMonth }: { memberCount: number;
             <button onClick={() => window.location.href = '/signup'} style={{ fontFamily: MR.mono, background: MR.gold, color: '#181000', fontWeight: 700, padding: '16px 22px', letterSpacing: 0.4, fontSize: 13, border: 'none', cursor: 'pointer' }}>PILIH KELAS ▸</button>
             <button onClick={() => document.getElementById('kurikulum')?.scrollIntoView({ behavior: 'smooth' })} style={{ fontFamily: MR.mono, border: `1px solid ${MR.borderHot}`, padding: '16px 22px', letterSpacing: 0.4, fontSize: 13, background: 'transparent', color: MR.text, cursor: 'pointer' }}>LIHAT KURIKULUM</button>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', borderTop: `1px solid ${MR.border}` }}>
+          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(4, 1fr)', borderTop: `1px solid ${MR.border}` }}>
             {[
               { k: 'MEMBER AKTIF',  v: memberCount.toString(),   d: `+${newThisMonth} 30D`, up: true  },
               { k: 'FUNDED LULUS',  v: fundedCount.toString(),   d: '+5 30D',               up: true  },
@@ -273,10 +288,12 @@ function Hero({ memberCount, fundedCount, newThisMonth }: { memberCount: number;
 }
 
 function Manifesto() {
+  const [isMobile, setIsMobile] = React.useState(() => window.matchMedia('(max-width: 767px)').matches);
+  React.useEffect(() => { const mq = window.matchMedia('(max-width: 767px)'); const h = (e: MediaQueryListEvent) => setIsMobile(e.matches); mq.addEventListener('change',h); return ()=>mq.removeEventListener('change',h); }, []);
   return (
     <section className='mr-stats-row' style={{ padding: '32px 40px', borderBottom: `1px solid ${MR.border}`, display: 'flex', justifyContent: 'space-between', gap: 32, alignItems: 'center' }}>
       <div style={{ fontFamily: MR.mono, color: MR.dim, fontSize: 11, letterSpacing: 0.8, flexShrink: 0 }}>// MANIFESTO</div>
-      <div style={{ fontSize: 22, lineHeight: 1.35, letterSpacing: -0.5, maxWidth: 1080 }}>
+      <div style={{ fontSize: isMobile ? 16 : 22, lineHeight: 1.5, letterSpacing: -0.25, maxWidth: 1080 }}>
         Pasar bukan bergerak secara random. Setiap pergerakan membentuk <span style={{ color: MR.up }}>struktur</span>, dan struktur selalu memberi petunjuk arah berikutnya. Kami ngajarin cara membaca <em style={{ fontStyle: 'normal', color: MR.gold }}>market structure</em> dengan benar — memahami kapan trend berlanjut, kapan melemah, dan kapan market mulai <span style={{ color: MR.down }}>berubah arah</span>.
       </div>
     </section>
@@ -284,6 +301,8 @@ function Manifesto() {
 }
 
 function Curriculum() {
+  const [isMobile, setIsMobile] = React.useState(() => window.matchMedia('(max-width: 767px)').matches);
+  React.useEffect(() => { const mq = window.matchMedia('(max-width: 767px)'); const h = (e: MediaQueryListEvent) => setIsMobile(e.matches); mq.addEventListener('change',h); return ()=>mq.removeEventListener('change',h); }, []);
   const [activeBasic, setActiveBasic] = React.useState<number|null>(null);
   const [activeAdv, setActiveAdv]     = React.useState<number|null>(null);
 
@@ -323,7 +342,7 @@ function Curriculum() {
       {/* Header */}
       <div style={{ padding: '48px 40px 32px', borderBottom: `1px solid ${MR.border}` }}>
         <div style={{ fontFamily: MR.mono, color: MR.dim, fontSize: 11, letterSpacing: 0.8, marginBottom: 8 }}>// KURIKULUM</div>
-        <h2 style={{ fontSize: 36, fontWeight: 700, margin: 0, letterSpacing: -1 }}>
+        <h2 style={{ fontSize: isMobile ? 22 : 36, fontWeight: 700, margin: 0, letterSpacing: isMobile ? -0.5 : -1 }}>
           Apa yang kamu pelajari
         </h2>
         <p style={{ color: MR.dim, fontSize: 15, marginTop: 10, maxWidth: 560 }}>
@@ -332,7 +351,7 @@ function Curriculum() {
       </div>
 
       {/* Two-column layout */}
-      <div className='mr-curriculum-grid' style={{ display: 'grid', gridTemplateColumns: '1fr 1fr' }}>
+      <div className='mr-curriculum-grid' style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr' }}>
 
         {/* BASIC */}
         <div style={{ borderRight: `1px solid ${MR.border}` }}>
@@ -371,20 +390,22 @@ function Curriculum() {
 
 
 function Testimonials({ testimonials }: { testimonials: Testimonial[] }) {
+  const [isMobile, setIsMobile] = React.useState(() => window.matchMedia('(max-width: 767px)').matches);
+  React.useEffect(() => { const mq = window.matchMedia('(max-width: 767px)'); const h = (e: MediaQueryListEvent) => setIsMobile(e.matches); mq.addEventListener('change',h); return ()=>mq.removeEventListener('change',h); }, []);
   const now = new Date();
   return (
     <section style={{ padding: '56px 40px', borderBottom: `1px solid ${MR.border}` }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'end', marginBottom: 32 }}>
         <div>
           <div style={{ fontFamily: MR.mono, color: MR.dim, fontSize: 11, letterSpacing: 0.8 }}>// TRADE JOURNAL · MEMBER WINS</div>
-          <h2 style={{ fontSize: 52, letterSpacing: -1.5, lineHeight: 1, margin: '16px 0 0', fontWeight: 700 }}>Bukti, bukan promo.</h2>
+          <h2 style={{ fontSize: isMobile ? 28 : 52, letterSpacing: isMobile ? -0.5 : -1.5, lineHeight: 1.1, margin: '16px 0 0', fontWeight: 700 }}>Bukti, bukan promo.</h2>
         </div>
         <div style={{ fontFamily: MR.mono, color: MR.dim, fontSize: 12, textAlign: 'right' }}>
           DATA TERAKHIR · {now.getDate()} MEI {now.getFullYear()}<br />
           <span style={{ color: MR.gold }}>★ 4.9</span> · MEMBER AKTIF
         </div>
       </div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: 16 }}>
         {testimonials.map((t, i) => (
           <div key={t.id} style={{ border: `1px solid ${MR.border}`, background: MR.panel, display: 'flex', flexDirection: 'column' }}>
             <div style={{ fontFamily: MR.mono, display: 'flex', justifyContent: 'space-between', padding: '10px 14px', borderBottom: `1px solid ${MR.border}`, fontSize: 11, color: MR.dim, background: MR.darker }}>
@@ -413,6 +434,8 @@ function Testimonials({ testimonials }: { testimonials: Testimonial[] }) {
 }
 
 function Pricing({ tiers }: { tiers: PricingTier[] }) {
+  const [isMobile, setIsMobile] = React.useState(() => window.matchMedia('(max-width: 767px)').matches);
+  React.useEffect(() => { const mq = window.matchMedia('(max-width: 767px)'); const h = (e: MediaQueryListEvent) => setIsMobile(e.matches); mq.addEventListener('change',h); return ()=>mq.removeEventListener('change',h); }, []);
   
   const fmt = (n: number) => new Intl.NumberFormat('id-ID').format(n);
 
@@ -421,13 +444,13 @@ function Pricing({ tiers }: { tiers: PricingTier[] }) {
       <div style={{ padding: '56px 40px 28px', display: 'flex', justifyContent: 'space-between', alignItems: 'end' }}>
         <div>
           <div style={{ fontFamily: MR.mono, color: MR.dim, fontSize: 11, letterSpacing: 0.8 }}>// ORDER TICKETS</div>
-          <h2 style={{ fontSize: 52, letterSpacing: -1.5, lineHeight: 1, margin: '16px 0 0', fontWeight: 700 }}>Pilih tier kamu.</h2>
+          <h2 style={{ fontSize: isMobile ? 28 : 52, letterSpacing: isMobile ? -0.5 : -1.5, lineHeight: 1.1, margin: '16px 0 0', fontWeight: 700 }}>Pilih tier kamu.</h2>
         </div>
         <div style={{ fontFamily: MR.mono, color: MR.dim, fontSize: 12, maxWidth: 360, textAlign: 'right', lineHeight: 1.55 }}>
           Trial bulanan untuk yang baru kenal. Bronze ke atas — sekali bayar, akses seumur hidup. Mau upgrade nanti? Harga yang sudah dibayar jadi kredit.
         </div>
       </div>
-      <div style={{ display: 'grid', gridTemplateColumns: `repeat(${tiers.length}, 1fr)`, borderTop: `1px solid ${MR.border}` }}>
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : `repeat(${tiers.length}, 1fr)`, borderTop: `1px solid ${MR.border}` }}>
         {tiers.map((p, i) => {
           const a = TIER_ACCENT[p.accent] ?? TIER_ACCENT['neutral'] ?? { bg: MR.panel, border: MR.border, label: MR.dim };
           return (
@@ -470,6 +493,8 @@ function Pricing({ tiers }: { tiers: PricingTier[] }) {
 }
 
 function Mentor() {
+  const [isMobile, setIsMobile] = React.useState(() => window.matchMedia('(max-width: 767px)').matches);
+  React.useEffect(() => { const mq = window.matchMedia('(max-width: 767px)'); const h = (e: MediaQueryListEvent) => setIsMobile(e.matches); mq.addEventListener('change',h); return ()=>mq.removeEventListener('change',h); }, []);
   const FEATURES = [
     {
       icon: (
@@ -534,7 +559,7 @@ function Mentor() {
   ];
 
   return (
-    <section className='mr-section-pad' style={{ padding: '80px 40px', borderBottom: `1px solid ${MR.border}`, background: '#080808' }}>
+    <section className='mr-section-pad' style={{ padding: isMobile ? '40px 16px' : '80px 40px', borderBottom: `1px solid ${MR.border}`, background: '#080808' }}>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.6fr', gap: 64, alignItems: 'center' }}>
 
         {/* Kiri */}
@@ -542,7 +567,7 @@ function Mentor() {
           <div style={{ fontFamily: MR.mono, color: '#22ab94', fontSize: 11, letterSpacing: 1.5, marginBottom: 24 }}>
             // INSIDEMENOLAKRUGI
           </div>
-          <h2 style={{ fontSize: 48, fontWeight: 700, letterSpacing: -1.5, lineHeight: 1.05, margin: '0 0 20px' }}>
+          <h2 style={{ fontSize: isMobile ? 26 : 48, fontWeight: 700, letterSpacing: isMobile ? -0.5 : -1.5, lineHeight: 1.1, margin: '0 0 20px' }}>
             Bukan cuma belajar.<br />
             Kamu masuk environment<br />
             trader aktif.
@@ -573,7 +598,7 @@ function Mentor() {
         </div>
 
         {/* Kanan — feature cards */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: 14 }}>
           {FEATURES.map(f => (
             <div key={f.title} style={{ background: '#111', border: `1px solid ${MR.border}`, padding: '24px 20px', display: 'flex', flexDirection: 'column', gap: 12 }}>
               <div>{f.icon}</div>
@@ -590,12 +615,14 @@ function Mentor() {
 
 
 function FaqSection() {
+  const [isMobile, setIsMobile] = React.useState(() => window.matchMedia('(max-width: 767px)').matches);
+  React.useEffect(() => { const mq = window.matchMedia('(max-width: 767px)'); const h = (e: MediaQueryListEvent) => setIsMobile(e.matches); mq.addEventListener('change',h); return ()=>mq.removeEventListener('change',h); }, []);
   const [open, setOpen] = useState(0);
   return (
-    <section style={{ padding: '64px 40px', borderBottom: `1px solid ${MR.border}`, display: 'grid', gridTemplateColumns: '360px 1fr', gap: 40 }}>
+    <section style={{ padding: isMobile ? '36px 16px' : '64px 40px', borderBottom: `1px solid ${MR.border}`, display: isMobile ? 'block' : 'grid', gridTemplateColumns: '360px 1fr', gap: 40 }}>
       <div>
         <div style={{ fontFamily: MR.mono, color: MR.dim, fontSize: 11, letterSpacing: 0.8 }}>// HELP DESK</div>
-        <h2 style={{ fontSize: 44, letterSpacing: -1.2, lineHeight: 1.02, margin: '16px 0 20px', fontWeight: 700 }}>Pertanyaan yang paling sering muncul.</h2>
+        <h2 style={{ fontSize: isMobile ? 24 : 44, letterSpacing: isMobile ? -0.5 : -1.2, lineHeight: 1.1, margin: '16px 0 20px', fontWeight: 700 }}>Pertanyaan yang paling sering muncul.</h2>
         <p style={{ color: MR.dim, fontSize: 14, lineHeight: 1.55 }}>Masih ada yang ngeganjel? Ping admin di Telegram, balasannya rata-rata di bawah 2 jam.</p>
         <a href="https://t.me/+_azyX2h9oFhmNjNl" target="_blank" rel="noreferrer">
           <button style={{ fontFamily: MR.mono, marginTop: 18, padding: '12px 16px', border: `1px solid ${MR.borderHot}`, fontSize: 12, letterSpacing: 0.4, background: 'transparent', color: MR.text, cursor: 'pointer' }}>TANYA ADMIN ▸</button>
@@ -623,13 +650,15 @@ function FaqSection() {
 }
 
 function CTA() {
+  const [isMobile, setIsMobile] = React.useState(() => window.matchMedia('(max-width: 767px)').matches);
+  React.useEffect(() => { const mq = window.matchMedia('(max-width: 767px)'); const h = (e: MediaQueryListEvent) => setIsMobile(e.matches); mq.addEventListener('change',h); return ()=>mq.removeEventListener('change',h); }, []);
   
   return (
     <section className='mr-section-pad' style={{ padding: '80px 40px', borderBottom: `1px solid ${MR.border}`, position: 'relative', overflow: 'hidden' }}>
       <div style={{ position: 'absolute', inset: 0, opacity: 0.4, ...CANDLE_GRID_STYLE }} />
       <div style={{ position: 'relative', maxWidth: 980 }}>
         <div style={{ fontFamily: MR.mono, color: MR.gold, fontSize: 11, letterSpacing: 0.8 }}>// FINAL CALL</div>
-        <h2 style={{ fontSize: 86, letterSpacing: -3, lineHeight: 0.95, margin: '20px 0 28px', fontWeight: 700 }}>
+        <h2 style={{ fontSize: isMobile ? 36 : 86, letterSpacing: isMobile ? -1 : -3, lineHeight: isMobile ? 1.1 : 0.95, margin: '20px 0 28px', fontWeight: 700 }}>
           Pasar buka senin pagi.<br />
           <span style={{ color: MR.dim }}>Kamu udah siap, atau </span><span style={{ color: MR.down }}>masih nebak?</span>
         </h2>
@@ -643,6 +672,8 @@ function CTA() {
 }
 
 function Footer() {
+  const [isMobile, setIsMobile] = React.useState(() => window.matchMedia('(max-width: 767px)').matches);
+  React.useEffect(() => { const mq = window.matchMedia('(max-width: 767px)'); const h = (e: MediaQueryListEvent) => setIsMobile(e.matches); mq.addEventListener('change',h); return ()=>mq.removeEventListener('change',h); }, []);
   const SOCIALS = [
     { label: 'Discord',  href: 'https://discord.gg/d2Tpf6sGMr',  icon: '💬' },
     { label: 'Telegram', href: 'https://t.me/+_azyX2h9oFhmNjNl', icon: '📢' },
@@ -652,7 +683,7 @@ function Footer() {
   ];
   return (
     <footer style={{ padding: '48px 40px 32px', background: MR.dark }}>
-      <div style={{ display: 'grid', gridTemplateColumns: '1.4fr repeat(3, 1fr)', gap: 32, marginBottom: 36 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : '1.4fr repeat(3, 1fr)', gap: isMobile ? 16 : 32, marginBottom: 36 }}>
         <div>
           <MRLogo size={36} />
           <div style={{ fontWeight: 800, marginTop: 12, letterSpacing: -0.4 }}>MENOLAK RUGI</div>
@@ -721,6 +752,14 @@ export default function LandingPage() {
   const { testimonials } = useApprovedTestimonials(6);
   const { tiers }        = usePricing();
 
+  const [isMobile, setIsMobile] = React.useState(() => window.matchMedia('(max-width: 767px)').matches);
+  React.useEffect(() => {
+    const mq = window.matchMedia('(max-width: 767px)');
+    const h = (e: MediaQueryListEvent) => setIsMobile(e.matches);
+    mq.addEventListener('change', h);
+    return () => mq.removeEventListener('change', h);
+  }, []);
+
   return (
     <div style={{ fontFamily: MR.sans, color: MR.text, background: MR.bg, minHeight: '100vh', WebkitFontSmoothing: 'antialiased', overflowX: 'hidden' }}>
       <style>{`
@@ -753,6 +792,12 @@ export default function LandingPage() {
           .mr-mentor-grid { grid-template-columns: 1fr !important; }
           .mr-faq-item { padding: 16px !important; }
           .mr-footer-grid { grid-template-columns: 1fr 1fr !important; }
+          /* Mobile navbar */
+          .mr-nav-topbar { padding: 10px 16px !important; }
+          .mr-nav-links { display: none !important; }
+          .mr-mobile-nav-right { display: flex !important; }
+          /* Pricing 1 col */
+          .mr-pricing-grid { grid-template-columns: 1fr !important; }
         }
       `}</style>
       <TVTickerTape />

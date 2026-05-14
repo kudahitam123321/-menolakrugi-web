@@ -917,23 +917,35 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
       });
     } catch {}
 
-    // Kirim ucapan selamat ke Discord
-    if (member?.discord_id && congratsChannelId) {
+    // ── Auto post website announcement ──
+    await supabase.from('announcements').insert({
+      judul: `🎉 Selamat ${req.member_nama} — Naik Kelas Advanced!`,
+      content: `${req.member_nama} (${req.member_tier}) berhasil naik ke kelas Advanced. Semangat terus belajar SMC dan menuju funded! 🏆`,
+    });
+
+    // ── Kirim ucapan selamat ke Discord ──
+    if (congratsChannelId) {
       try {
-        const res = await fetch('https://menolakrugi-bot-production.up.railway.app/discord/congrats-advanced', {
+        const discordRes = await fetch('https://menolakrugi-bot-production.up.railway.app/discord/congrats-advanced', {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ discord_id: member.discord_id, discord_username: member.discord_username, nama: req.member_nama, channel_id: congratsChannelId }),
+          body: JSON.stringify({
+            discord_id: member?.discord_id || null,
+            discord_username: member?.discord_username || null,
+            nama: req.member_nama,
+            channel_id: congratsChannelId
+          }),
         });
-        const data = await res.json();
-        if (data.success) notify(`${req.member_nama} di-approve! Ucapan selamat terkirim ke Discord ✅`);
-        else notify(`${req.member_nama} di-approve! (Gagal kirim ucapan: ${data.error})`);
+        const discordData = await discordRes.json();
+        if (discordData.success) {
+          notify(`${req.member_nama} di-approve! ✅ Pengumuman website + Discord terkirim.`);
+        } else {
+          notify(`${req.member_naam} di-approve! ✅ Pengumuman website terkirim. Discord: ${discordData.error}`);
+        }
       } catch {
-        notify(`${req.member_nama} di-approve! (Bot tidak terhubung)`);
+        notify(`${req.member_naam} di-approve! ✅ Pengumuman website terkirim. (Bot offline)`);
       }
-    } else if (!congratsChannelId) {
-      notify(`${req.member_nama} di-approve! ⚠️ Isi Channel ID dulu agar ucapan terkirim otomatis.`);
     } else {
-      notify(`${req.member_nama} di-approve! (Member belum hubungkan Discord)`);
+      notify(`${req.member_naam} di-approve! ✅ Pengumuman website terkirim. ⚠️ Isi Channel ID untuk kirim ke Discord juga.`);
     }
 
     loadData();
