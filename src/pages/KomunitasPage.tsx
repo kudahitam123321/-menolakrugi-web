@@ -105,10 +105,27 @@ const NAV = [
 
 export default function KomunitasPage() {
   return (
-    <div style={{ fontFamily: C.sans, background: C.bg, minHeight: '100vh', color: C.text }}>
+    <div style={{ fontFamily: C.sans, background: C.bg, minHeight: '100vh', color: C.text, overflowX: 'hidden' }}>
+      <style>{`
+        @media(max-width:767px){
+          .km-nav{padding:0 16px!important}
+          .km-nav-links{display:none!important}
+          .km-nav-btn span{display:none}
+          .km-hero{padding:40px 16px 32px!important}
+          .km-hero h1{font-size:28px!important;letter-spacing:-0.5px!important}
+          .km-hero p{font-size:14px!important}
+          .km-cards-wrap{padding:0 16px 48px!important}
+          .km-grid{grid-template-columns:1fr!important}
+          .km-card{flex-direction:column!important;gap:14px!important;padding:18px!important}
+          .km-cta{padding:24px 16px!important}
+          .km-cta h2{font-size:20px!important}
+          .km-cta-btns{flex-direction:column!important}
+          .km-cta-btns button{width:100%!important}
+        }
+      `}</style>
 
       {/* Navbar */}
-      <nav style={{ borderBottom: `1px solid ${C.border}`, padding: '0 40px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: 56, background: '#060606', position: 'sticky' as const, top: 0, zIndex: 50 }}>
+      <nav className='km-nav' style={{ borderBottom: `1px solid ${C.border}`, padding: '0 40px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: 56, background: '#060606', position: 'sticky' as const, top: 0, zIndex: 50 }}>
         <a href="/" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none' }}>
           <div style={{ width: 32, height: 32, background: C.gold, borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: 11, color: '#000' }}>MR</div>
           <div>
@@ -116,7 +133,7 @@ export default function KomunitasPage() {
             <div style={{ fontFamily: C.mono, fontSize: 9, color: C.dim, letterSpacing: 1 }}>SMC EDUCATION</div>
           </div>
         </a>
-        <div style={{ display: 'flex', gap: 4 }}>
+        <div className='km-nav-links' style={{ display: 'flex', gap: 4 }}>
           {NAV.map((item: any) => (
             <a key={item.l} href={item.href}
               style={{ fontFamily: C.mono, fontSize: 11, fontWeight: 700, letterSpacing: 0.8, padding: '6px 14px', textDecoration: 'none',
@@ -141,7 +158,7 @@ export default function KomunitasPage() {
       </nav>
 
       {/* Hero */}
-      <div style={{ padding: '64px 40px 48px', textAlign: 'center' as const, position: 'relative', overflow: 'hidden' }}>
+      <div className='km-hero' style={{ padding: '64px 40px 48px', textAlign: 'center' as const, position: 'relative', overflow: 'hidden' }}>
         <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse at 50% 0%, rgba(234,179,8,0.06) 0%, transparent 60%)' }} />
         <div style={{ position: 'relative' }}>
           <div style={{ fontFamily: C.mono, color: C.gold, fontSize: 11, letterSpacing: 2, marginBottom: 16 }}>// KOMUNITAS MENOLAK RUGI</div>
@@ -155,11 +172,11 @@ export default function KomunitasPage() {
       </div>
 
       {/* Social Media Cards */}
-      <div style={{ padding: '0 40px 80px', maxWidth: 960, margin: '0 auto' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 16 }}>
+      <div className='km-cards-wrap' style={{ padding: '0 40px 80px', maxWidth: 960, margin: '0 auto' }}>
+        <div className='km-grid' style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 16 }}>
           {SOCIALS.map(s => (
             <a key={s.id} href={s.href} target="_blank" rel="noopener noreferrer"
-              style={{ display: 'flex', gap: 20, padding: '24px', background: s.bg, border: `1px solid ${s.border}`, borderRadius: 14, textDecoration: 'none', transition: 'all 0.2s', cursor: 'pointer' }}
+              className='km-card' style={{ display: 'flex', gap: 20, padding: '24px', background: s.bg, border: `1px solid ${s.border}`, borderRadius: 14, textDecoration: 'none', transition: 'all 0.2s', cursor: 'pointer' }}
               onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = s.color + '66'; (e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)'; }}
               onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = s.border; (e.currentTarget as HTMLElement).style.transform = 'translateY(0)'; }}>
               <div style={{ flexShrink: 0, width: 56, height: 56, background: `${s.color}18`, borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -181,11 +198,11 @@ export default function KomunitasPage() {
         </div>
 
         {/* Bottom CTA */}
-        <div style={{ marginTop: 48, textAlign: 'center' as const, padding: '36px', background: '#0d0c00', border: `1px solid #2a2200`, borderRadius: 14 }}>
+        <div className='km-cta' style={{ marginTop: 48, textAlign: 'center' as const, padding: '36px', background: '#0d0c00', border: `1px solid #2a2200`, borderRadius: 14 }}>
           <div style={{ fontFamily: C.mono, color: C.gold, fontSize: 10, letterSpacing: 1.5, marginBottom: 12 }}>// BELUM PUNYA AKUN?</div>
           <h2 style={{ fontSize: 26, fontWeight: 700, margin: '0 0 12px', letterSpacing: -0.5 }}>Mulai perjalanan trading kamu</h2>
           <p style={{ color: C.dim, fontSize: 14, margin: '0 0 24px', lineHeight: 1.6 }}>Bergabung dengan 200+ member aktif yang sedang belajar SMC dan konsisten menuju funded account.</p>
-          <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
+          <div className='km-cta-btns' style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
             <button onClick={() => window.location.href = '/signup?tier=trial'}
               style={{ fontFamily: C.mono, fontSize: 12, fontWeight: 700, color: '#000', background: C.gold, padding: '12px 24px', border: 'none', cursor: 'pointer', borderRadius: 8 }}>
               COBA TRIAL · Rp 99K ▸

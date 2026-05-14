@@ -12,7 +12,7 @@ const BROKERS = [
 
 function NavBar({ showBack = false, backTo = '/partnership' }: { showBack?: boolean; backTo?: string }) {
   return (
-    <div style={{ borderBottom: `1px solid ${C.border}`, padding: '14px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#050505', position: 'sticky', top: 0, zIndex: 50 }}>
+    <div className='pp-nav' style={{ borderBottom: `1px solid ${C.border}`, padding: '14px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#050505', position: 'sticky', top: 0, zIndex: 50 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
         {showBack && (
           <button onClick={() => window.location.href = backTo} style={{ color: C.dim, background: 'none', border: 'none', cursor: 'pointer', fontSize: 13, fontFamily: C.mono, padding: '6px 10px', borderRadius: 6, marginRight: 4 }}>← Kembali</button>
@@ -21,8 +21,21 @@ function NavBar({ showBack = false, backTo = '/partnership' }: { showBack?: bool
           <div style={{ width: 34, height: 34, background: G.gold, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: 12, color: '#000' }}>MR</div>
           <div>
             <div style={{ fontWeight: 800, fontSize: 13 }}>MENOLAK RUGI</div>
-            <div style={{ fontFamily: C.mono, color: C.dim, fontSize: 9, letterSpacing: 1 }}>SMC TERMINAL · V3.0</div>
-          </div>
+            <div style={{ overflowX: 'hidden', fontFamily: C.mono, color: C.dim, fontSize: 9, letterSpacing: 1 }}>SMC TERMINAL · V3.0</div>
+      <style>{`
+        @media(max-width:767px){
+          .pp-nav{padding:14px 16px!important}
+          .pp-nav-title{display:none!important}
+          .pp-main{padding:16px!important}
+          .pp-card{padding:24px 18px!important}
+          .pp-grid3{grid-template-columns:1fr!important}
+          .pp-stats3{grid-template-columns:repeat(3,1fr)!important;gap:6px!important}
+          .pp-stats3 > div{padding:10px 8px!important}
+          .pp-confirm-grid3{grid-template-columns:1fr!important}
+          .pp-broker-actions{flex-direction:column!important}
+          .pp-next-btn{font-size:14px!important;padding:14px!important}
+        }
+      `}</style>          </div>
         </div>
       </div>
       <div style={{ display: 'flex', gap: 8 }}>
@@ -35,7 +48,7 @@ function NavBar({ showBack = false, backTo = '/partnership' }: { showBack?: bool
 
 function Wrap({ children, showBack = false, backTo = '/partnership' }: { children: React.ReactNode; showBack?: boolean; backTo?: string }) {
   return (
-    <div style={{ fontFamily: C.sans, background: C.bg, minHeight: '100vh', color: C.text, WebkitFontSmoothing: 'antialiased' }}>
+    <div style={{ overflowX: 'hidden', fontFamily: C.sans, background: C.bg, minHeight: '100vh', color: C.text, WebkitFontSmoothing: 'antialiased' }}>
       <NavBar showBack={showBack} backTo={backTo} />
       {children}
     </div>
@@ -47,7 +60,7 @@ function StepIntro() {
   return (
     <Wrap>
       <div style={{ maxWidth: 480, margin: '0 auto', padding: '56px 24px' }}>
-        <div style={{ background: 'linear-gradient(135deg,#0f0c00,#0a0a0a)', border: `1px solid ${G.goldDim}`, borderRadius: 20, padding: '40px 36px', boxShadow: `0 0 60px ${G.goldGlow}`, position: 'relative', overflow: 'hidden' }}>
+        <div className='pp-card' style={{ background: 'linear-gradient(135deg,#0f0c00,#0a0a0a)', border: `1px solid ${G.goldDim}`, borderRadius: 20, padding: '40px 36px', boxShadow: `0 0 60px ${G.goldGlow}`, position: 'relative', overflow: 'hidden' }}>
           <div style={{ position: 'absolute', right: -10, top: -10, opacity: 0.1 }}>
             <svg viewBox="0 0 180 200" width="180" height="200">
               {[20,50,80,110,140].map((x, i) => { const h=[70,110,60,130,90][i]; const up=i%2===0; return <g key={x}><line x1={x} x2={x} y1={200-h-15} y2={190} stroke={up?'#22ab94':'#ef4444'} strokeWidth="2.5"/><rect x={x-10} y={200-h} width="20" height={h*0.6} fill={up?'#22ab94':'#ef4444'}/></g>; })}
@@ -58,7 +71,7 @@ function StepIntro() {
           </div>
           <h1 style={{ fontSize: 36, fontWeight: 700, letterSpacing: -1, lineHeight: 1.1, margin: '0 0 14px' }}>Join Gratis<br />via <span style={{ color: G.gold }}>Partnership</span></h1>
           <p style={{ color: C.dim, fontSize: 15, lineHeight: 1.65, marginBottom: 28 }}>Dapatkan akses kelas <span style={{ color: G.gold, fontWeight: 600 }}>GRATIS</span> cukup dengan mendaftar melalui broker partner kami. Tidak ada biaya tersembunyi.</p>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 12, marginBottom: 28 }}>
+          <div className='pp-stats3' style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 12, marginBottom: 28 }}>
             {[{ icon: '🏦', l: 'Daftar melalui broker partner kami' }, { icon: '📋', l: 'Isi form konfirmasi' }, { icon: '🔓', l: 'Akses langsung diaktifkan' }].map((s, i) => (
               <div key={i} style={{ background: '#0d0d0d', border: `1px solid ${C.border}`, borderRadius: 10, padding: '14px 12px', textAlign: 'center' }}>
                 <div style={{ fontSize: 24, marginBottom: 8 }}>{s.icon}</div>
@@ -101,8 +114,8 @@ function StepBroker() {
                   </div>
                 </div>
                 <div style={{ textAlign: 'right' }}>
-                  <div style={{ fontFamily: C.mono, fontSize: 11, color: C.dim, marginBottom: 4 }}>Kode Referral</div>
-                  <div style={{ fontFamily: C.mono, fontSize: 14, color: G.gold, fontWeight: 700 }}>{b.code}</div>
+                  <div style={{ overflowX: 'hidden', fontFamily: C.mono, fontSize: 11, color: C.dim, marginBottom: 4 }}>Kode Referral</div>
+                  <div style={{ overflowX: 'hidden', fontFamily: C.mono, fontSize: 14, color: G.gold, fontWeight: 700 }}>{b.code}</div>
                 </div>
               </div>
               <button onClick={() => { setClicked(b.id); window.open(b.url, '_blank'); }} style={{ width: '100%', background: `linear-gradient(135deg,${G.gold},${G.gold2})`, color: '#000', fontWeight: 700, padding: '13px', fontSize: 14, border: 'none', cursor: 'pointer', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
@@ -113,7 +126,7 @@ function StepBroker() {
           ))}
         </div>
         <div style={{ background: '#0d0c00', border: `1px solid #2a2200`, borderRadius: 10, padding: '14px 18px', marginBottom: 24 }}>
-          <div style={{ display: 'flex', gap: 10 }}>
+          <div className='pp-broker-actions' style={{ display: 'flex', gap: 10 }}>
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={G.gold} strokeWidth="2" style={{ flexShrink: 0, marginTop: 1 }}><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
             <div><div style={{ fontWeight: 700, color: G.gold, fontSize: 13, marginBottom: 3 }}>Penting</div><div style={{ color: C.dim, fontSize: 13, lineHeight: 1.6 }}>Gunakan link pendaftaran di atas agar akses kamu dapat diverifikasi dan diaktifkan.</div></div>
           </div>
@@ -167,7 +180,7 @@ function StepConfirm() {
         </div>
         <h2 style={{ fontSize: 30, fontWeight: 700, margin: '0 0 12px' }}>Data Berhasil Dikirim!</h2>
         <p style={{ color: C.dim, fontSize: 15, lineHeight: 1.65, marginBottom: 36 }}>Terima kasih, data pendaftaran kamu telah kami terima.<br />Tim kami akan memverifikasi akun kamu.</p>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 12, marginBottom: 36 }}>
+        <div className='pp-stats3' style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 12, marginBottom: 36 }}>
           {[{ icon: '✅', t: 'Verifikasi Data', d: 'Tim kami akan mengecek data dan bukti pendaftaran.' }, { icon: '⏱', t: 'Proses Cepat', d: 'Maksimal 1×24 jam setelah data diterima.' }, { icon: '🔓', t: 'Akses Dikirim', d: 'Akses kelas akan dikirim melalui WhatsApp kamu.' }].map(s => (
             <div key={s.t} style={{ background: C.panel, border: `1px solid ${C.border}`, borderRadius: 10, padding: '16px 12px', textAlign: 'center' }}>
               <div style={{ fontSize: 22, marginBottom: 8 }}>{s.icon}</div>

@@ -534,7 +534,7 @@ function Mentor() {
   ];
 
   return (
-    <section style={{ padding: '80px 40px', borderBottom: `1px solid ${MR.border}`, background: '#080808' }}>
+    <section className='mr-section-pad' style={{ padding: '80px 40px', borderBottom: `1px solid ${MR.border}`, background: '#080808' }}>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.6fr', gap: 64, alignItems: 'center' }}>
 
         {/* Kiri */}
@@ -625,7 +625,7 @@ function FaqSection() {
 function CTA() {
   
   return (
-    <section style={{ padding: '80px 40px', borderBottom: `1px solid ${MR.border}`, position: 'relative', overflow: 'hidden' }}>
+    <section className='mr-section-pad' style={{ padding: '80px 40px', borderBottom: `1px solid ${MR.border}`, position: 'relative', overflow: 'hidden' }}>
       <div style={{ position: 'absolute', inset: 0, opacity: 0.4, ...CANDLE_GRID_STYLE }} />
       <div style={{ position: 'relative', maxWidth: 980 }}>
         <div style={{ fontFamily: MR.mono, color: MR.gold, fontSize: 11, letterSpacing: 0.8 }}>// FINAL CALL</div>
@@ -724,22 +724,35 @@ export default function LandingPage() {
   return (
     <div style={{ fontFamily: MR.sans, color: MR.text, background: MR.bg, minHeight: '100vh', WebkitFontSmoothing: 'antialiased', overflowX: 'hidden' }}>
       <style>{`
+        .mr-nav-links { display: flex; }
+        .mr-hero-section { padding: 96px 40px 80px; }
+        .mr-hero-grid { grid-template-columns: 1fr 1fr; }
+        .mr-hero-widget { display: block; }
+        .mr-stats-row { padding: 32px 40px; flex-wrap: nowrap; }
+        .mr-section-pad { padding: 80px 40px; }
+        .mr-curriculum-grid { grid-template-columns: 1fr 1fr; }
+        .mr-pricing-grid { grid-template-columns: 1fr 1fr; }
+        .mr-cta-row { flex-direction: row; }
         @media (max-width: 767px) {
           .mr-nav-links { display: none !important; }
+          .mr-nav-topbar { padding: 0 16px !important; }
+          .mr-hero-section { padding: 40px 16px 32px !important; }
+          .mr-hero-h1 { font-size: 36px !important; letter-spacing: -1px !important; line-height: 1.1 !important; }
+          .mr-hero-subtext { font-size: 14px !important; }
+          .mr-hero-cta { flex-direction: column !important; }
+          .mr-hero-cta a, .mr-hero-cta button { width: 100% !important; text-align: center !important; justify-content: center !important; }
           .mr-hero-grid { grid-template-columns: 1fr !important; }
-          .mr-hero-text h1 { font-size: 40px !important; letter-spacing: -1px !important; }
-          .mr-hero-text p { font-size: 15px !important; }
-          .mr-hero-section { padding: 48px 16px 40px !important; }
           .mr-hero-widget { display: none !important; }
-          .mr-stats-row { flex-wrap: wrap; gap: 16px !important; padding: 20px 16px !important; }
+          .mr-stats-row { padding: 20px 16px !important; flex-wrap: wrap !important; gap: 12px !important; }
+          .mr-stats-row > * { min-width: calc(50% - 8px); }
+          .mr-section-pad { padding: 40px 16px !important; }
           .mr-curriculum-grid { grid-template-columns: 1fr !important; }
           .mr-pricing-grid { grid-template-columns: 1fr !important; }
-          .mr-section { padding: 40px 16px !important; }
-          .mr-section-lg { padding: 48px 16px !important; }
-          .mr-topbar { padding: 0 16px !important; }
-          .mr-cta-btns { flex-direction: column !important; }
-          .mr-login-btn span { display: none !important; }
-          .mr-hero-h1 { font-size: 40px !important; letter-spacing: -1px !important; line-height: 1.1 !important; }
+          .mr-cta-row { flex-direction: column !important; }
+          .mr-cta-row button { width: 100% !important; }
+          .mr-mentor-grid { grid-template-columns: 1fr !important; }
+          .mr-faq-item { padding: 16px !important; }
+          .mr-footer-grid { grid-template-columns: 1fr 1fr !important; }
         }
       `}</style>
       <TVTickerTape />

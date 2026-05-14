@@ -487,40 +487,47 @@ export default function DashboardPage() {
   return (
     <div style={{ fontFamily: C.sans, background: C.bg, minHeight: '100vh', color: C.text, display: 'flex', flexDirection: 'column', overflowX: 'hidden' }}>
       <style>{`
-        .mr-sidebar { display: flex; width: 200px; }
+        .mr-sidebar { width: 200px; flex-shrink: 0; }
         .mr-main { flex: 1; overflow-y: auto; min-width: 0; }
-        .mr-topbar-brand { display: flex; }
-        .mr-topbar-right-full { display: flex; }
-        .mr-content-pad { padding: 24px; }
-        .mr-grid-4 { grid-template-columns: repeat(4, 1fr); gap: 14px; }
-        .mr-grid-3 { grid-template-columns: repeat(3, 1fr); gap: 14px; }
-        .mr-grid-2 { grid-template-columns: 1fr 1fr; gap: 14px; }
-        .mr-grid-announce { grid-template-columns: 1fr 1fr; gap: 16px; }
-        .mr-kelas-grid { grid-template-columns: 1fr 1fr; gap: 14px; }
-        .mr-funded-grid { grid-template-columns: repeat(3, 1fr); gap: 12px; }
         .mr-bottom-nav { display: none; }
         .mr-bottom-spacer { display: none; }
+        .mr-topbar-brand { display: flex; }
+        .mr-content-pad { padding: 24px; }
+        .mr-grid-4 { display: grid; grid-template-columns: repeat(4,1fr); gap: 14px; }
+        .mr-grid-3 { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; }
+        .mr-grid-announce { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+        .mr-kelas-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .mr-funded-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; }
         .mr-welcome-h1 { font-size: 32px; }
+        .mr-video-actions { display: flex; }
 
         @media (max-width: 767px) {
           .mr-sidebar { display: none !important; }
-          .mr-bottom-nav { display: flex !important; }
+          .mr-bottom-nav { display: flex !important; position: fixed; bottom: 0; left: 0; right: 0; height: 60px; z-index: 50; }
           .mr-bottom-spacer { display: block !important; height: 60px; }
           .mr-topbar-brand { display: none !important; }
-          .mr-topbar-right-full > span { display: none !important; }
+          .mr-topbar { padding: 0 12px !important; }
           .mr-content-pad { padding: 14px !important; }
-          .mr-grid-4 { grid-template-columns: repeat(2, 1fr) !important; gap: 10px !important; }
+          .mr-grid-4 { grid-template-columns: repeat(2,1fr) !important; gap: 10px !important; }
           .mr-grid-3 { grid-template-columns: 1fr !important; gap: 10px !important; }
-          .mr-grid-2 { grid-template-columns: 1fr !important; gap: 10px !important; }
           .mr-grid-announce { grid-template-columns: 1fr !important; gap: 12px !important; }
           .mr-kelas-grid { grid-template-columns: 1fr !important; gap: 10px !important; }
-          .mr-funded-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 10px !important; }
+          .mr-funded-grid { grid-template-columns: repeat(2,1fr) !important; gap: 8px !important; }
           .mr-welcome-h1 { font-size: 22px !important; }
+          .mr-welcome-desc { font-size: 13px !important; }
+          .mr-welcome-pad { padding: 18px 16px !important; }
+          .mr-chart-hide { display: none !important; }
+          .mr-video-actions { flex-wrap: wrap; gap: 4px !important; }
+          .mr-modal { padding: 20px 16px !important; }
+          .mr-modal-title { font-size: 18px !important; }
+          .mr-status-banner { flex-direction: column !important; gap: 10px !important; }
+          .mr-action-banner { padding: 12px !important; }
+          .mr-action-banner-text { font-size: 11px !important; }
         }
       `}</style>
 
       {/* ── Topbar ── */}
-      <div style={{ borderBottom: `1px solid ${C.border}`, padding: '0 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: 56, background: C.sidebar, flexShrink: 0, position: 'sticky' as const, top: 0, zIndex: 40 }}>
+      <div className='mr-topbar' style={{ borderBottom: `1px solid ${C.border}`, padding: '0 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: 56, background: C.sidebar, flexShrink: 0, position: 'sticky' as const, top: 0, zIndex: 40 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           {/* Hamburger / collapse toggle */}
           <button onClick={() => isMobile ? setMobileMenuOpen(o => !o) : toggleSidebar()}
@@ -653,7 +660,7 @@ export default function DashboardPage() {
           {active === 'dashboard' && (
             <div className='mr-content-pad' style={{ padding: 24, display: 'flex', flexDirection: 'column', gap: isMobile ? 14 : 20 }}>
               {/* Welcome */}
-              <div style={{ background: 'linear-gradient(135deg,#0f0c00,#0a0a0a)', border: `1px solid #2a2200`, borderRadius: 14, padding: isMobile ? '20px 18px' : '28px 32px', position: 'relative', overflow: 'hidden' }}>
+              <div className='mr-welcome-pad' style={{ background: 'linear-gradient(135deg,#0f0c00,#0a0a0a)', border: `1px solid #2a2200`, borderRadius: 14, padding: '28px 32px', position: 'relative', overflow: 'hidden' }}>
                 <div style={{ position: 'absolute', right: 0, top: 0, bottom: 0, width: '45%', opacity: 0.07 }}>
                   <svg viewBox="0 0 400 160" width="100%" height="100%">
                     <polyline points="0,120 40,100 80,110 120,70 160,90 200,50 240,80 280,40 320,60 360,30 400,50" fill="none" stroke={G.gold} strokeWidth="2.5"/>
@@ -687,7 +694,7 @@ export default function DashboardPage() {
               <div className='mr-grid-3' style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10 }}>
 
                 {/* Status Trading */}
-                <div style={{ background: C.panel, border: `1px solid ${member.funded_status ? '#3a2e00' : C.border}`, borderRadius: 12, padding: '16px 18px', cursor: 'pointer' }}
+                <div className='mr-status-card' style={{ background: C.panel, border: `1px solid ${member.funded_status ? '#3a2e00' : C.border}`, borderRadius: 12, padding: '16px 18px', cursor: 'pointer' }}
                   onClick={() => setActive('funded')}>
                   <div style={{ fontFamily: C.mono, color: C.dim, fontSize: 10, letterSpacing: 0.8, marginBottom: 8 }}>STATUS TRADING</div>
                   {member.funded_status ? (
@@ -752,7 +759,7 @@ export default function DashboardPage() {
                   {/* Discord banner */}
                   {!member.discord_username && (
                     <button onClick={() => setActive('pengaturan')}
-                      style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 18px', background: '#080d1a', border: '1px solid #1e2a4a', borderRadius: 10, cursor: 'pointer', textAlign: 'left' as const, width: '100%' }}>
+                      className='mr-action-banner' style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 18px', background: '#080d1a', border: '1px solid #1e2a4a', borderRadius: 10, cursor: 'pointer', textAlign: 'left' as const, width: '100%' }}>
                       <div style={{ width: 38, height: 38, background: '#1e2a4a', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: 18 }}>💬</div>
                       <div style={{ flex: 1 }}>
                         <div style={{ fontSize: 13, fontWeight: 700, color: '#93a8f0', marginBottom: 2 }}>Hubungkan Akun Discord Kamu</div>
@@ -765,7 +772,7 @@ export default function DashboardPage() {
                   {/* Trading status banner */}
                   {!member.funded_status && (
                     <button onClick={() => setActive('funded')}
-                      style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 18px', background: '#0a0c00', border: '1px solid #2a2e00', borderRadius: 10, cursor: 'pointer', textAlign: 'left' as const, width: '100%' }}>
+                      className='mr-action-banner' style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 18px', background: '#0a0c00', border: '1px solid #2a2e00', borderRadius: 10, cursor: 'pointer', textAlign: 'left' as const, width: '100%' }}>
                       <div style={{ width: 38, height: 38, background: '#1a1e00', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: 18 }}>🚀</div>
                       <div style={{ flex: 1 }}>
                         <div style={{ fontSize: 13, fontWeight: 700, color: G.gold, marginBottom: 2 }}>Set Status Trading Kamu</div>
@@ -856,9 +863,9 @@ export default function DashboardPage() {
               {/* Request Advanced Modal */}
               {showAdvModal && (
                 <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', zIndex: 999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
-                  <div style={{ background: '#0d0d0d', border: `1px solid ${C.border2}`, borderRadius: 14, padding: 28, width: '100%', maxWidth: 480 }}>
+                  <div className='mr-modal' style={{ background: '#0d0d0d', border: `1px solid ${C.border2}`, borderRadius: 14, padding: 28, width: '100%', maxWidth: 480 }}>
                     <div style={{ fontFamily: C.mono, color: G.gold, fontSize: 10, letterSpacing: 1, marginBottom: 6 }}>// REQUEST NAIK KELAS ADVANCED</div>
-                    <h3 style={{ fontSize: 18, fontWeight: 700, margin: '0 0 8px' }}>Ajukan Naik Kelas</h3>
+                    <h3 className='mr-modal-title' style={{ fontSize: 18, fontWeight: 700, margin: '0 0 8px' }}>Ajukan Naik Kelas</h3>
                     <p style={{ color: C.dim, fontSize: 13, margin: '0 0 20px', lineHeight: 1.6 }}>
                       Lampirkan minimal 1 jurnal trading (link atau file) sebagai syarat naik kelas Advanced. Admin akan mereview dan memberikan keputusan.
                     </p>

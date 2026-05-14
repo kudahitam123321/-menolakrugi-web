@@ -191,9 +191,32 @@ export default function AdminPanel() {
   }
 
   return (
+    <>
+    <style>{`
+      @media(max-width:1023px){
+        .ap-sidebar{display:none!important}
+        .ap-topbar{padding:0 16px!important}
+        .ap-topbar-title{display:none!important}
+        .ap-content{padding:16px!important}
+        .ap-grid5{grid-template-columns:repeat(2,1fr)!important}
+        .ap-grid6{grid-template-columns:repeat(3,1fr)!important}
+        .ap-grid3col{grid-template-columns:1fr!important}
+        .ap-grid2col{grid-template-columns:1fr!important}
+        .ap-grid15{grid-template-columns:1fr!important}
+        .ap-grid16{grid-template-columns:1fr!important}
+        .ap-table-header{display:none!important}
+        .ap-overview-row{flex-direction:column!important;gap:12px!important}
+        .ap-klaim-row{grid-template-columns:1fr 1fr!important}
+      }
+      @media(max-width:767px){
+        .ap-grid5{grid-template-columns:1fr 1fr!important}
+        .ap-grid6{grid-template-columns:repeat(2,1fr)!important}
+        .ap-klaim-row{grid-template-columns:1fr!important}
+      }
+    `}</style>
     <div style={{ fontFamily: C.sans, background: C.bg, minHeight: '100vh', color: C.text, display: 'flex', flexDirection: 'column' }}>
       {/* Top bar */}
-      <div style={{ borderBottom: `1px solid ${C.border}`, padding: '0 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: C.sidebar, height: 56, flexShrink: 0 }}>
+      <div className='ap-topbar' style={{ borderBottom: `1px solid ${C.border}`, padding: '0 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: C.sidebar, height: 56, flexShrink: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
           <div style={{ width: 36, height: 36 }}><img src='/logo.png' alt='MR' style={{ width: '100%', height: '100%', objectFit: 'contain' }}/></div>
           <span style={{ fontWeight: 800, fontSize: 14 }}>MENOLAK RUGI</span>
@@ -264,7 +287,7 @@ export default function AdminPanel() {
               </div>
 
               {/* 5 Stat Cards */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5,1fr)', gap: 12 }}>
+              <div className='ap-grid5' style={{ display: 'grid', gridTemplateColumns: 'repeat(5,1fr)', gap: 12 }}>
                 {[
                   { l:'TOTAL MEMBER',   v:dash.total,      sub:'+18 dari bulan lalu',       c:C.text,    icon:'👥', up:true  },
                   { l:'ACTIVE MEMBER',  v:dash.active,     sub:`${Math.round(dash.active/Math.max(dash.total,1)*100)}% dari total`, c:C.up,     icon:'✅', up:true  },
@@ -286,7 +309,7 @@ export default function AdminPanel() {
               </div>
 
               {/* Row 2 — 3 columns */}
-              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:16 }}>
+              <div className='ap-grid3col' style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:16 }}>
 
                 {/* Distribusi Membership */}
                 <div style={{ background:C.panel, border:`1px solid ${C.border}`, borderRadius:10, padding:'18px' }}>
@@ -357,7 +380,7 @@ export default function AdminPanel() {
                       </div>
                     ))}
                   </div>
-                  <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8, paddingTop:12, marginTop:8, borderTop:`1px solid ${C.border}` }}>
+                  <div className='ap-grid2col' style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8, paddingTop:12, marginTop:8, borderTop:`1px solid ${C.border}` }}>
                     {[
                       {l:'Total Video',  v:dash.totalVideos,  c:'#3b82f6'},
                       {l:'Total File',   v:dash.totalFiles,   c:'#a855f7'},
@@ -375,7 +398,7 @@ export default function AdminPanel() {
                 {/* Ringkasan Sistem */}
                 <div style={{ background:C.panel, border:`1px solid ${C.border}`, borderRadius:10, padding:'18px' }}>
                   <div style={{ fontWeight:700, fontSize:13, marginBottom:14 }}>RINGKASAN SISTEM</div>
-                  <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8 }}>
+                  <div className='ap-grid2col' style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8 }}>
                     {[
                       {l:'Total Video',   v:dash.totalVideos,  icon:'▶' },
                       {l:'File Materi',   v:dash.totalFiles,   icon:'📄'},
@@ -402,7 +425,7 @@ export default function AdminPanel() {
                   <div style={{ fontWeight:700, fontSize:13 }}>STATUS TRADING MEMBER</div>
                   <div style={{ fontFamily:C.mono, fontSize:11, color:G.gold }}>TOTAL FUNDED: {dash.totalFunded}</div>
                 </div>
-                <div style={{ display:'grid', gridTemplateColumns:'repeat(6,1fr)', gap:10 }}>
+                <div className='ap-grid6' style={{ display:'grid', gridTemplateColumns:'repeat(6,1fr)', gap:10 }}>
                   {([
                     {k:'DA',    label:'Demo Account',  color:'#3b82f6'},
                     {k:'P1',    label:'Phase 1',        color:'#a855f7'},
@@ -421,7 +444,7 @@ export default function AdminPanel() {
               </div>
 
               {/* Row 3 — Klaim + Aktivitas */}
-              <div style={{ display:'grid', gridTemplateColumns:'1.5fr 1fr', gap:16 }}>
+              <div className='ap-grid15' style={{ display:'grid', gridTemplateColumns:'1.5fr 1fr', gap:16 }}>
                 {/* Klaim terbaru */}
                 <div style={{ background:C.panel, border:`1px solid ${C.border}`, borderRadius:10, padding:'18px' }}>
                   <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:14 }}>
@@ -464,7 +487,7 @@ export default function AdminPanel() {
               </div>
 
               {/* Row 4 — Top Members + Growth Chart */}
-              <div style={{ display:'grid', gridTemplateColumns:'1fr 1.6fr', gap:16 }}>
+              <div className='ap-grid16' style={{ display:'grid', gridTemplateColumns:'1fr 1.6fr', gap:16 }}>
                 {/* Member Aktif */}
                 <div style={{ background:C.panel, border:`1px solid ${C.border}`, borderRadius:10, padding:'18px' }}>
                   <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:14 }}>
@@ -517,5 +540,6 @@ export default function AdminPanel() {
         </main>
       </div>
     </div>
+    </>
   );
 }

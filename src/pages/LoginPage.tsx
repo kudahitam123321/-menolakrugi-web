@@ -190,12 +190,20 @@ export default function LoginPage() {
   }, []);
   return (
     <div className='mr-lp-outer' style={{fontFamily:'"Geist",system-ui,sans-serif',background:'#080808',minHeight:'100vh',color:'#e7e5e4',WebkitFontSmoothing:'antialiased',overflowX:'hidden',display:'grid',gridTemplateColumns:'1fr 520px'}}>
-      <style>{`@media(max-width:767px){
-        .mr-lp-outer{display:flex!important;flex-direction:column;grid-template-columns:unset}
-        .mr-lp-left{display:none!important}
-        .mr-lp-right{padding:32px 20px!important;border-left:none!important;min-height:100vh;align-items:flex-start!important}
-        .mr-lp-form{max-width:100%!important}
-      }`}</style>
+      <style>{`
+        .mr-lp-outer { display: grid; grid-template-columns: 1fr 520px; min-height: 100vh; }
+        .mr-lp-left { display: flex; flex-direction: column; justify-content: space-between; overflow: hidden; position: relative; padding: 48px 56px; }
+        .mr-lp-right { display: flex; align-items: center; justify-content: center; padding: 48px 40px; background: #0d0d0d; border-left: 1px solid #1a1a1a; }
+        .mr-lp-form { width: 100%; max-width: 400px; }
+        @media (max-width: 767px) {
+          .mr-lp-outer { display: flex !important; flex-direction: column; min-height: 100vh; }
+          .mr-lp-left { display: none !important; }
+          .mr-lp-right { padding: 40px 20px !important; border-left: none !important; flex: 1; min-height: 100vh; align-items: flex-start !important; padding-top: 60px !important; }
+          .mr-lp-form { max-width: 100% !important; }
+          .mr-lp-tabs { gap: 6px !important; }
+          .mr-lp-field input { font-size: 16px !important; }
+        }
+      `}</style>
       {/* Kiri */}
       <div className='mr-lp-left' style={{position:'relative',padding:'48px 56px',display:'flex',flexDirection:'column',justifyContent:'space-between',overflow:'hidden'}}>
         <div style={{position:'absolute',inset:0,opacity:0.3,...CANDLE_GRID_STYLE}}/>
