@@ -1091,52 +1091,70 @@ export default function DashboardPage() {
                           )}
                         </div>
                       ) : (
-                        <div style={{ maxHeight: 280, overflowY: 'auto' as const }}>
+                        <div style={{ overflowY: 'auto' as const }}>
                           {vids.sort((a,b) => a.urutan - b.urutan).map(v => {
                             const ytId = v.youtube_url?.match(/(?:youtu\.be\/|v=)([^&?/\s]+)/)?.[1];
+                            const extUrl = v.youtube_url && !ytId ? v.youtube_url : null; // non-YouTube link
+                            const hasVideo = ytId || extUrl;
+                            const videoHref = ytId ? `https://youtube.com/watch?v=${ytId}` : extUrl;
                             const s = progress[v.id];
+                            const isComingSoon = !v.youtube_url && !v.coming_soon_img;
                             return (
-                              <div key={v.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 18px', borderBottom: `1px solid ${C.border}` }}>
-                                <div style={{ width: 28, height: 28, background: s==='selesai'?'#0a1a14':s==='mulai'?'#1a1500':'#0a0a0a', border: `1px solid ${s==='selesai'?C.up:s==='mulai'?G.gold:C.border}`, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, flexShrink: 0 }}>
+                              <div key={v.id} style={{ display: 'flex', gap: 12, padding: '12px 16px', borderBottom: `1px solid ${C.border}`, transition: 'background 0.15s' }}
+                                onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = '#0d0d0d'}
+                                onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = 'transparent'}>
+                                {/* Status icon */}
+                                <div style={{ width: 30, height: 30, background: s==='selesai'?'#0a1a14':s==='mulai'?'#1a1500':'#0a0a0a', border: `1px solid ${s==='selesai'?C.up:s==='mulai'?G.gold:C.border}`, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, flexShrink: 0, marginTop: 2 }}>
                                   {s==='selesai'?'✓':s==='mulai'?'▶':'○'}
                                 </div>
+                                {/* Content */}
                                 <div style={{ flex: 1, minWidth: 0 }}>
-                                  <div style={{ fontSize: 13, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const, color: s==='selesai'?C.dim:C.text }}>{v.judul}</div>
-                                </div>
-                                {v.coming_soon_img && !ytId && <span style={{ fontFamily: C.mono, fontSize: 9, color: '#333', border: `1px solid ${C.border}`, padding: '2px 6px' }}>SEGERA</span>}
-                                {ytId && (
-                                  <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexShrink: 0 }}>
-                                    <a href={`https://youtube.com/watch?v=${ytId}`} target="_blank" rel="noopener noreferrer"
-                                      onClick={async () => {
-                                        // Update member_progress
-                                        if (s !== 'mulai' && s !== 'selesai') {
-                                          await supabase.from('member_progress').upsert({ member_id: member!.id, video_id: v.id, status: 'mulai' }, { onConflict: 'member_id,video_id' });
-                                        }
-                                        // Update watch_history untuk LanjutkanBelajar
-                                        await trackVideoWatch(member!.id, v.id);
-                                        setWatchRefreshKey(k => k + 1); // force LanjutkanBelajar re-render
-                                      }}
-                                      style={{ fontFamily: C.mono, fontSize: 10, color: G.gold, textDecoration: 'none', padding: '3px 8px', border: `1px solid #3a2e00` }}>TONTON</a>
-                                    {s !== 'selesai' ? (
-                                      <button onClick={async () => {
-                                        await supabase.from('member_progress').upsert({ member_id: member!.id, video_id: v.id, status: 'selesai' }, { onConflict: 'member_id,video_id' });
-                                        await trackVideoWatch(member!.id, v.id);
-                                        setWatchRefreshKey(k => k + 1);
-                                        loadData(member!);
-                                      }} style={{ fontFamily: C.mono, fontSize: 9, color: C.up, background: '#0a1a14', border: `1px solid ${C.up}44`, padding: '3px 7px', cursor: 'pointer', borderRadius: 3 }}>
-                                        ✓ SELESAI
-                                      </button>
-                                    ) : (
-                                      <button onClick={async () => {
-                                        await supabase.from('member_progress').upsert({ member_id: member!.id, video_id: v.id, status: 'mulai' }, { onConflict: 'member_id,video_id' });
-                                        loadData(member!);
-                                      }} style={{ fontFamily: C.mono, fontSize: 9, color: C.dim, background: 'transparent', border: `1px solid ${C.border}`, padding: '3px 7px', cursor: 'pointer', borderRadius: 3 }}>
-                                        ↩ RESET
-                                      </button>
+                                  <div style={{ fontSize: 13, fontWeight: 600, color: s==='selesai'?C.dim:C.text, marginBottom: v.deskripsi ? 4 : 0, lineHeight: 1.4 }}>{v.judul}</div>
+                                  {v.deskripsi && (
+                                    <div style={{ fontSize: 11, color: C.dim, lineHeight: 1.5, marginBottom: 6, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' as const, overflow: 'hidden' }}>{v.deskripsi}</div>
+                                  )}
+                                  {/* Actions row */}
+                                  <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' as const }}>
+                                    {v.coming_soon_img && !hasVideo && (
+                                      <span style={{ fontFamily: C.mono, fontSize: 9, color: '#555', border: `1px solid ${C.border}`, padding: '2px 7px', borderRadius: 3 }}>SEGERA</span>
+                                    )}
+                                    {isComingSoon && !v.coming_soon_img && (
+                                      <span style={{ fontFamily: C.mono, fontSize: 9, color: '#555', border: `1px solid ${C.border}`, padding: '2px 7px', borderRadius: 3 }}>SEGERA</span>
+                                    )}
+                                    {hasVideo && (
+                                      <>
+                                        <a href={videoHref!} target="_blank" rel="noopener noreferrer"
+                                          onClick={async () => {
+                                            if (s !== 'mulai' && s !== 'selesai') {
+                                              await supabase.from('member_progress').upsert({ member_id: member!.id, video_id: v.id, status: 'mulai' }, { onConflict: 'member_id,video_id' });
+                                            }
+                                            await trackVideoWatch(member!.id, v.id);
+                                            setWatchRefreshKey(k => k + 1);
+                                          }}
+                                          style={{ fontFamily: C.mono, fontSize: 10, fontWeight: 700, color: '#000', background: G.gold, textDecoration: 'none', padding: '4px 10px', borderRadius: 4, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                                          ▶ TONTON
+                                        </a>
+                                        {s !== 'selesai' ? (
+                                          <button onClick={async () => {
+                                            await supabase.from('member_progress').upsert({ member_id: member!.id, video_id: v.id, status: 'selesai' }, { onConflict: 'member_id,video_id' });
+                                            await trackVideoWatch(member!.id, v.id);
+                                            setWatchRefreshKey(k => k + 1);
+                                            loadData(member!);
+                                          }} style={{ fontFamily: C.mono, fontSize: 10, color: C.up, background: '#0a1a14', border: `1px solid ${C.up}44`, padding: '4px 10px', cursor: 'pointer', borderRadius: 4 }}>
+                                            ✓ SELESAI
+                                          </button>
+                                        ) : (
+                                          <button onClick={async () => {
+                                            await supabase.from('member_progress').upsert({ member_id: member!.id, video_id: v.id, status: 'mulai' }, { onConflict: 'member_id,video_id' });
+                                            loadData(member!);
+                                          }} style={{ fontFamily: C.mono, fontSize: 10, color: '#555', background: 'transparent', border: `1px solid ${C.border}`, padding: '4px 10px', cursor: 'pointer', borderRadius: 4 }}>
+                                            ↩ RESET
+                                          </button>
+                                        )}
+                                      </>
                                     )}
                                   </div>
-                                )}
-                                {!ytId && !v.coming_soon_img && <span style={{ fontFamily: C.mono, fontSize: 9, color: '#333', border: `1px solid ${C.border}`, padding: '2px 6px' }}>SEGERA</span>}
+                                </div>
                               </div>
                             );
                           })}
