@@ -20,8 +20,8 @@ const SIDEBAR = [
   { id: 'materi',      label: 'Materi',       icon: '📚' },
   { id: 'live',        label: 'Live Trading', icon: '📡', badge: 'LIVE' },
   { id: 'news',        label: 'Chart',        icon: '📈' },
-  { id: 'komunitas',   label: 'Komunitas',    icon: '💬' },
-  { id: 'tools',       label: 'Broker',       icon: '🏦' },
+  { id: 'komunitas',   label: 'Komunitas',    icon: '💬', href: DISCORD },
+  { id: 'tools',       label: 'Tools',        icon: '🔧' },
   { id: 'pengaturan',  label: 'Pengaturan',   icon: '⚙' },
   { id: 'bantuan',     label: 'Bantuan',      icon: '❓' },
   { id: 'funded',      label: 'Status Trading', icon: '🚀' },
@@ -149,7 +149,29 @@ const AdvancedChartWidget = memo(function AdvancedChartWidget() {
         </a>
       </div>
 
-
+      {/* ── Mobile Bottom Nav ── */}
+      <nav className='mr-bottom-nav' style={{ position: 'fixed', bottom: 0, left: 0, right: 0, height: 60, background: C.sidebar, borderTop: `1px solid ${C.border}`, display: 'flex', alignItems: 'center', zIndex: 39, padding: '0 4px' }}>
+          {[
+            { id: 'dashboard', icon: '⊞', label: 'Home' },
+            { id: 'kelas',     icon: '▶', label: 'Kelas' },
+            { id: 'materi',    icon: '📁', label: 'Materi' },
+            { id: 'funded',    icon: '🚀', label: 'Trading' },
+            { id: 'menu',      icon: '☰',  label: 'Menu' },
+          ].map(item => {
+            const isA = item.id === 'menu' ? false : active === item.id;
+            return (
+              <button key={item.id}
+                onClick={() => {
+                  if (item.id === 'menu') setMobileMenuOpen(true);
+                  else setActive(item.id);
+                }}
+                style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 3, background: 'none', border: 'none', cursor: 'pointer', color: isA ? G.gold : '#555', padding: '4px 0' }}>
+                <span style={{ fontSize: 18 }}>{item.icon}</span>
+                <span style={{ fontFamily: C.mono, fontSize: 9, fontWeight: isA ? 700 : 400 }}>{item.label}</span>
+              </button>
+            );
+          })}
+        </nav>
       <div className='mr-bottom-spacer'/>
 
     </div>
@@ -205,7 +227,29 @@ function LotCalculator() {
         Pip value {pair}: ${pipVal}/lot/pip
       </div>
 
-
+      {/* ── Mobile Bottom Nav ── */}
+      <nav className='mr-bottom-nav' style={{ position: 'fixed', bottom: 0, left: 0, right: 0, height: 60, background: C.sidebar, borderTop: `1px solid ${C.border}`, display: 'flex', alignItems: 'center', zIndex: 39, padding: '0 4px' }}>
+          {[
+            { id: 'dashboard', icon: '⊞', label: 'Home' },
+            { id: 'kelas',     icon: '▶', label: 'Kelas' },
+            { id: 'materi',    icon: '📁', label: 'Materi' },
+            { id: 'funded',    icon: '🚀', label: 'Trading' },
+            { id: 'menu',      icon: '☰',  label: 'Menu' },
+          ].map(item => {
+            const isA = item.id === 'menu' ? false : active === item.id;
+            return (
+              <button key={item.id}
+                onClick={() => {
+                  if (item.id === 'menu') setMobileMenuOpen(true);
+                  else setActive(item.id);
+                }}
+                style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 3, background: 'none', border: 'none', cursor: 'pointer', color: isA ? G.gold : '#555', padding: '4px 0' }}>
+                <span style={{ fontSize: 18 }}>{item.icon}</span>
+                <span style={{ fontFamily: C.mono, fontSize: 9, fontWeight: isA ? 700 : 400 }}>{item.label}</span>
+              </button>
+            );
+          })}
+        </nav>
       <div className='mr-bottom-spacer'/>
 
     </div>
@@ -341,7 +385,6 @@ export default function DashboardPage() {
   const [progress, setProgress]       = useState<Record<string, string>>({});
   const [announcements, setAnnouncements] = useState<any[]>([]);
   const [brokers, setBrokers]         = useState<any[]>([]);
-  const [propRules, setPropRules]       = useState<any[]>([]);
   const [oldPass, setOldPass]         = useState('');
   const [newPass, setNewPass]         = useState('');
   const [confPass, setConfPass]       = useState('');
@@ -396,13 +439,12 @@ export default function DashboardPage() {
   }, []);
 
   async function loadData(m: Member) {
-    const [vidRes, fileRes, annRes, progRes, brokerRes, schedRes, notifRes, advRes, rulesRes] = await Promise.all([
+    const [vidRes, fileRes, annRes, progRes, brokerRes, schedRes, notifRes, advRes] = await Promise.all([
       supabase.from('videos').select('*').order('urutan', { ascending: true }),
       supabase.from('files').select('*').order('urutan', { ascending: true }),
       supabase.from('announcements').select('*').order('created_at', { ascending: false }).limit(5),
       supabase.from('member_progress').select('video_id, status').eq('member_id', m.id),
       supabase.from('brokers').select('*').order('urutan', { ascending: true }),
-      supabase.from('prop_firm_rules').select('*').order('created_at', { ascending: false }),
       supabase.from('live_schedules').select('*').order('urutan', { ascending: true }),
       supabase.from('member_notifications').select('*').eq('member_id', m.id).order('created_at', { ascending: false }).limit(10),
       supabase.from('advance_requests').select('*').eq('member_id', m.id).order('created_at', { ascending: false }).limit(1),
@@ -411,7 +453,6 @@ export default function DashboardPage() {
     if (fileRes.data)  setFiles(fileRes.data);
     if (annRes.data)   setAnnouncements(annRes.data);
     if (brokerRes.data) setBrokers(brokerRes.data);
-    if (rulesRes.data) setPropRules(rulesRes.data);
     if (schedRes.data)  setLiveSchedules(schedRes.data);
     if (notifRes.data)  setNotifications(notifRes.data);
     if (advRes.data && advRes.data.length > 0) setAdvanceReq(advRes.data[0]);
@@ -603,48 +644,6 @@ export default function DashboardPage() {
           .mr-action-banner { padding: 12px !important; }
           .mr-action-banner-text { font-size: 11px !important; }
         }
-
-        /* ── Dashboard Animations ── */
-        @keyframes mr-kpi-in {
-          from { opacity: 0; transform: translateY(16px); }
-          to   { opacity: 1; transform: translateY(0); }
-        }
-        @keyframes mr-ring-fill {
-          from { stroke-dashoffset: var(--ring-full); }
-          to   { stroke-dashoffset: var(--ring-offset); }
-        }
-        @keyframes mr-welcome-in {
-          from { opacity: 0; transform: translateX(-16px); }
-          to   { opacity: 1; transform: translateX(0); }
-        }
-        .mr-kpi-0 { animation: mr-kpi-in 0.5s ease 0.1s both; }
-        .mr-kpi-1 { animation: mr-kpi-in 0.5s ease 0.2s both; }
-        .mr-kpi-2 { animation: mr-kpi-in 0.5s ease 0.3s both; }
-        .mr-kpi-3 { animation: mr-kpi-in 0.5s ease 0.4s both; }
-        .mr-welcome-anim { animation: mr-welcome-in 0.6s ease 0.05s both; }
-        .mr-status-anim { animation: mr-kpi-in 0.5s ease 0.5s both; }
-        .mr-banner-anim { animation: mr-kpi-in 0.5s ease 0.7s both; }
-
-        @keyframes mr-modal-in {
-          from { opacity: 0; transform: scale(0.92); }
-          to   { opacity: 1; transform: scale(1); }
-        }
-        @keyframes mr-slideup-notify {
-          from { opacity: 0; transform: translateY(20px); }
-          to   { opacity: 1; transform: translateY(0); }
-        }
-        @keyframes mr-progress-fill {
-          from { width: 0%; }
-          to   { width: var(--prog-w); }
-        }
-        @keyframes mr-sidebar-bg {
-          from { background-size: 0% 100%; }
-          to   { background-size: 100% 100%; }
-        }
-        .mr-modal-anim { animation: mr-modal-in 0.25s ease both; }
-        .mr-notify-anim { animation: mr-slideup-notify 0.35s ease both; }
-        .mr-sidebar-item:hover { background: linear-gradient(90deg,#1a1500,transparent) !important; transition: background 0.2s !important; }
-        .mr-sidebar-item.active-item { background: linear-gradient(90deg,#1a1500,transparent) !important; border-left: 3px solid #eab308 !important; }
       `}</style>
 
       {/* ── Topbar ── */}
@@ -777,7 +776,7 @@ export default function DashboardPage() {
           {active === 'dashboard' && (
             <div className='mr-content-pad' style={{ padding: 24, display: 'flex', flexDirection: 'column', gap: isMobile ? 14 : 20 }}>
               {/* Welcome */}
-              <div className='mr-welcome-pad mr-welcome-anim' style={{ background: 'linear-gradient(135deg,#0f0c00,#0a0a0a)', border: `1px solid #2a2200`, borderRadius: 14, padding: '28px 32px', position: 'relative', overflow: 'hidden' }}>
+              <div className='mr-welcome-pad' style={{ background: 'linear-gradient(135deg,#0f0c00,#0a0a0a)', border: `1px solid #2a2200`, borderRadius: 14, padding: '28px 32px', position: 'relative', overflow: 'hidden' }}>
                 <div style={{ position: 'absolute', right: 0, top: 0, bottom: 0, width: '45%', opacity: 0.07 }}>
                   <svg viewBox="0 0 400 160" width="100%" height="100%">
                     <polyline points="0,120 40,100 80,110 120,70 160,90 200,50 240,80 280,40 320,60 360,30 400,50" fill="none" stroke={G.gold} strokeWidth="2.5"/>
@@ -808,7 +807,7 @@ export default function DashboardPage() {
               </div>
 
               {/* ── Status Member Row ── */}
-              <div className='mr-grid-3 mr-status-anim' style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10 }}>
+              <div className='mr-grid-3' style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10 }}>
 
                 {/* Status Trading */}
                 <div className='mr-status-card' style={{ background: C.panel, border: `1px solid ${member.funded_status ? '#3a2e00' : C.border}`, borderRadius: 12, padding: '16px 18px', cursor: 'pointer' }}
@@ -871,7 +870,7 @@ export default function DashboardPage() {
 
               {/* ── Action Banners (hanya tampil jika belum selesai) ── */}
               {(!member.discord_username || !member.funded_status) && (
-                <div className='mr-banner-anim' style={{ display: 'flex', flexDirection: 'column' as const, gap: 10 }}>
+                <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 10 }}>
 
                   {/* Discord banner */}
                   {!member.discord_username && (
@@ -920,7 +919,7 @@ export default function DashboardPage() {
                     </div>
                   )}
                   {/* Notifikasi personal (approve/reject advance) */}
-                  {notifications.filter((n:any) => !dismissedNotifs.has(n.id)).map((n: any, ni: number) => (
+                  {notifications.map((n: any) => (
                     <div key={n.id} style={{ display: 'flex', gap: 10, padding: '12px 14px', borderRadius: 8, marginBottom: 8,
                       background: n.type === 'approve' ? '#0a1a0a' : n.type === 'reject' ? '#1a0a0a' : '#0a0e1a',
                       border: `1px solid ${n.type === 'approve' ? C.up + '44' : n.type === 'reject' ? C.down + '44' : '#1e2a4a'}` }}>
@@ -980,7 +979,7 @@ export default function DashboardPage() {
               {/* Request Advanced Modal */}
               {showAdvModal && (
                 <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', zIndex: 999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
-                  <div className='mr-modal mr-modal-anim' style={{ background: '#0d0d0d', border: `1px solid ${C.border2}`, borderRadius: 14, padding: 28, width: '100%', maxWidth: 480 }}>
+                  <div className='mr-modal' style={{ background: '#0d0d0d', border: `1px solid ${C.border2}`, borderRadius: 14, padding: 28, width: '100%', maxWidth: 480 }}>
                     <div style={{ fontFamily: C.mono, color: G.gold, fontSize: 10, letterSpacing: 1, marginBottom: 6 }}>// REQUEST NAIK KELAS ADVANCED</div>
                     <h3 className='mr-modal-title' style={{ fontSize: 18, fontWeight: 700, margin: '0 0 8px' }}>Ajukan Naik Kelas</h3>
                     <p style={{ color: C.dim, fontSize: 13, margin: '0 0 20px', lineHeight: 1.6 }}>
@@ -1271,87 +1270,33 @@ export default function DashboardPage() {
 
           {/* ══ TOOLS ══ */}
           {active === 'tools' && (
-            <div className='mr-content-pad' style={{ padding: 24 }}>
-              {/* Header */}
-              <div style={{ marginBottom: 24 }}>
-                <div style={{ fontFamily: C.mono, color: G.gold, fontSize: 10, letterSpacing: 1, marginBottom: 6 }}>// BROKER & PROP FIRM</div>
-                <h2 style={{ fontSize: 22, fontWeight: 700, margin: '0 0 4px' }}>Broker & Prop Firm</h2>
-                <p style={{ color: C.dim, fontSize: 13, margin: 0 }}>Rekomendasi broker terpercaya dan rules prop firm dari mentor.</p>
-              </div>
-
-              {/* Lot Size Calculator — full width, compact */}
-              <div style={{ background: 'linear-gradient(135deg,#0d0c00,#0a0a0a)', border: `1px solid #2a2200`, borderRadius: 14, padding: '20px 24px', marginBottom: 20 }}>
-                <div style={{ fontFamily: C.mono, color: G.gold, fontSize: 10, letterSpacing: 1, marginBottom: 14 }}>// LOT SIZE CALCULATOR</div>
-                <LotCalculator/>
-              </div>
-
-              {/* Broker Rekomendasi — card grid */}
+            <div style={{ padding: 24 }}>
               <div style={{ marginBottom: 20 }}>
-                <div style={{ fontFamily: C.mono, color: C.dim, fontSize: 10, letterSpacing: 1, marginBottom: 12 }}>// BROKER & PROP FIRM REKOMENDASI</div>
-                {brokers.length > 0 ? (
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 12 }}>
-                    {brokers.map((b: any) => (
-                      <div key={b.id} style={{ background: C.panel, border: `1px solid ${C.border}`, borderRadius: 12, padding: '18px', display: 'flex', flexDirection: 'column' as const, gap: 8, transition: 'border-color 0.15s' }}
-                        onMouseEnter={e => (e.currentTarget as HTMLElement).style.borderColor = '#3a2e00'}
-                        onMouseLeave={e => (e.currentTarget as HTMLElement).style.borderColor = C.border}>
-                        {/* Icon + Name */}
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                          <div style={{ width: 40, height: 40, background: '#1a1500', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: 13, color: G.gold, flexShrink: 0, border: `1px solid #3a2e00` }}>
-                            {b.nama?.[0]?.toUpperCase()}
-                          </div>
-                          <div>
-                            <div style={{ fontWeight: 700, fontSize: 14 }}>{b.nama}</div>
-                            {b.diskon && <div style={{ fontFamily: C.mono, color: C.up, fontSize: 10 }}>🎁 {b.diskon}</div>}
-                          </div>
-                        </div>
-                        {b.deskripsi && <div style={{ color: C.dim, fontSize: 12, lineHeight: 1.55, flex: 1 }}>{b.deskripsi}</div>}
-                        {b.link && (
-                          <a href={b.link} target="_blank" rel="noopener noreferrer"
-                            style={{ display: 'block', textAlign: 'center' as const, fontFamily: C.mono, fontSize: 11, fontWeight: 700, color: '#000', background: G.gold, padding: '8px', borderRadius: 7, textDecoration: 'none', marginTop: 4 }}>
-                            DAFTAR ▸
-                          </a>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div style={{ color: C.dim, fontSize: 13, padding: '20px', background: C.panel, borderRadius: 12, textAlign: 'center' as const }}>
-                    Belum ada rekomendasi broker.
-                  </div>
-                )}
+                <div style={{ fontFamily: C.mono, color: G.gold, fontSize: 10, letterSpacing: 1, marginBottom: 6 }}>// TOOLS</div>
+                <h2 style={{ fontSize: 22, fontWeight: 700, margin: 0 }}>Trading Tools</h2>
               </div>
-
-              {/* Prop Firm Rules */}
-              {propRules.length > 0 && (
-                <div>
-                  <div style={{ fontFamily: C.mono, color: C.dim, fontSize: 10, letterSpacing: 1, marginBottom: 12 }}>// PROP FIRM RULES</div>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 12 }}>
-                    {propRules.map((r: any) => (
-                      <div key={r.id} style={{ background: C.panel, border: `1px solid #1e1440`, borderRadius: 12, padding: '18px', display: 'flex', flexDirection: 'column' as const, gap: 10 }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                          <span style={{ fontSize: 20 }}>📋</span>
-                          <div style={{ fontWeight: 700, fontSize: 14 }}>{r.judul}</div>
-                        </div>
-                        {r.deskripsi && <div style={{ color: C.dim, fontSize: 12, lineHeight: 1.55 }}>{r.deskripsi}</div>}
-                        <div style={{ display: 'flex', gap: 8, marginTop: 'auto' as const, flexWrap: 'wrap' as const }}>
-                          {r.link && (
-                            <a href={r.link} target="_blank" rel="noopener noreferrer"
-                              style={{ fontFamily: C.mono, fontSize: 10, fontWeight: 700, color: '#a855f7', textDecoration: 'none', border: '1px solid #4a2a8a', padding: '5px 12px', borderRadius: 6, background: '#0f0a1a' }}>
-                              BUKA LINK ▸
-                            </a>
-                          )}
-                          {r.file_url && (
-                            <a href={r.file_url} target="_blank" rel="noopener noreferrer"
-                              style={{ fontFamily: C.mono, fontSize: 10, fontWeight: 700, color: C.up, textDecoration: 'none', border: `1px solid ${C.up}44`, padding: '5px 12px', borderRadius: 6, background: '#0a1410' }}>
-                              ⬇ DOWNLOAD
-                            </a>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, alignItems: 'start' }}>
+                <LotCalculator/>
+                {/* Prop Firm Tracker */}
+                <div style={{ background: C.panel, border: `1px solid ${C.border}`, borderRadius: 12, padding: 20 }}>
+                  <div style={{ fontFamily: C.mono, color: G.gold, fontSize: 11, letterSpacing: 1, marginBottom: 16 }}>// PROP FIRM RULES</div>
+                  {brokers.length > 0 ? brokers.map((b: any) => (
+                    <div key={b.id} style={{ marginBottom: 12, background: '#0a0a0a', border: `1px solid ${C.border}`, borderRadius: 8, padding: '12px 14px' }}>
+                      <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 4 }}>{b.nama}</div>
+                      {b.deskripsi && <div style={{ color: C.dim, fontSize: 12, marginBottom: 8 }}>{b.deskripsi}</div>}
+                      {b.diskon && <div style={{ fontFamily: C.mono, color: C.up, fontSize: 11, marginBottom: 8 }}>🎁 Diskon: {b.diskon}</div>}
+                      {b.link && (
+                        <a href={b.link} target="_blank" rel="noopener noreferrer"
+                          style={{ fontFamily: C.mono, fontSize: 11, color: G.gold, textDecoration: 'none', border: `1px solid #3a2e00`, padding: '4px 10px' }}>
+                          DAFTAR ▸
+                        </a>
+                      )}
+                    </div>
+                  )) : (
+                    <div style={{ color: C.dim, fontSize: 13 }}>Belum ada broker/prop firm terdaftar.</div>
+                  )}
                 </div>
-              )}
+              </div>
             </div>
           )}
 
@@ -1579,41 +1524,6 @@ export default function DashboardPage() {
             );
           })()}
 
-          {/* ══ KOMUNITAS ══ */}
-          {active === 'komunitas' && (
-            <div className='mr-content-pad' style={{ padding: 24 }}>
-              <div style={{ fontFamily: C.mono, color: G.gold, fontSize: 10, letterSpacing: 1, marginBottom: 6 }}>// KOMUNITAS</div>
-              <h2 style={{ fontSize: 22, fontWeight: 700, margin: '0 0 6px' }}>Komunitas Menolak Rugi</h2>
-              <p style={{ color: C.dim, fontSize: 13, margin: '0 0 24px' }}>Ikuti semua platform kami untuk update market, edukasi, dan diskusi bersama member lain.</p>
-              <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 12 }}>
-                {([
-                  { name: 'Discord', handle: 'Server Komunitas', desc: 'Diskusi market, tanya mentor, share setup, notif live trading.', href: 'https://discord.gg/d2Tpf6sGMr', color: '#5865F2', label: 'GABUNG SERVER', emoji: '💬' },
-                  { name: 'Telegram', handle: '@menolakrugi', desc: 'Update cepat, pengumuman, dan info jadwal live.', href: 'https://t.me/+_azyX2h9oFhmNjNl', color: '#229ED9', label: 'JOIN CHANNEL', emoji: '📨' },
-                  { name: 'TikTok', handle: '@menolakrugi', desc: 'Konten edukasi SMC, analisa harian, tips psikologi trading.', href: 'https://www.tiktok.com/@menolakrugi', color: '#ff0050', label: 'FOLLOW', emoji: '🎵' },
-                  { name: 'YouTube', handle: '@menolakrugi', desc: 'Live session, replay analisa, video tutorial SMC lengkap.', href: 'https://youtube.com/@menolakrugi', color: '#FF0000', label: 'SUBSCRIBE', emoji: '▶️' },
-                  { name: 'WhatsApp Admin', handle: '+62 812-4222-4939', desc: 'Hubungi admin untuk pertanyaan membership atau kendala akses.', href: 'https://wa.me/6281242224939', color: '#25D366', label: 'CHAT ADMIN', emoji: '📱' },
-                ] as {name:string;handle:string;desc:string;href:string;color:string;label:string;emoji:string}[]).map(s => (
-                  <a key={s.name} href={s.href} target="_blank" rel="noopener noreferrer"
-                    style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '16px', background: C.panel, border: `1px solid ${C.border}`, borderRadius: 12, textDecoration: 'none', transition: 'border-color 0.15s' }}
-                    onMouseEnter={e => (e.currentTarget as HTMLElement).style.borderColor = s.color + '66'}
-                    onMouseLeave={e => (e.currentTarget as HTMLElement).style.borderColor = C.border}>
-                    <div style={{ width: 44, height: 44, background: s.color + '18', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, flexShrink: 0 }}>
-                      {s.emoji}
-                    </div>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontWeight: 700, fontSize: 14, color: C.text, marginBottom: 2 }}>{s.name}</div>
-                      <div style={{ fontFamily: C.mono, fontSize: 10, color: s.color, marginBottom: 4 }}>{s.handle}</div>
-                      <div style={{ fontSize: 12, color: C.dim, lineHeight: 1.5 }}>{s.desc}</div>
-                    </div>
-                    <div style={{ fontFamily: C.mono, fontSize: 10, fontWeight: 700, color: s.color, border: `1px solid ${s.color}55`, padding: '5px 12px', borderRadius: 6, flexShrink: 0, whiteSpace: 'nowrap' as const }}>
-                      {s.label} ▸
-                    </div>
-                  </a>
-                ))}
-              </div>
-            </div>
-          )}
-
           {/* ══ BANTUAN ══ */}
           {active === 'bantuan' && (
             <div style={{ padding: 24 }}>
@@ -1663,28 +1573,28 @@ export default function DashboardPage() {
       </div>
 
       {/* ── Mobile Bottom Nav ── */}
-      <nav className='mr-bottom-nav' style={{ background: C.sidebar, borderTop: `1px solid ${C.border}`, display: 'flex', alignItems: 'center', padding: '0 4px' }}>
-        {[
-          { id: 'dashboard', icon: '⊞', label: 'Home' },
-          { id: 'kelas',     icon: '▶', label: 'Kelas' },
-          { id: 'materi',    icon: '📁', label: 'Materi' },
-          { id: 'funded',    icon: '🚀', label: 'Trading' },
-          { id: 'menu',      icon: '☰',  label: 'Menu' },
-        ].map(item => {
-          const isA = item.id === 'menu' ? false : active === item.id;
-          return (
-            <button key={item.id}
-              onClick={() => {
-                if (item.id === 'menu') setMobileMenuOpen(true);
-                else setActive(item.id);
-              }}
-              style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 3, background: 'none', border: 'none', cursor: 'pointer', color: isA ? G.gold : '#555', padding: '4px 0' }}>
-              <span style={{ fontSize: 18 }}>{item.icon}</span>
-              <span style={{ fontFamily: C.mono, fontSize: 9, fontWeight: isA ? 700 : 400 }}>{item.label}</span>
-            </button>
-          );
-        })}
-      </nav>
+      <nav className='mr-bottom-nav' style={{ position: 'fixed', bottom: 0, left: 0, right: 0, height: 60, background: C.sidebar, borderTop: `1px solid ${C.border}`, display: 'flex', alignItems: 'center', zIndex: 39, padding: '0 4px' }}>
+          {[
+            { id: 'dashboard', icon: '⊞', label: 'Home' },
+            { id: 'kelas',     icon: '▶', label: 'Kelas' },
+            { id: 'materi',    icon: '📁', label: 'Materi' },
+            { id: 'funded',    icon: '🚀', label: 'Trading' },
+            { id: 'menu',      icon: '☰',  label: 'Menu' },
+          ].map(item => {
+            const isA = item.id === 'menu' ? false : active === item.id;
+            return (
+              <button key={item.id}
+                onClick={() => {
+                  if (item.id === 'menu') setMobileMenuOpen(true);
+                  else setActive(item.id);
+                }}
+                style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 3, background: 'none', border: 'none', cursor: 'pointer', color: isA ? G.gold : '#555', padding: '4px 0' }}>
+                <span style={{ fontSize: 18 }}>{item.icon}</span>
+                <span style={{ fontFamily: C.mono, fontSize: 9, fontWeight: isA ? 700 : 400 }}>{item.label}</span>
+              </button>
+            );
+          })}
+        </nav>
       <div className='mr-bottom-spacer'/>
 
     </div>

@@ -480,6 +480,9 @@ function MemberTable({ members, loadData }: { members: any[]; loadData: () => vo
                     </button>
                     <button onClick={()=>{setEditId(isEditing?null:m.id);setEditNama(m.nama);setEditTier(m.tier);setEditPass('');setEditAdvance(m.is_advance||false);}}
                       style={{background:isEditing?'#1a1500':'transparent',border:`1px solid ${isEditing?'#eab308':'#2a2a2a'}`,color:isEditing?'#eab308':'#666',fontSize:11,padding:'3px 7px',cursor:'pointer'}}>✏</button>
+                    <button onClick={()=>deleteMember(m.id)}
+                      style={{background:'transparent',border:'1px solid #2a2a2a',color:'#ef4444',fontSize:11,padding:'3px 7px',cursor:'pointer'}}
+                      title='Hapus member'>🗑</button>
                   </div>
                 </div>
                 {showPass===m.id&&(
@@ -575,6 +578,12 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
   const [announceMsg, setAnnounceMsg] = useState('');
   const [announceSending, setAnnounceSending] = useState(false);
   const [webAnnouncements, setWebAnnouncements] = useState<any[]>([]);
+  const [propRules, setPropRules]           = useState<any[]>([]);
+  const [prJudul, setPrJudul]               = useState('');
+  const [prDeskripsi, setPrDeskripsi]       = useState('');
+  const [prLink, setPrLink]                 = useState('');
+  const [prFile, setPrFile]                 = useState<File|null>(null);
+  const [prSaving, setPrSaving]             = useState(false);
   const [webAnnTitle, setWebAnnTitle] = useState('');
   const [webAnnContent, setWebAnnContent] = useState('');
   const [webAnnSaving, setWebAnnSaving] = useState(false);
@@ -685,6 +694,7 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
     const { data: ul } = await supabase.from('testimonials').select('*').order('created_at', { ascending: false });
     const { data: cl } = await supabase.from('partnership_claims').select('*').order('created_at', { ascending: false });
     const { data: wann } = await supabase.from('announcements').select('*').order('created_at', { ascending: false });
+    const { data: prul } = await supabase.from('prop_firm_rules').select('*').order('created_at', { ascending: false });
     const { data: prog } = await supabase.from('member_progress').select('member_id, video_id, status');
     if (m) setMembers(m);
     if (v) setVideos(v);
@@ -695,6 +705,7 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
     if (ul) setUlasanList(ul);
     if (cl) setClaims(cl);
     if (wann) setWebAnnouncements(wann);
+    if (prul) setPropRules(prul);
     if (prog) setAllProgress(prog);
   }
 
@@ -917,23 +928,35 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
       });
     } catch {}
 
-    // Kirim ucapan selamat ke Discord
-    if (member?.discord_id && congratsChannelId) {
+    // ── Auto post website announcement ──
+    await supabase.from('announcements').insert({
+      judul: `🎉 Selamat ${req.member_nama} — Naik Kelas Advanced!`,
+      content: `${req.member_nama} (${req.member_tier}) berhasil naik ke kelas Advanced. Semangat terus belajar SMC dan menuju funded! 🏆`,
+    });
+
+    // ── Kirim ucapan selamat ke Discord ──
+    if (congratsChannelId) {
       try {
-        const res = await fetch('https://menolakrugi-bot-production.up.railway.app/discord/congrats-advanced', {
+        const discordRes = await fetch('https://menolakrugi-bot-production.up.railway.app/discord/congrats-advanced', {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ discord_id: member.discord_id, discord_username: member.discord_username, nama: req.member_nama, channel_id: congratsChannelId }),
+          body: JSON.stringify({
+            discord_id: member?.discord_id || null,
+            discord_username: member?.discord_username || null,
+            nama: req.member_nama,
+            channel_id: congratsChannelId
+          }),
         });
-        const data = await res.json();
-        if (data.success) notify(`${req.member_nama} di-approve! Ucapan selamat terkirim ke Discord ✅`);
-        else notify(`${req.member_nama} di-approve! (Gagal kirim ucapan: ${data.error})`);
+        const discordData = await discordRes.json();
+        if (discordData.success) {
+          notify(`${req.member_nama} di-approve! ✅ Pengumuman website + Discord terkirim.`);
+        } else {
+          notify(`${req.member_naam} di-approve! ✅ Pengumuman website terkirim. Discord: ${discordData.error}`);
+        }
       } catch {
-        notify(`${req.member_nama} di-approve! (Bot tidak terhubung)`);
+        notify(`${req.member_naam} di-approve! ✅ Pengumuman website terkirim. (Bot offline)`);
       }
-    } else if (!congratsChannelId) {
-      notify(`${req.member_nama} di-approve! ⚠️ Isi Channel ID dulu agar ucapan terkirim otomatis.`);
     } else {
-      notify(`${req.member_nama} di-approve! (Member belum hubungkan Discord)`);
+      notify(`${req.member_naam} di-approve! ✅ Pengumuman website terkirim. ⚠️ Isi Channel ID untuk kirim ke Discord juga.`);
     }
 
     loadData();
@@ -1016,6 +1039,37 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
       else notify('Gagal kirim: ' + data.error, 'err');
     } catch { notify('Tidak bisa terhubung ke bot.', 'err'); }
     setAnnounceSending(false);
+  }
+
+  async function savePropRule() {
+    if (!prJudul.trim()) { notify('Judul wajib diisi.', 'err'); return; }
+    if (!prLink.trim() && !prFile) { notify('Isi link atau pilih file.', 'err'); return; }
+    setPrSaving(true);
+    let fileUrl = '';
+    if (prFile) {
+      const path = `prop-rules/${Date.now()}-${prFile.name}`;
+      const { data: up } = await supabase.storage.from('journals').upload(path, prFile, { upsert: true });
+      if (up) {
+        const { data: url } = supabase.storage.from('journals').getPublicUrl(path);
+        fileUrl = url.publicUrl;
+      }
+    }
+    await supabase.from('prop_firm_rules').insert({
+      judul: prJudul.trim(),
+      deskripsi: prDeskripsi.trim() || null,
+      link: prLink.trim() || null,
+      file_url: fileUrl || null,
+    });
+    notify('Rule berhasil ditambahkan! ✅');
+    setPrJudul(''); setPrDeskripsi(''); setPrLink(''); setPrFile(null);
+    loadData();
+    setPrSaving(false);
+  }
+
+  async function deletePropRule(id: string) {
+    if (!confirm('Hapus rule ini?')) return;
+    await supabase.from('prop_firm_rules').delete().eq('id', id);
+    notify('Dihapus.'); loadData();
   }
 
   async function saveWebAnnounce() {
@@ -1928,6 +1982,55 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
             </div>
           );
         })()}
+
+        {/* ── TAB PROP FIRM RULES ── */}
+        {tab === 'proprules' && (
+          <div style={{display:'flex',flexDirection:'column',gap:16,maxWidth:720}}>
+            <div style={{background:'#0d0d0d',border:'1px solid #1f1f1f',padding:'20px 24px'}}>
+              <div style={{fontFamily:'monospace',color:'#a855f7',fontSize:11,letterSpacing:1,marginBottom:16}}>// PROP FIRM RULES</div>
+              <div style={{marginBottom:12}}>
+                <div style={{fontFamily:'monospace',color:'#444',fontSize:10,marginBottom:6}}>JUDUL *</div>
+                <input type="text" value={prJudul} onChange={e=>setPrJudul(e.target.value)} placeholder="Contoh: FTMO Challenge Rules, MyForexFunds Rules..."
+                  style={{width:'100%',background:'#111',border:'1px solid #2a2a2a',color:'#e7e5e4',padding:'9px 14px',fontSize:13,fontFamily:'monospace',outline:'none',boxSizing:'border-box' as const,marginBottom:10}}
+                  onFocus={e=>e.target.style.borderColor='#a855f7'} onBlur={e=>e.target.style.borderColor='#2a2a2a'}/>
+                <div style={{fontFamily:'monospace',color:'#444',fontSize:10,marginBottom:6}}>DESKRIPSI (opsional)</div>
+                <textarea value={prDeskripsi} onChange={e=>setPrDeskripsi(e.target.value)} rows={3} placeholder="Penjelasan singkat tentang rules ini..."
+                  style={{width:'100%',background:'#111',border:'1px solid #2a2a2a',color:'#e7e5e4',padding:'9px 14px',fontSize:13,fontFamily:'monospace',outline:'none',resize:'vertical' as const,boxSizing:'border-box' as const,marginBottom:10}}
+                  onFocus={e=>e.target.style.borderColor='#a855f7'} onBlur={e=>e.target.style.borderColor='#2a2a2a'}/>
+                <div style={{fontFamily:'monospace',color:'#444',fontSize:10,marginBottom:6}}>LINK (opsional)</div>
+                <input type="text" value={prLink} onChange={e=>setPrLink(e.target.value)} placeholder="https://..."
+                  style={{width:'100%',background:'#111',border:'1px solid #2a2a2a',color:'#e7e5e4',padding:'9px 14px',fontSize:13,fontFamily:'monospace',outline:'none',boxSizing:'border-box' as const,marginBottom:10}}
+                  onFocus={e=>e.target.style.borderColor='#a855f7'} onBlur={e=>e.target.style.borderColor='#2a2a2a'}/>
+                <div style={{fontFamily:'monospace',color:'#444',fontSize:10,marginBottom:6}}>FILE (opsional — PDF / gambar)</div>
+                <label style={{display:'block',background:'#111',border:'1px dashed #2a2a2a',padding:'10px 14px',cursor:'pointer',fontSize:12,color:prFile?'#22ab94':'#555',fontFamily:'monospace',marginBottom:16}}>
+                  {prFile ? `✓ ${prFile.name}` : 'Klik untuk pilih file...'}
+                  <input type="file" accept=".pdf,.jpg,.jpeg,.png,.webp" style={{display:'none'}} onChange={e=>setPrFile(e.target.files?.[0]||null)}/>
+                </label>
+              </div>
+              <button onClick={savePropRule} disabled={prSaving||!prJudul.trim()}
+                style={{background:prSaving||!prJudul.trim()?'#1a1a1a':'#a855f7',color:prSaving||!prJudul.trim()?'#444':'#fff',fontFamily:'monospace',fontSize:12,fontWeight:700,padding:'10px 20px',border:'none',cursor:'pointer',marginBottom:20}}>
+                {prSaving?'MENYIMPAN...':'▸ TAMBAH RULE'}
+              </button>
+              <div style={{fontFamily:'monospace',color:'#444',fontSize:10,marginBottom:10}}>RULES AKTIF ({propRules.length})</div>
+              {propRules.length===0
+                ?<div style={{fontFamily:'monospace',color:'#333',fontSize:12}}>Belum ada rules.</div>
+                :propRules.map((r:any)=>(
+                  <div key={r.id} style={{display:'flex',alignItems:'flex-start',gap:12,padding:'12px 14px',background:'#111',border:'1px solid #1a1a1a',borderRadius:6,marginBottom:8}}>
+                    <div style={{flex:1}}>
+                      <div style={{fontWeight:700,fontSize:13,marginBottom:4,color:'#e7e5e4'}}>{r.judul}</div>
+                      {r.deskripsi&&<div style={{fontSize:12,color:'#888',marginBottom:6,lineHeight:1.5}}>{r.deskripsi}</div>}
+                      <div style={{display:'flex',gap:8,flexWrap:'wrap' as const}}>
+                        {r.link&&<a href={r.link} target="_blank" rel="noopener noreferrer" style={{fontFamily:'monospace',fontSize:10,color:'#a855f7',border:'1px solid #4a2a8a',padding:'2px 8px',textDecoration:'none'}}>LINK ▸</a>}
+                        {r.file_url&&<a href={r.file_url} target="_blank" rel="noopener noreferrer" style={{fontFamily:'monospace',fontSize:10,color:'#22ab94',border:'1px solid #22ab9444',padding:'2px 8px',textDecoration:'none'}}>⬇ FILE</a>}
+                      </div>
+                    </div>
+                    <button onClick={()=>deletePropRule(r.id)} style={{background:'#1a0a0a',border:'1px solid #3a1010',color:'#ef4444',fontFamily:'monospace',fontSize:11,padding:'5px 10px',cursor:'pointer',flexShrink:0}}>HAPUS</button>
+                  </div>
+                ))
+              }
+            </div>
+          </div>
+        )}
 
         {/* ── TAB PENGATURAN ── */}
         {tab === 'settings' && (

@@ -234,41 +234,76 @@ function NavBar() {
 }
 
 
+function useInView(threshold = 0.15) {
+  const ref = React.useRef<HTMLDivElement>(null);
+  const [inView, setInView] = React.useState(false);
+  React.useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(([e]) => { if (e.isIntersecting) { setInView(true); obs.disconnect(); } }, { threshold });
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, []);
+  return { ref, inView };
+}
+
+function useCounter(target: number, duration = 1400) {
+  const [val, setVal] = React.useState(0);
+  const started = React.useRef(false);
+  React.useEffect(() => {
+    if (!target || started.current) return;
+    started.current = true;
+    const start = performance.now();
+    function tick(now: number) {
+      const p = Math.min((now - start) / duration, 1);
+      const ease = 1 - Math.pow(1 - p, 3); // ease-out cubic
+      setVal(Math.round(ease * target));
+      if (p < 1) requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+  }, [target]);
+  return val;
+}
+
 function Hero({ memberCount, fundedCount, newThisMonth }: { memberCount: number; fundedCount: number; newThisMonth: number }) {
   const [isMobile, setIsMobile] = React.useState(() => window.matchMedia('(max-width: 767px)').matches);
   React.useEffect(() => { const mq = window.matchMedia('(max-width: 767px)'); const h = (e: MediaQueryListEvent) => setIsMobile(e.matches); mq.addEventListener('change',h); return ()=>mq.removeEventListener('change',h); }, []);
   
+  const cMember  = useCounter(memberCount, 1600);
+  const cFunded  = useCounter(fundedCount, 1200);
+  const cMonthly = useCounter(newThisMonth, 1000);
+
   return (
     <section id="kelas" style={{ position: 'relative', padding: '64px 40px 48px', borderBottom: `1px solid ${MR.border}` }}>
       <div style={{ position: 'absolute', inset: 0, opacity: 0.5, ...CANDLE_GRID_STYLE }} />
       <div className='mr-hero-grid' style={{ position: 'relative', display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 32, alignItems: 'stretch' }}>
         {/* Left */}
         <div>
-          <div style={{ fontFamily: MR.mono, display: 'inline-flex', gap: 8, alignItems: 'center', padding: '6px 10px', border: `1px solid ${MR.border}`, color: MR.dim, fontSize: 11, letterSpacing: 0.6 }}>
+          <div className='mr-anim-badge' style={{ fontFamily: MR.mono, display: 'inline-flex', gap: 8, alignItems: 'center', padding: '6px 10px', border: `1px solid ${MR.border}`, color: MR.dim, fontSize: 11, letterSpacing: 0.6 }}>
             <span className="mr-blink" style={{ color: MR.up }}>●</span>
             {memberCount}+ MEMBER · FUNDED CASES TIAP MINGGU
           </div>
           <h1 className='mr-hero-h1' style={{ fontSize: isMobile ? 36 : 84, lineHeight: isMobile ? 1.1 : 0.96, letterSpacing: isMobile ? -1 : -3, margin: '26px 0 24px', fontWeight: 700 } as React.CSSProperties}>
-            <span>Berhenti trading</span><br />
-            <span style={{ color: MR.dim }}>tanpa arah.</span><br />
-            <span>Mulai pahami</span><br />
-            <span style={{ color: MR.up }}>market structure.</span>
+            <span className='mr-anim-h1-1' style={{ display:'block' }}>Berhenti trading</span>
+            <span className='mr-anim-h1-2' style={{ display:'block', color: MR.dim }}>tanpa arah.</span>
+            <span className='mr-anim-h1-3' style={{ display:'block' }}>Mulai pahami</span>
+            <span className='mr-anim-h1-4' style={{ display:'block', color: MR.up }}>market structure.</span>
           </h1>
-          <p style={{ fontSize: 17, color: MR.dim, lineHeight: 1.55, maxWidth: 520, marginBottom: 36 }}>
+          <p className='mr-anim-desc' style={{ fontSize: 17, color: MR.dim, lineHeight: 1.55, maxWidth: 520, marginBottom: 36 }}>
             Smart Money Concept yang kami gunakan langsung di funded account. Belajar membaca arah market lewat struktur yang jelas — dari trend, BOS, CHoCH, sampai validasi entry. Bukan sekadar entry karena feeling.
           </p>
-          <div style={{ display: 'flex', gap: 12, marginBottom: 40 }}>
+          <div className='mr-anim-cta' style={{ display: 'flex', gap: 12, marginBottom: 40 }}>
             <button onClick={() => window.location.href = '/signup'} style={{ fontFamily: MR.mono, background: MR.gold, color: '#181000', fontWeight: 700, padding: '16px 22px', letterSpacing: 0.4, fontSize: 13, border: 'none', cursor: 'pointer' }}>PILIH KELAS ▸</button>
             <button onClick={() => document.getElementById('kurikulum')?.scrollIntoView({ behavior: 'smooth' })} style={{ fontFamily: MR.mono, border: `1px solid ${MR.borderHot}`, padding: '16px 22px', letterSpacing: 0.4, fontSize: 13, background: 'transparent', color: MR.text, cursor: 'pointer' }}>LIHAT KURIKULUM</button>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(4, 1fr)', borderTop: `1px solid ${MR.border}` }}>
             {[
-              { k: 'MEMBER AKTIF',  v: memberCount.toString(),   d: `+${newThisMonth} 30D`, up: true  },
-              { k: 'FUNDED LULUS',  v: fundedCount.toString(),   d: '+5 30D',               up: true  },
+              { k: 'MEMBER AKTIF',  v: cMember.toString(),   d: `+${cMonthly} 30D`, up: true  },
+              { k: 'FUNDED LULUS',  v: cFunded.toString(),   d: '+5 30D',               up: true  },
               { k: 'RATING KELAS',  v: '4.9',                    d: '/ 5.0',                up: null  },
               { k: 'AKSES MATERI',  v: '∞',                      d: 'LIFETIME',             up: null  },
             ].map((s, i) => (
-              <div key={i} style={{ borderRight: i < 3 ? `1px solid ${MR.border}` : 0, padding: '18px 14px 14px 0' }}>
+              <div key={i} className={`mr-anim-stat-${i}`} style={{ borderRight: i < 3 ? `1px solid ${MR.border}` : 0, padding: '18px 14px 14px 0' }}>
                 <div style={{ fontFamily: MR.mono, color: MR.dimmer, fontSize: 10, letterSpacing: 0.8 }}>{s.k}</div>
                 <div style={{ fontWeight: 700, fontSize: 32, marginTop: 6, letterSpacing: -1 }}>{s.v}</div>
                 <div style={{ fontFamily: MR.mono, fontSize: 10, color: s.up === true ? MR.up : MR.dim, marginTop: 2 }}>{s.up ? '▲ ' : ''}{s.d}</div>
@@ -278,7 +313,7 @@ function Hero({ memberCount, fundedCount, newThisMonth }: { memberCount: number;
         </div>
 
         {/* Right — TradingView Live Chart */}
-        <div style={{ height: 580 }}>
+        <div className='mr-anim-chart' style={{ height: 580 }}>
           <TradingViewWidget />
         </div>
 
@@ -392,6 +427,7 @@ function Curriculum() {
 function Testimonials({ testimonials }: { testimonials: Testimonial[] }) {
   const [isMobile, setIsMobile] = React.useState(() => window.matchMedia('(max-width: 767px)').matches);
   React.useEffect(() => { const mq = window.matchMedia('(max-width: 767px)'); const h = (e: MediaQueryListEvent) => setIsMobile(e.matches); mq.addEventListener('change',h); return ()=>mq.removeEventListener('change',h); }, []);
+  const { ref: testiRef, inView: testiInView } = useInView(0.1);
   const now = new Date();
   return (
     <section style={{ padding: '56px 40px', borderBottom: `1px solid ${MR.border}` }}>
@@ -405,9 +441,9 @@ function Testimonials({ testimonials }: { testimonials: Testimonial[] }) {
           <span style={{ color: MR.gold }}>★ 4.9</span> · MEMBER AKTIF
         </div>
       </div>
-      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: 16 }}>
-        {testimonials.map((t, i) => (
-          <div key={t.id} style={{ border: `1px solid ${MR.border}`, background: MR.panel, display: 'flex', flexDirection: 'column' }}>
+      <div ref={testiRef} style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: 16 }}>
+        {testimonials.map((t, i) => { const ta = testiInView ? `mr-testi-${Math.min(i,5)}` : 'mr-hidden'; return (
+          <div key={t.id} className={ta} style={{ border: `1px solid ${MR.border}`, background: MR.panel, display: 'flex', flexDirection: 'column' }}>
             <div style={{ fontFamily: MR.mono, display: 'flex', justifyContent: 'space-between', padding: '10px 14px', borderBottom: `1px solid ${MR.border}`, fontSize: 11, color: MR.dim, background: MR.darker }}>
               <span># TRADE-{String(241 - i).padStart(4, '0')}</span>
               {t.pl_result && <span style={{ color: MR.up }}>{t.pl_result}{t.duration ? ` · ${t.duration}` : ''}</span>}
@@ -427,7 +463,7 @@ function Testimonials({ testimonials }: { testimonials: Testimonial[] }) {
               </div>
             </div>
           </div>
-        ))}
+        )})}
       </div>
     </section>
   );
@@ -436,6 +472,7 @@ function Testimonials({ testimonials }: { testimonials: Testimonial[] }) {
 function Pricing({ tiers }: { tiers: PricingTier[] }) {
   const [isMobile, setIsMobile] = React.useState(() => window.matchMedia('(max-width: 767px)').matches);
   React.useEffect(() => { const mq = window.matchMedia('(max-width: 767px)'); const h = (e: MediaQueryListEvent) => setIsMobile(e.matches); mq.addEventListener('change',h); return ()=>mq.removeEventListener('change',h); }, []);
+  const { ref: pricingRef, inView: pricingInView } = useInView(0.1);
   
   const fmt = (n: number) => new Intl.NumberFormat('id-ID').format(n);
 
@@ -799,6 +836,52 @@ export default function LandingPage() {
           /* Pricing 1 col */
           .mr-pricing-grid { grid-template-columns: 1fr !important; }
         }
+
+        /* ── Animations ─────────────────────────────── */
+        @keyframes mr-fadeup {
+          from { opacity: 0; transform: translateY(28px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes mr-fadein {
+          from { opacity: 0; }
+          to   { opacity: 1; }
+        }
+        @keyframes mr-slideright {
+          from { opacity: 0; transform: translateX(-20px); }
+          to   { opacity: 1; transform: translateX(0); }
+        }
+        .mr-anim-badge   { animation: mr-fadein   0.5s ease both; }
+        .mr-anim-h1-1    { animation: mr-fadeup   0.6s ease 0.15s both; }
+        .mr-anim-h1-2    { animation: mr-fadeup   0.6s ease 0.28s both; }
+        .mr-anim-h1-3    { animation: mr-fadeup   0.6s ease 0.41s both; }
+        .mr-anim-h1-4    { animation: mr-fadeup   0.6s ease 0.54s both; }
+        .mr-anim-desc    { animation: mr-fadeup   0.6s ease 0.65s both; }
+        .mr-anim-cta     { animation: mr-fadeup   0.6s ease 0.78s both; }
+        .mr-anim-stat-0  { animation: mr-fadeup   0.5s ease 0.85s both; }
+        .mr-anim-stat-1  { animation: mr-fadeup   0.5s ease 0.95s both; }
+        .mr-anim-stat-2  { animation: mr-fadeup   0.5s ease 1.05s both; }
+        .mr-anim-stat-3  { animation: mr-fadeup   0.5s ease 1.15s both; }
+        .mr-anim-chart   { animation: mr-fadein   0.8s ease 0.4s  both; }
+
+        @keyframes mr-scaleup {
+          from { opacity: 0; transform: scale(0.92) translateY(20px); }
+          to   { opacity: 1; transform: scale(1) translateY(0); }
+        }
+        @keyframes mr-slidefromright {
+          from { opacity: 0; transform: translateX(40px); }
+          to   { opacity: 1; transform: translateX(0); }
+        }
+        .mr-card-anim-0 { animation: mr-scaleup 0.5s ease 0s    both; }
+        .mr-card-anim-1 { animation: mr-scaleup 0.5s ease 0.1s  both; }
+        .mr-card-anim-2 { animation: mr-scaleup 0.5s ease 0.2s  both; }
+        .mr-card-anim-3 { animation: mr-scaleup 0.5s ease 0.3s  both; }
+        .mr-testi-0  { animation: mr-slidefromright 0.5s ease 0s   both; }
+        .mr-testi-1  { animation: mr-slidefromright 0.5s ease 0.1s both; }
+        .mr-testi-2  { animation: mr-slidefromright 0.5s ease 0.2s both; }
+        .mr-testi-3  { animation: mr-slidefromright 0.5s ease 0.3s both; }
+        .mr-testi-4  { animation: mr-slidefromright 0.5s ease 0.4s both; }
+        .mr-testi-5  { animation: mr-slidefromright 0.5s ease 0.5s both; }
+        .mr-hidden   { opacity: 0; }
       `}</style>
       <TVTickerTape />
       <StatusBar />

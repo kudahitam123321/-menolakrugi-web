@@ -19,6 +19,7 @@ const SIDEBAR_SECTIONS = [
   { h: 'PARTNERSHIP', items: [
     { id: 'klaim',  label: 'Klaim Partnership', icon: '🤝' },
     { id: 'broker', label: 'Broker',            icon: '🏦' },
+    { id: 'proprules', label: 'Prop Firm Rules', icon: '📋' },
   ]},
   { h: 'COMMUNICATION', items: [
     { id: 'pengumuman', label: 'Pengumuman',      icon: '📢' },
@@ -33,7 +34,7 @@ const SIDEBAR_SECTIONS = [
 function getTabId(sidebarId: string): string {
   const map: Record<string,string> = {
     member:'member', progress:'progress', advance:'advance', admin:'admins',
-    video:'video', klaim:'claim', broker:'broker',
+    video:'video', klaim:'claim', broker:'broker', proprules:'proprules',
     pengumuman:'announce', broadcast:'announce',
     pengaturan:'settings', log:'settings',
   };
@@ -89,6 +90,8 @@ const TIER_COLORS: Record<string,string> = {
 
 export default function AdminPanel() {
   const [active, setActive] = useState('dashboard');
+  const [fundedModal, setFundedModal] = useState<{status:string;color:string;label:string}|null>(null);
+  const [fundedMembers, setFundedMembers] = useState<any[]>([]);
   const [dash, setDash] = useState({
     total:0, active:0, pending:0, advance:0, neverLogin:0,
     totalVideos:0, totalFiles:0, totalBrokers:0, totalClaims:0, totalUlasan:0, totalAnnounce:0,
@@ -127,6 +130,7 @@ export default function AdminPanel() {
       { data: topMembersData },
       { data: progressData },
       { data: fundedData },
+      { data: fundedMembersData },
     ] = await Promise.all([
       supabase.from('members').select('*',{count:'exact',head:true}),
       supabase.from('members').select('*',{count:'exact',head:true}).gte('last_seen', new Date(Date.now()-5*60*1000).toISOString()),
@@ -143,6 +147,8 @@ export default function AdminPanel() {
       supabase.from('members').select('id,nama,tier,last_seen').not('last_seen','is',null).order('last_seen',{ascending:false}).limit(5),
       supabase.from('member_progress').select('member_id,status'),
       supabase.from('members').select('funded_status').not('funded_status','is',null),
+      supabase.from('members').select('id,nama,tier,funded_status,discord_username').not('funded_status','is',null).order('funded_status'),
+      supabase.from('members').select('id,nama,tier,funded_status,discord_username,last_seen').not('funded_status','is',null).order('funded_status'),
     ]);
 
     // Tier distribution
@@ -179,6 +185,7 @@ export default function AdminPanel() {
       tierDist, completedMembers, partialMembers, notStarted, completionPct,
       totalFunded, fundedBreakdown,
     });
+    if (fundedMembersRaw) setFundedMembers(fundedMembersRaw);
     setRecentClaims(recentClaimsData||[]);
     setTopMembers(topMembersData||[]);
     setRecentActivity([
@@ -433,15 +440,59 @@ export default function AdminPanel() {
                     {k:'Master',label:'Master',         color:'#22ab94'},
                     {k:'MPAID', label:'Sudah Payout',   color:'#eab308'},
                     {k:'Ap',    label:'Akun Pribadi',   color:'#ec4899'},
-                  ] as {k:string;label:string;color:string}[]).map(s=>(
-                    <div key={s.k} style={{ background:'#0a0a0a', border:`1px solid ${(dash.fundedBreakdown[s.k]||0)>0?s.color+'44':C.border}`, borderRadius:8, padding:'12px 10px', textAlign:'center' as const }}>
-                      <div style={{ fontFamily:C.mono, fontWeight:700, fontSize:20, color:(dash.fundedBreakdown[s.k]||0)>0?s.color:'#333' }}>{dash.fundedBreakdown[s.k]||0}</div>
-                      <div style={{ fontFamily:C.mono, fontSize:10, color:(dash.fundedBreakdown[s.k]||0)>0?s.color:'#444', marginTop:4 }}>{s.k}</div>
+                  ] as {k:string;label:string;color:string}[]).map(s=>{
+                    const count = dash.fundedBreakdown[s.k]||0;
+                    return (
+                    <button key={s.k} onClick={()=>count>0&&setFundedModal(s)}
+                      style={{ background:'#0a0a0a', border:`1px solid ${count>0?s.color+'44':C.border}`, borderRadius:8, padding:'12px 10px', textAlign:'center' as const, cursor:count>0?'pointer':'default', transition:'all 0.15s' }}
+                      onMouseEnter={e=>{if(count>0)(e.currentTarget as HTMLElement).style.borderColor=s.color}}
+                      onMouseLeave={e=>{(e.currentTarget as HTMLElement).style.borderColor=count>0?s.color+'44':C.border}}>
+                      <div style={{ fontFamily:C.mono, fontWeight:700, fontSize:20, color:count>0?s.color:'#333' }}>{count}</div>
+                      <div style={{ fontFamily:C.mono, fontSize:10, color:count>0?s.color:'#444', marginTop:4 }}>{s.k}</div>
                       <div style={{ fontSize:10, color:'#555', marginTop:2 }}>{s.label}</div>
-                    </div>
-                  ))}
+                      {count>0&&<div style={{ fontFamily:C.mono, fontSize:8, color:s.color+'88', marginTop:4 }}>KLIK ▸</div>}
+                    </button>
+                  )})}
                 </div>
               </div>
+
+              {/* Funded Modal */}
+              {fundedModal && (
+                <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.8)', zIndex:100, display:'flex', alignItems:'center', justifyContent:'center', padding:24 }}
+                  onClick={()=>setFundedModal(null)}>
+                  <div style={{ background:'#0d0d0d', border:`1px solid ${fundedModal.color}44`, borderRadius:14, padding:28, width:'100%', maxWidth:480, maxHeight:'80vh', overflowY:'auto' as const }}
+                    onClick={e=>e.stopPropagation()}>
+                    <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:20 }}>
+                      <div>
+                        <div style={{ fontFamily:C.mono, color:fundedModal.color, fontSize:10, marginBottom:4 }}>{fundedModal.k} — {fundedModal.label.toUpperCase()}</div>
+                        <div style={{ fontSize:18, fontWeight:700 }}>
+                          {fundedMembers.filter(m=>m.funded_status===fundedModal.k).length} Member
+                        </div>
+                      </div>
+                      <button onClick={()=>setFundedModal(null)} style={{ background:'none', border:'none', color:'#666', fontSize:22, cursor:'pointer' }}>×</button>
+                    </div>
+                    <div style={{ display:'flex', flexDirection:'column' as const, gap:8 }}>
+                      {fundedMembers.filter(m=>m.funded_status===fundedModal.k).map((m:any)=>(
+                        <div key={m.id} style={{ display:'flex', alignItems:'center', gap:12, padding:'12px 14px', background:'#111', border:`1px solid #1a1a1a`, borderRadius:8 }}>
+                          <div style={{ width:36, height:36, background:`${fundedModal.color}22`, border:`1px solid ${fundedModal.color}44`, borderRadius:8, display:'flex', alignItems:'center', justifyContent:'center', fontWeight:700, fontSize:13, color:fundedModal.color, flexShrink:0 }}>
+                            {m.nama?.[0]?.toUpperCase()||'?'}
+                          </div>
+                          <div style={{ flex:1, minWidth:0 }}>
+                            <div style={{ fontWeight:600, fontSize:13 }}>{m.nama}</div>
+                            <div style={{ fontFamily:C.mono, fontSize:10, color:'#555', marginTop:2 }}>{m.tier?.replace('SMC ','')}</div>
+                          </div>
+                          {m.discord_username && (
+                            <div style={{ fontFamily:C.mono, fontSize:10, color:'#22ab94' }}>@{m.discord_username}</div>
+                          )}
+                          <div style={{ fontFamily:C.mono, fontSize:11, fontWeight:700, color:fundedModal.color, background:`${fundedModal.color}18`, border:`1px solid ${fundedModal.color}44`, padding:'3px 8px', borderRadius:4 }}>
+                            {m.funded_status}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Row 3 — Klaim + Aktivitas */}
               <div className='ap-grid15' style={{ display:'grid', gridTemplateColumns:'1.5fr 1fr', gap:16 }}>

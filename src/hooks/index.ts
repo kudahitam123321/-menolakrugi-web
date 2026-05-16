@@ -27,11 +27,11 @@ export function useLandingStats() {
           .select('*', { count: 'exact', head: true })
           .gte('created_at', since30.toISOString());
 
-        // Funded traders
+        // Funded traders — hitung member yang punya funded_status apapun
         const { count: fundedCount } = await supabase
           .from('members')
           .select('*', { count: 'exact', head: true })
-          .eq('is_funded', true);
+          .not('funded_status', 'is', null);
 
         setStats({
           memberCount:          memberCount ?? 0,
