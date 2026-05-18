@@ -6,7 +6,7 @@ import { trackVideoWatch } from '../../hooks/useWatchHistory';
 const G = { gold: '#eab308', gold2: '#ca9e00' };
 const C = {
   bg: '#090909', sidebar: '#0d0d0d', panel: '#111', border: '#1e1e1e',
-  border2: '#2a2a2a', dim: '#555', muted: '#888', text: '#e7e5e4',
+  border2: '#2a2a2a', dim: '#666', muted: '#888', text: '#e7e5e4',
   up: '#22ab94', down: '#ef4444', mono: '"Geist Mono",monospace',
   sans: '"Geist",system-ui,sans-serif',
 };
@@ -18,7 +18,6 @@ const SIDEBAR = [
   { id: 'dashboard',   label: 'Dashboard',    icon: '⊞' },
   { id: 'kelas',       label: 'Kelas Saya',   icon: '▶' },
   { id: 'materi',      label: 'Materi',       icon: '📚' },
-  { id: 'live',        label: 'Live Trading', icon: '📡', badge: 'LIVE' },
   { id: 'news',        label: 'Chart',        icon: '📈' },
   { id: 'komunitas',   label: 'Komunitas',    icon: '💬' },
   { id: 'tools',       label: 'Broker',       icon: '🏦' },
@@ -26,6 +25,7 @@ const SIDEBAR = [
   { id: 'bantuan',     label: 'Bantuan',      icon: '❓' },
   { id: 'funded',      label: 'Status Trading', icon: '🚀' },
   { id: 'sertifikat',  label: 'Sertifikat',     icon: '🏆' },
+  { id: 'ulasan',      label: 'Tulis Ulasan',   icon: '⭐' },
   { id: 'logout',      label: 'Logout',         icon: '⏻' },
 ];
 
@@ -46,7 +46,7 @@ function Ring({ pct, size = 48, color = G.gold }: { pct: number; size?: number; 
         strokeDasharray={c2} strokeDashoffset={c2-(pct/100)*c2} strokeLinecap="round"
         transform={`rotate(-90 ${size/2} ${size/2})`}/>
       <text x={size/2} y={size/2+1} textAnchor="middle" dominantBaseline="central"
-        fontSize={size/4.5} fontFamily={C.mono} fontWeight="700" fill={color}>{pct}%</text>
+        fontSize={size/4.5} fontFamily='"Geist Mono",monospace' fontWeight="700" fill={color}>{pct}%</text>
     </svg>
   );
 }
@@ -362,6 +362,15 @@ export default function DashboardPage() {
   const [jurnalMode, setJurnalMode]         = useState<('link'|'file')[]>(['link','link','link']);
   const [statusSaving, setStatusSaving]     = useState(false);
   const [watchRefreshKey, setWatchRefreshKey] = useState(0);
+  const [leaderboard, setLeaderboard]          = useState<any[]>([]);
+  const [videoRatings, setVideoRatings]         = useState<Record<string,number>>({});
+  const [myTestimonial, setMyTestimonial]       = useState<any>(null);
+  const [testiForm, setTestiForm]               = useState({ rating: 5, nama_akun: '', teks: '' });
+  const [testiSaving, setTestiSaving]           = useState(false);
+  const [testiMsg, setTestiMsg]                 = useState('');
+  const [referralCode, setReferralCode]         = useState('');
+  const [referrals, setReferrals]               = useState<any[]>([]);
+  const [referralCopied, setReferralCopied]     = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
     return localStorage.getItem('mr_sidebar_collapsed') === '1';
   });
@@ -412,6 +421,32 @@ export default function DashboardPage() {
     if (annRes.data)   setAnnouncements(annRes.data);
     if (brokerRes.data) setBrokers(brokerRes.data);
     if (rulesRes.data) setPropRules(rulesRes.data);
+
+    // Leaderboard
+    const { data: progAll } = await supabase.from('member_progress').select('member_id,status');
+    const { data: membAll } = await supabase.from('members').select('id,nama,tier,is_advance');
+    if (progAll && membAll) {
+      const counts: Record<string,number> = {};
+      progAll.forEach((p:any) => { if (p.status==='selesai') counts[p.member_id]=(counts[p.member_id]||0)+1; });
+      setLeaderboard(membAll.map((mb:any) => ({...mb, selesai: counts[mb.id]||0})).sort((a:any,b:any) => b.selesai-a.selesai));
+    }
+
+    // Video ratings
+    if (m.id) {
+      const { data: ratData } = await supabase.from('video_ratings').select('video_id,rating').eq('member_id', m.id);
+      if (ratData) { const map: Record<string,number> = {}; ratData.forEach((r:any) => { map[r.video_id] = r.rating; }); setVideoRatings(map); }
+    }
+
+    // Referral
+    // My testimonial
+    const { data: myTesti } = await supabase.from('testimonials').select('*').eq('member_id', m.id).single().catch(()=>({data:null}));
+    if (myTesti) { setMyTestimonial(myTesti); setTestiForm({ rating: myTesti.rating||5, nama_akun: myTesti.nama_akun||m.nama, teks: myTesti.teks||'' }); }
+    else { setTestiForm(prev => ({...prev, nama_akun: m.nama})); }
+
+    const code = m.referral_code || (m.nama?.toLowerCase().replace(/\s+/g,'') + m.id?.slice(-4));
+    setReferralCode(code);
+    const { data: refData } = await supabase.from('referrals').select('*').eq('referrer_id', m.id).order('created_at',{ascending:false});
+    if (refData) setReferrals(refData);
     if (schedRes.data)  setLiveSchedules(schedRes.data);
     if (notifRes.data)  setNotifications(notifRes.data);
     if (advRes.data && advRes.data.length > 0) setAdvanceReq(advRes.data[0]);
@@ -446,6 +481,15 @@ export default function DashboardPage() {
     else sessionStorage.setItem('mr_member', updated);
     setSettingMsg('Tersimpan!');
     setTimeout(() => setSettingMsg(''), 2000);
+  }
+
+  async function rateVideo(videoId: string, star: number) {
+    if (!member) return;
+    await supabase.from('video_ratings').upsert(
+      { member_id: member.id, video_id: videoId, rating: star },
+      { onConflict: 'member_id,video_id' }
+    );
+    setVideoRatings(prev => ({ ...prev, [videoId]: star }));
   }
 
   async function handleUpdateStatus(newStatus: string | null) {
@@ -967,6 +1011,73 @@ export default function DashboardPage() {
                   </div>
                 </div>
               </div>
+
+              {/* ── Leaderboard Widget ── */}
+              <div style={{ background: C.panel, border: `1px solid ${C.border}`, borderRadius: 14 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 20px', borderBottom: `1px solid ${C.border}` }}>
+                  <div>
+                    <div style={{ fontFamily: C.mono, color: G.gold, fontSize: 9, letterSpacing: 1.5, marginBottom: 4 }}>// LEADERBOARD</div>
+                    <div style={{ fontWeight: 700, fontSize: 15 }}>Top 10 Progress Terbaik</div>
+                  </div>
+                </div>
+                <div style={{ padding: '6px 0' }}>
+                  {leaderboard.slice(0, 10).map((m: any, idx: number) => {
+                    const isMe = m.id === member!.id;
+                    const totalV = videos.length || 1;
+                    const pct = Math.min(100, Math.round(m.selesai / totalV * 100));
+                    const MEDALS = ['🥇','🥈','🥉'];
+                    return (
+                      <div key={m.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '9px 20px', background: isMe ? '#1a150008' : 'transparent', borderLeft: isMe ? `3px solid ${G.gold}` : '3px solid transparent' }}>
+                        <div style={{ width: 24, fontFamily: C.mono, fontSize: idx < 3 ? 16 : 11, color: idx < 3 ? G.gold : '#444', textAlign: 'center' as const, flexShrink: 0 }}>
+                          {idx < 3 ? MEDALS[idx] : idx + 1}
+                        </div>
+                        <div style={{ width: 30, height: 30, borderRadius: 8, background: isMe ? '#2a2000' : '#111', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 12, color: isMe ? G.gold : '#444', flexShrink: 0 }}>
+                          {m.nama?.[0]?.toUpperCase()}
+                        </div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+                            <span style={{ fontWeight: 600, fontSize: 12, color: isMe ? G.gold : C.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}>{m.nama}</span>
+                            {isMe && <span style={{ fontFamily: C.mono, fontSize: 8, color: G.gold, border: `1px solid ${G.gold}44`, padding: '1px 5px', borderRadius: 3, flexShrink: 0 }}>KAMU</span>}
+                          </div>
+                          <div style={{ height: 3, background: '#111', borderRadius: 2 }}>
+                            <div style={{ height: '100%', width: `${pct}%`, background: isMe ? G.gold : C.up, borderRadius: 2, transition: 'width 0.8s ease' }}/>
+                          </div>
+                        </div>
+                        <div style={{ fontFamily: C.mono, fontSize: 12, fontWeight: 700, color: isMe ? G.gold : C.dim, flexShrink: 0, minWidth: 40, textAlign: 'right' as const }}>
+                          {m.selesai}<span style={{ color: '#333' }}>/{totalV}</span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+                {/* Member rank if outside top 10 */}
+                {(() => {
+                  const myRank = leaderboard.findIndex((m: any) => m.id === member!.id);
+                  if (myRank >= 10) {
+                    const me = leaderboard[myRank];
+                    const pct = Math.min(100, Math.round(me.selesai / (videos.length||1) * 100));
+                    return (
+                      <div style={{ borderTop: `1px dashed ${C.border}`, padding: '8px 20px 12px' }}>
+                        <div style={{ fontFamily: C.mono, color: C.dim, fontSize: 9, textAlign: 'center' as const, marginBottom: 6 }}>· · · POSISIMU · · ·</div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 12px', background: '#1a150012', border: `1px solid ${G.gold}22`, borderRadius: 8 }}>
+                          <div style={{ width: 24, fontFamily: C.mono, fontSize: 11, color: G.gold, textAlign: 'center' as const }}>#{myRank + 1}</div>
+                          <div style={{ width: 30, height: 30, borderRadius: 8, background: '#2a2000', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 12, color: G.gold }}>
+                            {me.nama?.[0]?.toUpperCase()}
+                          </div>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontSize: 12, color: G.gold, fontWeight: 600, marginBottom: 4 }}>{me.nama} <span style={{ fontFamily: C.mono, fontSize: 8, border: `1px solid ${G.gold}44`, padding: '1px 5px', borderRadius: 3 }}>KAMU</span></div>
+                            <div style={{ height: 3, background: '#111', borderRadius: 2 }}>
+                              <div style={{ height: '100%', width: `${pct}%`, background: G.gold, borderRadius: 2 }}/>
+                            </div>
+                          </div>
+                          <div style={{ fontFamily: C.mono, fontSize: 12, fontWeight: 700, color: G.gold }}>{me.selesai}<span style={{ color: '#333' }}>/{videos.length}</span></div>
+                        </div>
+                      </div>
+                    );
+                  }
+                  return null;
+                })()}
+              </div>
             </div>
           )}
 
@@ -1151,6 +1262,14 @@ export default function DashboardPage() {
                                             ↩ RESET
                                           </button>
                                         )}
+                                        {/* Star Rating */}
+                                        <div style={{ display: 'flex', gap: 1, alignItems: 'center', marginLeft: 4 }}>
+                                          {[1,2,3,4,5].map(star => (
+                                            <button key={star} onClick={() => rateVideo(v.id, star)}
+                                              style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 13, color: (videoRatings[v.id]||0) >= star ? '#eab308' : '#333', padding: '1px', lineHeight: 1, transition: 'color 0.1s' }}
+                                              title={`${star} bintang`}>★</button>
+                                          ))}
+                                        </div>
                                       </>
                                     )}
                                   </div>
@@ -1631,6 +1750,101 @@ export default function DashboardPage() {
               </div>
             </div>
           )}
+
+          {/* ══ ULASAN ══ */}
+          {active === 'ulasan' && (() => {
+            async function submitTesti() {
+              if (!testiForm.teks.trim()) { setTestiMsg('Tulis ulasan dulu.'); return; }
+              setTestiSaving(true); setTestiMsg('');
+              try {
+                const payload = {
+                  member_id: member!.id,
+                  nama_akun: testiForm.nama_akun || member!.nama,
+                  teks: testiForm.teks.trim(),
+                  rating: testiForm.rating,
+                  tier: member!.tier,
+                  status: 'pending',
+                };
+                if (myTestimonial) {
+                  await supabase.from('testimonials').update(payload).eq('id', myTestimonial.id);
+                  setTestiMsg('Ulasan diperbarui! Menunggu persetujuan admin.');
+                } else {
+                  const { data } = await supabase.from('testimonials').insert(payload).select().single();
+                  setMyTestimonial(data);
+                  setTestiMsg('Ulasan terkirim! Menunggu persetujuan admin.');
+                }
+              } catch { setTestiMsg('Gagal mengirim ulasan.'); }
+              setTestiSaving(false);
+            }
+
+            const STATUS_LABEL: Record<string,string> = { pending:'⏳ Menunggu review', disetujui:'✅ Ditampilkan di landing page', ditolak:'❌ Ditolak admin' };
+            const STATUS_COLOR: Record<string,string> = { pending:'#eab308', disetujui:C.up, ditolak:C.down };
+
+            return (
+              <div className='mr-content-pad' style={{ padding: 24 }}>
+                <div style={{ fontFamily: C.mono, color: G.gold, fontSize: 10, letterSpacing: 1, marginBottom: 6 }}>// ULASAN</div>
+                <h2 style={{ fontSize: 22, fontWeight: 700, margin: '0 0 6px' }}>Tulis Ulasanmu</h2>
+                <p style={{ color: C.dim, fontSize: 13, margin: '0 0 24px' }}>Bantu member lain dengan pengalamanmu. Ulasan yang disetujui akan tampil di halaman utama.</p>
+
+                {/* Status badge */}
+                {myTestimonial && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 16px', background: C.panel, border: `1px solid ${STATUS_COLOR[myTestimonial.status]||C.border}44`, borderRadius: 10, marginBottom: 20 }}>
+                    <span style={{ fontFamily: C.mono, fontSize: 12, color: STATUS_COLOR[myTestimonial.status]||C.dim, fontWeight: 700 }}>
+                      {STATUS_LABEL[myTestimonial.status] || myTestimonial.status}
+                    </span>
+                  </div>
+                )}
+
+                {/* Star rating picker */}
+                <div style={{ marginBottom: 20 }}>
+                  <div style={{ fontFamily: C.mono, color: C.dim, fontSize: 10, letterSpacing: 1, marginBottom: 10 }}>RATING</div>
+                  <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                    {[1,2,3,4,5].map(star => (
+                      <button key={star} onClick={() => setTestiForm(f => ({...f, rating: star}))}
+                        style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 32, color: testiForm.rating >= star ? '#eab308' : '#333', transition: 'all 0.15s', transform: testiForm.rating >= star ? 'scale(1.1)' : 'scale(1)', padding: 0 }}>
+                        ★
+                      </button>
+                    ))}
+                    <span style={{ fontFamily: C.mono, color: G.gold, fontSize: 14, fontWeight: 700, marginLeft: 8 }}>
+                      {['','Kurang','Cukup','Bagus','Sangat Bagus','Luar Biasa!'][testiForm.rating]}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Nama tampil */}
+                <div style={{ marginBottom: 16 }}>
+                  <div style={{ fontFamily: C.mono, color: C.dim, fontSize: 10, letterSpacing: 1, marginBottom: 8 }}>NAMA TAMPIL (opsional)</div>
+                  <input value={testiForm.nama_akun} onChange={e => setTestiForm(f => ({...f, nama_akun: e.target.value}))}
+                    placeholder={member!.nama}
+                    style={{ width: '100%', maxWidth: 360, background: C.panel, border: `1px solid ${C.border}`, color: C.text, padding: '11px 14px', fontSize: 13, fontFamily: C.sans, borderRadius: 8, outline: 'none', boxSizing: 'border-box' as const }}
+                    onFocus={e => e.target.style.borderColor = G.gold} onBlur={e => e.target.style.borderColor = C.border}/>
+                </div>
+
+                {/* Teks ulasan */}
+                <div style={{ marginBottom: 20 }}>
+                  <div style={{ fontFamily: C.mono, color: C.dim, fontSize: 10, letterSpacing: 1, marginBottom: 8 }}>ULASANMU *</div>
+                  <textarea value={testiForm.teks} onChange={e => setTestiForm(f => ({...f, teks: e.target.value}))}
+                    rows={5} placeholder="Ceritakan pengalamanmu belajar di Menolak Rugi. Apa yang paling berkesan? Bagaimana perkembangan tradingmu?"
+                    style={{ width: '100%', background: C.panel, border: `1px solid ${C.border}`, color: C.text, padding: '11px 14px', fontSize: 13, fontFamily: C.sans, borderRadius: 8, outline: 'none', resize: 'vertical' as const, boxSizing: 'border-box' as const }}
+                    onFocus={e => e.target.style.borderColor = G.gold} onBlur={e => e.target.style.borderColor = C.border}/>
+                  <div style={{ fontFamily: C.mono, fontSize: 10, color: C.dim, marginTop: 4 }}>{testiForm.teks.length}/500</div>
+                </div>
+
+                {testiMsg && <div style={{ fontFamily: C.mono, fontSize: 12, color: testiMsg.includes('Gagal') ? C.down : C.up, marginBottom: 16, padding: '10px 14px', background: C.panel, borderRadius: 8 }}>{testiMsg}</div>}
+
+                <button onClick={submitTesti} disabled={testiSaving || !testiForm.teks.trim()}
+                  style={{ fontFamily: C.mono, fontSize: 12, fontWeight: 700, color: '#000', background: testiSaving || !testiForm.teks.trim() ? '#555' : G.gold, padding: '12px 28px', border: 'none', cursor: testiSaving ? 'not-allowed' : 'pointer', borderRadius: 8 }}>
+                  {testiSaving ? 'MENGIRIM...' : myTestimonial ? '↻ PERBARUI ULASAN' : '✓ KIRIM ULASAN'}
+                </button>
+
+                {myTestimonial?.status === 'ditolak' && (
+                  <p style={{ fontFamily: C.mono, fontSize: 11, color: C.dim, marginTop: 12 }}>
+                    Ulasanmu ditolak admin. Kamu bisa edit dan kirim ulang.
+                  </p>
+                )}
+              </div>
+            );
+          })()}
 
           {/* ══ BANTUAN ══ */}
           {active === 'bantuan' && (

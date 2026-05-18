@@ -5,7 +5,7 @@ import { supabase } from '../lib/supabase';
 const TIERS = ['SMC Trial', 'SMC Bronze', 'SMC Gold Mentorship', 'SMC Platinum 1 on 1'];
 
 interface Admin { id: string; username: string; password: string; role: string; }
-interface Member { id: string; nama: string; tier: string; password: string; is_active: boolean; is_advance: boolean; last_seen?: string; discord_id?: string; discord_username?: string; funded_status?: string | null; }
+interface Member { id: string; nama: string; tier: string; password: string; is_active: boolean; is_advance: boolean; last_seen?: string; discord_id?: string; discord_username?: string; }
 interface VideoItem { id: string; judul: string; deskripsi: string; youtube_url: string; tier_akses: string[]; level: string; urutan: number; }
 interface AdvanceRequest { id: string; member_id: string; member_nama: string; member_tier: string; status: string; alasan_tolak: string | null; created_at: string; }
 
@@ -322,8 +322,6 @@ function MemberTable({ members, loadData }: { members: any[]; loadData: () => vo
   const [editNama, setEditNama]     = useState('');
   const [editTier, setEditTier]     = useState('');
   const [editPass, setEditPass]     = useState('');
-  const [editAdvance, setEditAdvance] = useState(false);
-  const [editFunded, setEditFunded]   = useState<string>('');
   const [progress, setProgress]     = useState<Record<string,number>>({});
 
   const uniqueTiers = Array.from(new Set(members.map((m:any) => m.tier).filter(Boolean))).sort() as string[];
@@ -332,15 +330,20 @@ function MemberTable({ members, loadData }: { members: any[]; loadData: () => vo
   const advanceMembers = members.filter((m:any) => m.is_advance);
 
   useEffect(() => {
-    supabase.from('member_progress_summary').select('member_id,progress_pct')
+    if (members.length === 0) return;
+    supabase.from('member_progress').select('member_id,status')
       .then(({ data }) => {
         if (data) {
+          const countByMember: Record<string,number> = {};
+          data.forEach((p:any) => { if(p.status==='selesai') countByMember[p.member_id]=(countByMember[p.member_id]||0)+1; });
           const map: Record<string,number> = {};
-          data.forEach((d:any) => { map[d.member_id] = parseFloat(d.progress_pct)||0; });
+          Object.entries(countByMember).forEach(([mid, count]) => {
+            map[mid] = videos.length > 0 ? Math.round((count as number)/videos.length*100) : 0;
+          });
           setProgress(map);
         }
       }).catch(()=>{});
-  }, [members]);
+  }, [members, videos]);
 
   const filtered = members.filter((m:any) =>
     (filterLevel === 'all' || (filterLevel === 'basic' ? !m.is_advance : m.is_advance)) &&
@@ -349,7 +352,7 @@ function MemberTable({ members, loadData }: { members: any[]; loadData: () => vo
   );
 
   async function saveEdit(id: string) {
-    const updates: any = { is_advance: editAdvance, funded_status: editFunded || null };
+    const updates: any = {};
     if (editNama) updates.nama = editNama;
     if (editTier) updates.tier = editTier;
     if (editPass) updates.password = editPass;
@@ -427,7 +430,7 @@ function MemberTable({ members, loadData }: { members: any[]; loadData: () => vo
 
       {/* Table */}
       <div style={{background:'#0d0d0d',border:'1px solid #1f1f1f'}}>
-        <div style={{display:'grid',gridTemplateColumns:'28px 1fr 160px 80px 80px 60px 100px 80px 80px',gap:8,padding:'8px 20px',borderBottom:'1px solid #1a1a1a',fontFamily:'monospace',color:'#444',fontSize:10,letterSpacing:0.5}}>
+        <div style={{display:'grid',gridTemplateColumns:'28px 1fr 170px 90px 90px 110px 90px 80px',gap:8,padding:'8px 20px',borderBottom:'1px solid #1a1a1a',fontFamily:'monospace',color:'#444',fontSize:10,letterSpacing:0.5}}>
           <span>#</span><span>NAMA</span><span>TIER</span><span>STATUS</span><span>DISCORD</span><span>LAST LOGIN</span><span>PROGRESS</span><span>AKSI</span>
         </div>
         <div style={{maxHeight:540,overflowY:'auto' as const}}>
@@ -442,7 +445,7 @@ function MemberTable({ members, loadData }: { members: any[]; loadData: () => vo
             const isEditing=editId===m.id;
             return (
               <React.Fragment key={m.id}>
-                <div style={{display:'grid',gridTemplateColumns:'28px 1fr 160px 80px 80px 60px 100px 80px 80px',gap:8,padding:'10px 20px',borderBottom:isEditing?'none':'1px solid #111',alignItems:'center',fontSize:12,background:isEditing?'#0a0a0a':'transparent'}}>
+                <div style={{display:'grid',gridTemplateColumns:'28px 1fr 170px 90px 90px 110px 90px 80px',gap:8,padding:'10px 20px',borderBottom:isEditing?'none':'1px solid #111',alignItems:'center',fontSize:12,background:isEditing?'#0a0a0a':'transparent'}}>
                   <span style={{fontFamily:'monospace',color:'#333',fontSize:10}}>{i+1}</span>
                   <span style={{fontWeight:600,fontSize:13}}>{m.nama}</span>
                   <span style={{fontFamily:'monospace',color:'#666',fontSize:11,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap' as const}}>{m.tier}</span>
@@ -455,13 +458,6 @@ function MemberTable({ members, loadData }: { members: any[]; loadData: () => vo
                     {m.is_advance?'ADVANCE':'BASIC'}
                   </span>
                   <span style={{fontFamily:'monospace',color:m.discord_username?'#22ab94':'#333',fontSize:11}}>{m.discord_username||'—'}</span>
-                  <span style={{fontFamily:'monospace',fontSize:10,fontWeight:700,
-                    color:m.funded_status?'#eab308':'#333',
-                    background:m.funded_status?'#1a1500':'transparent',
-                    border:m.funded_status?'1px solid #3a2e00':'none',
-                    padding:m.funded_status?'2px 6px':'0'}}>
-                    {m.funded_status||'—'}
-                  </span>
                   <span style={{fontFamily:'monospace',color:isOnline?'#22ab94':'#555',fontSize:11}}>{ago}</span>
                   <div>
                     {pct>0?(
@@ -478,11 +474,8 @@ function MemberTable({ members, loadData }: { members: any[]; loadData: () => vo
                       style={{background:'transparent',border:'1px solid #2a2a2a',color:'#666',fontSize:11,padding:'3px 7px',cursor:'pointer'}}>
                       {showPass===m.id?'🙈':'👁'}
                     </button>
-                    <button onClick={()=>{setEditId(isEditing?null:m.id);setEditNama(m.nama);setEditTier(m.tier);setEditPass('');setEditAdvance(m.is_advance||false);}}
+                    <button onClick={()=>{setEditId(isEditing?null:m.id);setEditNama(m.nama);setEditTier(m.tier);setEditPass('');}}
                       style={{background:isEditing?'#1a1500':'transparent',border:`1px solid ${isEditing?'#eab308':'#2a2a2a'}`,color:isEditing?'#eab308':'#666',fontSize:11,padding:'3px 7px',cursor:'pointer'}}>✏</button>
-                    <button onClick={()=>deleteMember(m.id)}
-                      style={{background:'transparent',border:'1px solid #2a2a2a',color:'#ef4444',fontSize:11,padding:'3px 7px',cursor:'pointer'}}
-                      title='Hapus member'>🗑</button>
                   </div>
                 </div>
                 {showPass===m.id&&(
@@ -502,31 +495,6 @@ function MemberTable({ members, loadData }: { members: any[]; loadData: () => vo
                       </select>
                       <input value={editPass} onChange={e=>setEditPass(e.target.value)} placeholder="Password baru (kosong=tidak ganti)" style={inp}
                         onFocus={e=>e.target.style.borderColor='#eab308'} onBlur={e=>e.target.style.borderColor='#2a2a2a'}/>
-                    </div>
-                    <div style={{display:'flex',gap:8,marginBottom:8,alignItems:'center',flexWrap:'wrap' as const}}>
-                      <span style={{fontFamily:'monospace',color:'#444',fontSize:10,marginRight:4}}>STATUS TRADING:</span>
-                      <select value={editFunded} onChange={e=>setEditFunded(e.target.value)}
-                        style={{background:'#111',border:'1px solid #2a2a2a',color:'#e7e5e4',padding:'4px 10px',fontFamily:'monospace',fontSize:11,outline:'none',cursor:'pointer',borderRadius:4}}>
-                        <option value="">— Tidak ada —</option>
-                        {['DA','P1','P2','Master','MPAID','Ap'].map(s=>(
-                          <option key={s} value={s}>{s === 'DA' ? 'DA — Demo Account' : s === 'P1' ? 'P1 — Phase 1' : s === 'P2' ? 'P2 — Phase 2' : s === 'Master' ? 'Master — Lolos P2' : s === 'MPAID' ? 'MPAID — Sudah Payout' : 'Ap — Akun Pribadi'}</option>
-                        ))}
-                      </select>
-                    </div>
-                    <div style={{display:'flex',gap:6,marginBottom:8,alignItems:'center'}}>
-                      <span style={{fontFamily:'monospace',color:'#444',fontSize:10,marginRight:4}}>KELAS:</span>
-                      {(['basic','advance'] as const).map(lvl=>(
-                        <button key={lvl} onClick={()=>setEditAdvance(lvl==='advance')}
-                          style={{fontFamily:'monospace',fontSize:11,fontWeight:700,padding:'5px 14px',cursor:'pointer',
-                            background:(lvl==='advance'?editAdvance:!editAdvance)?( lvl==='advance'?'#1a1500':'#0a1a14'):'transparent',
-                            border:`1px solid ${(lvl==='advance'?editAdvance:!editAdvance)?(lvl==='advance'?'#eab308':'#22ab94'):'#2a2a2a'}`,
-                            color:(lvl==='advance'?editAdvance:!editAdvance)?(lvl==='advance'?'#eab308':'#22ab94'):'#555'}}>
-                          {lvl.toUpperCase()}
-                        </button>
-                      ))}
-                      <span style={{fontFamily:'monospace',fontSize:10,color:'#444',marginLeft:4}}>
-                        → Kelas {editAdvance?'Advanced (akses semua materi advanced)':'Basic (materi basic saja)'}
-                      </span>
                     </div>
                     <div style={{display:'flex',gap:8}}>
                       <button onClick={()=>saveEdit(m.id)} style={{background:'#eab308',color:'#000',fontFamily:'monospace',fontSize:11,fontWeight:700,padding:'6px 14px',border:'none',cursor:'pointer'}}>SIMPAN</button>
@@ -548,11 +516,13 @@ function MemberTable({ members, loadData }: { members: any[]; loadData: () => vo
 
 export default function AdminPage({ initialTab, embedded }: { initialTab?: string; embedded?: boolean } = {}) {
   const [currentAdmin, setCurrentAdmin] = useState<Admin | null>(null);
-  const [tab, setTab] = useState<'member' | 'video' | 'materi' | 'advance' | 'admins' | 'settings' | 'announce' | 'broker' | 'ulasan' | 'claim' | 'jadwal' | 'progress'>((initialTab as any) || 'member');
+  const [tab, setTab] = useState<'member' | 'video' | 'materi' | 'advance' | 'admins' | 'settings' | 'announce' | 'broker' | 'ulasan' | 'claim' | 'jadwal' | 'rating' | 'referral' | 'progress'>((initialTab as any) || 'member');
   const [ulasanList, setUlasanList] = useState<any[]>([]);
   const [claims, setClaims] = useState<any[]>([]);
   const [claimActionLoading, setClaimActionLoading] = useState<string | null>(null);
   const [liveSchedules, setLiveSchedules] = useState<any[]>([]);
+  const [videoRatingStats, setVideoRatingStats] = useState<any[]>([]);
+  const [adminReferrals, setAdminReferrals]     = useState<any[]>([]);
   const [jadwalHari, setJadwalHari]   = useState('');
   const [jadwalJam, setJadwalJam]     = useState('');
   const [jadwalSesi, setJadwalSesi]   = useState('');
@@ -577,19 +547,6 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
   const [announceChannel, setAnnounceChannel] = useState('');
   const [announceMsg, setAnnounceMsg] = useState('');
   const [announceSending, setAnnounceSending] = useState(false);
-  const [webAnnouncements, setWebAnnouncements] = useState<any[]>([]);
-  const [propRules, setPropRules]           = useState<any[]>([]);
-  const [prJudul, setPrJudul]               = useState('');
-  const [prDeskripsi, setPrDeskripsi]       = useState('');
-  const [prLink, setPrLink]                 = useState('');
-  const [prFile, setPrFile]                 = useState<File|null>(null);
-  const [prSaving, setPrSaving]             = useState(false);
-  const [webAnnTitle, setWebAnnTitle] = useState('');
-  const [webAnnContent, setWebAnnContent] = useState('');
-  const [webAnnSaving, setWebAnnSaving] = useState(false);
-  const [allProgress, setAllProgress] = useState<any[]>([]);
-  const [progressExpanded, setProgressExpanded] = useState<string | null>(null);
-  const [progressFilter, setProgressFilter] = useState('all');
   const [members, setMembers] = useState<Member[]>([]);
   const [videos, setVideos] = useState<VideoItem[]>([]);
   const [requests, setRequests] = useState<AdvanceRequest[]>([]);
@@ -691,11 +648,28 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
     const { data: br } = await supabase.from('brokers').select('*').order('urutan', { ascending: true });
     const { data: js } = await supabase.from('live_schedules').select('*').order('urutan', { ascending: true });
     if (js) setLiveSchedules(js);
+    // Referrals
+    try {
+      const { data: refD } = await supabase.from('referrals')
+        .select('*, referrer:members!referrals_referrer_id_fkey(nama,tier)')
+        .order('created_at', { ascending: false });
+      if (refD) setAdminReferrals(refD);
+    } catch(e) { /* tabel belum dibuat */ }
+    // Video ratings
+    try {
+      const { data: ratD } = await supabase.from('video_ratings').select('video_id,rating');
+      if (ratD) {
+        const stats: Record<string,{judul:string,likes:number,dislikes:number}> = {};
+        ratD.forEach((r:any) => {
+          if (!stats[r.video_id]) stats[r.video_id] = { judul: r.video_id, likes:0, dislikes:0 };
+          if (r.rating===1) stats[r.video_id].likes++;
+          else stats[r.video_id].dislikes++;
+        });
+        setVideoRatingStats(Object.values(stats).sort((a:any,b:any)=>b.likes-a.likes));
+      }
+    } catch(e) { /* tabel belum dibuat */ }
     const { data: ul } = await supabase.from('testimonials').select('*').order('created_at', { ascending: false });
     const { data: cl } = await supabase.from('partnership_claims').select('*').order('created_at', { ascending: false });
-    const { data: wann } = await supabase.from('announcements').select('*').order('created_at', { ascending: false });
-    const { data: prul } = await supabase.from('prop_firm_rules').select('*').order('created_at', { ascending: false });
-    const { data: prog } = await supabase.from('member_progress').select('member_id, video_id, status');
     if (m) setMembers(m);
     if (v) setVideos(v);
     if (r) setRequests(r);
@@ -704,9 +678,6 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
     if (br) setBrokers(br);
     if (ul) setUlasanList(ul);
     if (cl) setClaims(cl);
-    if (wann) setWebAnnouncements(wann);
-    if (prul) setPropRules(prul);
-    if (prog) setAllProgress(prog);
   }
 
   // Broker CRUD
@@ -909,14 +880,6 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
     await supabase.from('advance_requests').update({ status: 'disetujui', updated_at: new Date().toISOString() }).eq('id', req.id);
     await supabase.from('members').update({ is_advance: true }).eq('id', req.member_id);
 
-    // Kirim notifikasi ke dashboard member
-    await supabase.from('member_notifications').insert({
-      member_id: req.member_id,
-      type: 'approve',
-      message: `Selamat! Request naik kelas Advanced kamu telah DISETUJUI oleh admin. Kamu sekarang bisa mengakses semua materi Advanced. Semangat belajarnya! 🎉`,
-      is_read: false,
-    });
-
     // Ambil discord_id member
     const { data: member } = await supabase.from('members').select('discord_id, discord_username').eq('id', req.member_id).single();
 
@@ -928,35 +891,23 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
       });
     } catch {}
 
-    // ── Auto post website announcement ──
-    await supabase.from('announcements').insert({
-      judul: `🎉 Selamat ${req.member_nama} — Naik Kelas Advanced!`,
-      content: `${req.member_nama} (${req.member_tier}) berhasil naik ke kelas Advanced. Semangat terus belajar SMC dan menuju funded! 🏆`,
-    });
-
-    // ── Kirim ucapan selamat ke Discord ──
-    if (congratsChannelId) {
+    // Kirim ucapan selamat ke Discord
+    if (member?.discord_id && congratsChannelId) {
       try {
-        const discordRes = await fetch('https://menolakrugi-bot-production.up.railway.app/discord/congrats-advanced', {
+        const res = await fetch('https://menolakrugi-bot-production.up.railway.app/discord/congrats-advanced', {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            discord_id: member?.discord_id || null,
-            discord_username: member?.discord_username || null,
-            nama: req.member_nama,
-            channel_id: congratsChannelId
-          }),
+          body: JSON.stringify({ discord_id: member.discord_id, discord_username: member.discord_username, nama: req.member_nama, channel_id: congratsChannelId }),
         });
-        const discordData = await discordRes.json();
-        if (discordData.success) {
-          notify(`${req.member_nama} di-approve! ✅ Pengumuman website + Discord terkirim.`);
-        } else {
-          notify(`${req.member_naam} di-approve! ✅ Pengumuman website terkirim. Discord: ${discordData.error}`);
-        }
+        const data = await res.json();
+        if (data.success) notify(`${req.member_nama} di-approve! Ucapan selamat terkirim ke Discord ✅`);
+        else notify(`${req.member_nama} di-approve! (Gagal kirim ucapan: ${data.error})`);
       } catch {
-        notify(`${req.member_naam} di-approve! ✅ Pengumuman website terkirim. (Bot offline)`);
+        notify(`${req.member_nama} di-approve! (Bot tidak terhubung)`);
       }
+    } else if (!congratsChannelId) {
+      notify(`${req.member_nama} di-approve! ⚠️ Isi Channel ID dulu agar ucapan terkirim otomatis.`);
     } else {
-      notify(`${req.member_naam} di-approve! ✅ Pengumuman website terkirim. ⚠️ Isi Channel ID untuk kirim ke Discord juga.`);
+      notify(`${req.member_nama} di-approve! (Member belum hubungkan Discord)`);
     }
 
     loadData();
@@ -981,15 +932,6 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
   async function tolakRequest(req: AdvanceRequest) {
     if (!alasanTolak.trim()) { notify('Isi alasan penolakan dulu.', 'err'); return; }
     await supabase.from('advance_requests').update({ status: 'ditolak', alasan_tolak: alasanTolak, updated_at: new Date().toISOString() }).eq('id', req.id);
-
-    // Kirim notifikasi ke dashboard member
-    await supabase.from('member_notifications').insert({
-      member_id: req.member_id,
-      type: 'reject',
-      message: `Request naik kelas Advanced kamu belum disetujui. Alasan: ${alasanTolak.trim()}. Kamu bisa mengajukan ulang setelah memenuhi syarat.`,
-      is_read: false,
-    });
-
     notify(`Request ${req.member_nama} ditolak.`);
     setTolakId(null); setAlasanTolak(''); loadData();
   }
@@ -1039,52 +981,6 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
       else notify('Gagal kirim: ' + data.error, 'err');
     } catch { notify('Tidak bisa terhubung ke bot.', 'err'); }
     setAnnounceSending(false);
-  }
-
-  async function savePropRule() {
-    if (!prJudul.trim()) { notify('Judul wajib diisi.', 'err'); return; }
-    if (!prLink.trim() && !prFile) { notify('Isi link atau pilih file.', 'err'); return; }
-    setPrSaving(true);
-    let fileUrl = '';
-    if (prFile) {
-      const path = `prop-rules/${Date.now()}-${prFile.name}`;
-      const { data: up } = await supabase.storage.from('journals').upload(path, prFile, { upsert: true });
-      if (up) {
-        const { data: url } = supabase.storage.from('journals').getPublicUrl(path);
-        fileUrl = url.publicUrl;
-      }
-    }
-    await supabase.from('prop_firm_rules').insert({
-      judul: prJudul.trim(),
-      deskripsi: prDeskripsi.trim() || null,
-      link: prLink.trim() || null,
-      file_url: fileUrl || null,
-    });
-    notify('Rule berhasil ditambahkan! ✅');
-    setPrJudul(''); setPrDeskripsi(''); setPrLink(''); setPrFile(null);
-    loadData();
-    setPrSaving(false);
-  }
-
-  async function deletePropRule(id: string) {
-    if (!confirm('Hapus rule ini?')) return;
-    await supabase.from('prop_firm_rules').delete().eq('id', id);
-    notify('Dihapus.'); loadData();
-  }
-
-  async function saveWebAnnounce() {
-    if (!webAnnContent.trim()) { notify('Isi pengumuman tidak boleh kosong.', 'err'); return; }
-    setWebAnnSaving(true);
-    const { error } = await supabase.from('announcements').insert({ judul: webAnnTitle.trim() || null, content: webAnnContent.trim() });
-    if (error) notify('Gagal: ' + error.message, 'err');
-    else { notify('Pengumuman disimpan ke website! ✅'); setWebAnnTitle(''); setWebAnnContent(''); loadData(); }
-    setWebAnnSaving(false);
-  }
-
-  async function deleteWebAnnounce(id: string) {
-    if (!confirm('Hapus pengumuman ini?')) return;
-    await supabase.from('announcements').delete().eq('id', id);
-    notify('Dihapus.'); loadData();
   }
 
   function startEditVideo(v: any) {
@@ -1188,7 +1084,10 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
             { id: 'advance', label: 'REQ. ADVANCE', count: pendingRequests.length, warn: true },
             { id: 'announce',label: 'PENGUMUMAN', count: null },
             { id: 'broker',  label: 'BROKER',   count: brokers.length },
+            { id: 'progress', label: 'PROGRES BELAJAR', count: null },
             { id: 'jadwal',  label: 'JADWAL LIVE', count: null },
+            { id: 'rating',  label: 'RATING VIDEO', count: null },
+            { id: 'referral', label: 'REFERRAL', count: adminReferrals.filter((r:any)=>r.status==='pending').length, warn: adminReferrals.some((r:any)=>r.status==='pending') },
             { id: 'ulasan',  label: 'ULASAN',   count: ulasanList.filter(u=>u.status==='pending').length, warn: true },
             { id: 'claim',   label: 'KLAIM PARTNER', count: claims.filter(c=>c.status==='pending').length, warn: true },
             { id: 'settings',label: 'PASSWORD', count: null },
@@ -1376,59 +1275,43 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
 
         {/* ── TAB PENGUMUMAN ── */}
         {tab === 'announce' && (
-          <div style={{display:'flex',flexDirection:'column',gap:16,maxWidth:720}}>
-            <div style={{background:'#0d0d0d',border:'1px solid #1f1f1f',padding:'20px 24px'}}>
-              <div style={{fontFamily:'monospace',color:'#22ab94',fontSize:11,letterSpacing:1,marginBottom:16}}>// PENGUMUMAN WEBSITE (tampil di dashboard member)</div>
-              <div style={{marginBottom:12}}>
-                <div style={{fontFamily:'monospace',color:'#444',fontSize:10,marginBottom:6}}>JUDUL (opsional)</div>
-                <input type="text" value={webAnnTitle} onChange={e=>setWebAnnTitle(e.target.value)}
-                  placeholder="Contoh: Update Materi Baru, Maintenance..."
-                  style={{width:'100%',background:'#111',border:'1px solid #2a2a2a',color:'#e7e5e4',padding:'9px 14px',fontSize:13,fontFamily:'monospace',outline:'none',boxSizing:'border-box' as const,marginBottom:10}}
-                  onFocus={e=>e.target.style.borderColor='#22ab94'} onBlur={e=>e.target.style.borderColor='#2a2a2a'}/>
-                <div style={{fontFamily:'monospace',color:'#444',fontSize:10,marginBottom:6}}>ISI PENGUMUMAN *</div>
-                <textarea value={webAnnContent} onChange={e=>setWebAnnContent(e.target.value)} rows={4}
-                  placeholder="Tulis isi pengumuman yang akan tampil di dashboard member..."
-                  style={{width:'100%',background:'#111',border:'1px solid #2a2a2a',color:'#e7e5e4',padding:'9px 14px',fontSize:13,fontFamily:'monospace',outline:'none',resize:'vertical' as const,boxSizing:'border-box' as const}}
-                  onFocus={e=>e.target.style.borderColor='#22ab94'} onBlur={e=>e.target.style.borderColor='#2a2a2a'}/>
-              </div>
-              <button onClick={saveWebAnnounce} disabled={webAnnSaving||!webAnnContent.trim()}
-                style={{background:webAnnSaving||!webAnnContent.trim()?'#1a1a1a':'#22ab94',color:webAnnSaving||!webAnnContent.trim()?'#444':'#000',fontFamily:'monospace',fontSize:12,fontWeight:700,padding:'10px 20px',border:'none',cursor:'pointer',marginBottom:16}}>
-                {webAnnSaving?'MENYIMPAN...':'▸ SIMPAN KE WEBSITE'}
-              </button>
-              <div style={{fontFamily:'monospace',color:'#444',fontSize:10,marginBottom:10}}>PENGUMUMAN AKTIF ({webAnnouncements.length})</div>
-              {webAnnouncements.length===0
-                ? <div style={{fontFamily:'monospace',color:'#333',fontSize:12}}>Belum ada pengumuman.</div>
-                : webAnnouncements.map((ann:any)=>(
-                  <div key={ann.id} style={{display:'flex',alignItems:'flex-start',gap:12,padding:'12px 14px',background:'#111',border:'1px solid #1a1a1a',borderRadius:6,marginBottom:8}}>
-                    <div style={{flex:1}}>
-                      {ann.judul&&<div style={{fontWeight:700,fontSize:13,marginBottom:4,color:'#e7e5e4'}}>{ann.judul}</div>}
-                      <div style={{fontSize:13,color:'#888',lineHeight:1.5}}>{ann.content}</div>
-                      <div style={{fontFamily:'monospace',fontSize:10,color:'#333',marginTop:6}}>{new Date(ann.created_at).toLocaleDateString('id-ID',{day:'numeric',month:'short',year:'numeric'})}</div>
-                    </div>
-                    <button onClick={()=>deleteWebAnnounce(ann.id)} style={{background:'#1a0a0a',border:'1px solid #3a1010',color:'#ef4444',fontFamily:'monospace',fontSize:11,padding:'5px 10px',cursor:'pointer',flexShrink:0}}>HAPUS</button>
-                  </div>
-                ))
-              }
-            </div>
+          <div style={{display:'flex',flexDirection:'column',gap:16,maxWidth:680}}>
             <div style={{background:'#0d0d0d',border:'1px solid #1f1f1f',padding:'20px 24px'}}>
               <div style={{fontFamily:'monospace',color:'#eab308',fontSize:11,letterSpacing:1,marginBottom:16}}>// KIRIM PENGUMUMAN KE DISCORD</div>
               <div style={{marginBottom:12}}>
-                <div style={{fontFamily:'monospace',color:'#444',fontSize:10,marginBottom:6}}>CHANNEL ID</div>
+                <div style={{fontFamily:'monospace',color:'#444',fontSize:10,letterSpacing:0.5,marginBottom:6}}>CHANNEL ID</div>
                 <input type="text" value={announceChannel} onChange={e=>setAnnounceChannel(e.target.value.trim())} placeholder="Paste Channel ID Discord..."
                   style={{width:'100%',background:'#111',border:'1px solid #2a2a2a',color:'#e7e5e4',padding:'10px 14px',fontSize:13,fontFamily:'monospace',outline:'none',boxSizing:'border-box' as const}}
                   onFocus={e=>e.target.style.borderColor='#eab308'} onBlur={e=>e.target.style.borderColor='#2a2a2a'}/>
+                <div style={{fontFamily:'monospace',color:'#333',fontSize:10,marginTop:4}}>Klik kanan channel Discord → Copy Channel ID (butuh Developer Mode aktif)</div>
               </div>
               <div style={{marginBottom:12}}>
-                <div style={{fontFamily:'monospace',color:'#444',fontSize:10,marginBottom:6}}>PESAN</div>
-                <textarea value={announceMsg} onChange={e=>setAnnounceMsg(e.target.value)} rows={8}
-                  placeholder={'Tulis pengumuman...'}
+                <div style={{fontFamily:'monospace',color:'#444',fontSize:10,letterSpacing:0.5,marginBottom:6}}>PESAN PENGUMUMAN</div>
+                <textarea value={announceMsg} onChange={e=>setAnnounceMsg(e.target.value)} rows={10}
+                  placeholder={`Tulis pengumuman...\n\nSupport markdown Discord:\n# Heading\n**bold**\n_italic_\n> quote`}
                   style={{width:'100%',background:'#111',border:'1px solid #2a2a2a',color:'#e7e5e4',padding:'10px 14px',fontSize:13,fontFamily:'monospace',outline:'none',resize:'vertical' as const,boxSizing:'border-box' as const}}
                   onFocus={e=>e.target.style.borderColor='#eab308'} onBlur={e=>e.target.style.borderColor='#2a2a2a'}/>
+                <div style={{fontFamily:'monospace',color:'#333',fontSize:10,marginTop:4}}>{announceMsg.length} karakter</div>
               </div>
+              {announceMsg && (
+                <div style={{background:'#111',border:'1px solid #2a2a2a',padding:'14px',marginBottom:12}}>
+                  <div style={{fontFamily:'monospace',color:'#555',fontSize:10,marginBottom:8}}>// PREVIEW</div>
+                  <pre style={{color:'#aaa',fontSize:12,fontFamily:'monospace',whiteSpace:'pre-wrap' as const,margin:0}}>{announceMsg}</pre>
+                </div>
+              )}
               <button onClick={sendAnnounce} disabled={announceSending||!announceChannel||!announceMsg.trim()}
-                style={{background:announceSending||!announceChannel||!announceMsg.trim()?'#1a1a1a':'#eab308',color:announceSending||!announceChannel||!announceMsg.trim()?'#444':'#000',fontFamily:'monospace',fontSize:12,fontWeight:700,padding:'12px',border:'none',cursor:'pointer',width:'100%'}}>
+                style={{background:announceSending||!announceChannel||!announceMsg.trim()?'#1a1a1a':'#eab308',color:announceSending||!announceChannel||!announceMsg.trim()?'#444':'#000',fontFamily:'monospace',fontSize:12,fontWeight:700,padding:'12px',border:'none',cursor:'pointer',letterSpacing:0.5,width:'100%'}}>
                 {announceSending?'MENGIRIM...':'▸ KIRIM KE DISCORD'}
               </button>
+            </div>
+            <div style={{background:'#0d0d0d',border:'1px solid #1f1f1f',padding:'16px 20px'}}>
+              <div style={{fontFamily:'monospace',color:'#555',fontSize:11,letterSpacing:1,marginBottom:10}}>// CARA AKTIFKAN DEVELOPER MODE</div>
+              {['Buka Discord → Settings (ikon gear)','Klik Advanced','Aktifkan Developer Mode','Klik kanan channel → Copy Channel ID','Paste ID di kolom di atas'].map((step,i)=>(
+                <div key={i} style={{display:'flex',gap:10,marginBottom:6,alignItems:'baseline'}}>
+                  <span style={{fontFamily:'monospace',color:'#eab308',fontSize:11,flexShrink:0}}>{i+1}.</span>
+                  <span style={{fontSize:13,color:'#888'}}>{step}</span>
+                </div>
+              ))}
             </div>
           </div>
         )}
@@ -1881,153 +1764,165 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
           </div>
         )}
 
-        {/* ── TAB PROGRES BELAJAR ── */}
+
         {tab === 'progress' && (() => {
-          const TIERS_ALL = ['all','SMC Trial','SMC Bronze','SMC Gold Mentorship','SMC Platinum 1 on 1'];
-          const filtered  = progressFilter==='all' ? members : members.filter((m:any)=>m.tier===progressFilter);
-          const vidItems  = videos.filter((v:any)=>!((v as any).kategori?.startsWith('file-')));
-          const totalVids = vidItems.length;
-          const byMember:Record<string,{done:number;busy:number;vids:string[]}> = {};
-          allProgress.forEach((p:any)=>{
-            if(!byMember[p.member_id]) byMember[p.member_id]={done:0,busy:0,vids:[]};
-            if(p.status==='selesai') byMember[p.member_id].done++;
-            if(p.status==='mulai')   byMember[p.member_id].busy++;
-            byMember[p.member_id].vids.push(p.video_id+':'+p.status);
-          });
-          const vidMap:Record<string,string>={};
-          vidItems.forEach((v:any)=>{vidMap[v.id]=v.judul;});
+          const totalVids = videos.length || 1;
+          const memberProgress = members.map(m => {
+            // Count from progress state (ratio per member)
+            const pct = progress[m.id] || 0;
+            return { ...m, pct };
+          }).sort((a:any, b:any) => b.pct - a.pct);
+
           return (
-            <div>
-              <div style={{marginBottom:20,display:'flex',alignItems:'center',gap:12,flexWrap:'wrap' as const}}>
-                <h2 style={{margin:0,fontSize:20,fontWeight:700}}>Progres Belajar Member</h2>
-                <select value={progressFilter} onChange={e=>setProgressFilter(e.target.value)}
-                  style={{background:'#111',border:'1px solid #2a2a2a',color:'#e7e5e4',padding:'6px 12px',fontFamily:'monospace',fontSize:12,outline:'none',cursor:'pointer'}}>
-                  {TIERS_ALL.map(t=><option key={t} value={t}>{t==='all'?'Semua Tier':t}</option>)}
-                </select>
-                <span style={{fontFamily:'monospace',color:'#555',fontSize:11}}>{filtered.length} member · {totalVids} video</span>
+            <div style={{display:'flex',flexDirection:'column',gap:16,maxWidth:800}}>
+              <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+                <div style={{fontFamily:'monospace',color:'#eab308',fontSize:11,letterSpacing:1}}>// PROGRES BELAJAR MEMBER</div>
+                <div style={{fontFamily:'monospace',fontSize:10,color:'#666'}}>Total {members.length} member · {videos.length} video</div>
               </div>
-              <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:12,marginBottom:20}}>
-                {([
-                  {l:'Total Member', v:filtered.length, col:'#e7e5e4'},
-                  {l:'Sudah Mulai',  v:filtered.filter((m:any)=>(byMember[m.id]?.done||0)+(byMember[m.id]?.busy||0)>0).length, col:'#eab308'},
-                  {l:'Progres >50%', v:filtered.filter((m:any)=>totalVids>0&&((byMember[m.id]?.done||0)/totalVids)>0.5).length, col:'#22ab94'},
-                  {l:'Belum Mulai',  v:filtered.filter((m:any)=>!byMember[m.id]||(byMember[m.id].done===0&&byMember[m.id].busy===0)).length, col:'#ef4444'},
-                ] as {l:string;v:number;col:string}[]).map((k,i)=>(
-                  <div key={i} style={{background:'#0d0d0d',border:'1px solid #1f1f1f',borderRadius:10,padding:'16px 18px'}}>
-                    <div style={{fontFamily:'monospace',color:'#444',fontSize:10,marginBottom:8}}>{k.l}</div>
-                    <div style={{fontSize:28,fontWeight:700,color:k.col}}>{k.v}</div>
+
+              {/* Stats bar */}
+              <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:10}}>
+                {[
+                  {l:'Selesai Semua', v:memberProgress.filter((m:any)=>m.pct>=100).length, c:'#22ab94'},
+                  {l:'Di atas 50%',   v:memberProgress.filter((m:any)=>m.pct>=50&&m.pct<100).length, c:'#eab308'},
+                  {l:'Di bawah 50%',  v:memberProgress.filter((m:any)=>m.pct>0&&m.pct<50).length, c:'#f59e0b'},
+                  {l:'Belum Mulai',   v:memberProgress.filter((m:any)=>m.pct===0).length, c:'#ef4444'},
+                ].map((s,i)=>(
+                  <div key={i} style={{background:'#0d0d0d',border:`1px solid ${s.c}33`,borderRadius:8,padding:'12px',textAlign:'center' as const}}>
+                    <div style={{fontFamily:'monospace',color:s.c,fontSize:22,fontWeight:700}}>{s.v}</div>
+                    <div style={{fontFamily:'monospace',color:'#666',fontSize:9,marginTop:4}}>{s.l}</div>
                   </div>
                 ))}
               </div>
-              <div style={{background:'#0d0d0d',border:'1px solid #1f1f1f',borderRadius:10,overflow:'hidden'}}>
-                <div style={{display:'grid',gridTemplateColumns:'1fr 140px 220px 90px 80px',padding:'10px 18px',borderBottom:'1px solid #1f1f1f',fontFamily:'monospace',color:'#444',fontSize:10,letterSpacing:0.8}}>
-                  <span>NAMA</span><span>TIER</span><span>PROGRES</span><span>SELESAI</span><span>DETAIL</span>
+
+              {/* Member list */}
+              <div style={{background:'#0d0d0d',border:'1px solid #1f1f1f',borderRadius:8,overflow:'hidden'}}>
+                <div style={{display:'grid',gridTemplateColumns:'32px 1fr 80px 120px 60px',gap:'4px 12px',fontFamily:'monospace',fontSize:9,color:'#666',padding:'10px 16px',borderBottom:'1px solid #1a1a1a',letterSpacing:0.5}}>
+                  <span>#</span><span>NAMA</span><span>TIER</span><span>PROGRESS</span><span>PCT</span>
                 </div>
-                {filtered.length===0 && <div style={{padding:'20px 18px',fontFamily:'monospace',color:'#333',fontSize:12}}>Tidak ada member.</div>}
-                {filtered.map((m:any)=>{
-                  const p=byMember[m.id]||{done:0,busy:0,vids:[]};
-                  const pct=totalVids>0?Math.round((p.done/totalVids)*100):0;
-                  const col=pct===0?'#ef4444':pct<50?'#eab308':'#22ab94';
-                  const isExp=progressExpanded===m.id;
-                  const doneV=p.vids.filter((v:string)=>v.endsWith(':selesai')).map((v:string)=>v.split(':')[0]);
-                  const busyV=p.vids.filter((v:string)=>v.endsWith(':mulai')).map((v:string)=>v.split(':')[0]);
-                  return (
-                    <div key={m.id}>
-                      <div style={{display:'grid',gridTemplateColumns:'1fr 140px 220px 90px 80px',padding:'12px 18px',borderBottom:'1px solid #161616',alignItems:'center'}}>
-                        <div>
-                          <div style={{fontWeight:600,fontSize:13}}>{m.nama}</div>
-                          {m.last_seen&&<div style={{fontFamily:'monospace',fontSize:10,color:'#444',marginTop:2}}>Login: {new Date(m.last_seen).toLocaleDateString('id-ID',{day:'numeric',month:'short'})}</div>}
-                        </div>
-                        <span style={{fontFamily:'monospace',fontSize:11,color:'#888'}}>{m.tier?.replace('SMC ','')}</span>
-                        <div style={{display:'flex',alignItems:'center',gap:8}}>
-                          <div style={{flex:1,height:6,background:'#1a1a1a',borderRadius:3,overflow:'hidden'}}>
-                            <div style={{width:`${pct}%`,height:'100%',background:col,borderRadius:3,transition:'width 0.3s'}}/>
-                          </div>
-                          <span style={{fontFamily:'monospace',fontSize:11,color:col,minWidth:36,textAlign:'right' as const}}>{pct}%</span>
-                        </div>
-                        <div style={{fontFamily:'monospace',fontSize:12,color:col}}>{p.done}<span style={{color:'#333'}}> / {totalVids}</span></div>
-                        <button onClick={()=>setProgressExpanded(isExp?null:m.id)}
-                          style={{background:'#111',border:'1px solid #2a2a2a',color:'#eab308',fontFamily:'monospace',fontSize:10,padding:'4px 10px',cursor:'pointer',borderRadius:4}}>
-                          {isExp?'TUTUP':'LIHAT'}
-                        </button>
-                      </div>
-                      {isExp&&(
-                        <div style={{background:'#080808',borderBottom:'1px solid #161616',padding:'16px 18px'}}>
-                          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:16}}>
-                            <div>
-                              <div style={{fontFamily:'monospace',color:'#22ab94',fontSize:10,marginBottom:10}}>✓ SELESAI ({doneV.length})</div>
-                              {doneV.length===0?<div style={{color:'#333',fontSize:12,fontFamily:'monospace'}}>—</div>
-                               :doneV.map((vid:string)=>(
-                                <div key={vid} style={{fontSize:12,color:'#888',padding:'5px 0',borderBottom:'1px solid #111',display:'flex',gap:8}}>
-                                  <span style={{color:'#22ab94',flexShrink:0}}>✓</span>{vidMap[vid]||'Video'}
-                                </div>
-                              ))}
-                            </div>
-                            <div>
-                              <div style={{fontFamily:'monospace',color:'#eab308',fontSize:10,marginBottom:10}}>▶ SEDANG ({busyV.length})</div>
-                              {busyV.length===0?<div style={{color:'#333',fontSize:12,fontFamily:'monospace'}}>—</div>
-                               :busyV.map((vid:string)=>(
-                                <div key={vid} style={{fontSize:12,color:'#888',padding:'5px 0',borderBottom:'1px solid #111',display:'flex',gap:8}}>
-                                  <span style={{color:'#eab308',flexShrink:0}}>▶</span>{vidMap[vid]||'Video'}
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        </div>
-                      )}
+                {memberProgress.slice(0,50).map((m:any,i:number)=>(
+                  <div key={m.id} style={{display:'grid',gridTemplateColumns:'32px 1fr 80px 120px 60px',gap:'4px 12px',alignItems:'center',padding:'10px 16px',borderBottom:'1px solid #0d0d0d'}}>
+                    <span style={{fontFamily:'monospace',color:'#444',fontSize:10}}>{i+1}</span>
+                    <div>
+                      <div style={{fontSize:12,fontWeight:600}}>{m.nama}</div>
+                      {m.is_advance&&<span style={{fontFamily:'monospace',fontSize:8,color:'#a855f7',border:'1px solid #a855f744',padding:'1px 5px',borderRadius:3}}>ADV</span>}
                     </div>
-                  );
-                })}
+                    <span style={{fontFamily:'monospace',fontSize:10,color:'#888'}}>{m.tier?.replace('SMC ','').slice(0,8)}</span>
+                    <div style={{height:5,background:'#111',borderRadius:3,overflow:'hidden'}}>
+                      <div style={{height:'100%',width:m.pct+'%',background:m.pct>=100?'#22ab94':m.pct>=50?'#eab308':'#f59e0b',borderRadius:3,transition:'width 0.5s ease'}}/>
+                    </div>
+                    <span style={{fontFamily:'monospace',fontSize:11,fontWeight:700,color:m.pct>=100?'#22ab94':m.pct>=50?'#eab308':m.pct>0?'#f59e0b':'#444'}}>{m.pct}%</span>
+                  </div>
+                ))}
+                {members.length===0&&<div style={{padding:'32px',textAlign:'center' as const,fontFamily:'monospace',color:'#444',fontSize:12}}>Tidak ada data member.</div>}
               </div>
             </div>
           );
         })()}
 
-        {/* ── TAB PROP FIRM RULES ── */}
-        {tab === 'proprules' && (
-          <div style={{display:'flex',flexDirection:'column',gap:16,maxWidth:720}}>
-            <div style={{background:'#0d0d0d',border:'1px solid #1f1f1f',padding:'20px 24px'}}>
-              <div style={{fontFamily:'monospace',color:'#a855f7',fontSize:11,letterSpacing:1,marginBottom:16}}>// PROP FIRM RULES</div>
-              <div style={{marginBottom:12}}>
-                <div style={{fontFamily:'monospace',color:'#444',fontSize:10,marginBottom:6}}>JUDUL *</div>
-                <input type="text" value={prJudul} onChange={e=>setPrJudul(e.target.value)} placeholder="Contoh: FTMO Challenge Rules, MyForexFunds Rules..."
-                  style={{width:'100%',background:'#111',border:'1px solid #2a2a2a',color:'#e7e5e4',padding:'9px 14px',fontSize:13,fontFamily:'monospace',outline:'none',boxSizing:'border-box' as const,marginBottom:10}}
-                  onFocus={e=>e.target.style.borderColor='#a855f7'} onBlur={e=>e.target.style.borderColor='#2a2a2a'}/>
-                <div style={{fontFamily:'monospace',color:'#444',fontSize:10,marginBottom:6}}>DESKRIPSI (opsional)</div>
-                <textarea value={prDeskripsi} onChange={e=>setPrDeskripsi(e.target.value)} rows={3} placeholder="Penjelasan singkat tentang rules ini..."
-                  style={{width:'100%',background:'#111',border:'1px solid #2a2a2a',color:'#e7e5e4',padding:'9px 14px',fontSize:13,fontFamily:'monospace',outline:'none',resize:'vertical' as const,boxSizing:'border-box' as const,marginBottom:10}}
-                  onFocus={e=>e.target.style.borderColor='#a855f7'} onBlur={e=>e.target.style.borderColor='#2a2a2a'}/>
-                <div style={{fontFamily:'monospace',color:'#444',fontSize:10,marginBottom:6}}>LINK (opsional)</div>
-                <input type="text" value={prLink} onChange={e=>setPrLink(e.target.value)} placeholder="https://..."
-                  style={{width:'100%',background:'#111',border:'1px solid #2a2a2a',color:'#e7e5e4',padding:'9px 14px',fontSize:13,fontFamily:'monospace',outline:'none',boxSizing:'border-box' as const,marginBottom:10}}
-                  onFocus={e=>e.target.style.borderColor='#a855f7'} onBlur={e=>e.target.style.borderColor='#2a2a2a'}/>
-                <div style={{fontFamily:'monospace',color:'#444',fontSize:10,marginBottom:6}}>FILE (opsional — PDF / gambar)</div>
-                <label style={{display:'block',background:'#111',border:'1px dashed #2a2a2a',padding:'10px 14px',cursor:'pointer',fontSize:12,color:prFile?'#22ab94':'#555',fontFamily:'monospace',marginBottom:16}}>
-                  {prFile ? `✓ ${prFile.name}` : 'Klik untuk pilih file...'}
-                  <input type="file" accept=".pdf,.jpg,.jpeg,.png,.webp" style={{display:'none'}} onChange={e=>setPrFile(e.target.files?.[0]||null)}/>
-                </label>
+
+        {tab === 'rating' && (
+          <div style={{display:'flex',flexDirection:'column',gap:12,maxWidth:720}}>
+            <div style={{fontFamily:'monospace',color:'#eab308',fontSize:11,letterSpacing:1,marginBottom:4}}>// RATING VIDEO DARI MEMBER (Bintang 1-5)</div>
+            <div style={{background:'#0d0d0d',border:'1px solid #1f1f1f',borderRadius:8,overflow:'hidden'}}>
+              <div style={{display:'grid',gridTemplateColumns:'1fr 100px 80px 80px',gap:'4px 10px',fontFamily:'monospace',fontSize:9,color:'#666',padding:'10px 16px',borderBottom:'1px solid #1a1a1a',letterSpacing:0.5}}>
+                {['VIDEO','RATING','VOTER','SKOR'].map(h=><span key={h}>{h}</span>)}
               </div>
-              <button onClick={savePropRule} disabled={prSaving||!prJudul.trim()}
-                style={{background:prSaving||!prJudul.trim()?'#1a1a1a':'#a855f7',color:prSaving||!prJudul.trim()?'#444':'#fff',fontFamily:'monospace',fontSize:12,fontWeight:700,padding:'10px 20px',border:'none',cursor:'pointer',marginBottom:20}}>
-                {prSaving?'MENYIMPAN...':'▸ TAMBAH RULE'}
-              </button>
-              <div style={{fontFamily:'monospace',color:'#444',fontSize:10,marginBottom:10}}>RULES AKTIF ({propRules.length})</div>
-              {propRules.length===0
-                ?<div style={{fontFamily:'monospace',color:'#333',fontSize:12}}>Belum ada rules.</div>
-                :propRules.map((r:any)=>(
-                  <div key={r.id} style={{display:'flex',alignItems:'flex-start',gap:12,padding:'12px 14px',background:'#111',border:'1px solid #1a1a1a',borderRadius:6,marginBottom:8}}>
-                    <div style={{flex:1}}>
-                      <div style={{fontWeight:700,fontSize:13,marginBottom:4,color:'#e7e5e4'}}>{r.judul}</div>
-                      {r.deskripsi&&<div style={{fontSize:12,color:'#888',marginBottom:6,lineHeight:1.5}}>{r.deskripsi}</div>}
-                      <div style={{display:'flex',gap:8,flexWrap:'wrap' as const}}>
-                        {r.link&&<a href={r.link} target="_blank" rel="noopener noreferrer" style={{fontFamily:'monospace',fontSize:10,color:'#a855f7',border:'1px solid #4a2a8a',padding:'2px 8px',textDecoration:'none'}}>LINK ▸</a>}
-                        {r.file_url&&<a href={r.file_url} target="_blank" rel="noopener noreferrer" style={{fontFamily:'monospace',fontSize:10,color:'#22ab94',border:'1px solid #22ab9444',padding:'2px 8px',textDecoration:'none'}}>⬇ FILE</a>}
-                      </div>
-                    </div>
-                    <button onClick={()=>deletePropRule(r.id)} style={{background:'#1a0a0a',border:'1px solid #3a1010',color:'#ef4444',fontFamily:'monospace',fontSize:11,padding:'5px 10px',cursor:'pointer',flexShrink:0}}>HAPUS</button>
+              {videoRatingStats.length===0&&<div style={{padding:'32px',textAlign:'center' as const,fontFamily:'monospace',color:'#444',fontSize:12}}>Belum ada rating. Pastikan tabel video_ratings sudah dibuat di Supabase.</div>}
+              {videoRatingStats.map((v:any,i:number)=>(
+                <div key={i} style={{display:'grid',gridTemplateColumns:'1fr 100px 80px 80px',gap:'4px 10px',alignItems:'center',padding:'12px 16px',borderBottom:'1px solid #111'}}>
+                  <div style={{fontSize:12,fontWeight:600,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap' as const}}>{v.judul}</div>
+                  <div style={{display:'flex',gap:2}}>
+                    {[1,2,3,4,5].map(s=>(
+                      <span key={s} style={{fontSize:12,color:v.total>=s?'#eab308':'#333'}}>★</span>
+                    ))}
                   </div>
-                ))
-              }
+                  <span style={{fontFamily:'monospace',color:'#888',fontSize:11}}>{v.count} org</span>
+                  <span style={{fontFamily:'monospace',fontWeight:700,fontSize:12,color:v.total>=4?'#22ab94':v.total>=3?'#eab308':'#ef4444'}}>{v.total}/5</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {tab === 'referral' && (
+          <div style={{display:'flex',flexDirection:'column',gap:16,maxWidth:760}}>
+            <div style={{fontFamily:'monospace',color:'#22ab94',fontSize:11,letterSpacing:1}}>// PROGRAM REFERRAL</div>
+
+            {/* Stats */}
+            <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:10}}>
+              {[
+                {l:'Total Referral',  v:adminReferrals.length,                                                    c:'#e7e5e4'},
+                {l:'Menunggu Verif',  v:adminReferrals.filter((r:any)=>r.status==='pending').length,               c:'#eab308'},
+                {l:'Sudah Diverif',   v:adminReferrals.filter((r:any)=>r.status!=='pending').length,              c:'#22ab94'},
+              ].map((s,i)=>(
+                <div key={i} style={{background:'#0d0d0d',border:'1px solid #1f1f1f',borderRadius:8,padding:'14px 16px',textAlign:'center' as const}}>
+                  <div style={{fontFamily:'monospace',color:'#444',fontSize:9,marginBottom:6}}>{s.l}</div>
+                  <div style={{fontFamily:'monospace',fontSize:24,fontWeight:700,color:s.c}}>{s.v}</div>
+                </div>
+              ))}
+            </div>
+
+            {adminReferrals.length===0 ? (
+              <div style={{background:'#0d0d0d',border:'1px solid #1f1f1f',padding:'32px',textAlign:'center' as const,fontFamily:'monospace',color:'#333',fontSize:12,borderRadius:8}}>
+                Belum ada referral. Pastikan SQL migrations sudah dijalankan.
+              </div>
+            ) : (
+              <div style={{background:'#0d0d0d',border:'1px solid #1f1f1f',borderRadius:8,overflow:'hidden'}}>
+                <div style={{display:'grid',gridTemplateColumns:'1.2fr 1.2fr 90px 90px 110px',gap:'4px 10px',fontFamily:'monospace',fontSize:9,color:'#444',padding:'10px 18px',borderBottom:'1px solid #111'}}>
+                  {['REFERRER','MEMBER BARU','TANGGAL','STATUS','AKSI'].map(h=><span key={h}>{h}</span>)}
+                </div>
+                {adminReferrals.map((r:any)=>(
+                  <div key={r.id} style={{display:'grid',gridTemplateColumns:'1.2fr 1.2fr 90px 90px 110px',gap:'4px 10px',alignItems:'center',padding:'12px 18px',borderBottom:'1px solid #0d0d0d'}}>
+                    <div>
+                      <div style={{fontSize:13,fontWeight:700}}>{r.referrer?.nama||'—'}</div>
+                      <div style={{fontFamily:'monospace',color:'#444',fontSize:9}}>{r.referrer?.tier?.replace('SMC ','')}</div>
+                    </div>
+                    <div>
+                      <div style={{fontSize:13,fontWeight:600,color:'#aaa'}}>{r.referred_name||'—'}</div>
+                    </div>
+                    <div style={{fontFamily:'monospace',color:'#555',fontSize:10}}>
+                      {new Date(r.created_at).toLocaleDateString('id-ID',{day:'numeric',month:'short'})}
+                    </div>
+                    <span style={{fontFamily:'monospace',fontSize:10,fontWeight:700,
+                      color:r.status==='rewarded'?'#eab308':r.status==='verified'?'#22ab94':'#666'}}>
+                      {r.status==='rewarded'?'💰 REWARDED':r.status==='verified'?'✓ VERIFIED':'⏳ PENDING'}
+                    </span>
+                    <div style={{display:'flex',gap:4,flexWrap:'wrap' as const}}>
+                      {r.status==='pending'&&(
+                        <button onClick={async()=>{
+                          await supabase.from('referrals').update({status:'verified'}).eq('id',r.id);
+                          notify(`Referral ${r.referred_name} terverifikasi ✅`);
+                          loadData();
+                        }} style={{fontFamily:'monospace',fontSize:9,fontWeight:700,color:'#22ab94',background:'#0a1a14',border:'1px solid #22ab9444',padding:'4px 10px',cursor:'pointer',borderRadius:4}}>
+                          VERIFIKASI
+                        </button>
+                      )}
+                      {r.status==='verified'&&(
+                        <button onClick={async()=>{
+                          await supabase.from('referrals').update({status:'rewarded'}).eq('id',r.id);
+                          notify(`Reward untuk ${r.referrer?.nama||'member'} berhasil diberikan 💰`);
+                          loadData();
+                        }} style={{fontFamily:'monospace',fontSize:9,fontWeight:700,color:'#eab308',background:'#1a1500',border:'1px solid #3a2e00',padding:'4px 10px',cursor:'pointer',borderRadius:4}}>
+                          BERI REWARD
+                        </button>
+                      )}
+                      {r.status==='rewarded'&&<span style={{fontFamily:'monospace',fontSize:9,color:'#333'}}>selesai</span>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Info box */}
+            <div style={{background:'#0a0c00',border:'1px solid #2a2e00',borderRadius:8,padding:'14px 18px'}}>
+              <div style={{fontFamily:'monospace',color:'#eab308',fontSize:10,marginBottom:6}}>// CARA KERJA REFERRAL</div>
+              <div style={{fontSize:12,color:'#666',lineHeight:1.7}}>
+                1. Member dapat link referral unik: <span style={{color:'#22ab94',fontFamily:'monospace'}}>menolakrugi.pages.dev/signup?ref=KODE</span><br/>
+                2. Member baru daftar lewat link → otomatis tercatat sebagai referral <span style={{color:'#eab308'}}>PENDING</span><br/>
+                3. Admin <span style={{color:'#22ab94'}}>VERIFIKASI</span> setelah member baru melakukan pembayaran dan aktif<br/>
+                4. Admin <span style={{color:'#eab308'}}>BERI REWARD</span> ke referrer (transfer manual / voucher / komisi)
+              </div>
             </div>
           </div>
         )}

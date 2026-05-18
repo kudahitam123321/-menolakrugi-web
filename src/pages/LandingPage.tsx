@@ -449,17 +449,17 @@ function Testimonials({ testimonials }: { testimonials: Testimonial[] }) {
               {t.pl_result && <span style={{ color: MR.up }}>{t.pl_result}{t.duration ? ` · ${t.duration}` : ''}</span>}
             </div>
             <div style={{ padding: 18, flex: 1 }}>
-              <p style={{ fontSize: 15, lineHeight: 1.55, margin: 0, color: MR.muted }}>"{t.content}"</p>
+              <p style={{ fontSize: 15, lineHeight: 1.55, margin: 0, color: MR.muted }}>"{t.teks || t.content}"</p>
             </div>
             <div style={{ borderTop: `1px solid ${MR.border}`, padding: '12px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div>
-                <div style={{ fontWeight: 600, fontSize: 13 }}>{t.member_name}</div>
+                <div style={{ fontWeight: 600, fontSize: 13 }}>{t.member_name || t.nama_akun || t.nama}</div>
                 {t.member_role && <div style={{ fontFamily: MR.mono, color: MR.dim, fontSize: 10, marginTop: 2 }}>{t.member_role}</div>}
               </div>
-              <div style={{ width: 56, height: 24, background: MR.darker, border: `1px solid ${MR.border}`, padding: 2 }}>
-                <svg viewBox="0 0 56 20" width="100%" height="100%">
-                  <polyline points="0,16 8,14 16,15 24,10 32,12 40,7 48,8 56,3" fill="none" stroke={MR.up} strokeWidth="1.2" />
-                </svg>
+              <div style={{ display: 'flex', flexDirection: 'column' as const, alignItems: 'flex-end', gap: 4 }}>
+                <div style={{ display: 'flex', gap: 2 }}>
+                  {[1,2,3,4,5].map(s => <span key={s} style={{ color: (t.rating||5) >= s ? MR.gold : '#333', fontSize: 14 }}>★</span>)}
+                </div>
               </div>
             </div>
           </div>

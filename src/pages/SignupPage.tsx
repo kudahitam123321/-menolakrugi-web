@@ -121,6 +121,8 @@ export default function SignupPage() {
     mq.addEventListener('change', h); return () => mq.removeEventListener('change', h);
   }, []);
 
+  const refCode = params.get('ref') ?? '';
+
   const [step, setStep]       = useState(1);
   const [tier, setTier]       = useState(params.get('tier') ?? 'gold');
   const [method, setMethod]   = useState('qris');
@@ -141,22 +143,42 @@ export default function SignupPage() {
     try {
       // Cek apakah nama sudah terdaftar
       const { data: existing } = await supabase
-        .from('members')
-        .select('id')
-        .ilike('nama', form.nama.trim())
-        .single();
-      
+        .from('members').select('id').ilike('nama', form.nama.trim()).single();
       if (existing) throw new Error('Nama sudah terdaftar. Gunakan nama lain atau login.');
 
-      // Insert member baru ke database
-      const { error: memberErr } = await supabase.from('members').insert({
-        nama:      form.nama.trim(),
-        tier:      tier,
-        password:  form.password,
-        role:      'member',
-        is_active: false,  // aktif setelah verifikasi pembayaran
-      });
+      // Cari referrer berdasarkan referral_code jika ada
+      let referrerId: string | null = null;
+      if (refCode) {
+        const { data: referrer } = await supabase
+          .from('members').select('id').eq('referral_code', refCode).single();
+        if (referrer) referrerId = referrer.id;
+      }
+
+      // Generate referral code unik untuk member baru
+      const newRefCode = form.nama.trim().toLowerCase().replace(/\s+/g, '') +
+        Math.random().toString(36).slice(-4);
+
+      // Insert member baru
+      const { data: newMember, error: memberErr } = await supabase.from('members').insert({
+        nama:          form.nama.trim(),
+        tier:          tier,
+        password:      form.password,
+        role:          'member',
+        is_active:     false,
+        referral_code: newRefCode,
+        referred_by:   referrerId,
+      }).select('id').single();
       if (memberErr) throw memberErr;
+
+      // Catat referral jika ada referrer
+      if (referrerId && newMember) {
+        await supabase.from('referrals').insert({
+          referrer_id:        referrerId,
+          referred_name:      form.nama.trim(),
+          referred_member_id: newMember.id,
+          status:             'pending',
+        });
+      }
 
       // Redirect ke payment
       window.location.href = `/payment?tier=${tier}&name=${encodeURIComponent(form.nama)}&method=${method}`;
@@ -206,6 +228,15 @@ export default function SignupPage() {
           <h2 style={{ fontSize: isMobile ? 24 : 38, fontWeight: 700, letterSpacing: -1, margin: '10px 0 6px' }}>Daftar akun kamu.</h2>
           <p style={{ color: MR.dim, fontSize: 14, lineHeight: 1.55, marginBottom: 28 }}>Email dipakai untuk akses materi & login ke dashboard. Nomor WhatsApp untuk invite ke channel komunitas.</p>
 
+          {refCode && (
+            <div style={{ display:'flex', gap:10, alignItems:'center', padding:'10px 14px', background:'#0a1a14', border:'1px solid #22ab9444', borderRadius:8, marginBottom:16 }}>
+              <span style={{fontSize:18}}>🔗</span>
+              <div>
+                <div style={{fontFamily:MR.mono,color:'#22ab94',fontSize:12,fontWeight:700}}>Diundang dengan kode: <span style={{color:'#fff'}}>{refCode}</span></div>
+                <div style={{fontFamily:MR.mono,color:'#444',fontSize:10,marginTop:2}}>Kamu diundang oleh member Menolak Rugi!</div>
+              </div>
+            </div>
+          )}
           <div style={{ display: 'grid', gap: 20, maxWidth: 560 }}>
             <AInput label="NAMA LENGKAP" value={form.nama}     onChange={set('nama')}     placeholder="Nama sesuai KTP" />
             <AInput label="PASSWORD"     value={form.password}  onChange={set('password')} type="password" placeholder="Min. 8 karakter" />

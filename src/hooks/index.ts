@@ -61,7 +61,7 @@ export function useApprovedTestimonials(limit = 6) {
     supabase
       .from('testimonials')
       .select('*')
-      .eq('status', 'approved')
+      .in('status', ['approved','disetujui'])
       .order('created_at', { ascending: false })
       .limit(limit)
       .then(({ data, error }) => {

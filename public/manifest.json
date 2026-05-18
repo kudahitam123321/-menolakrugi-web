@@ -1,0 +1,39 @@
+{
+  "name": "Menolak Rugi – Trading SMC",
+  "short_name": "Menolak Rugi",
+  "description": "Platform edukasi trading Smart Money Concept terbaik di Indonesia",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#080808",
+  "theme_color": "#eab308",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/logo.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["education", "finance"],
+  "lang": "id",
+  "dir": "ltr",
+  "shortcuts": [
+    {
+      "name": "Dashboard",
+      "url": "/member",
+      "description": "Buka dashboard member"
+    },
+    {
+      "name": "Kelas",
+      "url": "/#kelas",
+      "description": "Lihat kelas tersedia"
+    }
+  ]
+}
