@@ -2,8 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabase';
 import AdminPage from '../AdminPage';
 
-const G = { gold: '#eab308', gold2: '#ca9e00', cyan: '#00d4ff', cyanDim: '#00d4ff22' };
-const C = { bg: '#050508', sidebar: '#07070b', panel: '#0b0b10', border: '#161622', border2: '#22223a', dim: '#555', text: '#e2e0ff', muted: '#9999bb', up: '#00e5a0', down: '#ff4466', mono: '"Geist Mono",monospace', sans: '"Geist",system-ui,sans-serif' };
+const G = { gold: '#16a34a', gold2: '#15803d', cyan: '#00d4ff', cyanDim: '#00d4ff22' };
+const C = { bg: '#050508', sidebar: '#07070b', panel: '#0b0b10', border: '#161622', border2: '#22223a', dim: '#555', text: '#ffffff', muted: '#9999bb', up: '#22c55e', down: '#ff4466', mono: '"Geist Mono",monospace', sans: '"Geist",system-ui,sans-serif' };
 
 const SIDEBAR_SECTIONS = [
   { h: null, items: [{ id: 'dashboard', label: 'Dashboard', icon: '⊞' }] },
@@ -20,6 +20,8 @@ const SIDEBAR_SECTIONS = [
     { id: 'klaim',  label: 'Klaim Partnership', icon: '🤝' },
     { id: 'broker', label: 'Broker',            icon: '🏦' },
     { id: 'proprules', label: 'Prop Firm Rules', icon: '📋' },
+    { id: 'rating',    label: 'Rating Video',    icon: '⭐' },
+    { id: 'referral',  label: 'Referral',         icon: '🔗' },
   ]},
   { h: 'COMMUNICATION', items: [
     { id: 'pengumuman', label: 'Pengumuman',      icon: '📢' },
@@ -34,7 +36,7 @@ const SIDEBAR_SECTIONS = [
 function getTabId(sidebarId: string): string {
   const map: Record<string,string> = {
     member:'member', progress:'progress', advance:'advance', admin:'admins',
-    video:'video', klaim:'claim', broker:'broker', proprules:'proprules',
+    video:'video', klaim:'claim', broker:'broker', proprules:'proprules', rating:'rating', referral:'referral',
     pengumuman:'announce', broadcast:'announce',
     pengaturan:'settings', log:'settings',
   };
@@ -133,7 +135,7 @@ export default function AdminPanel() {
       { data: fundedMembersData },
     ] = await Promise.all([
       supabase.from('members').select('*',{count:'exact',head:true}),
-      supabase.from('members').select('*',{count:'exact',head:true}).gte('last_seen', new Date(Date.now()-5*60*1000).toISOString()),
+      supabase.from('members').select('*',{count:'exact',head:true}).gte('last_seen', new Date(Date.now()-24*60*60*1000).toISOString()),
       supabase.from('members').select('*',{count:'exact',head:true}).is('last_seen',null),
       supabase.from('partnership_claims').select('*',{count:'exact',head:true}).eq('status','pending'),
       supabase.from('members').select('*',{count:'exact',head:true}).in('tier',['SMC Gold Mentorship','SMC Platinum 1-on-1']),

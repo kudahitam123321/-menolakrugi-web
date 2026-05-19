@@ -36,7 +36,7 @@ function VideoMateriTab({ videos, loadData, addVideo, uploadFile, deleteVideo, d
 
   const PER_PAGE = 10;
   const CATS = [
-    { id:'intro',         label:'Intro',         color:'#eab308' },
+    { id:'intro',         label:'Intro',         color:'#16a34a' },
     { id:'basic',         label:'Basic',         color:'#22ab94' },
     { id:'tips-basic',    label:'Tips Basic',    color:'#22ab94' },
     { id:'advanced',      label:'Advanced',      color:'#a855f7' },
@@ -79,10 +79,10 @@ function VideoMateriTab({ videos, loadData, addVideo, uploadFile, deleteVideo, d
   const paged = filtered.slice((page-1)*PER_PAGE, page*PER_PAGE);
 
   const inp: React.CSSProperties = { background:'#111', border:'1px solid #2a2a2a', color:'#e7e5e4', padding:'8px 12px', fontSize:12, fontFamily:'monospace', outline:'none' };
-  const btn = (active?: boolean, color = '#eab308'): React.CSSProperties => ({
+  const btn = (active?: boolean, color = '#16a34a'): React.CSSProperties => ({
     fontFamily:'monospace', fontSize:11, fontWeight:700, padding:'6px 14px',
     border:`1px solid ${active?color:'#2a2a2a'}`,
-    background: active ? (color==='#eab308'?'#1a1500':color==='#3b82f6'?'#0a0f1a':'#0a1a0a') : 'transparent',
+    background: active ? (color==='#16a34a'?'#0a1a0e':color==='#3b82f6'?'#0a0f1a':'#0a1a0a') : 'transparent',
     color: active ? color : '#555', cursor:'pointer'
   });
 
@@ -95,7 +95,7 @@ function VideoMateriTab({ videos, loadData, addVideo, uploadFile, deleteVideo, d
           <p style={{color:'#666', fontSize:12, margin:'4px 0 0'}}>Kelola semua materi pembelajaran untuk member.</p>
         </div>
         <button onClick={()=>setShowForm(f=>!f)}
-          style={{background:'#eab308', color:'#000', fontFamily:'monospace', fontSize:12, fontWeight:700, padding:'10px 18px', border:'none', cursor:'pointer'}}>
+          style={{background:'#16a34a', color:'#fff', fontFamily:'monospace', fontSize:12, fontWeight:700, padding:'10px 18px', border:'none', cursor:'pointer'}}>
           {showForm ? '✕ TUTUP' : '+ TAMBAH MATERI'}
         </button>
       </div>
@@ -117,15 +117,15 @@ function VideoMateriTab({ videos, loadData, addVideo, uploadFile, deleteVideo, d
               </div>
               <div style={{display:'grid', gridTemplateColumns:'1fr 1fr 80px', gap:8}}>
                 <input value={vJudul} onChange={e=>setVJudul(e.target.value)} placeholder="Judul video" style={inp}
-                  onFocus={e=>e.target.style.borderColor='#eab308'} onBlur={e=>e.target.style.borderColor='#2a2a2a'}/>
+                  onFocus={e=>e.target.style.borderColor='#16a34a'} onBlur={e=>e.target.style.borderColor='#2a2a2a'}/>
                 <input value={vUrl} onChange={e=>setVUrl(e.target.value)} placeholder="URL YouTube" style={inp}
-                  onFocus={e=>e.target.style.borderColor='#eab308'} onBlur={e=>e.target.style.borderColor='#2a2a2a'}/>
+                  onFocus={e=>e.target.style.borderColor='#16a34a'} onBlur={e=>e.target.style.borderColor='#2a2a2a'}/>
                 <input value={vUrutan} onChange={e=>setVUrutan(e.target.value)} placeholder="Urutan" type="number" style={inp}/>
               </div>
               <textarea value={vDesc} onChange={e=>setVDesc(e.target.value)} placeholder="Deskripsi (opsional)" rows={2}
                 style={{...inp, resize:'vertical' as const, width:'100%', boxSizing:'border-box' as const}}/>
               <div style={{background:'#111', border:'1px dashed #3a2a00', padding:'10px 12px'}}>
-                <div style={{fontFamily:'monospace', color:'#eab308', fontSize:10, marginBottom:6}}>COMING SOON IMAGE</div>
+                <div style={{fontFamily:'monospace', color:'#16a34a', fontSize:10, marginBottom:6}}>COMING SOON IMAGE</div>
                 <input ref={csUploadRef} type="file" accept="image/*" onChange={e=>setCsFile(e.target.files?.[0]||null)} style={{fontSize:11,color:'#666',fontFamily:'monospace'}}/>
               </div>
               <button onClick={addVideo} disabled={loading} style={{...btn(true), alignSelf:'flex-start' as const}}>{loading?'MENYIMPAN...':'+ TAMBAH VIDEO'}</button>
@@ -157,7 +157,7 @@ function VideoMateriTab({ videos, loadData, addVideo, uploadFile, deleteVideo, d
           { l:'TOTAL FILE',   v:fileItems.length, c:'#e7e5e4', sub:'Semua file' },
           { l:'TOTAL MATERI', v:allItems.length,  c:'#e7e5e4', sub:'Video+File' },
           { l:'TERPUBLISH',   v:vidItems.filter((v:any)=>v.youtube_url).length+fileItems.length, c:'#22ab94', sub:'Aktif' },
-          { l:'COMING SOON',  v:vidItems.filter((v:any)=>!v.youtube_url).length, c:'#eab308', sub:'Belum publish' },
+          { l:'COMING SOON',  v:vidItems.filter((v:any)=>!v.youtube_url).length, c:'#16a34a', sub:'Belum publish' },
         ].map((s,i)=>(
           <div key={i} style={{background:'#0d0d0d',border:'1px solid #1f1f1f',padding:'14px 16px'}}>
             <div style={{fontFamily:'monospace',color:'#444',fontSize:10,marginBottom:6}}>{s.l}</div>
@@ -171,7 +171,7 @@ function VideoMateriTab({ videos, loadData, addVideo, uploadFile, deleteVideo, d
       <div style={{display:'flex', borderBottom:'1px solid #1f1f1f'}}>
         {[{id:'video',l:'Video'},{id:'file',l:'File Materi'}].map(t=>(
           <button key={t.id} onClick={()=>{setSubTab(t.id as any);setPage(1);setFilterKat('all');setEditId(null);}}
-            style={{fontFamily:'monospace',fontSize:12,fontWeight:700,padding:'9px 20px',border:'none',background:'transparent',color:subTab===t.id?'#eab308':'#555',cursor:'pointer',borderBottom:subTab===t.id?'2px solid #eab308':'2px solid transparent'}}>
+            style={{fontFamily:'monospace',fontSize:12,fontWeight:700,padding:'9px 20px',border:'none',background:'transparent',color:subTab===t.id?'#16a34a':'#555',cursor:'pointer',borderBottom:subTab===t.id?'2px solid #16a34a':'2px solid transparent'}}>
             {t.l} <span style={{fontSize:10,color:'#444',marginLeft:4}}>({t.id==='video'?vidItems.length:fileItems.length})</span>
           </button>
         ))}
@@ -181,7 +181,7 @@ function VideoMateriTab({ videos, loadData, addVideo, uploadFile, deleteVideo, d
       <div style={{display:'flex', gap:8, alignItems:'center', flexWrap:'wrap' as const}}>
         <input value={search} onChange={e=>{setSearch(e.target.value);setPage(1);}} placeholder="🔍 Cari judul materi..."
           style={{flex:'1 1 200px',...inp}}
-          onFocus={e=>e.target.style.borderColor='#eab308'} onBlur={e=>e.target.style.borderColor='#2a2a2a'}/>
+          onFocus={e=>e.target.style.borderColor='#16a34a'} onBlur={e=>e.target.style.borderColor='#2a2a2a'}/>
         <select value={filterKat} onChange={e=>{setFilterKat(e.target.value);setPage(1);}}
           style={{...inp, cursor:'pointer'}}>
           <option value="all">Semua Kategori</option>
@@ -218,13 +218,13 @@ function VideoMateriTab({ videos, loadData, addVideo, uploadFile, deleteVideo, d
                 <div style={{minWidth:0}}>
                   <div style={{fontWeight:600,fontSize:13,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap' as const}}>{v.judul}</div>
                   {v.deskripsi && <div style={{fontSize:11,color:'#555',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap' as const}}>{v.deskripsi}</div>}
-                  {!v.youtube_url&&!isFile && <span style={{fontFamily:'monospace',fontSize:9,background:'#1a1500',color:'#eab308',padding:'1px 5px'}}>COMING SOON</span>}
+                  {!v.youtube_url&&!isFile && <span style={{fontFamily:'monospace',fontSize:9,background:'#0a1a0e',color:'#16a34a',padding:'1px 5px'}}>COMING SOON</span>}
                 </div>
                 <span style={{fontFamily:'monospace',fontSize:10,color:catColor(v.kategori)}}>{catLabel(v.kategori)}</span>
                 <span style={{fontFamily:'monospace',color:'#555',fontSize:11}}>{v.urutan}</span>
                 <div style={{display:'flex',gap:4}}>
                   <button onClick={()=>isEditing?setEditId(null):startEdit(v,isFile)}
-                    style={{background:isEditing?'#1a1500':'transparent',border:`1px solid ${isEditing?'#eab308':'#2a2a2a'}`,color:isEditing?'#eab308':'#aaa',fontSize:12,padding:'4px 8px',cursor:'pointer'}}>
+                    style={{background:isEditing?'#0a1a0e':'transparent',border:`1px solid ${isEditing?'#16a34a':'#2a2a2a'}`,color:isEditing?'#16a34a':'#aaa',fontSize:12,padding:'4px 8px',cursor:'pointer'}}>
                     {isEditing?'✕':'✏'}
                   </button>
                   <button onClick={()=>isFile?deleteFile(v.id,v.file_url):deleteVideo(v.id,v.coming_soon_image_url)}
@@ -234,15 +234,15 @@ function VideoMateriTab({ videos, loadData, addVideo, uploadFile, deleteVideo, d
               {/* Inline edit form */}
               {isEditing && (
                 <div style={{padding:'16px 20px',background:'#0a0a0a',borderBottom:'1px solid #1a1a1a'}}>
-                  <div style={{fontFamily:'monospace',color:isFile?'#3b82f6':'#eab308',fontSize:10,marginBottom:10}}>
+                  <div style={{fontFamily:'monospace',color:isFile?'#3b82f6':'#16a34a',fontSize:10,marginBottom:10}}>
                     // EDIT {isFile?'FILE':'VIDEO'}: {v.judul}
                   </div>
                   <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 80px',gap:8,marginBottom:8}}>
                     <input value={editJudul} onChange={e=>setEditJudul(e.target.value)} placeholder="Judul"
-                      style={inp} onFocus={e=>e.target.style.borderColor='#eab308'} onBlur={e=>e.target.style.borderColor='#2a2a2a'}/>
+                      style={inp} onFocus={e=>e.target.style.borderColor='#16a34a'} onBlur={e=>e.target.style.borderColor='#2a2a2a'}/>
                     {!isFile && (
                       <input value={editUrl} onChange={e=>setEditUrl(e.target.value)} placeholder="URL YouTube"
-                        style={inp} onFocus={e=>e.target.style.borderColor='#eab308'} onBlur={e=>e.target.style.borderColor='#2a2a2a'}/>
+                        style={inp} onFocus={e=>e.target.style.borderColor='#16a34a'} onBlur={e=>e.target.style.borderColor='#2a2a2a'}/>
                     )}
                     <input value={editUrutan} onChange={e=>setEditUrutan(e.target.value)} placeholder="Urutan" type="number" style={inp}/>
                   </div>
@@ -258,7 +258,7 @@ function VideoMateriTab({ videos, loadData, addVideo, uploadFile, deleteVideo, d
                   </div>
                   <div style={{display:'flex',gap:8}}>
                     <button onClick={saveEdit} disabled={loading}
-                      style={{background:isFile?'#3b82f6':'#eab308',color:isFile?'#fff':'#000',fontFamily:'monospace',fontSize:11,fontWeight:700,padding:'7px 16px',border:'none',cursor:'pointer'}}>
+                      style={{background:isFile?'#3b82f6':'#16a34a',color:isFile?'#fff':'#000',fontFamily:'monospace',fontSize:11,fontWeight:700,padding:'7px 16px',border:'none',cursor:'pointer'}}>
                       SIMPAN
                     </button>
                     <button onClick={()=>setEditId(null)}
@@ -282,7 +282,7 @@ function VideoMateriTab({ videos, loadData, addVideo, uploadFile, deleteVideo, d
               style={{background:'transparent',border:'1px solid #2a2a2a',color:page===1?'#333':'#666',padding:'4px 10px',cursor:'pointer',fontFamily:'monospace',fontSize:11}}>‹</button>
             {Array.from({length:Math.min(totalPages,5)},(_,i)=>i+1).map(p=>(
               <button key={p} onClick={()=>setPage(p)}
-                style={{background:page===p?'#eab308':'transparent',border:`1px solid ${page===p?'#eab308':'#2a2a2a'}`,color:page===p?'#000':'#666',padding:'4px 10px',cursor:'pointer',fontFamily:'monospace',fontSize:11,fontWeight:page===p?700:400}}>{p}</button>
+                style={{background:page===p?'#16a34a':'transparent',border:`1px solid ${page===p?'#16a34a':'#2a2a2a'}`,color:page===p?'#000':'#666',padding:'4px 10px',cursor:'pointer',fontFamily:'monospace',fontSize:11,fontWeight:page===p?700:400}}>{p}</button>
             ))}
             <button onClick={()=>setPage(p=>Math.min(totalPages,p+1))} disabled={page===totalPages}
               style={{background:'transparent',border:'1px solid #2a2a2a',color:page===totalPages?'#333':'#666',padding:'4px 10px',cursor:'pointer',fontFamily:'monospace',fontSize:11}}>›</button>
@@ -330,14 +330,18 @@ function MemberTable({ members, loadData }: { members: any[]; loadData: () => vo
   const advanceMembers = members.filter((m:any) => m.is_advance);
 
   useEffect(() => {
-    supabase.from('member_progress_summary').select('member_id,progress_pct')
-      .then(({ data }) => {
-        if (data) {
-          const map: Record<string,number> = {};
-          data.forEach((d:any) => { map[d.member_id] = parseFloat(d.progress_pct)||0; });
-          setProgress(map);
-        }
-      }).catch(()=>{});
+    Promise.all([
+      supabase.from('member_progress').select('member_id,status'),
+      supabase.from('videos').select('id',{count:'exact',head:true})
+    ]).then(([{data:progData},{count:vidCount}]) => {
+      if (progData && vidCount) {
+        const counts: Record<string,number> = {};
+        progData.forEach((p:any) => { if(p.status==='selesai') counts[p.member_id]=(counts[p.member_id]||0)+1; });
+        const map: Record<string,number> = {};
+        Object.entries(counts).forEach(([mid,n]) => { map[mid]=Math.round((n as number)/vidCount*100); });
+        setProgress(map);
+      }
+    }).catch(()=>{});
   }, [members]);
 
   const filtered = members.filter((m:any) =>
@@ -374,7 +378,7 @@ function MemberTable({ members, loadData }: { members: any[]; loadData: () => vo
         {[
           { l:'TOTAL MEMBER',   v:members.length,        c:'#e7e5e4' },
           { l:'BASIC',          v:basicMembers.length,   c:'#22ab94' },
-          { l:'ADVANCE',        v:advanceMembers.length, c:'#eab308' },
+          { l:'ADVANCE',        v:advanceMembers.length, c:'#16a34a' },
           { l:'ONLINE SEKARANG',v:onlineCount,           c:'#22ab94' },
         ].map((s,i)=>(
           <div key={i} style={{background:'#0d0d0d',border:'1px solid #1f1f1f',padding:'14px 16px'}}>
@@ -396,9 +400,9 @@ function MemberTable({ members, loadData }: { members: any[]; loadData: () => vo
           ].map(f=>(
             <button key={f.id} onClick={()=>setLevel(f.id as any)}
               style={{fontFamily:'monospace',fontSize:11,fontWeight:700,padding:'6px 14px',
-                border:`1px solid ${f.active ? (f.id==='advance'?'#eab308':f.id==='basic'?'#22ab94':'#666') : '#2a2a2a'}`,
-                background:f.active ? (f.id==='advance'?'#1a1500':f.id==='basic'?'#0a1a14':'#181818') : 'transparent',
-                color:f.active ? (f.id==='advance'?'#eab308':f.id==='basic'?'#22ab94':'#e7e5e4') : '#555',
+                border:`1px solid ${f.active ? (f.id==='advance'?'#16a34a':f.id==='basic'?'#22ab94':'#666') : '#2a2a2a'}`,
+                background:f.active ? (f.id==='advance'?'#0a1a0e':f.id==='basic'?'#0a1a14':'#181818') : 'transparent',
+                color:f.active ? (f.id==='advance'?'#16a34a':f.id==='basic'?'#22ab94':'#e7e5e4') : '#555',
                 cursor:'pointer'}}>
               {f.label}
             </button>
@@ -417,7 +421,7 @@ function MemberTable({ members, loadData }: { members: any[]; loadData: () => vo
         {/* Search */}
         <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="🔍 Cari nama member..."
           style={{...inp,flex:'1 1 160px'}}
-          onFocus={e=>e.target.style.borderColor='#eab308'}
+          onFocus={e=>e.target.style.borderColor='#16a34a'}
           onBlur={e=>e.target.style.borderColor='#2a2a2a'}/>
 
         <span style={{fontFamily:'monospace',color:'#444',fontSize:10}}>{filtered.length}/{members.length}</span>
@@ -446,9 +450,9 @@ function MemberTable({ members, loadData }: { members: any[]; loadData: () => vo
                   <span style={{fontFamily:'monospace',color:'#666',fontSize:11,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap' as const}}>{m.tier}</span>
                   {/* is_advance badge */}
                   <span style={{fontFamily:'monospace',fontSize:10,fontWeight:700,
-                    color:m.is_advance?'#eab308':'#22ab94',
-                    background:m.is_advance?'#1a1500':'#0a1a14',
-                    border:`1px solid ${m.is_advance?'#3a2e00':'#0f2a1f'}`,
+                    color:m.is_advance?'#16a34a':'#22ab94',
+                    background:m.is_advance?'#0a1a0e':'#0a1a14',
+                    border:`1px solid ${m.is_advance?'#1a3a22':'#0f2a1f'}`,
                     padding:'2px 7px',textAlign:'center' as const}}>
                     {m.is_advance?'ADVANCE':'BASIC'}
                   </span>
@@ -458,7 +462,7 @@ function MemberTable({ members, loadData }: { members: any[]; loadData: () => vo
                     {pct>0?(
                       <>
                         <div style={{height:5,background:'#1a1a1a',borderRadius:2,marginBottom:2}}>
-                          <div style={{height:'100%',width:`${pct}%`,background:pct>=80?'#22ab94':pct>=40?'#eab308':'#555',borderRadius:2}}/>
+                          <div style={{height:'100%',width:`${pct}%`,background:pct>=80?'#22ab94':pct>=40?'#16a34a':'#555',borderRadius:2}}/>
                         </div>
                         <div style={{fontFamily:'monospace',fontSize:9,color:'#888'}}>{pct}%</div>
                       </>
@@ -470,29 +474,29 @@ function MemberTable({ members, loadData }: { members: any[]; loadData: () => vo
                       {showPass===m.id?'🙈':'👁'}
                     </button>
                     <button onClick={()=>{setEditId(isEditing?null:m.id);setEditNama(m.nama);setEditTier(m.tier);setEditPass('');}}
-                      style={{background:isEditing?'#1a1500':'transparent',border:`1px solid ${isEditing?'#eab308':'#2a2a2a'}`,color:isEditing?'#eab308':'#666',fontSize:11,padding:'3px 7px',cursor:'pointer'}}>✏</button>
+                      style={{background:isEditing?'#0a1a0e':'transparent',border:`1px solid ${isEditing?'#16a34a':'#2a2a2a'}`,color:isEditing?'#16a34a':'#666',fontSize:11,padding:'3px 7px',cursor:'pointer'}}>✏</button>
                   </div>
                 </div>
                 {showPass===m.id&&(
                   <div style={{padding:'6px 20px 6px 76px',background:'#0a0a0a',borderBottom:'1px solid #111',fontFamily:'monospace',fontSize:11}}>
                     <span style={{color:'#555'}}>PASSWORD: </span>
-                    <span style={{color:'#eab308',letterSpacing:1}}>{m.password||'—'}</span>
+                    <span style={{color:'#16a34a',letterSpacing:1}}>{m.password||'—'}</span>
                   </div>
                 )}
                 {isEditing&&(
                   <div style={{padding:'14px 20px',background:'#0a0a0a',borderBottom:'1px solid #111'}}>
-                    <div style={{fontFamily:'monospace',color:'#eab308',fontSize:10,marginBottom:8}}>// EDIT: {m.nama}</div>
+                    <div style={{fontFamily:'monospace',color:'#16a34a',fontSize:10,marginBottom:8}}>// EDIT: {m.nama}</div>
                     <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:8,marginBottom:8}}>
                       <input value={editNama} onChange={e=>setEditNama(e.target.value)} placeholder="Nama" style={inp}
-                        onFocus={e=>e.target.style.borderColor='#eab308'} onBlur={e=>e.target.style.borderColor='#2a2a2a'}/>
+                        onFocus={e=>e.target.style.borderColor='#16a34a'} onBlur={e=>e.target.style.borderColor='#2a2a2a'}/>
                       <select value={editTier} onChange={e=>setEditTier(e.target.value)} style={{...inp,cursor:'pointer'}}>
                         {uniqueTiers.map(t=><option key={t} value={t}>{t}</option>)}
                       </select>
                       <input value={editPass} onChange={e=>setEditPass(e.target.value)} placeholder="Password baru (kosong=tidak ganti)" style={inp}
-                        onFocus={e=>e.target.style.borderColor='#eab308'} onBlur={e=>e.target.style.borderColor='#2a2a2a'}/>
+                        onFocus={e=>e.target.style.borderColor='#16a34a'} onBlur={e=>e.target.style.borderColor='#2a2a2a'}/>
                     </div>
                     <div style={{display:'flex',gap:8}}>
-                      <button onClick={()=>saveEdit(m.id)} style={{background:'#eab308',color:'#000',fontFamily:'monospace',fontSize:11,fontWeight:700,padding:'6px 14px',border:'none',cursor:'pointer'}}>SIMPAN</button>
+                      <button onClick={()=>saveEdit(m.id)} style={{background:'#16a34a',color:'#fff',fontFamily:'monospace',fontSize:11,fontWeight:700,padding:'6px 14px',border:'none',cursor:'pointer'}}>SIMPAN</button>
                       <button onClick={()=>setEditId(null)} style={{background:'transparent',color:'#666',fontFamily:'monospace',fontSize:11,padding:'6px 12px',border:'1px solid #2a2a2a',cursor:'pointer'}}>BATAL</button>
                     </div>
                   </div>
@@ -515,7 +519,9 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
   const [ulasanList, setUlasanList] = useState<any[]>([]);
   const [claims, setClaims] = useState<any[]>([]);
   const [claimActionLoading, setClaimActionLoading] = useState<string | null>(null);
-  const [liveSchedules, setLiveSchedules] = useState<any[]>([]);
+  const [liveSchedules, setLiveSchedules]     = useState<any[]>([]);
+  const [videoRatingStats, setVideoRatingStats] = useState<any[]>([]);
+  const [adminReferrals, setAdminReferrals]     = useState<any[]>([]);
   const [propRules, setPropRules]           = useState<any[]>([]);
   const [newRuleName, setNewRuleName]       = useState('');
   const [newRuleType, setNewRuleType]       = useState('challenge');
@@ -645,9 +651,27 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
     const { data: br } = await supabase.from('brokers').select('*').order('urutan', { ascending: true });
     const { data: js } = await supabase.from('live_schedules').select('*').order('urutan', { ascending: true });
     if (js) setLiveSchedules(js);
+    // Video ratings
+    try {
+      const { data: ratD } = await supabase.from('video_ratings').select('video_id,rating');
+      if (ratD) {
+        const stats: Record<string,{judul:string,sum:number,count:number,total:number}> = {};
+        ratD.forEach((r:any) => {
+          if (!stats[r.video_id]) stats[r.video_id] = { judul:r.video_id, sum:0, count:0, total:0 };
+          stats[r.video_id].sum += r.rating; stats[r.video_id].count++;
+          stats[r.video_id].total = Math.round(stats[r.video_id].sum/stats[r.video_id].count*10)/10;
+        });
+        setVideoRatingStats(Object.values(stats).sort((a:any,b:any)=>b.total-a.total));
+      }
+    } catch(_e) {}
+    // Referrals
+    try {
+      const { data: refD } = await supabase.from('referrals').select('*,referrer:members!referrals_referrer_id_fkey(nama,tier)').order('created_at',{ascending:false});
+      if (refD) setAdminReferrals(refD);
+    } catch(_e) {}
     // Prop firm rules
     try {
-      const { data: prData } = await supabase.from('prop_firm_rules').select('*').order('created_at', { ascending: false });
+      const { data: prData } = await supabase.from('prop_firm_rules').select('id,judul,deskripsi,link,file_url,created_at').order('created_at', { ascending: false });
       if (prData) setPropRules(prData);
     } catch(_e) { /* table may not exist */ }
     const { data: ul } = await supabase.from('testimonials').select('*').order('created_at', { ascending: false });
@@ -1073,7 +1097,7 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
             ...(isSuperAdmin ? [{ id: 'admins', label: 'ADMIN', count: admins.length }] : []),
           ].map(t => (
             <button key={t.id} onClick={() => setTab(t.id as typeof tab)}
-              style={{fontFamily:'monospace',fontSize:11,fontWeight:700,letterSpacing:0.8,padding:'10px 18px',border:'none',cursor:'pointer',whiteSpace:'nowrap' as const,borderBottom: tab===t.id ? '2px solid #eab308' : '2px solid transparent',background:'transparent',color: tab===t.id ? '#eab308' : '#555',display:'flex',alignItems:'center',gap:6,transition:'color .15s'}}>
+              style={{fontFamily:'monospace',fontSize:11,fontWeight:700,letterSpacing:0.8,padding:'10px 18px',border:'none',cursor:'pointer',whiteSpace:'nowrap' as const,borderBottom: tab===t.id ? '2px solid #16a34a' : '2px solid transparent',background:'transparent',color: tab===t.id ? '#16a34a' : '#555',display:'flex',alignItems:'center',gap:6,transition:'color .15s'}}>
               {t.label}
               {t.count !== null && t.count !== undefined && (
                 <span style={{fontFamily:'monospace',fontSize:9,background: t.warn && t.count > 0 ? '#3a1a1a' : '#1a1a1a',color: t.warn && t.count > 0 ? '#ef4444' : '#555',border: `1px solid ${t.warn && t.count > 0 ? '#ef4444' : '#2a2a2a'}`,padding:'1px 6px',fontWeight:700}}>
@@ -1097,7 +1121,7 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
                 <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:12}}>
                   {[
                     { l:'ONLINE SEKARANG', v:online.length, c:'#22ab94', sub:'dalam 5 menit terakhir' },
-                    { l:'PERNAH LOGIN',    v:sudahLogin.length, c:'#eab308', sub:`dari ${members.length} total` },
+                    { l:'PERNAH LOGIN',    v:sudahLogin.length, c:'#16a34a', sub:`dari ${members.length} total` },
                     { l:'BELUM LOGIN',     v:belumLogin.length, c:'#ef4444', sub:'member belum masuk' },
                   ].map(s => (
                     <div key={s.l} style={{background:'#0d0d0d',border:'1px solid #1f1f1f',padding:'18px 20px'}}>
@@ -1110,11 +1134,11 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
 
                 {/* Tambah Member */}
                 <div style={{background:'#0d0d0d',border:'1px solid #1f1f1f',padding:'20px 24px'}}>
-                  <div style={{fontFamily:'monospace',color:'#eab308',fontSize:11,letterSpacing:1,marginBottom:12}}>// TAMBAH MEMBER BARU</div>
+                  <div style={{fontFamily:'monospace',color:'#16a34a',fontSize:11,letterSpacing:1,marginBottom:12}}>// TAMBAH MEMBER BARU</div>
                   <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:10,marginBottom:10}}>
                     <input type="text" value={mNama} onChange={e=>setMNama(e.target.value)} placeholder="Nama member"
                       style={{background:'#111',border:'1px solid #2a2a2a',color:'#e7e5e4',padding:'10px 14px',fontSize:13,fontFamily:'monospace',outline:'none'}}
-                      onFocus={e=>e.target.style.borderColor='#eab308'} onBlur={e=>e.target.style.borderColor='#2a2a2a'}/>
+                      onFocus={e=>e.target.style.borderColor='#16a34a'} onBlur={e=>e.target.style.borderColor='#2a2a2a'}/>
                     <select value={mTier} onChange={e=>setMTier(e.target.value)}
                       style={{background:'#111',border:'1px solid #2a2a2a',color:mTier?'#e7e5e4':'#555',padding:'10px 14px',fontSize:13,fontFamily:'monospace',outline:'none',appearance:'none' as const,cursor:'pointer'}}>
                       <option value="">Pilih Tier</option>
@@ -1123,12 +1147,12 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
                     <div style={{position:'relative' as const}}>
                       <input type={showMPass?'text':'password'} value={mPassword} onChange={e=>setMPassword(e.target.value)} placeholder="Password"
                         style={{width:'100%',background:'#111',border:'1px solid #2a2a2a',color:'#e7e5e4',padding:'10px 44px 10px 14px',fontSize:13,fontFamily:'monospace',outline:'none',boxSizing:'border-box' as const}}
-                        onFocus={e=>e.target.style.borderColor='#eab308'} onBlur={e=>e.target.style.borderColor='#2a2a2a'}/>
+                        onFocus={e=>e.target.style.borderColor='#16a34a'} onBlur={e=>e.target.style.borderColor='#2a2a2a'}/>
                       <button onClick={()=>setShowMPass(p=>!p)} style={{position:'absolute' as const,right:8,top:'50%',transform:'translateY(-50%)',background:'none',border:'none',cursor:'pointer',color:'#555',fontSize:14}}>{showMPass?'🙈':'👁'}</button>
                     </div>
                   </div>
                   <button onClick={addMember} disabled={loading}
-                    style={{background:loading?'#1a1a1a':'#eab308',color:loading?'#444':'#000',fontFamily:'monospace',fontSize:12,fontWeight:700,padding:'10px 20px',border:'none',cursor:loading?'not-allowed':'pointer',letterSpacing:0.5}}>
+                    style={{background:loading?'#1a1a1a':'#16a34a',color:loading?'#444':'#000',fontFamily:'monospace',fontSize:12,fontWeight:700,padding:'10px 20px',border:'none',cursor:loading?'not-allowed':'pointer',letterSpacing:0.5}}>
                     {loading ? 'MENYIMPAN...' : '+ TAMBAH MEMBER'}
                   </button>
                 </div>
@@ -1170,7 +1194,7 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
           <div style={{display:'flex',flexDirection:'column',gap:16}}>
             {/* Setting Channel Ucapan — Terminal style */}
             <div style={{background:'#0d0d0d',border:'1px solid #1f1f1f',padding:'20px 24px'}}>
-              <div style={{fontFamily:'monospace',color:'#eab308',fontSize:11,letterSpacing:1,marginBottom:12}}>// DISCORD · BULK CONGRATS</div>
+              <div style={{fontFamily:'monospace',color:'#16a34a',fontSize:11,letterSpacing:1,marginBottom:12}}>// DISCORD · BULK CONGRATS</div>
               <p style={{color:'#555',fontSize:12,fontFamily:'monospace',marginBottom:12,lineHeight:1.6}}>
                 Channel ID Discord untuk kirim ucapan selamat saat member di-approve.
               </p>
@@ -1178,9 +1202,9 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
                 <input type="text" value={congratsChannelId} onChange={e=>setCongratsChannelId(e.target.value.trim())}
                   placeholder="Paste Channel ID Discord..."
                   style={{flex:1,background:'#111',border:'1px solid #2a2a2a',color:'#e7e5e4',padding:'10px 14px',fontSize:13,fontFamily:'monospace',outline:'none',minWidth:200}}
-                  onFocus={e=>e.target.style.borderColor='#eab308'} onBlur={e=>e.target.style.borderColor='#2a2a2a'}/>
+                  onFocus={e=>e.target.style.borderColor='#16a34a'} onBlur={e=>e.target.style.borderColor='#2a2a2a'}/>
                 <button onClick={sendBulkCongrats} disabled={sendingBulk||!congratsChannelId}
-                  style={{background:sendingBulk||!congratsChannelId?'#1a1a1a':'#eab308',color:sendingBulk||!congratsChannelId?'#444':'#000',fontFamily:'monospace',fontSize:12,fontWeight:700,padding:'10px 18px',border:'none',cursor:sendingBulk||!congratsChannelId?'not-allowed':'pointer',letterSpacing:0.5,whiteSpace:'nowrap' as const}}>
+                  style={{background:sendingBulk||!congratsChannelId?'#1a1a1a':'#16a34a',color:sendingBulk||!congratsChannelId?'#444':'#000',fontFamily:'monospace',fontSize:12,fontWeight:700,padding:'10px 18px',border:'none',cursor:sendingBulk||!congratsChannelId?'not-allowed':'pointer',letterSpacing:0.5,whiteSpace:'nowrap' as const}}>
                   {sendingBulk?'MENGIRIM...':'▸ KIRIM BULK ADVANCED'}
                 </button>
               </div>
@@ -1189,8 +1213,8 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
             {/* Pending */}
             <div style={{background:'#0d0d0d',border:'1px solid #1f1f1f'}}>
               <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'14px 20px',borderBottom:'1px solid #1f1f1f'}}>
-                <span style={{fontFamily:'monospace',color:'#eab308',fontSize:11,letterSpacing:1}}>// REQUEST MENUNGGU</span>
-                <span style={{fontFamily:'monospace',background:'#1a1500',border:'1px solid #3a2e00',color:'#eab308',fontSize:11,padding:'3px 10px',fontWeight:700}}>{pendingRequests.length} PENDING</span>
+                <span style={{fontFamily:'monospace',color:'#16a34a',fontSize:11,letterSpacing:1}}>// REQUEST MENUNGGU</span>
+                <span style={{fontFamily:'monospace',background:'#0a1a0e',border:'1px solid #1a3a22',color:'#16a34a',fontSize:11,padding:'3px 10px',fontWeight:700}}>{pendingRequests.length} PENDING</span>
               </div>
               {pendingRequests.length===0 ? (
                 <div style={{padding:'40px',textAlign:'center' as const,fontFamily:'monospace',color:'#333',fontSize:13}}>— TIDAK ADA REQUEST —</div>
@@ -1201,12 +1225,12 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
                       <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:6}}>
                         <span style={{fontFamily:'monospace',color:'#444',fontSize:11}}>#{String(i+1).padStart(3,'0')}</span>
                         <span style={{fontWeight:700,fontSize:15}}>{req.member_nama}</span>
-                        <span style={{fontFamily:'monospace',fontSize:10,background:'#1a1500',border:'1px solid #3a2e00',color:'#eab308',padding:'2px 8px'}}>{req.member_tier}</span>
+                        <span style={{fontFamily:'monospace',fontSize:10,background:'#0a1a0e',border:'1px solid #1a3a22',color:'#16a34a',padding:'2px 8px'}}>{req.member_tier}</span>
                       </div>
                       <div style={{fontFamily:'monospace',color:'#444',fontSize:11}}>{new Date(req.created_at).toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'})}</div>
                       {req.alasan_tolak&&req.alasan_tolak.startsWith('Jurnal')&&(
                         <div style={{background:'#111',border:'1px solid #1a1a1a',padding:'12px',marginTop:8}}>
-                          <div style={{fontFamily:'monospace',color:'#eab308',fontSize:10,marginBottom:8}}>// LINK JURNAL</div>
+                          <div style={{fontFamily:'monospace',color:'#16a34a',fontSize:10,marginBottom:8}}>// LINK JURNAL</div>
                           {req.alasan_tolak.split('\n').map((line:string,ji:number)=>{
                             const parts=line.split(': '); const label=parts[0]; const link=parts.slice(1).join(': ');
                             return link?(<div key={ji} style={{display:'flex',gap:8,marginBottom:4}}><span style={{fontFamily:'monospace',color:'#555',fontSize:10,minWidth:60,flexShrink:0}}>{label}</span><a href={link} target="_blank" rel="noopener noreferrer" style={{color:'#22ab94',fontSize:11,fontFamily:'monospace',wordBreak:'break-all' as const,textDecoration:'none'}}>{link.slice(0,70)}</a></div>):null;
@@ -1256,12 +1280,12 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
         {tab === 'announce' && (
           <div style={{display:'flex',flexDirection:'column',gap:16,maxWidth:680}}>
             <div style={{background:'#0d0d0d',border:'1px solid #1f1f1f',padding:'20px 24px'}}>
-              <div style={{fontFamily:'monospace',color:'#eab308',fontSize:11,letterSpacing:1,marginBottom:16}}>// KIRIM PENGUMUMAN KE DISCORD</div>
+              <div style={{fontFamily:'monospace',color:'#16a34a',fontSize:11,letterSpacing:1,marginBottom:16}}>// KIRIM PENGUMUMAN KE DISCORD</div>
               <div style={{marginBottom:12}}>
                 <div style={{fontFamily:'monospace',color:'#444',fontSize:10,letterSpacing:0.5,marginBottom:6}}>CHANNEL ID</div>
                 <input type="text" value={announceChannel} onChange={e=>setAnnounceChannel(e.target.value.trim())} placeholder="Paste Channel ID Discord..."
                   style={{width:'100%',background:'#111',border:'1px solid #2a2a2a',color:'#e7e5e4',padding:'10px 14px',fontSize:13,fontFamily:'monospace',outline:'none',boxSizing:'border-box' as const}}
-                  onFocus={e=>e.target.style.borderColor='#eab308'} onBlur={e=>e.target.style.borderColor='#2a2a2a'}/>
+                  onFocus={e=>e.target.style.borderColor='#16a34a'} onBlur={e=>e.target.style.borderColor='#2a2a2a'}/>
                 <div style={{fontFamily:'monospace',color:'#333',fontSize:10,marginTop:4}}>Klik kanan channel Discord → Copy Channel ID (butuh Developer Mode aktif)</div>
               </div>
               <div style={{marginBottom:12}}>
@@ -1269,7 +1293,7 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
                 <textarea value={announceMsg} onChange={e=>setAnnounceMsg(e.target.value)} rows={10}
                   placeholder={`Tulis pengumuman...\n\nSupport markdown Discord:\n# Heading\n**bold**\n_italic_\n> quote`}
                   style={{width:'100%',background:'#111',border:'1px solid #2a2a2a',color:'#e7e5e4',padding:'10px 14px',fontSize:13,fontFamily:'monospace',outline:'none',resize:'vertical' as const,boxSizing:'border-box' as const}}
-                  onFocus={e=>e.target.style.borderColor='#eab308'} onBlur={e=>e.target.style.borderColor='#2a2a2a'}/>
+                  onFocus={e=>e.target.style.borderColor='#16a34a'} onBlur={e=>e.target.style.borderColor='#2a2a2a'}/>
                 <div style={{fontFamily:'monospace',color:'#333',fontSize:10,marginTop:4}}>{announceMsg.length} karakter</div>
               </div>
               {announceMsg && (
@@ -1279,7 +1303,7 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
                 </div>
               )}
               <button onClick={sendAnnounce} disabled={announceSending||!announceChannel||!announceMsg.trim()}
-                style={{background:announceSending||!announceChannel||!announceMsg.trim()?'#1a1a1a':'#eab308',color:announceSending||!announceChannel||!announceMsg.trim()?'#444':'#000',fontFamily:'monospace',fontSize:12,fontWeight:700,padding:'12px',border:'none',cursor:'pointer',letterSpacing:0.5,width:'100%'}}>
+                style={{background:announceSending||!announceChannel||!announceMsg.trim()?'#1a1a1a':'#16a34a',color:announceSending||!announceChannel||!announceMsg.trim()?'#444':'#000',fontFamily:'monospace',fontSize:12,fontWeight:700,padding:'12px',border:'none',cursor:'pointer',letterSpacing:0.5,width:'100%'}}>
                 {announceSending?'MENGIRIM...':'▸ KIRIM KE DISCORD'}
               </button>
             </div>
@@ -1287,7 +1311,7 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
               <div style={{fontFamily:'monospace',color:'#555',fontSize:11,letterSpacing:1,marginBottom:10}}>// CARA AKTIFKAN DEVELOPER MODE</div>
               {['Buka Discord → Settings (ikon gear)','Klik Advanced','Aktifkan Developer Mode','Klik kanan channel → Copy Channel ID','Paste ID di kolom di atas'].map((step,i)=>(
                 <div key={i} style={{display:'flex',gap:10,marginBottom:6,alignItems:'baseline'}}>
-                  <span style={{fontFamily:'monospace',color:'#eab308',fontSize:11,flexShrink:0}}>{i+1}.</span>
+                  <span style={{fontFamily:'monospace',color:'#16a34a',fontSize:11,flexShrink:0}}>{i+1}.</span>
                   <span style={{fontSize:13,color:'#888'}}>{step}</span>
                 </div>
               ))}
@@ -1299,7 +1323,7 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
         {tab === 'broker' && (
           <div style={{display:'flex',flexDirection:'column',gap:16}}>
             <div style={{background:'#0d0d0d',border:'1px solid #1f1f1f',padding:'20px 24px'}}>
-              <div style={{fontFamily:'monospace',color:'#eab308',fontSize:11,letterSpacing:1,marginBottom:16}}>// TAMBAH PROP FIRM / BROKER</div>
+              <div style={{fontFamily:'monospace',color:'#16a34a',fontSize:11,letterSpacing:1,marginBottom:16}}>// TAMBAH PROP FIRM / BROKER</div>
               <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginBottom:10}}>
                 {[
                   {v:bNama,s:setBNama,ph:'Nama Broker/Prop Firm'},
@@ -1309,14 +1333,14 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
                 ].map((f,i)=>(
                   <input key={i} type={f.type||'text'} value={f.v} onChange={e=>f.s(e.target.value)} placeholder={f.ph}
                     style={{background:'#111',border:'1px solid #2a2a2a',color:'#e7e5e4',padding:'10px 14px',fontSize:13,fontFamily:'monospace',outline:'none'}}
-                    onFocus={e=>e.target.style.borderColor='#eab308'} onBlur={e=>e.target.style.borderColor='#2a2a2a'}/>
+                    onFocus={e=>e.target.style.borderColor='#16a34a'} onBlur={e=>e.target.style.borderColor='#2a2a2a'}/>
                 ))}
               </div>
               <textarea value={bDesc} onChange={e=>setBDesc(e.target.value)} placeholder="Deskripsi singkat" rows={2}
                 style={{width:'100%',background:'#111',border:'1px solid #2a2a2a',color:'#e7e5e4',padding:'10px 14px',fontSize:13,fontFamily:'monospace',outline:'none',resize:'vertical' as const,boxSizing:'border-box' as const,marginBottom:10}}
-                onFocus={e=>e.target.style.borderColor='#eab308'} onBlur={e=>e.target.style.borderColor='#2a2a2a'}/>
+                onFocus={e=>e.target.style.borderColor='#16a34a'} onBlur={e=>e.target.style.borderColor='#2a2a2a'}/>
               <button onClick={addBroker} disabled={loading}
-                style={{background:loading?'#1a1a1a':'#eab308',color:loading?'#444':'#000',fontFamily:'monospace',fontSize:12,fontWeight:700,padding:'10px 20px',border:'none',cursor:loading?'not-allowed':'pointer',letterSpacing:0.5}}>
+                style={{background:loading?'#1a1a1a':'#16a34a',color:loading?'#444':'#000',fontFamily:'monospace',fontSize:12,fontWeight:700,padding:'10px 20px',border:'none',cursor:loading?'not-allowed':'pointer',letterSpacing:0.5}}>
                 {loading?'MENYIMPAN...':'+ TAMBAH BROKER'}
               </button>
             </div>
@@ -1341,7 +1365,7 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
                   </div>
                   {editBrokerId===b.id&&(
                     <div style={{padding:'16px 20px',background:'#111',borderTop:'1px solid #1a1a1a'}}>
-                      <div style={{fontFamily:'monospace',color:'#eab308',fontSize:10,marginBottom:10}}>// EDIT BROKER</div>
+                      <div style={{fontFamily:'monospace',color:'#16a34a',fontSize:10,marginBottom:10}}>// EDIT BROKER</div>
                       <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:8}}>
                         {[
                           {v:editBNama,s:setEditBNama,ph:'Nama'},
@@ -1351,13 +1375,13 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
                         ].map((f,i)=>(
                           <input key={i} type={f.type||'text'} value={f.v} onChange={e=>f.s(e.target.value)} placeholder={f.ph}
                             style={{background:'#0d0d0d',border:'1px solid #2a2a2a',color:'#e7e5e4',padding:'8px 12px',fontSize:13,fontFamily:'monospace',outline:'none'}}
-                            onFocus={e=>e.target.style.borderColor='#eab308'} onBlur={e=>e.target.style.borderColor='#2a2a2a'}/>
+                            onFocus={e=>e.target.style.borderColor='#16a34a'} onBlur={e=>e.target.style.borderColor='#2a2a2a'}/>
                         ))}
                       </div>
                       <textarea value={editBDesc} onChange={e=>setEditBDesc(e.target.value)} placeholder="Deskripsi" rows={2}
                         style={{width:'100%',background:'#0d0d0d',border:'1px solid #2a2a2a',color:'#e7e5e4',padding:'8px 12px',fontSize:13,fontFamily:'monospace',outline:'none',resize:'vertical' as const,boxSizing:'border-box' as const,marginBottom:8}}/>
                       <div style={{display:'flex',gap:8}}>
-                        <button onClick={()=>saveEditBroker(b.id)} style={{background:'#eab308',color:'#000',fontFamily:'monospace',fontSize:11,fontWeight:700,padding:'7px 16px',border:'none',cursor:'pointer'}}>SIMPAN</button>
+                        <button onClick={()=>saveEditBroker(b.id)} style={{background:'#16a34a',color:'#fff',fontFamily:'monospace',fontSize:11,fontWeight:700,padding:'7px 16px',border:'none',cursor:'pointer'}}>SIMPAN</button>
                         <button onClick={()=>setEditBrokerId(null)} style={{background:'transparent',color:'#666',fontFamily:'monospace',fontSize:11,padding:'7px 12px',border:'1px solid #2a2a2a',cursor:'pointer'}}>BATAL</button>
                       </div>
                     </div>
@@ -1373,8 +1397,8 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
           <div style={{display:'flex',flexDirection:'column',gap:16}}>
             <div style={{background:'#0d0d0d',border:'1px solid #1f1f1f'}}>
               <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'14px 20px',borderBottom:'1px solid #1f1f1f'}}>
-                <span style={{fontFamily:'monospace',color:'#eab308',fontSize:11,letterSpacing:1}}>// ULASAN MENUNGGU</span>
-                <span style={{fontFamily:'monospace',background:'#1a1500',border:'1px solid #3a2e00',color:'#eab308',fontSize:11,padding:'3px 10px',fontWeight:700}}>{ulasanList.filter(u=>u.status==='pending').length} PENDING</span>
+                <span style={{fontFamily:'monospace',color:'#16a34a',fontSize:11,letterSpacing:1}}>// ULASAN MENUNGGU</span>
+                <span style={{fontFamily:'monospace',background:'#0a1a0e',border:'1px solid #1a3a22',color:'#16a34a',fontSize:11,padding:'3px 10px',fontWeight:700}}>{ulasanList.filter(u=>u.status==='pending').length} PENDING</span>
               </div>
               {ulasanList.filter(u=>u.status==='pending').length===0?(
                 <div style={{padding:'32px',textAlign:'center' as const,fontFamily:'monospace',color:'#333',fontSize:13}}>— TIDAK ADA ULASAN PENDING —</div>
@@ -1383,8 +1407,8 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
                   <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',gap:12,flexWrap:'wrap' as const,marginBottom:10}}>
                     <div>
                       <div style={{fontWeight:700,fontSize:14,marginBottom:2}}>{u.nama}</div>
-                      <div style={{fontFamily:'monospace',color:'#eab308',fontSize:11,marginBottom:4}}>{u.kelas}</div>
-                      <div style={{display:'flex',gap:2}}>{[1,2,3,4,5].map(s=><span key={s} style={{color:s<=u.rating?'#eab308':'#333',fontSize:14}}>★</span>)}</div>
+                      <div style={{fontFamily:'monospace',color:'#16a34a',fontSize:11,marginBottom:4}}>{u.kelas}</div>
+                      <div style={{display:'flex',gap:2}}>{[1,2,3,4,5].map(s=><span key={s} style={{color:s<=u.rating?'#16a34a':'#333',fontSize:14}}>★</span>)}</div>
                     </div>
                     <div style={{display:'flex',gap:8}}>
                       <button onClick={async()=>{await supabase.from('testimonials').update({status:'disetujui'}).eq('id',u.id);setUlasanList(l=>l.map(x=>x.id===u.id?{...x,status:'disetujui'}:x));}}
@@ -1427,7 +1451,7 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
           <div style={{display:'flex',flexDirection:'column',gap:16}}>
             <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
               <div>
-                <div style={{fontFamily:'monospace',color:'#eab308',fontSize:11,letterSpacing:1,marginBottom:4}}>// KLAIM PARTNERSHIP</div>
+                <div style={{fontFamily:'monospace',color:'#16a34a',fontSize:11,letterSpacing:1,marginBottom:4}}>// KLAIM PARTNERSHIP</div>
                 <div style={{color:'#666',fontSize:13}}>Verifikasi pendaftaran broker dari calon member gratis.</div>
               </div>
             </div>
@@ -1435,7 +1459,7 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
             <div style={{display:'flex',gap:6}}>
               {(['all','pending','approved','rejected'] as const).map(s=>(
                 <button key={s} onClick={()=>setClaimFilter(s)}
-                  style={{fontFamily:'monospace',fontSize:11,fontWeight:700,padding:'7px 14px',border:`1px solid ${claimFilter===s?'#eab308':'#2a2a2a'}`,background:claimFilter===s?'#1a1500':'transparent',color:claimFilter===s?'#eab308':'#555',cursor:'pointer',letterSpacing:0.5}}>
+                  style={{fontFamily:'monospace',fontSize:11,fontWeight:700,padding:'7px 14px',border:`1px solid ${claimFilter===s?'#16a34a':'#2a2a2a'}`,background:claimFilter===s?'#0a1a0e':'transparent',color:claimFilter===s?'#16a34a':'#555',cursor:'pointer',letterSpacing:0.5}}>
                   {s==='all'?'SEMUA':s==='pending'?'PENDING':s==='approved'?'DISETUJUI':'DITOLAK'}
                   <span style={{marginLeft:6,color:'#444',fontWeight:400}}>({claims.filter(c=>s==='all'||c.status===s).length})</span>
                 </button>
@@ -1453,13 +1477,13 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
                           <div style={{fontWeight:700,fontSize:15,marginBottom:4}}>{claim.nama}</div>
                           <div style={{fontFamily:'monospace',color:'#555',fontSize:12}}>📱 {claim.whatsapp}</div>
                         </div>
-                        <span style={{fontFamily:'monospace',fontSize:11,fontWeight:700,padding:'4px 12px',border:`1px solid ${claim.status==='pending'?'#3a2e00':claim.status==='approved'?'#0f2a1f':'#3a1a1a'}`,color:claim.status==='pending'?'#eab308':claim.status==='approved'?'#22ab94':'#ef4444',background:claim.status==='pending'?'#1a1500':claim.status==='approved'?'#0a1a14':'#1a0f0f',whiteSpace:'nowrap' as const}}>
+                        <span style={{fontFamily:'monospace',fontSize:11,fontWeight:700,padding:'4px 12px',border:`1px solid ${claim.status==='pending'?'#1a3a22':claim.status==='approved'?'#0f2a1f':'#3a1a1a'}`,color:claim.status==='pending'?'#16a34a':claim.status==='approved'?'#22ab94':'#ef4444',background:claim.status==='pending'?'#0a1a0e':claim.status==='approved'?'#0a1a14':'#1a0f0f',whiteSpace:'nowrap' as const}}>
                           {claim.status==='pending'?'⏳ PENDING':claim.status==='approved'?'✓ DISETUJUI':'✕ DITOLAK'}
                         </span>
                       </div>
                       <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:10,marginBottom:12}}>
                         {[
-                          {l:'BROKER',v:claim.broker,c:'#eab308'},
+                          {l:'BROKER',v:claim.broker,c:'#16a34a'},
                           {l:'NOMOR AKUN',v:claim.nomor_akun,c:'#e7e5e4'},
                           {l:'TANGGAL',v:new Date(claim.created_at).toLocaleDateString('id-ID',{day:'numeric',month:'short',year:'2-digit'}),c:'#666'},
                         ].map(f=>(
@@ -1502,23 +1526,23 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
         {tab === 'admins' && isSuperAdmin && (
           <div style={{display:'flex',flexDirection:'column',gap:16}}>
             <div style={{background:'#0d0d0d',border:'1px solid #1f1f1f',padding:'20px 24px'}}>
-              <div style={{fontFamily:'monospace',color:'#eab308',fontSize:11,letterSpacing:1,marginBottom:14}}>// TAMBAH ADMIN BARU</div>
+              <div style={{fontFamily:'monospace',color:'#16a34a',fontSize:11,letterSpacing:1,marginBottom:14}}>// TAMBAH ADMIN BARU</div>
               <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginBottom:10}}>
                 <input type="text" value={aUsername} onChange={e=>setAUsername(e.target.value)} placeholder="Username admin"
                   style={{background:'#111',border:'1px solid #2a2a2a',color:'#e7e5e4',padding:'10px 14px',fontSize:13,fontFamily:'monospace',outline:'none'}}
-                  onFocus={e=>e.target.style.borderColor='#eab308'} onBlur={e=>e.target.style.borderColor='#2a2a2a'}/>
+                  onFocus={e=>e.target.style.borderColor='#16a34a'} onBlur={e=>e.target.style.borderColor='#2a2a2a'}/>
                 <div style={{position:'relative' as const}}>
                   <input type={showAPass?'text':'password'} value={aPassword} onChange={e=>setAPassword(e.target.value)} placeholder="Password"
                     style={{width:'100%',background:'#111',border:'1px solid #2a2a2a',color:'#e7e5e4',padding:'10px 80px 10px 14px',fontSize:13,fontFamily:'monospace',outline:'none',boxSizing:'border-box' as const}}
-                    onFocus={e=>e.target.style.borderColor='#eab308'} onBlur={e=>e.target.style.borderColor='#2a2a2a'}/>
+                    onFocus={e=>e.target.style.borderColor='#16a34a'} onBlur={e=>e.target.style.borderColor='#2a2a2a'}/>
                   <div style={{position:'absolute' as const,right:8,top:'50%',transform:'translateY(-50%)',display:'flex',gap:4}}>
                     <button onClick={()=>setShowAPass(p=>!p)} style={{background:'none',border:'none',cursor:'pointer',color:'#555',fontSize:13}}>{showAPass?'🙈':'👁'}</button>
-                    <button onClick={()=>setAPassword(generatePassword())} style={{background:'none',border:'none',cursor:'pointer',color:'#eab308',fontSize:10,fontFamily:'monospace'}}>GEN</button>
+                    <button onClick={()=>setAPassword(generatePassword())} style={{background:'none',border:'none',cursor:'pointer',color:'#16a34a',fontSize:10,fontFamily:'monospace'}}>GEN</button>
                   </div>
                 </div>
               </div>
               <button onClick={addAdmin} disabled={loading}
-                style={{background:loading?'#1a1a1a':'#eab308',color:loading?'#444':'#000',fontFamily:'monospace',fontSize:12,fontWeight:700,padding:'10px 20px',border:'none',cursor:loading?'not-allowed':'pointer',letterSpacing:0.5}}>
+                style={{background:loading?'#1a1a1a':'#16a34a',color:loading?'#444':'#000',fontFamily:'monospace',fontSize:12,fontWeight:700,padding:'10px 20px',border:'none',cursor:loading?'not-allowed':'pointer',letterSpacing:0.5}}>
                 {loading?'MENYIMPAN...':'+ TAMBAH ADMIN'}
               </button>
             </div>
@@ -1527,12 +1551,12 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
               {admins.map(a=>(
                 <div key={a.id} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'14px 20px',borderBottom:'1px solid #111'}}>
                   <div style={{display:'flex',alignItems:'center',gap:12}}>
-                    <div style={{width:36,height:36,background:'#1a1500',border:'1px solid #3a2e00',display:'flex',alignItems:'center',justifyContent:'center',fontWeight:900,fontSize:14,color:'#eab308',fontFamily:'monospace'}}>
+                    <div style={{width:36,height:36,background:'#0a1a0e',border:'1px solid #1a3a22',display:'flex',alignItems:'center',justifyContent:'center',fontWeight:900,fontSize:14,color:'#16a34a',fontFamily:'monospace'}}>
                       {a.username[0].toUpperCase()}
                     </div>
                     <div>
                       <div style={{fontWeight:700,fontSize:13}}>@{a.username}</div>
-                      <span style={{fontFamily:'monospace',fontSize:10,color:a.role==='superadmin'?'#eab308':'#22ab94',background:a.role==='superadmin'?'#1a1500':'#0a1a14',border:`1px solid ${a.role==='superadmin'?'#3a2e00':'#0f2a1f'}`,padding:'1px 7px'}}>
+                      <span style={{fontFamily:'monospace',fontSize:10,color:a.role==='superadmin'?'#16a34a':'#22ab94',background:a.role==='superadmin'?'#0a1a0e':'#0a1a14',border:`1px solid ${a.role==='superadmin'?'#1a3a22':'#0f2a1f'}`,padding:'1px 7px'}}>
                         {a.role==='superadmin'?'SUPERADMIN':'ADMIN'}
                       </span>
                     </div>
@@ -1574,8 +1598,8 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
             {/* Filter kategori */}
             {(() => {
               const cats = [
-                { id:'all',          label:'SEMUA',        color:'#eab308' },
-                { id:'intro',        label:'INTRO',        color:'#eab308' },
+                { id:'all',          label:'SEMUA',        color:'#16a34a' },
+                { id:'intro',        label:'INTRO',        color:'#16a34a' },
                 { id:'basic',        label:'BASIC',        color:'#22ab94' },
                 { id:'tips-basic',   label:'TIPS BASIC',   color:'#22ab94' },
                 { id:'advanced',     label:'ADVANCED',     color:'#a855f7' },
@@ -1588,7 +1612,7 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
 
             {/* All categories */}
             {[
-              { id:'intro',         label:'INTRO',         color:'#eab308' },
+              { id:'intro',         label:'INTRO',         color:'#16a34a' },
               { id:'basic',         label:'BASIC',         color:'#22ab94' },
               { id:'tips-basic',    label:'TIPS BASIC',    color:'#22ab94' },
               { id:'advanced',      label:'ADVANCED',      color:'#a855f7' },
@@ -1644,7 +1668,7 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
                                   <div style={{width:44,height:44,background:'rgba(234,179,8,.9)',borderRadius:'50%',display:'flex',alignItems:'center',justifyContent:'center',fontSize:18}}>▶</div>
                                 </a>
                               )}
-                              {!ytId && <div style={{position:'absolute' as const,top:8,left:8,fontFamily:'monospace',fontSize:9,background:'#1a1500',border:'1px solid #3a2e00',color:'#eab308',padding:'2px 6px'}}>COMING SOON</div>}
+                              {!ytId && <div style={{position:'absolute' as const,top:8,left:8,fontFamily:'monospace',fontSize:9,background:'#0a1a0e',border:'1px solid #1a3a22',color:'#16a34a',padding:'2px 6px'}}>COMING SOON</div>}
                             </div>
                             <div style={{padding:'10px 12px'}}>
                               <div style={{fontFamily:'monospace',color:cat.color,fontSize:9,marginBottom:4}}>MOD.{String(v.urutan||0).padStart(2,'0')}</div>
@@ -1667,33 +1691,33 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
         {tab === 'jadwal' && (
           <div style={{display:'flex',flexDirection:'column',gap:16,maxWidth:700}}>
             <div style={{background:'#0d0d0d',border:'1px solid #1f1f1f',padding:'20px 24px'}}>
-              <div style={{fontFamily:'monospace',color:'#eab308',fontSize:11,letterSpacing:1,marginBottom:16}}>// TAMBAH JADWAL LIVE</div>
+              <div style={{fontFamily:'monospace',color:'#16a34a',fontSize:11,letterSpacing:1,marginBottom:16}}>// TAMBAH JADWAL LIVE</div>
               <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginBottom:10}}>
                 <div>
                   <div style={{fontFamily:'monospace',color:'#444',fontSize:10,marginBottom:5}}>HARI / TANGGAL</div>
                   <input value={jadwalHari} onChange={e=>setJadwalHari(e.target.value)} placeholder="cth: Senin / 26 Mei 2025"
                     style={{width:'100%',background:'#111',border:'1px solid #2a2a2a',color:'#e7e5e4',padding:'9px 12px',fontSize:12,fontFamily:'monospace',outline:'none',boxSizing:'border-box' as const}}
-                    onFocus={e=>e.target.style.borderColor='#eab308'} onBlur={e=>e.target.style.borderColor='#2a2a2a'}/>
+                    onFocus={e=>e.target.style.borderColor='#16a34a'} onBlur={e=>e.target.style.borderColor='#2a2a2a'}/>
                 </div>
                 <div>
                   <div style={{fontFamily:'monospace',color:'#444',fontSize:10,marginBottom:5}}>JAM</div>
                   <input value={jadwalJam} onChange={e=>setJadwalJam(e.target.value)} placeholder="cth: 20.00 – 22.00 WIB"
                     style={{width:'100%',background:'#111',border:'1px solid #2a2a2a',color:'#e7e5e4',padding:'9px 12px',fontSize:12,fontFamily:'monospace',outline:'none',boxSizing:'border-box' as const}}
-                    onFocus={e=>e.target.style.borderColor='#eab308'} onBlur={e=>e.target.style.borderColor='#2a2a2a'}/>
+                    onFocus={e=>e.target.style.borderColor='#16a34a'} onBlur={e=>e.target.style.borderColor='#2a2a2a'}/>
                 </div>
               </div>
               <div style={{marginBottom:10}}>
                 <div style={{fontFamily:'monospace',color:'#444',fontSize:10,marginBottom:5}}>NAMA SESI</div>
                 <input value={jadwalSesi} onChange={e=>setJadwalSesi(e.target.value)} placeholder="cth: Live Trading + Market Analysis"
                   style={{width:'100%',background:'#111',border:'1px solid #2a2a2a',color:'#e7e5e4',padding:'9px 12px',fontSize:12,fontFamily:'monospace',outline:'none',boxSizing:'border-box' as const}}
-                  onFocus={e=>e.target.style.borderColor='#eab308'} onBlur={e=>e.target.style.borderColor='#2a2a2a'}/>
+                  onFocus={e=>e.target.style.borderColor='#16a34a'} onBlur={e=>e.target.style.borderColor='#2a2a2a'}/>
               </div>
               <div style={{display:'grid',gridTemplateColumns:'1fr 80px',gap:10,marginBottom:12}}>
                 <div>
                   <div style={{fontFamily:'monospace',color:'#444',fontSize:10,marginBottom:5}}>LINK GABUNG (opsional)</div>
                   <input value={jadwalLink} onChange={e=>setJadwalLink(e.target.value)} placeholder="https://discord.gg/... atau YouTube"
                     style={{width:'100%',background:'#111',border:'1px solid #2a2a2a',color:'#e7e5e4',padding:'9px 12px',fontSize:12,fontFamily:'monospace',outline:'none',boxSizing:'border-box' as const}}
-                    onFocus={e=>e.target.style.borderColor='#eab308'} onBlur={e=>e.target.style.borderColor='#2a2a2a'}/>
+                    onFocus={e=>e.target.style.borderColor='#16a34a'} onBlur={e=>e.target.style.borderColor='#2a2a2a'}/>
                 </div>
                 <div>
                   <div style={{fontFamily:'monospace',color:'#444',fontSize:10,marginBottom:5}}>URUTAN</div>
@@ -1708,7 +1732,7 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
                 setJadwalHari('');setJadwalJam('');setJadwalSesi('');setJadwalLink('');setJadwalUrutan('');
                 loadData();
               }} disabled={loading}
-                style={{background:loading?'#1a1a1a':'#eab308',color:loading?'#444':'#000',fontFamily:'monospace',fontSize:12,fontWeight:700,padding:'10px 20px',border:'none',cursor:loading?'not-allowed':'pointer'}}>
+                style={{background:loading?'#1a1a1a':'#16a34a',color:loading?'#444':'#000',fontFamily:'monospace',fontSize:12,fontWeight:700,padding:'10px 20px',border:'none',cursor:loading?'not-allowed':'pointer'}}>
                 {loading?'MENYIMPAN...':'+ TAMBAH JADWAL'}
               </button>
             </div>
@@ -1722,7 +1746,7 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
                 <div key={s.id} style={{padding:'14px 20px',borderBottom:'1px solid #111',display:'flex',alignItems:'flex-start',gap:16}}>
                   <div style={{flex:1}}>
                     <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:4}}>
-                      <span style={{fontFamily:'monospace',color:'#eab308',fontSize:12,fontWeight:700}}>{s.hari}</span>
+                      <span style={{fontFamily:'monospace',color:'#16a34a',fontSize:12,fontWeight:700}}>{s.hari}</span>
                       {s.jam&&<span style={{fontFamily:'monospace',color:'#555',fontSize:11}}>{s.jam}</span>}
                       {s.is_active&&<span style={{fontFamily:'monospace',fontSize:9,background:'#ef4444',color:'#fff',padding:'2px 6px',borderRadius:3,fontWeight:700}}>● LIVE</span>}
                     </div>
@@ -1746,68 +1770,190 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
         {/* ── TAB PROP FIRM RULES ── */}
         {tab === 'proprules' && (
           <div style={{display:'flex',flexDirection:'column',gap:16,maxWidth:800}}>
-            <div style={{fontFamily:'monospace',color:'#eab308',fontSize:11,letterSpacing:1}}>// PROP FIRM RULES</div>
+            <div style={{fontFamily:'monospace',color:'#16a34a',fontSize:11,letterSpacing:1}}>// PROP FIRM RULES</div>
+
+            {/* Form tambah */}
             <div style={{background:'#0d0d0d',border:'1px solid #1f1f1f',borderRadius:8,padding:'18px'}}>
-              <div style={{fontFamily:'monospace',color:'#666',fontSize:10,marginBottom:12,letterSpacing:0.5}}>TAMBAH RULE BARU</div>
-              <div style={{display:'grid',gridTemplateColumns:'1fr 120px',gap:8,marginBottom:8}}>
-                <input value={newRuleName} onChange={e=>setNewRuleName(e.target.value)} placeholder="Nama prop firm (contoh: FTMO, MFF)"
-                  style={{background:'#111',border:'1px solid #2a2a2a',color:'#fff',padding:'10px 14px',fontFamily:'monospace',fontSize:12,borderRadius:6,outline:'none'}}/>
-                <select value={newRuleType} onChange={e=>setNewRuleType(e.target.value)}
-                  style={{background:'#111',border:'1px solid #2a2a2a',color:'#fff',padding:'10px 14px',fontFamily:'monospace',fontSize:12,borderRadius:6,outline:'none'}}>
-                  <option value="challenge">Challenge</option>
-                  <option value="funded">Funded</option>
-                  <option value="instant">Instant</option>
-                </select>
+              <div style={{fontFamily:'monospace',color:'#666',fontSize:10,marginBottom:12,letterSpacing:0.5}}>TAMBAH PROP FIRM RULE BARU</div>
+              <div style={{display:'flex',flexDirection:'column' as const,gap:8}}>
+                <input value={newRuleName} onChange={e=>setNewRuleName(e.target.value)} placeholder="Judul (contoh: FTMO Challenge Rules, FundingPips Phase 1, dll)"
+                  style={{background:'#111',border:'1px solid #2a2a2a',color:'#fff',padding:'10px 14px',fontFamily:'monospace',fontSize:12,borderRadius:6,outline:'none',width:'100%',boxSizing:'border-box' as const}}/>
+                <input value={newRuleType} onChange={e=>setNewRuleType(e.target.value)} placeholder="Link (opsional — contoh: https://ftmo.com/rules)"
+                  style={{background:'#111',border:'1px solid #2a2a2a',color:'#fff',padding:'10px 14px',fontFamily:'monospace',fontSize:12,borderRadius:6,outline:'none',width:'100%',boxSizing:'border-box' as const}}/>
+                <textarea value={newRuleContent} onChange={e=>setNewRuleContent(e.target.value)} rows={7}
+                  placeholder="Isi rules / penjelasan lengkap. Tulis bebas, contoh: Max Daily Loss: 5% | Max Total Loss: 10% | Profit Target: 10% | Min Trading Days: 4 | Leverage: 1:100"
+                  style={{background:'#111',border:'1px solid #2a2a2a',color:'#fff',padding:'10px 14px',fontFamily:'monospace',fontSize:12,borderRadius:6,outline:'none',resize:'vertical' as const,width:'100%',boxSizing:'border-box' as const,lineHeight:1.6}}/>
+                <div style={{display:'flex',alignItems:'center',gap:8,padding:'10px 14px',background:'#111',border:'1px solid #2a2a2a',borderRadius:6,cursor:'pointer'}} onClick={()=>document.getElementById('pfrFileInput')?.click()}>
+                  <span style={{fontSize:16}}>📎</span>
+                  <span style={{fontFamily:'monospace',fontSize:11,color:'#666'}}>Upload file PDF/gambar (opsional)</span>
+                  <input id="pfrFileInput" type="file" accept=".pdf,.png,.jpg,.jpeg" style={{display:'none'}} onChange={async(e)=>{
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    const ext = file.name.split('.').pop();
+                    const path = `prop-rules/${Date.now()}.${ext}`;
+                    const {error} = await supabase.storage.from('files').upload(path, file);
+                    if (error) { notify('Gagal upload: '+error.message); return; }
+                    const {data: urlData} = supabase.storage.from('files').getPublicUrl(path);
+                    setNewRuleContent(prev => prev + (prev ? '\n\n' : '') + '[FILE] '+urlData.publicUrl);
+                    notify('File berhasil diupload, URL ditambahkan ke deskripsi');
+                  }}/>
+                </div>
+                <button onClick={async()=>{
+                  if(!newRuleName.trim()){notify('Judul wajib diisi');return;}
+                  try{
+                    const {error}=await supabase.from('prop_firm_rules').insert({
+                      judul: newRuleName.trim(),
+                      link: newRuleType.trim()||null,
+                      deskripsi: newRuleContent.trim()||null,
+                    });
+                    if(error)throw error;
+                    notify('Rule berhasil ditambahkan!');
+                    setNewRuleName('');setNewRuleType('');setNewRuleContent('');
+                    loadData();
+                  }catch(e:any){notify('Error: '+(e.message||JSON.stringify(e)));}
+                }} style={{fontFamily:'monospace',fontSize:11,fontWeight:700,color:'#fff',background:'#16a34a',padding:'10px 20px',border:'none',cursor:'pointer',borderRadius:6,alignSelf:'flex-start' as const}}>
+                  + TAMBAH RULE
+                </button>
               </div>
-              <textarea value={newRuleContent} onChange={e=>setNewRuleContent(e.target.value)} rows={5}
-                placeholder={'Rules (satu per baris):\nMax Daily Loss: 5%\nMax Total Loss: 10%\nProfit Target: 8%'}
-                style={{width:'100%',background:'#111',border:'1px solid #2a2a2a',color:'#fff',padding:'10px 14px',fontFamily:'monospace',fontSize:12,borderRadius:6,outline:'none',resize:'vertical' as const,boxSizing:'border-box' as const,marginBottom:8}}/>
-              <button onClick={async()=>{
-                if(!newRuleName||!newRuleContent){notify('Isi nama dan rules dulu');return;}
-                try{
-                  const rules=newRuleContent.trim().split('\n').filter(Boolean);
-                  const {error}=await supabase.from('prop_firm_rules').insert({name:newRuleName,type:newRuleType,rules,is_active:true});
-                  if(error)throw error;
-                  notify('Rule berhasil ditambahkan ✅');
-                  setNewRuleName('');setNewRuleContent('');loadData();
-                }catch(e:any){notify('Error: '+e.message);}
-              }} style={{fontFamily:'monospace',fontSize:11,fontWeight:700,color:'#000',background:'#eab308',padding:'10px 20px',border:'none',cursor:'pointer',borderRadius:6}}>
-                + TAMBAH
-              </button>
             </div>
-            {propRules.length===0?(
+
+            {/* Daftar rules */}
+            {propRules.length===0 ? (
               <div style={{background:'#0d0d0d',border:'1px solid #1f1f1f',padding:'32px',textAlign:'center' as const,fontFamily:'monospace',color:'#444',fontSize:12,borderRadius:8}}>
-                Belum ada prop firm rules.<br/><span style={{color:'#333',fontSize:10}}>Pastikan tabel prop_firm_rules sudah ada di Supabase.</span>
+                Belum ada prop firm rules. Tambahkan di atas.
               </div>
-            ):(
-              <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(340px,1fr))',gap:12}}>
+            ) : (
+              <div style={{display:'flex',flexDirection:'column' as const,gap:10}}>
                 {propRules.map((r:any)=>(
-                  <div key={r.id} style={{background:'#0d0d0d',border:`1px solid ${r.is_active?'#2a2a1a':'#1f1f1f'}`,borderRadius:8,padding:'16px'}}>
-                    <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:10}}>
-                      <div>
-                        <div style={{fontWeight:700,fontSize:14}}>{r.name}</div>
-                        <div style={{fontFamily:'monospace',fontSize:10,color:r.type==='funded'?'#22ab94':r.type==='challenge'?'#eab308':'#a855f7',marginTop:3,textTransform:'uppercase' as const}}>{r.type}</div>
+                  <div key={r.id} style={{background:'#0d0d0d',border:'1px solid #1f1f1f',borderRadius:8,padding:'16px'}}>
+                    <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:10,gap:12}}>
+                      <div style={{flex:1,minWidth:0}}>
+                        <div style={{fontWeight:700,fontSize:14,marginBottom:4}}>{r.judul}</div>
+                        {r.link&&<a href={r.link} target="_blank" rel="noopener noreferrer" style={{fontFamily:'monospace',fontSize:10,color:'#3b82f6',textDecoration:'none'}}>🔗 {r.link}</a>}
                       </div>
-                      <div style={{display:'flex',gap:6}}>
-                        <button onClick={async()=>{await supabase.from('prop_firm_rules').update({is_active:!r.is_active}).eq('id',r.id);loadData();}}
-                          style={{fontFamily:'monospace',fontSize:9,color:r.is_active?'#22ab94':'#555',background:r.is_active?'#0a1a14':'#111',border:`1px solid ${r.is_active?'#22ab9444':'#2a2a2a'}`,padding:'3px 8px',cursor:'pointer',borderRadius:4}}>
-                          {r.is_active?'AKTIF':'NONAKTIF'}
-                        </button>
-                        <button onClick={async()=>{if(!confirm('Hapus?'))return;await supabase.from('prop_firm_rules').delete().eq('id',r.id);loadData();}}
-                          style={{fontFamily:'monospace',fontSize:9,color:'#ef4444',background:'#1a0a0a',border:'1px solid #ef444444',padding:'3px 8px',cursor:'pointer',borderRadius:4}}>HAPUS</button>
-                      </div>
+                      <button onClick={async()=>{if(!confirm('Hapus rule ini?'))return;await supabase.from('prop_firm_rules').delete().eq('id',r.id);loadData();}}
+                        style={{fontFamily:'monospace',fontSize:9,color:'#ef4444',background:'#1a0a0a',border:'1px solid #ef444433',padding:'4px 10px',cursor:'pointer',borderRadius:4,flexShrink:0}}>HAPUS</button>
                     </div>
-                    <div style={{display:'flex',flexDirection:'column' as const,gap:4}}>
-                      {(Array.isArray(r.rules)?r.rules:typeof r.rules==='string'?JSON.parse(r.rules||'[]'):[]).map((rule:string,i:number)=>(
-                        <div key={i} style={{display:'flex',gap:8,alignItems:'flex-start',fontSize:12,color:'#aaa'}}>
-                          <span style={{color:'#eab308',fontFamily:'monospace',flexShrink:0}}>▸</span><span>{rule}</span>
-                        </div>
-                      ))}
+                    <div style={{fontFamily:'monospace',fontSize:12,color:'#888',whiteSpace:'pre-wrap' as const,lineHeight:1.7,borderTop:'1px solid #1a1a1a',paddingTop:10}}>
+                      {r.deskripsi}
                     </div>
                   </div>
                 ))}
               </div>
             )}
+          </div>
+        )}
+
+        {/* ── TAB RATING VIDEO ── */}
+        {tab === 'rating' && (
+          <div style={{display:'flex',flexDirection:'column',gap:12,maxWidth:720}}>
+            <div style={{fontFamily:'monospace',color:'#16a34a',fontSize:11,letterSpacing:1}}>// RATING VIDEO DARI MEMBER (Bintang 1-5)</div>
+            <div style={{background:'#0d0d0d',border:'1px solid #1f1f1f',borderRadius:8,overflow:'hidden'}}>
+              <div style={{display:'grid',gridTemplateColumns:'1fr 100px 80px 80px',gap:'4px 10px',fontFamily:'monospace',fontSize:9,color:'#666',padding:'10px 16px',borderBottom:'1px solid #1a1a1a',letterSpacing:0.5}}>
+                {['VIDEO','RATING','VOTER','SKOR'].map(h=><span key={h}>{h}</span>)}
+              </div>
+              {videoRatingStats.length===0 && <div style={{padding:'32px',textAlign:'center' as const,fontFamily:'monospace',color:'#444',fontSize:12}}>Belum ada rating. Pastikan tabel video_ratings sudah dibuat.</div>}
+              {videoRatingStats.map((v:any,i:number)=>(
+                <div key={i} style={{display:'grid',gridTemplateColumns:'1fr 100px 80px 80px',gap:'4px 10px',alignItems:'center',padding:'12px 16px',borderBottom:'1px solid #111'}}>
+                  <div style={{fontSize:12,fontWeight:600,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap' as const}}>{v.judul}</div>
+                  <div style={{display:'flex',gap:2}}>{[1,2,3,4,5].map(s=><span key={s} style={{fontSize:12,color:v.total>=s?'#16a34a':'#333'}}>★</span>)}</div>
+                  <span style={{fontFamily:'monospace',color:'#888',fontSize:11}}>{v.count} org</span>
+                  <span style={{fontFamily:'monospace',fontWeight:700,fontSize:12,color:v.total>=4?'#22ab94':v.total>=3?'#16a34a':'#ef4444'}}>{v.total}/5</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* ── TAB REFERRAL ── */}
+        {tab === 'referral' && (
+          <div style={{display:'flex',flexDirection:'column',gap:16,maxWidth:760}}>
+            <div style={{fontFamily:'monospace',color:'#22ab94',fontSize:11,letterSpacing:1}}>// PROGRAM REFERRAL</div>
+            <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:10}}>
+              {[
+                {l:'Total', v:adminReferrals.length, c:'#e7e5e4'},
+                {l:'Pending', v:adminReferrals.filter((r:any)=>r.status==='pending').length, c:'#16a34a'},
+                {l:'Terverif', v:adminReferrals.filter((r:any)=>r.status!=='pending').length, c:'#22ab94'},
+              ].map((s:any,i:number)=>(
+                <div key={i} style={{background:'#0d0d0d',border:'1px solid #1f1f1f',borderRadius:8,padding:'14px 16px',textAlign:'center' as const}}>
+                  <div style={{fontFamily:'monospace',color:'#444',fontSize:9,marginBottom:6}}>{s.l}</div>
+                  <div style={{fontFamily:'monospace',fontSize:24,fontWeight:700,color:s.c}}>{s.v}</div>
+                </div>
+              ))}
+            </div>
+            {adminReferrals.length===0 ? (
+              <div style={{background:'#0d0d0d',border:'1px solid #1f1f1f',padding:'32px',textAlign:'center' as const,fontFamily:'monospace',color:'#444',fontSize:12,borderRadius:8}}>Belum ada referral.</div>
+            ) : (
+              <div style={{background:'#0d0d0d',border:'1px solid #1f1f1f',borderRadius:8,overflow:'hidden'}}>
+                <div style={{display:'grid',gridTemplateColumns:'1.2fr 1.2fr 90px 90px 110px',gap:'4px 10px',fontFamily:'monospace',fontSize:9,color:'#555',padding:'10px 18px',borderBottom:'1px solid #111'}}>
+                  {['REFERRER','MEMBER BARU','TANGGAL','STATUS','AKSI'].map(h=><span key={h}>{h}</span>)}
+                </div>
+                {adminReferrals.map((r:any)=>(
+                  <div key={r.id} style={{display:'grid',gridTemplateColumns:'1.2fr 1.2fr 90px 90px 110px',gap:'4px 10px',alignItems:'center',padding:'12px 18px',borderBottom:'1px solid #0d0d0d'}}>
+                    <div>
+                      <div style={{fontSize:13,fontWeight:700}}>{r.referrer?.nama||r.referrer_id?.slice(0,8)||'—'}</div>
+                      <div style={{fontFamily:'monospace',color:'#444',fontSize:9}}>{r.referrer?.tier?.replace('SMC ','')}</div>
+                    </div>
+                    <span style={{fontSize:12,color:'#888'}}>{r.referred_name||'—'}</span>
+                    <span style={{fontFamily:'monospace',color:'#555',fontSize:10}}>{new Date(r.created_at).toLocaleDateString('id-ID',{day:'numeric',month:'short'})}</span>
+                    <span style={{fontFamily:'monospace',fontSize:10,fontWeight:700,color:r.status==='rewarded'?'#16a34a':r.status==='verified'?'#22ab94':'#666'}}>
+                      {r.status==='rewarded'?'💰':r.status==='verified'?'✓':'⏳'} {r.status}
+                    </span>
+                    <div style={{display:'flex',gap:4}}>
+                      {r.status==='pending'&&<button onClick={async()=>{await supabase.from('referrals').update({status:'verified'}).eq('id',r.id);notify('Terverifikasi ✅');loadData();}} style={{fontFamily:'monospace',fontSize:9,fontWeight:700,color:'#22ab94',background:'#0a1a14',border:'1px solid #22ab9444',padding:'4px 8px',cursor:'pointer',borderRadius:4}}>VERIF</button>}
+                      {r.status==='verified'&&<button onClick={async()=>{await supabase.from('referrals').update({status:'rewarded'}).eq('id',r.id);notify('Reward diberikan 💰');loadData();}} style={{fontFamily:'monospace',fontSize:9,fontWeight:700,color:'#16a34a',background:'#0a1a0e',border:'1px solid #1a3a22',padding:'4px 8px',cursor:'pointer',borderRadius:4}}>REWARD</button>}
+                      {r.status==='rewarded'&&<span style={{fontFamily:'monospace',fontSize:9,color:'#333'}}>selesai</span>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+            <div style={{background:'#0a0c00',border:'1px solid #1a3020',borderRadius:8,padding:'14px 18px'}}>
+              <div style={{fontFamily:'monospace',color:'#16a34a',fontSize:10,marginBottom:6}}>// CARA KERJA</div>
+              <div style={{fontSize:12,color:'#666',lineHeight:1.7}}>1. Member dapat link: <span style={{color:'#22ab94',fontFamily:'monospace'}}>menolakrugi.pages.dev/signup?ref=KODE</span><br/>2. Member baru daftar → otomatis tercatat PENDING<br/>3. Admin VERIFIKASI setelah member baru aktif & bayar<br/>4. Admin BERI REWARD ke referrer (manual)</div>
+            </div>
+          </div>
+        )}
+
+        {/* ── TAB PROGRES BELAJAR ── */}
+        {tab === 'progress' && (
+          <div style={{display:'flex',flexDirection:'column',gap:16,maxWidth:800}}>
+            <div style={{fontFamily:'monospace',color:'#16a34a',fontSize:11,letterSpacing:1}}>// PROGRES BELAJAR MEMBER</div>
+            <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:10}}>
+              {[
+                {l:'Selesai Semua', v:members.filter((m:any)=>(progress[m.id]||0)>=100).length, c:'#22ab94'},
+                {l:'Di atas 50%',   v:members.filter((m:any)=>{const p=progress[m.id]||0;return p>=50&&p<100;}).length, c:'#16a34a'},
+                {l:'Di bawah 50%',  v:members.filter((m:any)=>{const p=progress[m.id]||0;return p>0&&p<50;}).length, c:'#f59e0b'},
+                {l:'Belum Mulai',   v:members.filter((m:any)=>!(progress[m.id])).length, c:'#ef4444'},
+              ].map((s:any,i:number)=>(
+                <div key={i} style={{background:'#0d0d0d',border:`1px solid ${s.c}33`,borderRadius:8,padding:'12px',textAlign:'center' as const}}>
+                  <div style={{fontFamily:'monospace',color:s.c,fontSize:22,fontWeight:700}}>{s.v}</div>
+                  <div style={{fontFamily:'monospace',color:'#555',fontSize:9,marginTop:4}}>{s.l}</div>
+                </div>
+              ))}
+            </div>
+            <div style={{background:'#0d0d0d',border:'1px solid #1f1f1f',borderRadius:8,overflow:'hidden'}}>
+              <div style={{display:'grid',gridTemplateColumns:'32px 1fr 80px 140px 60px',gap:'4px 12px',fontFamily:'monospace',fontSize:9,color:'#555',padding:'10px 16px',borderBottom:'1px solid #1a1a1a',letterSpacing:0.5}}>
+                <span>#</span><span>NAMA</span><span>TIER</span><span>PROGRESS</span><span>PCT</span>
+              </div>
+              {members.sort((a:any,b:any)=>(progress[b.id]||0)-(progress[a.id]||0)).slice(0,60).map((m:any,i:number)=>{
+                const pct = progress[m.id]||0;
+                return (
+                <div key={m.id} style={{display:'grid',gridTemplateColumns:'32px 1fr 80px 140px 60px',gap:'4px 12px',alignItems:'center',padding:'10px 16px',borderBottom:'1px solid #0d0d0d'}}>
+                  <span style={{fontFamily:'monospace',color:'#444',fontSize:10}}>{i+1}</span>
+                  <div>
+                    <div style={{fontSize:12,fontWeight:600}}>{m.nama}</div>
+                    {m.is_advance&&<span style={{fontFamily:'monospace',fontSize:8,color:'#a855f7',border:'1px solid #a855f744',padding:'1px 5px',borderRadius:3}}>ADV</span>}
+                  </div>
+                  <span style={{fontFamily:'monospace',fontSize:10,color:'#666'}}>{m.tier?.replace('SMC ','').slice(0,8)}</span>
+                  <div style={{height:5,background:'#111',borderRadius:3,overflow:'hidden'}}>
+                    <div style={{height:'100%',width:pct+'%',background:pct>=100?'#22ab94':pct>=50?'#16a34a':'#f59e0b',borderRadius:3,transition:'width 0.5s ease'}}/>
+                  </div>
+                  <span style={{fontFamily:'monospace',fontSize:11,fontWeight:700,color:pct>=100?'#22ab94':pct>=50?'#16a34a':pct>0?'#f59e0b':'#333'}}>{pct}%</span>
+                </div>
+              );})}
+              {members.length===0&&<div style={{padding:'32px',textAlign:'center' as const,fontFamily:'monospace',color:'#444',fontSize:12}}>Tidak ada data.</div>}
+            </div>
           </div>
         )}
 

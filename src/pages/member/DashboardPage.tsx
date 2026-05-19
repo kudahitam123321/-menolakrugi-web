@@ -3,11 +3,11 @@ import { supabase } from '../../lib/supabase';
 import LanjutkanBelajar from '../../components/LanjutkanBelajar';
 import { trackVideoWatch } from '../../hooks/useWatchHistory';
 
-const G = { gold: '#eab308', gold2: '#ca9e00' };
+const G = { gold: '#16a34a', gold2: '#15803d' };
 const C = {
   bg: '#090909', sidebar: '#0d0d0d', panel: '#111', border: '#1e1e1e',
   border2: '#2a2a2a', dim: '#555', muted: '#888', text: '#e7e5e4',
-  up: '#22ab94', down: '#ef4444', mono: '"Geist Mono",monospace',
+  up: '#22c55e', down: '#ef4444', mono: '"Geist Mono",monospace',
   sans: '"Geist",system-ui,sans-serif',
 };
 const DISCORD  = 'https://discord.gg/d2Tpf6sGMr';
@@ -18,7 +18,6 @@ const SIDEBAR = [
   { id: 'dashboard',   label: 'Dashboard',    icon: '⊞' },
   { id: 'kelas',       label: 'Kelas Saya',   icon: '▶' },
   { id: 'materi',      label: 'Materi',       icon: '📚' },
-  { id: 'live',        label: 'Live Trading', icon: '📡', badge: 'LIVE' },
   { id: 'news',        label: 'Chart',        icon: '📈' },
   { id: 'komunitas',   label: 'Komunitas',    icon: '💬' },
   { id: 'tools',       label: 'Broker',       icon: '🏦' },
@@ -26,6 +25,8 @@ const SIDEBAR = [
   { id: 'bantuan',     label: 'Bantuan',      icon: '❓' },
   { id: 'funded',      label: 'Status Trading', icon: '🚀' },
   { id: 'sertifikat',  label: 'Sertifikat',     icon: '🏆' },
+  { id: 'ulasan',      label: 'Tulis Ulasan',   icon: '⭐' },
+  { id: 'referral',    label: 'Referral',       icon: '🔗' },
   { id: 'logout',      label: 'Logout',         icon: '⏻' },
 ];
 
@@ -46,7 +47,7 @@ function Ring({ pct, size = 48, color = G.gold }: { pct: number; size?: number; 
         strokeDasharray={c2} strokeDashoffset={c2-(pct/100)*c2} strokeLinecap="round"
         transform={`rotate(-90 ${size/2} ${size/2})`}/>
       <text x={size/2} y={size/2+1} textAnchor="middle" dominantBaseline="central"
-        fontSize={size/4.5} fontFamily={C.mono} fontWeight="700" fill={color}>{pct}%</text>
+        fontSize={size/4.5} fontFamily='"Geist Mono",monospace' fontWeight="700" fill={color}>{pct}%</text>
     </svg>
   );
 }
@@ -215,7 +216,7 @@ function LotCalculator() {
 // ── Halaman utama ──────────────────────────────────────────────────────────
 interface Member { id: string; nama: string; tier: string; is_advance: boolean; discord_username?: string; created_at?: string; funded_status?: string | null; discord_id?: string; }
 
-// ── Certificate Canvas Component ──────────────────────────────
+// ── Certificate Canvas Component ──────────────────────────────────────
 function CertificateCanvas({ nama, tier, tanggal }: { nama: string; tier: string; tanggal: string }) {
   const canvasRef = React.useRef<HTMLCanvasElement>(null);
 
@@ -225,105 +226,206 @@ function CertificateCanvas({ nama, tier, tanggal }: { nama: string; tier: string
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    const W = 900, H = 636;
+    const W = 1200, H = 848;
     canvas.width = W; canvas.height = H;
     canvas.id = 'mr-cert-canvas';
 
-    // Background
-    ctx.fillStyle = '#0a0800';
+    // ── Background gradient ──
+    const bg = ctx.createLinearGradient(0, 0, W, H);
+    bg.addColorStop(0, '#040a04');
+    bg.addColorStop(0.5, '#060e06');
+    bg.addColorStop(1, '#040604');
+    ctx.fillStyle = bg;
     ctx.fillRect(0, 0, W, H);
 
-    // Gold border outer
-    ctx.strokeStyle = '#eab308';
-    ctx.lineWidth = 3;
-    ctx.strokeRect(12, 12, W - 24, H - 24);
+    // ── Subtle grid pattern ──
+    ctx.strokeStyle = 'rgba(22,163,74,0.04)';
+    ctx.lineWidth = 0.5;
+    for (let x = 0; x < W; x += 40) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke(); }
+    for (let y = 0; y < H; y += 40) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke(); }
 
-    // Gold border inner
-    ctx.strokeStyle = '#3a2e00';
-    ctx.lineWidth = 1;
-    ctx.strokeRect(22, 22, W - 44, H - 44);
+    // ── Radial glow center ──
+    const glow = ctx.createRadialGradient(W/2, H/2, 0, W/2, H/2, 380);
+    glow.addColorStop(0, 'rgba(22,163,74,0.07)');
+    glow.addColorStop(1, 'transparent');
+    ctx.fillStyle = glow;
+    ctx.fillRect(0, 0, W, H);
 
-    // Top decorative line
-    ctx.fillStyle = '#eab308';
-    ctx.fillRect(40, 40, W - 80, 2);
-    ctx.fillRect(40, H - 42, W - 80, 2);
+    // ── Outer border — green ──
+    ctx.strokeStyle = '#16a34a';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(16, 16, W - 32, H - 32);
 
-    // Brand
-    ctx.fillStyle = '#eab308';
-    ctx.font = 'bold 13px "Geist Mono", monospace';
+    // ── Inner border — thin ──
+    ctx.strokeStyle = 'rgba(22,163,74,0.3)';
+    ctx.lineWidth = 0.5;
+    ctx.strokeRect(28, 28, W - 56, H - 56);
+
+    // ── Corner ornaments ──
+    const drawCorner = (cx: number, cy: number, rot: number) => {
+      ctx.save();
+      ctx.translate(cx, cy);
+      ctx.rotate(rot);
+      ctx.strokeStyle = '#16a34a';
+      ctx.lineWidth = 1.5;
+      // L-shape
+      ctx.beginPath(); ctx.moveTo(0, 24); ctx.lineTo(0, 0); ctx.lineTo(24, 0); ctx.stroke();
+      // Dot
+      ctx.beginPath(); ctx.arc(0, 0, 3, 0, Math.PI*2);
+      ctx.fillStyle = '#16a34a'; ctx.fill();
+      ctx.restore();
+    };
+    drawCorner(36, 36, 0);
+    drawCorner(W - 36, 36, Math.PI / 2);
+    drawCorner(W - 36, H - 36, Math.PI);
+    drawCorner(36, H - 36, -Math.PI / 2);
+
+    // ── Top accent bar ──
+    const topBar = ctx.createLinearGradient(40, 0, W - 40, 0);
+    topBar.addColorStop(0, 'transparent');
+    topBar.addColorStop(0.3, '#16a34a');
+    topBar.addColorStop(0.7, '#16a34a');
+    topBar.addColorStop(1, 'transparent');
+    ctx.fillStyle = topBar;
+    ctx.fillRect(40, 52, W - 80, 2);
+
+    // ── Bottom accent bar ──
+    ctx.fillStyle = topBar;
+    ctx.fillRect(40, H - 54, W - 80, 2);
+
+    // ── Brand name ──
     ctx.textAlign = 'center';
-    ctx.fillText('MENOLAK RUGI · ELITE TRADING ENVIRONMENT', W / 2, 80);
+    ctx.fillStyle = '#16a34a';
+    ctx.font = 'bold 11px "Courier New", monospace';
+    ctx.fillText('MENOLAK RUGI  ·  ELITE TRADING ENVIRONMENT', W / 2, 44);
+    // ── MR monogram (stylized) ──
+    ctx.font = 'bold 28px "Courier New", monospace';
+    ctx.fillStyle = 'rgba(22,163,74,0.12)';
+    ctx.fillText('MR', W / 2, 115);
+    ctx.fillStyle = 'rgba(22,163,74,0.6)';
+    ctx.font = 'bold 24px "Courier New", monospace';
+    ctx.fillText('MR', W / 2, 113);
 
-    // Certificate title
-    ctx.fillStyle = '#e7e5e4';
-    ctx.font = 'bold 36px "Geist", system-ui, sans-serif';
-    ctx.fillText('SERTIFIKAT', W / 2, 148);
+    // ── "SERTIFIKAT" title ──
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 52px Georgia, serif';
+    ctx.fillText('SERTIFIKAT', W / 2, 168);
 
-    ctx.fillStyle = '#a855f7';
-    ctx.font = 'bold 22px "Geist", system-ui, sans-serif';
-    ctx.fillText('NAIK KELAS ADVANCED', W / 2, 186);
+    // ── Subtitle ──
+    ctx.fillStyle = '#16a34a';
+    ctx.font = 'italic bold 18px Georgia, serif';
+    ctx.fillText('Naik Kelas Advanced — SMC Trading Education', W / 2, 200);
 
-    // Divider
-    ctx.fillStyle = '#2a2a2a';
-    ctx.fillRect(W / 2 - 120, 206, 240, 1);
+    // ── Thin divider ──
+    const divGrad = ctx.createLinearGradient(W/2 - 200, 0, W/2 + 200, 0);
+    divGrad.addColorStop(0, 'transparent');
+    divGrad.addColorStop(0.5, '#16a34a');
+    divGrad.addColorStop(1, 'transparent');
+    ctx.fillStyle = divGrad;
+    ctx.fillRect(W/2 - 200, 220, 400, 1);
 
-    // "Diberikan kepada"
-    ctx.fillStyle = '#666';
-    ctx.font = '14px "Geist", system-ui, sans-serif';
-    ctx.fillText('Diberikan kepada', W / 2, 240);
+    // ── "Diberikan kepada" ──
+    ctx.fillStyle = 'rgba(255,255,255,0.35)';
+    ctx.font = 'italic 15px Georgia, serif';
+    ctx.fillText('Dengan bangga diberikan kepada', W / 2, 255);
 
-    // Member name
-    ctx.fillStyle = '#eab308';
-    ctx.font = 'bold 42px "Geist", system-ui, sans-serif';
-    ctx.fillText(nama, W / 2, 300);
+    // ── Member name — hero text ──
+    const nameLen = nama.length;
+    const nameFontSize = nameLen > 24 ? 38 : nameLen > 18 ? 44 : 52;
+    ctx.fillStyle = '#ffffff';
+    ctx.font = `bold ${nameFontSize}px Georgia, serif`;
+    ctx.fillText(nama, W / 2, 322);
 
-    // Tier
-    ctx.fillStyle = '#888';
-    ctx.font = '15px "Geist Mono", monospace';
-    ctx.fillText(tier.toUpperCase(), W / 2, 330);
+    // ── Name underline ──
+    const nameWidth = ctx.measureText(nama).width;
+    const ulGrad = ctx.createLinearGradient(W/2 - nameWidth/2, 0, W/2 + nameWidth/2, 0);
+    ulGrad.addColorStop(0, 'transparent');
+    ulGrad.addColorStop(0.5, '#16a34a');
+    ulGrad.addColorStop(1, 'transparent');
+    ctx.fillStyle = ulGrad;
+    ctx.fillRect(W/2 - nameWidth/2, 334, nameWidth, 1.5);
 
-    // Description
-    ctx.fillStyle = '#666';
-    ctx.font = '14px "Geist", system-ui, sans-serif';
-    ctx.fillText('Telah menyelesaikan materi Basic dan berhasil naik ke kelas', W / 2, 375);
-    ctx.fillStyle = '#a855f7';
-    ctx.font = 'bold 14px "Geist", system-ui, sans-serif';
-    ctx.fillText('Advanced — Smart Money Concept (SMC) Trading Education', W / 2, 398);
+    // ── Tier badge ──
+    const tierClean = tier.replace('SMC ', '').toUpperCase();
+    ctx.fillStyle = 'rgba(22,163,74,0.12)';
+    ctx.beginPath();
+    const badgeW = ctx.measureText(tierClean).width + 40;
+    ctx.roundRect(W/2 - badgeW/2, 348, badgeW, 26, 13);
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(22,163,74,0.4)';
+    ctx.lineWidth = 0.8;
+    ctx.stroke();
+    ctx.fillStyle = '#16a34a';
+    ctx.font = 'bold 12px "Courier New", monospace';
+    ctx.fillText(tierClean, W / 2, 365);
 
-    // Date + signature line
-    ctx.fillStyle = '#444';
-    ctx.fillRect(100, 476, 200, 1);
-    ctx.fillRect(W - 300, 476, 200, 1);
+    // ── Description ──
+    ctx.fillStyle = 'rgba(255,255,255,0.45)';
+    ctx.font = '14px Georgia, serif';
+    ctx.fillText('Telah menyelesaikan seluruh materi Basic dan berhasil', W / 2, 412);
+    ctx.fillText('naik ke kelas Advanced Smart Money Concept (SMC)', W / 2, 432);
 
-    ctx.fillStyle = '#555';
-    ctx.font = '12px "Geist Mono", monospace';
+    // ── Signature section ──
+    // Left: date
+    ctx.fillStyle = 'rgba(255,255,255,0.5)';
+    ctx.fillRect(120, 510, 180, 0.8);
+    ctx.fillStyle = 'rgba(255,255,255,0.7)';
+    ctx.font = 'bold 13px Georgia, serif';
     ctx.textAlign = 'center';
-    ctx.fillText(tanggal, 200, 500);
-    ctx.fillText('Mentor — Menolak Rugi', W - 200, 500);
+    ctx.fillText(tanggal, 210, 534);
+    ctx.fillStyle = 'rgba(255,255,255,0.3)';
+    ctx.font = '10px "Courier New", monospace';
+    ctx.fillText('TANGGAL DITERBITKAN', 210, 550);
 
-    ctx.fillStyle = '#333';
-    ctx.font = '11px "Geist Mono", monospace';
-    ctx.fillText('TANGGAL DITERBITKAN', 200, 518);
-    ctx.fillText('IKHSAN · FOUNDER', W - 200, 518);
+    // Center: green seal
+    ctx.beginPath();
+    ctx.arc(W/2, 525, 38, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(22,163,74,0.08)';
+    ctx.fill();
+    ctx.strokeStyle = '#16a34a';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+    // Inner circle
+    ctx.beginPath();
+    ctx.arc(W/2, 525, 28, 0, Math.PI * 2);
+    ctx.strokeStyle = 'rgba(22,163,74,0.4)';
+    ctx.lineWidth = 0.8;
+    ctx.stroke();
+    // Checkmark
+    ctx.strokeStyle = '#16a34a';
+    ctx.lineWidth = 2.5;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(W/2 - 12, 525);
+    ctx.lineTo(W/2 - 3, 534);
+    ctx.lineTo(W/2 + 14, 515);
+    ctx.stroke();
 
-    // Footer
-    ctx.fillStyle = '#2a2200';
-    ctx.fillRect(40, H - 68, W - 80, 24);
-    ctx.fillStyle = '#eab308';
-    ctx.font = '10px "Geist Mono", monospace';
+    // Right: mentor
+    ctx.fillStyle = 'rgba(255,255,255,0.5)';
+    ctx.fillRect(W - 300, 510, 180, 0.8);
+    ctx.fillStyle = 'rgba(255,255,255,0.7)';
+    ctx.font = 'bold italic 15px Georgia, serif';
     ctx.textAlign = 'center';
-    ctx.fillText('menolakrugi.pages.dev  ·  SMART MONEY CONCEPT EDUCATION  ·  VALID & VERIFIED', W / 2, H - 51);
+    ctx.fillText('Ikhsan', W - 210, 534);
+    ctx.fillStyle = 'rgba(255,255,255,0.3)';
+    ctx.font = '10px "Courier New", monospace';
+    ctx.fillText('FOUNDER · MENTOR', W - 210, 550);
 
-    // Corner ornaments
-    const corners = [[44, 44], [W - 44, 44], [44, H - 44], [W - 44, H - 44]];
-    corners.forEach(([x, y]) => {
-      ctx.beginPath();
-      ctx.arc(x, y, 6, 0, Math.PI * 2);
-      ctx.fillStyle = '#eab308';
-      ctx.fill();
-    });
+    // ── Footer ──
+    const footGrad = ctx.createLinearGradient(0, 0, W, 0);
+    footGrad.addColorStop(0, 'transparent');
+    footGrad.addColorStop(0.2, 'rgba(22,163,74,0.15)');
+    footGrad.addColorStop(0.8, 'rgba(22,163,74,0.15)');
+    footGrad.addColorStop(1, 'transparent');
+    ctx.fillStyle = footGrad;
+    ctx.fillRect(40, H - 50, W - 80, 26);
 
-  }, [nama, tier, tanggal]);
+    ctx.fillStyle = 'rgba(22,163,74,0.8)';
+    ctx.font = '9px "Courier New", monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText('menolakrugi.pages.dev  ·  SMART MONEY CONCEPT EDUCATION  ·  VALID & VERIFIED', W / 2, H - 33);
+    }, [nama, tier, tanggal]);
 
   return (
     <canvas
@@ -362,6 +464,17 @@ export default function DashboardPage() {
   const [jurnalMode, setJurnalMode]         = useState<('link'|'file')[]>(['link','link','link']);
   const [statusSaving, setStatusSaving]     = useState(false);
   const [watchRefreshKey, setWatchRefreshKey] = useState(0);
+  const [leaderboard, setLeaderboard]          = useState<any[]>([]);
+  const [videoRatings, setVideoRatings]         = useState<Record<string,number>>({});
+  const [referralCode, setReferralCode]         = useState('');
+  const [referrals, setReferrals]               = useState<any[]>([]);
+  const [referralCopied, setReferralCopied]     = useState(false);
+  const [myTestimonial, setMyTestimonial]       = useState<any>(null);
+  const [testiNama, setTestiNama]               = useState('');
+  const [testiBintang, setTestiBintang]         = useState(5);
+  const [testiTeks, setTestiTeks]               = useState('');
+  const [testiSaving, setTestiSaving]           = useState(false);
+  const [testiMsg, setTestiMsg]                 = useState('');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
     return localStorage.getItem('mr_sidebar_collapsed') === '1';
   });
@@ -412,6 +525,31 @@ export default function DashboardPage() {
     if (annRes.data)   setAnnouncements(annRes.data);
     if (brokerRes.data) setBrokers(brokerRes.data);
     if (rulesRes.data) setPropRules(rulesRes.data);
+
+    // Leaderboard
+    const { data: progAll } = await supabase.from('member_progress').select('member_id,status');
+    const { data: membAll } = await supabase.from('members').select('id,nama,tier,is_advance');
+    if (progAll && membAll) {
+      const counts: Record<string,number> = {};
+      progAll.forEach((p:any) => { if(p.status==='selesai') counts[p.member_id]=(counts[p.member_id]||0)+1; });
+      setLeaderboard(membAll.map((mb:any) => ({...mb,selesai:counts[mb.id]||0})).sort((a:any,b:any)=>b.selesai-a.selesai));
+    }
+    // Video ratings
+    if (m.id) {
+      const { data: ratData } = await supabase.from('video_ratings').select('video_id,rating').eq('member_id', m.id);
+      if (ratData) { const map: Record<string,number> = {}; ratData.forEach((r:any)=>{ map[r.video_id]=r.rating; }); setVideoRatings(map); }
+    }
+    // Referral
+    const code = m.referral_code || (m.nama?.toLowerCase().replace(/\s+/g,'') + m.id?.slice(-4));
+    setReferralCode(code);
+    const { data: refData } = await supabase.from('referrals').select('*').eq('referrer_id', m.id).order('created_at',{ascending:false});
+    if (refData) setReferrals(refData);
+    // My testimonial
+    try {
+      const { data: _testi } = await supabase.from('testimonials').select('id,nama,ulasan,bintang,kelas,status').eq('member_id', m.id).maybeSingle();
+      if (_testi) { setMyTestimonial(_testi); setTestiNama(_testi.nama||m.nama); setTestiBintang(_testi.bintang||5); setTestiTeks(_testi.ulasan||''); }
+      else { setTestiNama(m.nama); }
+    } catch(_e) {}
     if (schedRes.data)  setLiveSchedules(schedRes.data);
     if (notifRes.data)  setNotifications(notifRes.data);
     if (advRes.data && advRes.data.length > 0) setAdvanceReq(advRes.data[0]);
@@ -446,6 +584,12 @@ export default function DashboardPage() {
     else sessionStorage.setItem('mr_member', updated);
     setSettingMsg('Tersimpan!');
     setTimeout(() => setSettingMsg(''), 2000);
+  }
+
+  async function rateVideo(videoId: string, star: number) {
+    if (!member) return;
+    await supabase.from('video_ratings').upsert({ member_id: member.id, video_id: videoId, rating: star }, { onConflict: 'member_id,video_id' });
+    setVideoRatings(prev => ({ ...prev, [videoId]: star }));
   }
 
   async function handleUpdateStatus(newStatus: string | null) {
@@ -535,8 +679,31 @@ export default function DashboardPage() {
   }
 
   if (!member) return (
-    <div style={{ background: C.bg, minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: C.dim, fontFamily: C.mono, fontSize: 13 }}>
-      Loading...
+    <div style={{ fontFamily: C.sans, background: C.bg, color: C.text, minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+      <div style={{ height:56, background:C.sidebar, borderBottom:`1px solid ${C.border}`, display:'flex', alignItems:'center', padding:'0 20px', gap:14, flexShrink:0 }}>
+        <div className='mr-skeleton' style={{ width:32, height:32, borderRadius:8 }}/>
+        <div className='mr-skeleton' style={{ width:120, height:14 }}/>
+        <div style={{ flex:1 }}/>
+        <div className='mr-skeleton' style={{ width:80, height:28, borderRadius:6 }}/>
+      </div>
+      <div style={{ display:'flex', flex:1 }}>
+        <div style={{ width:200, background:C.sidebar, borderRight:`1px solid ${C.border}`, padding:'20px 12px', flexShrink:0, display:'flex', flexDirection:'column' as const, gap:8 }}>
+          {[80,60,70,60,65,55,70,60].map((w,i)=><div key={i} className='mr-skeleton' style={{ width:`${w}%`, height:32, borderRadius:8 }}/>)}
+        </div>
+        <div style={{ flex:1, padding:24, display:'flex', flexDirection:'column' as const, gap:20 }}>
+          <div style={{ background:C.panel, border:`1px solid ${C.border}`, borderRadius:14, padding:28 }}>
+            <div className='mr-skeleton mr-skeleton-text' style={{ width:160 }}/>
+            <div className='mr-skeleton mr-skeleton-title' style={{ width:240 }}/>
+            <div className='mr-skeleton mr-skeleton-text' style={{ width:'60%' }}/>
+          </div>
+          <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:14 }}>
+            {[0,1,2,3].map(i=><div key={i} className='mr-skeleton mr-skeleton-card'/>)}
+          </div>
+          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14 }}>
+            {[0,1].map(i=><div key={i} className='mr-skeleton mr-skeleton-thumb'/>)}
+          </div>
+        </div>
+      </div>
     </div>
   );
 
@@ -624,6 +791,12 @@ export default function DashboardPage() {
         .mr-welcome-anim { animation: mr-welcome-in 0.6s ease 0.05s both; }
         .mr-status-anim { animation: mr-kpi-in 0.5s ease 0.5s both; }
         .mr-banner-anim { animation: mr-kpi-in 0.5s ease 0.7s both; }
+        @keyframes mr-shimmer { 0% { background-position:-400px 0; } 100% { background-position:400px 0; } }
+        .mr-skeleton { background:linear-gradient(90deg,#111 25%,#1a1a1a 50%,#111 75%); background-size:800px 100%; animation:mr-shimmer 1.4s infinite; border-radius:6px; }
+        .mr-skeleton-text  { height:14px; margin-bottom:8px; }
+        .mr-skeleton-title { height:24px; margin-bottom:12px; }
+        .mr-skeleton-card  { height:90px; border-radius:12px; }
+        .mr-skeleton-thumb { height:120px; border-radius:10px; }
 
         @keyframes mr-modal-in {
           from { opacity: 0; transform: scale(0.92); }
@@ -775,127 +948,93 @@ export default function DashboardPage() {
 
           {/* ══ DASHBOARD ══ */}
           {active === 'dashboard' && (
-            <div className='mr-content-pad' style={{ padding: 24, display: 'flex', flexDirection: 'column', gap: isMobile ? 14 : 20 }}>
-              {/* Welcome */}
-              <div className='mr-welcome-pad mr-welcome-anim' style={{ background: 'linear-gradient(135deg,#0f0c00,#0a0a0a)', border: `1px solid #2a2200`, borderRadius: 14, padding: '28px 32px', position: 'relative', overflow: 'hidden' }}>
-                <div style={{ position: 'absolute', right: 0, top: 0, bottom: 0, width: '45%', opacity: 0.07 }}>
-                  <svg viewBox="0 0 400 160" width="100%" height="100%">
-                    <polyline points="0,120 40,100 80,110 120,70 160,90 200,50 240,80 280,40 320,60 360,30 400,50" fill="none" stroke={G.gold} strokeWidth="2.5"/>
-                  </svg>
+            <div className='mr-content-pad' style={{ padding: isMobile ? 16 : 24, display: 'flex', flexDirection: 'column', gap: 12 }}>
+
+              {/* ── Top bar: Welcome + quick stats ── */}
+              <div className='mr-welcome-anim' style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' as const }}>
+                <div>
+                  <div style={{ fontFamily: C.mono, color: '#444', fontSize: 9, letterSpacing: 1.5, marginBottom: 3 }}>SELAMAT DATANG KEMBALI</div>
+                  <h1 style={{ fontSize: 22, fontWeight: 700, letterSpacing: -0.5, margin: 0, color: C.text }}>{member.nama}</h1>
                 </div>
-                <div style={{ fontFamily: C.mono, color: '#555', fontSize: 11, letterSpacing: 1, marginBottom: 8 }}>SELAMAT DATANG KEMBALI,</div>
-                <h1 className='mr-welcome-h1' style={{ fontSize: 32, fontWeight: 700, letterSpacing: -1, margin: '0 0 8px' }}>{member.nama}</h1>
-                <p style={{ color: C.dim, fontSize: 14, margin: 0 }}>Terus belajar dan kuasai market dengan konsep SMC.</p>
-              </div>
-
-              {/* KPI cards */}
-              <div className='mr-grid-4' style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 14 }}>
-                {[
-                  { l: 'PROGRESS BELAJAR', v: `${progressPct}%`,          sub: `${completedVideos} video selesai`, color: G.gold, ring: progressPct },
-                  { l: 'MATERI SELESAI',   v: `${completedVideos} / ${totalVideos}`, sub: 'Video',          color: C.up },
-                  { l: 'AKSES KELAS',      v: 'AKTIF',                     sub: member.tier,              color: C.up },
-                  { l: 'FILE MATERI',      v: `${files.length}`,           sub: 'File tersedia',          color: C.text },
-                ].map((k, i) => (
-                  <div key={i} style={{ background: C.panel, border: `1px solid ${C.border}`, borderRadius: 12, padding: '18px 16px' }}>
-                    <div style={{ fontFamily: C.mono, color: C.dim, fontSize: 10, letterSpacing: 0.8, marginBottom: 10 }}>{k.l}</div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <div style={{ fontSize: 26, fontWeight: 700, color: k.color, letterSpacing: -0.5 }}>{k.v}</div>
-                      {k.ring !== undefined && <Ring pct={k.ring} size={44}/>}
-                    </div>
-                    <div style={{ fontFamily: C.mono, fontSize: 10, color: '#555', marginTop: 8 }}>{k.sub}</div>
+                {/* Inline stats pills */}
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' as const }}>
+                  <div style={{ fontFamily: C.mono, fontSize: 11, fontWeight: 700, color: G.gold, background: '#1a1200', border: '1px solid #3a2e0044', padding: '6px 14px', borderRadius: 20 }}>
+                    {progressPct}% selesai
                   </div>
-                ))}
-              </div>
-
-              {/* ── Status Member Row ── */}
-              <div className='mr-grid-3 mr-status-anim' style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10 }}>
-
-                {/* Status Trading */}
-                <div className='mr-status-card' style={{ background: C.panel, border: `1px solid ${member.funded_status ? '#3a2e00' : C.border}`, borderRadius: 12, padding: '16px 18px', cursor: 'pointer' }}
-                  onClick={() => setActive('funded')}>
-                  <div style={{ fontFamily: C.mono, color: C.dim, fontSize: 10, letterSpacing: 0.8, marginBottom: 8 }}>STATUS TRADING</div>
-                  {member.funded_status ? (
-                    <>
-                      <div style={{ fontSize: 22, fontWeight: 700, color: G.gold, letterSpacing: -0.5 }}>
-                        {member.funded_status === 'DA' ? '📊' : member.funded_status === 'P1' ? '🟣' : member.funded_status === 'P2' ? '🟡' : member.funded_status === 'Master' ? '🏆' : member.funded_status === 'MPAID' ? '💰' : '💼'} {member.funded_status}
-                      </div>
-                      <div style={{ fontFamily: C.mono, fontSize: 10, color: G.gold, marginTop: 6 }}>
-                        {member.funded_status === 'DA' ? 'Demo Account' : member.funded_status === 'P1' ? 'Phase 1' : member.funded_status === 'P2' ? 'Phase 2' : member.funded_status === 'Master' ? 'Master — Lolos P2' : member.funded_status === 'MPAID' ? 'Sudah Payout' : 'Akun Pribadi'}
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                      <div style={{ fontSize: 18, fontWeight: 700, color: '#444' }}>Belum diset</div>
-                      <div style={{ fontFamily: C.mono, fontSize: 10, color: '#f97316', marginTop: 6 }}>Klik untuk set status →</div>
-                    </>
+                  <div style={{ fontFamily: C.mono, fontSize: 11, color: C.up, background: '#0a1a1044', border: '1px solid #22ab9422', padding: '6px 14px', borderRadius: 20 }}>
+                    {completedVideos}/{totalVideos} video
+                  </div>
+                  {member.is_advance && (
+                    <div style={{ fontFamily: C.mono, fontSize: 11, color: '#a855f7', background: '#0f0a1a', border: '1px solid #a855f722', padding: '6px 14px', borderRadius: 20 }}>
+                      ADVANCE
+                    </div>
                   )}
                 </div>
+              </div>
 
-                {/* Akses Kelas */}
-                <div style={{ background: C.panel, border: `1px solid ${isExpired ? C.down + '44' : daysLeft !== null && daysLeft <= 7 ? '#f9731644' : C.border}`, borderRadius: 12, padding: '16px 18px' }}>
-                  <div style={{ fontFamily: C.mono, color: C.dim, fontSize: 10, letterSpacing: 0.8, marginBottom: 8 }}>AKSES KELAS</div>
-                  <div style={{ fontSize: 22, fontWeight: 700, color: isExpired ? C.down : daysLeft !== null && daysLeft <= 7 ? '#f97316' : C.up, letterSpacing: -0.5 }}>
+              {/* ── Progress bar ── */}
+              <div style={{ background: C.panel, border: `1px solid ${C.border}`, borderRadius: 10, padding: '12px 16px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                  <div style={{ fontFamily: C.mono, color: '#555', fontSize: 9, letterSpacing: 1 }}>PROGRESS BELAJAR</div>
+                  <div style={{ fontFamily: C.mono, fontSize: 11, fontWeight: 700, color: G.gold }}>{progressPct}%</div>
+                </div>
+                <div style={{ height: 5, background: '#1a1a1a', borderRadius: 3, overflow: 'hidden' }}>
+                  <div style={{ height: '100%', width: `${progressPct}%`, background: `linear-gradient(90deg,${G.gold},${G.gold}cc)`, borderRadius: 3, transition: 'width 1s ease', boxShadow: `0 0 8px ${G.gold}44` }}/>
+                </div>
+              </div>
+
+              {/* ── Status row ── compact 3-col ── */}
+              <div className='mr-grid-3' style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 8 }}>
+                {/* Status Trading */}
+                <div style={{ background: C.panel, border: `1px solid ${member.funded_status ? '#3a2e0066' : C.border}`, borderRadius: 10, padding: '12px 14px', cursor: 'pointer' }}
+                  onClick={() => setActive('funded')}>
+                  <div style={{ fontFamily: C.mono, color: '#444', fontSize: 9, letterSpacing: 1, marginBottom: 5 }}>STATUS TRADING</div>
+                  <div style={{ fontWeight: 700, fontSize: 16, color: member.funded_status ? G.gold : '#333', letterSpacing: -0.3 }}>
+                    {member.funded_status
+                      ? (member.funded_status==='DA'?'📊 Demo':member.funded_status==='P1'?'🟣 Phase 1':member.funded_status==='P2'?'🟡 Phase 2':member.funded_status==='Master'?'🏆 Master':member.funded_status==='MPAID'?'💰 Sudah Payout':'💼 '+member.funded_status)
+                      : '— Belum diset'}
+                  </div>
+                  {!member.funded_status && <div style={{ fontFamily: C.mono, fontSize: 9, color: '#f97316', marginTop: 4 }}>Klik untuk set →</div>}
+                </div>
+                {/* Akses */}
+                <div style={{ background: C.panel, border: `1px solid ${isExpired ? C.down+'44' : C.border}`, borderRadius: 10, padding: '12px 14px' }}>
+                  <div style={{ fontFamily: C.mono, color: '#444', fontSize: 9, letterSpacing: 1, marginBottom: 5 }}>AKSES KELAS</div>
+                  <div style={{ fontWeight: 700, fontSize: 16, color: isExpired ? C.down : C.up }}>
                     {isExpired ? 'BERAKHIR' : 'AKTIF'}
                   </div>
-                  <div style={{ fontFamily: C.mono, fontSize: 10, color: isExpired ? C.down : C.dim, marginTop: 6 }}>
+                  <div style={{ fontFamily: C.mono, fontSize: 9, color: '#555', marginTop: 4 }}>
                     {isTrial && expiryDate
                       ? isExpired
-                        ? `Berakhir ${expiryDate.toLocaleDateString('id-ID',{day:'numeric',month:'short',year:'numeric'})}`
-                        : `Hingga ${expiryDate.toLocaleDateString('id-ID',{day:'numeric',month:'short',year:'numeric'})} · ${daysLeft} hari lagi`
-                      : member.tier + ' · Seumur Hidup'}
+                        ? `Berakhir ${expiryDate.toLocaleDateString('id-ID',{day:'numeric',month:'short'})}`
+                        : `${daysLeft} hari lagi`
+                      : 'Seumur Hidup'}
                   </div>
-                  {isTrial && (
-                    <a href="/checkout" style={{ display: 'inline-block', marginTop: 8, fontFamily: C.mono, fontSize: 9, fontWeight: 700, color: '#000', background: isExpired ? C.down : G.gold, padding: '4px 10px', textDecoration: 'none', borderRadius: 4 }}>
-                      {isExpired ? 'AKTIFKAN LAGI' : 'NAIK TIER ▸'}
-                    </a>
-                  )}
                 </div>
-
-                {/* Level Kelas */}
-                <div style={{ background: C.panel, border: `1px solid ${member.is_advance ? '#3a2e00' : C.border}`, borderRadius: 12, padding: '16px 18px' }}>
-                  <div style={{ fontFamily: C.mono, color: C.dim, fontSize: 10, letterSpacing: 0.8, marginBottom: 8 }}>LEVEL KELAS</div>
-                  <div style={{ fontSize: 22, fontWeight: 700, color: member.is_advance ? G.gold : C.up, letterSpacing: -0.5 }}>
-                    {member.is_advance ? 'ADVANCE' : 'BASIC'}
-                  </div>
-                  <div style={{ fontFamily: C.mono, fontSize: 10, color: C.dim, marginTop: 6 }}>
-                    {member.is_advance ? 'Akses semua materi Advanced' : 'Akses materi Basic'}
-                  </div>
-                  {!member.is_advance && (
-                    <button onClick={() => setActive('kelas')}
-                      style={{ marginTop: 8, fontFamily: C.mono, fontSize: 9, fontWeight: 700, color: '#a855f7', background: '#0f0a1a', border: '1px solid #4a2a8a', padding: '4px 10px', cursor: 'pointer', borderRadius: 4 }}>
-                      REQUEST ADVANCE →
-                    </button>
-                  )}
+                {/* Files */}
+                <div style={{ background: C.panel, border: `1px solid ${C.border}`, borderRadius: 10, padding: '12px 14px' }}>
+                  <div style={{ fontFamily: C.mono, color: '#444', fontSize: 9, letterSpacing: 1, marginBottom: 5 }}>FILE MATERI</div>
+                  <div style={{ fontWeight: 700, fontSize: 16, color: C.text }}>{files.length}</div>
+                  <div style={{ fontFamily: C.mono, fontSize: 9, color: '#555', marginTop: 4 }}>file tersedia</div>
                 </div>
               </div>
 
-              {/* ── Action Banners (hanya tampil jika belum selesai) ── */}
+              {/* ── Action banners (compact) ── */}
               {(!member.discord_username || !member.funded_status) && (
-                <div className='mr-banner-anim' style={{ display: 'flex', flexDirection: 'column' as const, gap: 10 }}>
-
-                  {/* Discord banner */}
+                <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 6 }}>
                   {!member.discord_username && (
                     <button onClick={() => setActive('pengaturan')}
-                      className='mr-action-banner' style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 18px', background: '#080d1a', border: '1px solid #1e2a4a', borderRadius: 10, cursor: 'pointer', textAlign: 'left' as const, width: '100%' }}>
-                      <div style={{ width: 38, height: 38, background: '#1e2a4a', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: 18 }}>💬</div>
-                      <div style={{ flex: 1 }}>
-                        <div style={{ fontSize: 13, fontWeight: 700, color: '#93a8f0', marginBottom: 2 }}>Hubungkan Akun Discord Kamu</div>
-                        <div style={{ fontSize: 12, color: '#3d4a6a', lineHeight: 1.5 }}>Wajib untuk akses server, notifikasi live, dan verifikasi membership. Klik untuk menghubungkan →</div>
-                      </div>
-                      <span style={{ fontFamily: C.mono, fontSize: 10, color: '#5865F2', border: '1px solid #1e2a4a', padding: '4px 10px', borderRadius: 5, flexShrink: 0 }}>HUBUNGKAN ▸</span>
+                      style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px', background: '#080d1a', border: '1px solid #1e2a4a44', borderRadius: 8, cursor: 'pointer', textAlign: 'left' as const, width: '100%' }}>
+                      <span style={{ fontSize: 14 }}>💬</span>
+                      <span style={{ fontSize: 12, color: '#5a6a9a', flex: 1 }}>Hubungkan akun Discord untuk akses server & notifikasi live</span>
+                      <span style={{ fontFamily: C.mono, fontSize: 9, color: '#5865F2', border: '1px solid #5865F222', padding: '3px 8px', borderRadius: 4, flexShrink: 0 }}>HUBUNGKAN ▸</span>
                     </button>
                   )}
-
-                  {/* Trading status banner */}
                   {!member.funded_status && (
                     <button onClick={() => setActive('funded')}
-                      className='mr-action-banner' style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 18px', background: '#0a0c00', border: '1px solid #2a2e00', borderRadius: 10, cursor: 'pointer', textAlign: 'left' as const, width: '100%' }}>
-                      <div style={{ width: 38, height: 38, background: '#1a1e00', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: 18 }}>🚀</div>
-                      <div style={{ flex: 1 }}>
-                        <div style={{ fontSize: 13, fontWeight: 700, color: G.gold, marginBottom: 2 }}>Set Status Trading Kamu</div>
-                        <div style={{ fontSize: 12, color: '#555', lineHeight: 1.5 }}>Beritahu komunitas apakah kamu sedang Demo, Phase 1, Phase 2, atau sudah Funded. Klik untuk set →</div>
-                      </div>
-                      <span style={{ fontFamily: C.mono, fontSize: 10, color: G.gold, border: '1px solid #3a2e00', padding: '4px 10px', borderRadius: 5, flexShrink: 0 }}>SET STATUS ▸</span>
+                      style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px', background: '#0a0c00', border: '1px solid #2a2e0044', borderRadius: 8, cursor: 'pointer', textAlign: 'left' as const, width: '100%' }}>
+                      <span style={{ fontSize: 14 }}>🚀</span>
+                      <span style={{ fontSize: 12, color: '#666', flex: 1 }}>Set status trading kamu — Demo, Phase, Funded, dll</span>
+                      <span style={{ fontFamily: C.mono, fontSize: 9, color: G.gold, border: '1px solid #3a2e00', padding: '3px 8px', borderRadius: 4, flexShrink: 0 }}>SET STATUS ▸</span>
                     </button>
                   )}
                 </div>
@@ -966,6 +1105,53 @@ export default function DashboardPage() {
                     <MarketOverviewWidget/>
                   </div>
                 </div>
+              </div>
+
+              {/* ── Leaderboard Widget ── */}
+              <div style={{ background:C.panel, border:`1px solid ${C.border}`, borderRadius:14 }}>
+                <div style={{ padding:'16px 20px', borderBottom:`1px solid ${C.border}` }}>
+                  <div style={{ fontFamily:C.mono, color:G.gold, fontSize:9, letterSpacing:1.5, marginBottom:4 }}>// LEADERBOARD</div>
+                  <div style={{ fontWeight:700, fontSize:15 }}>Top 10 Progress Terbaik</div>
+                </div>
+                <div style={{ padding:'6px 0' }}>
+                  {leaderboard.slice(0,10).map((m:any,idx:number)=>{
+                    const isMe=m.id===member!.id; const MEDALS=['🥇','🥈','🥉'];
+                    const pct=Math.min(100,Math.round(m.selesai/(videos.length||1)*100));
+                    return(
+                      <div key={m.id} style={{ display:'flex', alignItems:'center', gap:12, padding:'9px 20px', background:isMe?'#1a150008':'transparent', borderLeft:isMe?`3px solid ${G.gold}`:'3px solid transparent' }}>
+                        <div style={{ width:24, fontFamily:C.mono, fontSize:idx<3?16:11, color:idx<3?G.gold:'#444', textAlign:'center' as const, flexShrink:0 }}>{idx<3?MEDALS[idx]:idx+1}</div>
+                        <div style={{ width:30, height:30, borderRadius:8, background:isMe?'#2a2000':'#111', display:'flex', alignItems:'center', justifyContent:'center', fontWeight:700, fontSize:12, color:isMe?G.gold:'#444', flexShrink:0 }}>{m.nama?.[0]?.toUpperCase()}</div>
+                        <div style={{ flex:1, minWidth:0 }}>
+                          <div style={{ display:'flex', alignItems:'center', gap:6, marginBottom:4 }}>
+                            <span style={{ fontWeight:600, fontSize:12, color:isMe?G.gold:C.text, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' as const }}>{m.nama}</span>
+                            {isMe&&<span style={{ fontFamily:C.mono, fontSize:8, color:G.gold, border:`1px solid ${G.gold}44`, padding:'1px 5px', borderRadius:3, flexShrink:0 }}>KAMU</span>}
+                          </div>
+                          <div style={{ height:3, background:'#111', borderRadius:2 }}>
+                            <div style={{ height:'100%', width:`${pct}%`, background:isMe?G.gold:C.up, borderRadius:2, transition:'width 0.8s ease' }}/>
+                          </div>
+                        </div>
+                        <div style={{ fontFamily:C.mono, fontSize:12, fontWeight:700, color:isMe?G.gold:C.dim, flexShrink:0, minWidth:40, textAlign:'right' as const }}>{m.selesai}<span style={{color:'#333'}}>/{videos.length}</span></div>
+                      </div>
+                    );
+                  })}
+                </div>
+                {(() => {
+                  const myRank=leaderboard.findIndex((m:any)=>m.id===member!.id);
+                  if(myRank>=10){const me=leaderboard[myRank];const pct=Math.min(100,Math.round(me.selesai/(videos.length||1)*100));return(
+                    <div style={{ borderTop:`1px dashed ${C.border}`, padding:'8px 20px 12px' }}>
+                      <div style={{ fontFamily:C.mono, color:C.dim, fontSize:9, textAlign:'center' as const, marginBottom:6 }}>· · · POSISIMU · · ·</div>
+                      <div style={{ display:'flex', alignItems:'center', gap:12, padding:'10px 12px', background:'#1a150012', border:`1px solid ${G.gold}22`, borderRadius:8 }}>
+                        <div style={{ width:24, fontFamily:C.mono, fontSize:11, color:G.gold, textAlign:'center' as const }}>#{myRank+1}</div>
+                        <div style={{ width:30, height:30, borderRadius:8, background:'#2a2000', display:'flex', alignItems:'center', justifyContent:'center', fontWeight:700, fontSize:12, color:G.gold }}>{me.nama?.[0]?.toUpperCase()}</div>
+                        <div style={{ flex:1, minWidth:0 }}>
+                          <div style={{ fontSize:12, color:G.gold, fontWeight:600, marginBottom:4 }}>{me.nama}</div>
+                          <div style={{ height:3, background:'#111', borderRadius:2 }}><div style={{ height:'100%', width:`${pct}%`, background:G.gold, borderRadius:2 }}/></div>
+                        </div>
+                        <div style={{ fontFamily:C.mono, fontSize:12, fontWeight:700, color:G.gold }}>{me.selesai}<span style={{color:'#333'}}>/{videos.length}</span></div>
+                      </div>
+                    </div>
+                  );}return null;
+                })()}
               </div>
             </div>
           )}
@@ -1151,6 +1337,11 @@ export default function DashboardPage() {
                                             ↩ RESET
                                           </button>
                                         )}
+                                        <div style={{ display:'flex', gap:1 }}>
+                                          {[1,2,3,4,5].map(star=>(
+                                            <button key={star} onClick={()=>rateVideo(v.id,star)} style={{ background:'none', border:'none', cursor:'pointer', fontSize:13, color:(videoRatings[v.id]||0)>=star?'#eab308':'#333', padding:'1px', lineHeight:1 }}>★</button>
+                                          ))}
+                                        </div>
                                       </>
                                     )}
                                   </div>
@@ -1585,7 +1776,7 @@ export default function DashboardPage() {
                       />
                     </div>
                     <button onClick={downloadCertificate}
-                      style={{ display: 'flex', alignItems: 'center', gap: 10, fontFamily: C.mono, fontSize: 13, fontWeight: 700, color: '#000', background: G.gold, padding: '13px 28px', border: 'none', cursor: 'pointer', borderRadius: 8 }}>
+                      style={{ display: 'flex', alignItems: 'center', gap: 10, fontFamily: C.mono, fontSize: 13, fontWeight: 700, color: '#fff', background: G.gold, padding: '13px 28px', border: 'none', cursor: 'pointer', borderRadius: 8 }}>
                       ⬇ DOWNLOAD SERTIFIKAT (PNG)
                     </button>
                     <p style={{ fontFamily: C.mono, fontSize: 11, color: C.dim, marginTop: 10 }}>
@@ -1629,6 +1820,126 @@ export default function DashboardPage() {
                   </a>
                 ))}
               </div>
+            </div>
+          )}
+
+          {/* ══ ULASAN ══ */}
+          {active === 'ulasan' && (() => {
+            const STATUS_LABEL: Record<string,string> = { pending:'⏳ Menunggu review admin', disetujui:'✅ Ditampilkan di halaman utama', ditolak:'❌ Ditolak — silakan edit ulang' };
+            const STATUS_COLOR: Record<string,string> = { pending:G.gold, disetujui:C.up, ditolak:C.down };
+            async function submitTesti() {
+              if (!testiTeks.trim()) { setTestiMsg('Tulis ulasan dulu ya.'); return; }
+              setTestiSaving(true); setTestiMsg('');
+              try {
+                const payload = { member_id: member!.id, nama: testiNama||member!.nama, ulasan: testiTeks.trim(), bintang: testiBintang, kelas: member!.tier, status: 'pending' };
+                if (myTestimonial) {
+                  await supabase.from('testimonials').update({...payload}).eq('id', myTestimonial.id);
+                  setMyTestimonial((p:any) => ({...p,...payload}));
+                  setTestiMsg('Ulasan diperbarui! Menunggu persetujuan admin.');
+                } else {
+                  const { data: nd } = await supabase.from('testimonials').insert(payload).select().maybeSingle();
+                  setMyTestimonial(nd);
+                  setTestiMsg('Ulasan terkirim! Menunggu persetujuan admin.');
+                }
+              } catch(e) { setTestiMsg('Gagal mengirim. Coba lagi.'); }
+              setTestiSaving(false);
+            }
+            return (
+              <div className='mr-content-pad' style={{ padding:24 }}>
+                <div style={{ fontFamily:C.mono, color:G.gold, fontSize:10, letterSpacing:1, marginBottom:6 }}>// ULASAN</div>
+                <h2 style={{ fontSize:22, fontWeight:700, margin:'0 0 6px' }}>Tulis Ulasanmu</h2>
+                <p style={{ color:C.dim, fontSize:13, margin:'0 0 24px', lineHeight:1.6 }}>Bagikan pengalamanmu. Ulasan yang disetujui akan tampil di halaman utama.</p>
+                {myTestimonial && (
+                  <div style={{ display:'flex', alignItems:'center', gap:10, padding:'10px 16px', background:C.panel, border:`1px solid ${STATUS_COLOR[myTestimonial.status]||C.border}44`, borderRadius:10, marginBottom:20 }}>
+                    <span style={{ fontFamily:C.mono, fontSize:12, color:STATUS_COLOR[myTestimonial.status]||C.dim, fontWeight:700 }}>{STATUS_LABEL[myTestimonial.status]||myTestimonial.status}</span>
+                  </div>
+                )}
+                <div style={{ marginBottom:20 }}>
+                  <div style={{ fontFamily:C.mono, color:C.dim, fontSize:10, letterSpacing:1, marginBottom:10 }}>BINTANG</div>
+                  <div style={{ display:'flex', gap:8, alignItems:'center' }}>
+                    {[1,2,3,4,5].map(s=>(
+                      <button key={s} onClick={()=>setTestiBintang(s)} style={{ background:'none', border:'none', cursor:'pointer', fontSize:32, color:testiBintang>=s?G.gold:'#333', transition:'all 0.15s', transform:testiBintang>=s?'scale(1.1)':'scale(1)', padding:0, lineHeight:1 }}>★</button>
+                    ))}
+                    <span style={{ fontFamily:C.mono, color:G.gold, fontSize:14, fontWeight:700, marginLeft:8 }}>{['','Kurang','Cukup','Bagus','Sangat Bagus','Luar Biasa!'][testiBintang]}</span>
+                  </div>
+                </div>
+                <div style={{ marginBottom:16 }}>
+                  <div style={{ fontFamily:C.mono, color:C.dim, fontSize:10, letterSpacing:1, marginBottom:8 }}>NAMA TAMPIL</div>
+                  <input value={testiNama} onChange={e=>setTestiNama(e.target.value)} placeholder={member!.nama}
+                    style={{ width:'100%', maxWidth:360, background:C.panel, border:`1px solid ${C.border}`, color:C.text, padding:'11px 14px', fontSize:13, borderRadius:8, outline:'none', boxSizing:'border-box' as const }}
+                    onFocus={e=>e.target.style.borderColor=G.gold} onBlur={e=>e.target.style.borderColor=C.border}/>
+                </div>
+                <div style={{ marginBottom:20 }}>
+                  <div style={{ fontFamily:C.mono, color:C.dim, fontSize:10, letterSpacing:1, marginBottom:8 }}>ULASANMU *</div>
+                  <textarea value={testiTeks} onChange={e=>setTestiTeks(e.target.value)} rows={5}
+                    placeholder="Ceritakan pengalamanmu belajar di Menolak Rugi..."
+                    style={{ width:'100%', background:C.panel, border:`1px solid ${C.border}`, color:C.text, padding:'11px 14px', fontSize:13, borderRadius:8, outline:'none', resize:'vertical' as const, boxSizing:'border-box' as const }}
+                    onFocus={e=>e.target.style.borderColor=G.gold} onBlur={e=>e.target.style.borderColor=C.border}/>
+                  <div style={{ fontFamily:C.mono, fontSize:10, color:C.dim, marginTop:4 }}>{testiTeks.length} karakter</div>
+                </div>
+                {testiMsg && <div style={{ fontFamily:C.mono, fontSize:12, color:testiMsg.includes('Gagal')?C.down:C.up, marginBottom:16, padding:'10px 14px', background:C.panel, borderRadius:8 }}>{testiMsg}</div>}
+                <button onClick={submitTesti} disabled={testiSaving||!testiTeks.trim()}
+                  style={{ fontFamily:C.mono, fontSize:12, fontWeight:700, color:'#000', background:testiSaving||!testiTeks.trim()?'#555':G.gold, padding:'12px 28px', border:'none', cursor:testiSaving?'not-allowed':'pointer', borderRadius:8 }}>
+                  {testiSaving?'MENGIRIM...':myTestimonial?'↻ PERBARUI ULASAN':'✓ KIRIM ULASAN'}
+                </button>
+              </div>
+            );
+          })()}
+
+          {/* ══ REFERRAL ══ */}
+          {active === 'referral' && (
+            <div className='mr-content-pad' style={{ padding:24 }}>
+              <div style={{ fontFamily:C.mono, color:C.up, fontSize:10, letterSpacing:1, marginBottom:6 }}>// REFERRAL</div>
+              <h2 style={{ fontSize:22, fontWeight:700, margin:'0 0 6px' }}>Program Referral</h2>
+              <p style={{ color:C.dim, fontSize:13, margin:'0 0 24px' }}>Ajak teman bergabung dan dapatkan reward.</p>
+              <div style={{ background:'linear-gradient(135deg,#0a1a14,#0a0a0a)', border:'1px solid #1a3a28', borderRadius:14, padding:24, marginBottom:20 }}>
+                <div style={{ fontFamily:C.mono, color:C.up, fontSize:10, letterSpacing:1, marginBottom:12 }}>// LINK REFERRAL KAMU</div>
+                <div style={{ display:'flex', gap:10, alignItems:'center', marginBottom:12 }}>
+                  <div style={{ flex:1, background:'#0a0a0a', border:`1px solid ${C.border}`, borderRadius:8, padding:'12px 14px', fontFamily:C.mono, fontSize:12, color:C.up, overflowX:'auto' as const, whiteSpace:'nowrap' as const }}>
+                    menolakrugi.pages.dev/signup?ref={referralCode}
+                  </div>
+                  <button onClick={()=>{ navigator.clipboard.writeText(`https://menolakrugi.pages.dev/signup?ref=${referralCode}`); setReferralCopied(true); setTimeout(()=>setReferralCopied(false),2000); }}
+                    style={{ fontFamily:C.mono, fontSize:11, fontWeight:700, color:'#000', background:referralCopied?C.up:G.gold, padding:'12px 18px', border:'none', cursor:'pointer', borderRadius:8, flexShrink:0, transition:'all 0.2s' }}>
+                    {referralCopied?'✓ TERSALIN':'⎘ SALIN'}
+                  </button>
+                </div>
+                <div style={{ display:'flex', gap:8 }}>
+                  <a href={`https://wa.me/?text=${encodeURIComponent('Hei! Belajar trading SMC bareng aku di Menolak Rugi: https://menolakrugi.pages.dev/signup?ref='+referralCode)}`} target="_blank" rel="noopener noreferrer"
+                    style={{ fontFamily:C.mono, fontSize:10, color:'#25D366', border:'1px solid #25D36644', padding:'6px 12px', borderRadius:6, textDecoration:'none', background:'#25D36611' }}>Share WhatsApp ▸</a>
+                  <a href={`https://t.me/share/url?url=${encodeURIComponent('https://menolakrugi.pages.dev/signup?ref='+referralCode)}&text=${encodeURIComponent('Belajar trading SMC di Menolak Rugi!')}`} target="_blank" rel="noopener noreferrer"
+                    style={{ fontFamily:C.mono, fontSize:10, color:'#229ED9', border:'1px solid #229ED944', padding:'6px 12px', borderRadius:6, textDecoration:'none', background:'#229ED911' }}>Share Telegram ▸</a>
+                </div>
+              </div>
+              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:12, marginBottom:20 }}>
+                {[
+                  { l:'Total Referral', v:referrals.length, c:C.text },
+                  { l:'Terverifikasi', v:referrals.filter((r:any)=>r.status!=='pending').length, c:C.up },
+                  { l:'Pending', v:referrals.filter((r:any)=>r.status==='pending').length, c:G.gold },
+                ].map((s:any,i:number)=>(
+                  <div key={i} style={{ background:C.panel, border:`1px solid ${C.border}`, borderRadius:12, padding:16, textAlign:'center' as const }}>
+                    <div style={{ fontFamily:C.mono, color:C.dim, fontSize:10, marginBottom:6 }}>{s.l}</div>
+                    <div style={{ fontFamily:C.mono, fontSize:22, fontWeight:700, color:s.c }}>{s.v}</div>
+                  </div>
+                ))}
+              </div>
+              {referrals.length===0 ? (
+                <div style={{ textAlign:'center' as const, color:C.dim, padding:48, fontFamily:C.mono, fontSize:13 }}>Belum ada referral. Mulai share link kamu!</div>
+              ) : (
+                <div style={{ background:C.panel, border:`1px solid ${C.border}`, borderRadius:12, overflow:'hidden' }}>
+                  <div style={{ fontFamily:C.mono, color:C.dim, fontSize:10, letterSpacing:1, padding:'14px 18px', borderBottom:`1px solid ${C.border}` }}>// DAFTAR REFERRAL</div>
+                  {referrals.map((r:any)=>(
+                    <div key={r.id} style={{ display:'flex', alignItems:'center', gap:12, padding:'12px 18px', borderBottom:`1px solid ${C.border}` }}>
+                      <div style={{ flex:1 }}>
+                        <div style={{ fontWeight:600, fontSize:13 }}>{r.referred_name||'Member Baru'}</div>
+                        <div style={{ fontFamily:C.mono, fontSize:10, color:C.dim, marginTop:2 }}>{new Date(r.created_at).toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'})}</div>
+                      </div>
+                      <div style={{ fontFamily:C.mono, fontSize:11, fontWeight:700, color:r.status==='rewarded'?G.gold:r.status==='verified'?C.up:C.dim, background:r.status==='rewarded'?'#1a1500':r.status==='verified'?'#0a1a14':'#111', border:`1px solid ${r.status==='rewarded'?'#3a2e00':r.status==='verified'?'#1a3a28':C.border}`, padding:'3px 10px', borderRadius:6 }}>
+                        {r.status==='rewarded'?'💰 REWARDED':r.status==='verified'?'✓ VERIFIED':'⏳ PENDING'}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 

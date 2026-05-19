@@ -11,9 +11,6 @@ interface FileItem {
   id: string; judul: string; deskripsi: string; file_url: string;
   file_name: string; file_type: string; kategori: string; tier_akses: string[]; level: string; urutan: number;
 }
-interface Broker {
-  id: string; nama: string; link: string; diskon: string | null; deskripsi: string | null; urutan: number;
-}
 interface Session { token: string; member_id: string; nama: string; tier: string; }
 interface AdvanceRequest { id: string; status: string; alasan_tolak: string | null; created_at: string; }
 
@@ -32,11 +29,7 @@ const TABS = [
   { id: 'tips-advanced', label: 'Tips Advanced', icon: <Lightbulb size={15} />, desc: 'Tips & trik materi advanced', locked: true },
   { id: 'file-basic', label: 'File Basic', icon: <FileText size={15} />, desc: 'Dokumen materi basic' },
   { id: 'file-advanced', label: 'File Advanced', icon: <FileText size={15} />, desc: 'Dokumen materi advanced', locked: true },
-  { id: 'funded', label: 'Status Trading', icon: <span className="text-base">🚀</span> },
   { id: 'komunitas', label: 'Komunitas', icon: <span className="text-base">🌐</span> },
-  { id: 'broker', label: 'Funded Broker', icon: <span className="text-base">🏦</span> },
-  { id: 'ulasan', label: 'Tulis Ulasan', icon: <span className="text-base">⭐</span> },
-  { id: 'sertifikat', label: 'Sertifikat', icon: <span className="text-base">🏆</span> },
   { id: 'settings', label: 'Password', icon: <KeyRound size={15} /> },
 ];
 
@@ -62,90 +55,6 @@ export default function MemberPage() {
   const [requestMsg, setRequestMsg] = useState('');
   const [discordConnected, setDiscordConnected] = useState(false);
   const [discordUsername, setDiscordUsername] = useState('');
-  const [brokers, setBrokers] = useState<Broker[]>([]);
-  const [ulasanTeks, setUlasanTeks] = useState('');
-  const [ulasanBintang, setUlasanBintang] = useState(5);
-  const [ulasanSent, setUlasanSent] = useState(false);
-  const [ulasanLoading, setUlasanLoading] = useState(false);
-  const [ulasanErr, setUlasanErr] = useState('');
-  const [approveDate, setApproveDate] = useState<string>('');
-  const [fundedStatus, setFundedStatus] = useState<string | null>(null);
-  const [fundedLoading, setFundedLoading] = useState(false);
-  const [fundedMsg, setFundedMsg] = useState('');
-  const [fundedErr, setFundedErr] = useState('');
-  const [selectedFunded, setSelectedFunded] = useState<string | null>(null);
-
-  // Fetch tanggal approve dari advance_requests
-  useEffect(() => {
-    if (!session) return;
-    supabase.from('advance_requests').select('updated_at').eq('member_id', session.member_id).eq('status', 'disetujui').order('updated_at', { ascending: false }).limit(1).single()
-      .then(({ data }) => { if (data) setApproveDate(data.updated_at); });
-  }, [session]);
-
-  function generateSertifikat(format: 'png' | 'pdf') {
-    if (!session) return;
-
-    // Load Great Vibes font
-    const fontLink = document.createElement('link');
-    fontLink.rel = 'stylesheet';
-    fontLink.href = 'https://fonts.googleapis.com/css2?family=Great+Vibes&display=swap';
-    if (!document.head.querySelector('link[href*="Great+Vibes"]')) {
-      document.head.appendChild(fontLink);
-    }
-
-    const img = new Image();
-    img.crossOrigin = 'anonymous';
-    img.src = 'https://pogjfldmmzcphjwgzofb.supabase.co/storage/v1/object/public/materi/ss.png';
-    img.onload = () => {
-      const canvas = document.createElement('canvas');
-      canvas.width = img.width;
-      canvas.height = img.height;
-      const ctx = canvas.getContext('2d')!;
-      const W = img.width;
-      const H = img.height;
-
-      // Gambar template sebagai background
-      ctx.drawImage(img, 0, 0);
-
-      // Tunggu font load lalu render
-      document.fonts.load('80px "Great Vibes"').then(() => {
-
-        // ── Nama member (Great Vibes) — posisi di bawah banner "Diberikan kepada:" ──
-        ctx.font = `${Math.round(H * 0.095)}px "Great Vibes"`;
-        ctx.fillStyle = '#1a3a30';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(session!.nama, W * 0.55, H * 0.49);
-
-        // ── Tanggal — pojok kiri bawah (area dekat tanda tangan) ──
-        const tgl = approveDate
-          ? new Date(approveDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })
-          : new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
-        ctx.font = `${Math.round(H * 0.018)}px Arial`;
-        ctx.fillStyle = '#4a5568';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(tgl, W * 0.3, H * 0.88);
-
-        // ── Download ──
-        if (format === 'png') {
-          const link = document.createElement('a');
-          link.download = `Sertifikat_Advanced_${session!.nama.replace(/\s/g, '_')}.png`;
-          link.href = canvas.toDataURL('image/png');
-          link.click();
-        } else {
-          const imgData = canvas.toDataURL('image/png');
-          const win = window.open('');
-          if (win) {
-            win.document.write(`<html><head><title>Sertifikat ${session!.nama}</title></head><body style="margin:0;background:#fff;display:flex;align-items:center;justify-content:center;min-height:100vh"><img src="${imgData}" style="max-width:100%;display:block"/></body></html>`);
-            win.document.close();
-            setTimeout(() => win.print(), 800);
-          }
-        }
-      });
-    };
-    img.onerror = () => alert('Gagal memuat template. Coba refresh halaman.');
-  }
   const [oldPass, setOldPass] = useState('');
   const [newPass, setNewPass] = useState('');
   const [confirmPass, setConfirmPass] = useState('');
@@ -158,13 +67,12 @@ export default function MemberPage() {
       const raw = localStorage.getItem('mr_session');
       if (!raw) { window.location.href = '/login'; return; }
       const sess: Session = JSON.parse(raw);
-      const { data: member } = await supabase.from('members').select('session_token, is_active, is_advance, discord_id, discord_username, funded_status').eq('id', sess.member_id).single();
+      const { data: member } = await supabase.from('members').select('session_token, is_active, is_advance, discord_id, discord_username').eq('id', sess.member_id).single();
       if (!member || !member.is_active || member.session_token !== sess.token) {
         localStorage.removeItem('mr_session'); window.location.href = '/login'; return;
       }
       setSession(sess);
       setIsAdvance(member.is_advance || false);
-      if (member.funded_status) { setFundedStatus(member.funded_status); setSelectedFunded(member.funded_status); }
       const { data: req } = await supabase.from('advance_requests').select('*').eq('member_id', sess.member_id).order('created_at', { ascending: false }).limit(1).single();
       if (req) setAdvanceRequest(req);
       const { data: vids } = await supabase.from('videos').select('*').order('urutan', { ascending: true });
@@ -172,24 +80,9 @@ export default function MemberPage() {
       const { data: fileData } = await supabase.from('files').select('*').order('urutan', { ascending: true });
       if (member.discord_id) { setDiscordConnected(true); setDiscordUsername(member.discord_username || ''); }
       if (fileData) setFiles(fileData);
-      const { data: brokerData } = await supabase.from('brokers').select('*').order('urutan', { ascending: true });
-      if (brokerData) setBrokers(brokerData);
-
-      // Update last_seen
-      await supabase.from('members').update({ last_seen: new Date().toISOString() }).eq('id', sess.member_id);
       setLoading(false);
     }
     init();
-
-    // Ping last_seen setiap 2 menit
-    const pingInterval = setInterval(async () => {
-      const raw = localStorage.getItem('mr_session');
-      if (!raw) return;
-      const sess = JSON.parse(raw);
-      await supabase.from('members').update({ last_seen: new Date().toISOString() }).eq('id', sess.member_id);
-    }, 2 * 60 * 1000);
-
-    return () => clearInterval(pingInterval);
   }, []);
 
   function canAccessAdvance() {
@@ -213,80 +106,17 @@ export default function MemberPage() {
     return files.filter(f => f.kategori === tabId);
   }
 
-  const [showJurnalForm, setShowJurnalForm] = useState(false);
-  const [jurnal1, setJurnal1] = useState('');
-  const [jurnal2, setJurnal2] = useState('');
-  const [jurnal3, setJurnal3] = useState('');
-  const [jFile1, setJFile1] = useState<File | null>(null);
-  const [jFile2, setJFile2] = useState<File | null>(null);
-  const [jFile3, setJFile3] = useState<File | null>(null);
-
-  async function uploadJurnalFile(file: File): Promise<string> {
-    const fileName = `jurnal/${Date.now()}_${file.name.replace(/\s/g, '_')}`;
-    const { error } = await supabase.storage.from('materi').upload(fileName, file, { upsert: false });
-    if (error) throw new Error(error.message);
-    const { data } = supabase.storage.from('materi').getPublicUrl(fileName);
-    return data.publicUrl;
-  }
-
   async function handleRequestAdvance() {
     if (!session) return;
-    // Cek minimal salah satu dari link atau file per jurnal
-    const j1Valid = jurnal1.trim() || jFile1;
-    const j2Valid = jurnal2.trim() || jFile2;
-    const j3Valid = jurnal3.trim() || jFile3;
-    if (!j1Valid || !j2Valid || !j3Valid) {
-      setRequestMsg('Ketiga jurnal wajib diisi (link atau upload file).');
-      return;
-    }
     setRequesting(true); setRequestMsg('');
-    try {
-      const links: string[] = [];
-      // Jurnal 1
-      if (jFile1) links.push(await uploadJurnalFile(jFile1));
-      else links.push(jurnal1.trim());
-      // Jurnal 2
-      if (jFile2) links.push(await uploadJurnalFile(jFile2));
-      else links.push(jurnal2.trim());
-      // Jurnal 3
-      if (jFile3) links.push(await uploadJurnalFile(jFile3));
-      else links.push(jurnal3.trim());
-
-      const catatan = `Jurnal 1: ${links[0]}\nJurnal 2: ${links[1]}\nJurnal 3: ${links[2]}`;
-      const { error } = await supabase.from('advance_requests').insert({
-        member_id: session.member_id, member_nama: session.nama,
-        member_tier: session.tier, status: 'pending', alasan_tolak: catatan,
-      });
-      if (error) setRequestMsg('Gagal mengirim request. Coba lagi.');
-      else {
-        setRequestMsg('Request berhasil dikirim! Tunggu review dari mentor.');
-        setShowJurnalForm(false);
-        setJurnal1(''); setJurnal2(''); setJurnal3('');
-        setJFile1(null); setJFile2(null); setJFile3(null);
-        const { data: req } = await supabase.from('advance_requests').select('*').eq('member_id', session.member_id).order('created_at', { ascending: false }).limit(1).single();
-        if (req) setAdvanceRequest(req);
-      }
-    } catch (e: any) {
-      setRequestMsg('Gagal upload file: ' + e.message);
+    const { error } = await supabase.from('advance_requests').insert({ member_id: session.member_id, member_nama: session.nama, member_tier: session.tier, status: 'pending' });
+    if (error) setRequestMsg('Gagal mengirim request. Coba lagi.');
+    else {
+      setRequestMsg('Request berhasil dikirim! Tunggu review dari mentor.');
+      const { data: req } = await supabase.from('advance_requests').select('*').eq('member_id', session.member_id).order('created_at', { ascending: false }).limit(1).single();
+      if (req) setAdvanceRequest(req);
     }
     setRequesting(false);
-  }
-
-  async function handleKirimUlasan() {
-    if (!session) return;
-    if (!ulasanTeks.trim()) { setUlasanErr('Ulasan tidak boleh kosong.'); return; }
-    setUlasanLoading(true); setUlasanErr('');
-    const { error } = await supabase.from('testimonials').insert({
-      member_id: session.member_id,
-      nama: session.nama,
-      kelas: session.tier,
-      ulasan: ulasanTeks.trim(),
-      bintang: ulasanBintang,
-      status: 'pending',
-    });
-    if (error) setUlasanErr('Gagal mengirim. Coba lagi.');
-    else setUlasanSent(true);
-    setUlasanLoading(false);
   }
 
   async function handleGantiPassword() {
@@ -301,31 +131,6 @@ export default function MemberPage() {
     if (error) { setPassErr('Gagal menyimpan. Coba lagi.'); }
     else { setPassMsg('Password berhasil diubah!'); setOldPass(''); setNewPass(''); setConfirmPass(''); }
     setChangingPass(false);
-  }
-
-  async function handleUpdateFundedStatus() {
-    if (!session) return;
-    setFundedLoading(true); setFundedMsg(''); setFundedErr('');
-    try {
-      const BOT_URL = import.meta.env.VITE_BOT_URL || 'https://menolakrugi-bot-production.up.railway.app';
-      const res = await fetch(`${BOT_URL}/discord/funded-status`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ member_id: session.member_id, funded_status: selectedFunded }),
-      });
-      const data = await res.json();
-      if (data.success) {
-        setFundedStatus(selectedFunded);
-        setFundedMsg(data.discord_updated
-          ? `✅ Status berhasil diupdate! Nickname Discord kamu sudah berubah menjadi: ${data.nickname}`
-          : '✅ Status berhasil disimpan! Hubungkan Discord untuk update nickname otomatis.');
-      } else {
-        setFundedErr('Gagal update status. Coba lagi.');
-      }
-    } catch {
-      setFundedErr('Gagal menghubungi server. Coba lagi.');
-    }
-    setFundedLoading(false);
   }
 
   function handleConnectDiscord() {
@@ -383,30 +188,8 @@ export default function MemberPage() {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 pt-28 pb-16">
-        {/* Mobile Tabs — di atas konten, full width */}
-        <div className="lg:hidden mb-4">
-          <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-            {TABS.map(t => {
-              const tabLocked = isTabLocked(t.id);
-              return (
-                <button key={t.id} onClick={() => { setActiveTab(t.id); setActiveVideo(null); }}
-                  className={`flex-shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold transition-all ${
-                    activeTab === t.id
-                      ? t.id.includes('advanced') ? 'bg-purple-600 text-white'
-                      : t.id === 'settings' ? 'bg-gray-600 text-white'
-                      : 'bg-yellow-500 text-[#0a0f1e]'
-                      : 'bg-[#111827] text-gray-400 border border-gray-700'
-                  }`}>
-                  {t.icon} {t.label} {tabLocked && <Lock size={11} />}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        <div className="flex gap-6">
-        {/* Sidebar Tabs — desktop only */}
+      <div className="max-w-7xl mx-auto px-4 pt-28 pb-16 flex gap-6">
+        {/* Sidebar Tabs */}
         <div className="w-52 flex-shrink-0 hidden lg:block">
           <div className="bg-[#111827] border border-gray-700/50 rounded-2xl p-3 sticky top-28">
             <p className="text-gray-500 text-xs font-semibold uppercase tracking-widest px-2 mb-3">Menu</p>
@@ -429,6 +212,26 @@ export default function MemberPage() {
                 );
               })}
             </div>
+          </div>
+        </div>
+
+        {/* Mobile Tabs */}
+        <div className="lg:hidden w-full mb-6">
+          <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+            {TABS.map(t => {
+              const tabLocked = isTabLocked(t.id);
+              return (
+                <button key={t.id} onClick={() => { setActiveTab(t.id); setActiveVideo(null); }}
+                  className={`flex-shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold transition-all ${
+                    activeTab === t.id
+                      ? t.id.includes('advanced') ? 'bg-purple-600 text-white'
+                      : 'bg-yellow-500 text-[#0a0f1e]'
+                      : 'bg-[#111827] text-gray-400 border border-gray-700'
+                  }`}>
+                  {t.icon} {t.label} {tabLocked && <Lock size={11} />}
+                </button>
+              );
+            })}
           </div>
         </div>
 
@@ -461,7 +264,7 @@ export default function MemberPage() {
                   <p className="text-gray-400 text-sm leading-relaxed mb-4">
                     Syarat untuk naik ke kelas Advanced:<br />
                     ✅ Minimal tier <strong className="text-white">SMC Silver</strong><br />
-                    ✅ Penjurnalan selama <strong className="text-white">1 bulan</strong><br />
+                    ✅ Penjurnalan selama <strong className="text-white">3 bulan</strong><br />
                     ✅ Direview dan disetujui mentor
                   </p>
                   {advanceRequest?.status === 'pending' && (
@@ -484,59 +287,11 @@ export default function MemberPage() {
                       <div className="flex items-center gap-2"><CheckCircle size={18} className="text-green-400" /><p className="text-green-400 text-sm">{requestMsg}</p></div>
                     </div>
                   )}
-                  {(!advanceRequest || advanceRequest.status === 'ditolak' || advanceRequest.status === 'disetujui') && !requestMsg && (
-                    <div>
-                      {!showJurnalForm ? (
-                        <button onClick={() => setShowJurnalForm(true)}
-                          className="flex items-center gap-2 bg-purple-600 hover:bg-purple-500 text-white font-semibold px-6 py-3 rounded-xl transition-all">
-                          <ChevronUp size={18} /> Request Naik Advanced
-                        </button>
-                      ) : (
-                        <div className="bg-[#0d1325] border border-purple-500/20 rounded-xl p-4 space-y-4">
-                          <p className="text-purple-300 text-sm font-semibold">📓 Lampirkan 3 Jurnal Trading kamu</p>
-                          <p className="text-gray-500 text-xs">Tiap jurnal bisa berupa link (Google Sheets, Notion, dll) <strong className="text-gray-400">atau</strong> upload file (Excel, PDF, dll).</p>
-                          {[
-                            { label: 'Jurnal 1', val: jurnal1, setVal: setJurnal1, file: jFile1, setFile: setJFile1 },
-                            { label: 'Jurnal 2', val: jurnal2, setVal: setJurnal2, file: jFile2, setFile: setJFile2 },
-                            { label: 'Jurnal 3', val: jurnal3, setVal: setJurnal3, file: jFile3, setFile: setJFile3 },
-                          ].map((j, i) => (
-                            <div key={i} className="bg-[#111827] border border-gray-700/50 rounded-xl p-3 space-y-2">
-                              <p className="text-gray-400 text-xs font-semibold">{j.label}</p>
-                              {!j.file ? (
-                                <input type="text" value={j.val} onChange={e => j.setVal(e.target.value)}
-                                  placeholder="Paste link jurnal (Google Sheets, Notion, dll)"
-                                  className="w-full bg-[#0d1325] border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-600 focus:outline-none focus:border-purple-500/50" />
-                              ) : (
-                                <div className="flex items-center gap-2 bg-[#0d1325] rounded-lg px-3 py-2">
-                                  <span className="text-purple-400 text-xs flex-1 truncate">📎 {j.file.name}</span>
-                                  <button onClick={() => j.setFile(null)} className="text-gray-500 hover:text-red-400 text-xs">Hapus</button>
-                                </div>
-                              )}
-                              {!j.val.trim() && (
-                                <div className="flex items-center gap-2">
-                                  <span className="text-gray-600 text-xs">atau</span>
-                                  <label className="cursor-pointer text-purple-400 hover:text-purple-300 text-xs font-semibold border border-purple-500/30 px-3 py-1.5 rounded-lg hover:bg-purple-500/10 transition-all">
-                                    📂 Upload File
-                                    <input type="file" accept=".xlsx,.xls,.pdf,.csv,.doc,.docx,.png,.jpg" className="hidden"
-                                      onChange={e => { j.setFile(e.target.files?.[0] || null); j.setVal(''); }} />
-                                  </label>
-                                  <span className="text-gray-700 text-xs">(.xlsx, .pdf, .csv, dll)</span>
-                                </div>
-                              )}
-                            </div>
-                          ))}
-                          {requestMsg && <p className="text-red-400 text-xs">{requestMsg}</p>}
-                          <div className="flex gap-2">
-                            <button onClick={handleRequestAdvance} disabled={requesting}
-                              className="flex items-center gap-2 bg-purple-600 hover:bg-purple-500 text-white font-semibold px-5 py-2.5 rounded-xl transition-all disabled:opacity-50 text-sm">
-                              <ChevronUp size={16} />{requesting ? 'Mengirim...' : 'Kirim Request'}
-                            </button>
-                            <button onClick={() => { setShowJurnalForm(false); setRequestMsg(''); }}
-                              className="text-gray-500 hover:text-gray-300 px-4 py-2.5 rounded-xl text-sm">Batal</button>
-                          </div>
-                        </div>
-                      )}
-                    </div>
+                  {(!advanceRequest || advanceRequest.status === 'ditolak') && !requestMsg && (
+                    <button onClick={handleRequestAdvance} disabled={requesting}
+                      className="flex items-center gap-2 bg-purple-600 hover:bg-purple-500 text-white font-semibold px-6 py-3 rounded-xl transition-all disabled:opacity-50">
+                      <ChevronUp size={18} />{requesting ? 'Mengirim...' : 'Request Naik Advanced'}
+                    </button>
                   )}
                 </div>
               </div>
@@ -692,7 +447,7 @@ export default function MemberPage() {
 
                 {/* Platform lain */}
                 {[
-                  { name: 'Telegram', icon: '✈️', color: 'bg-blue-500/10 border-blue-500/30 text-blue-400', btn: 'bg-blue-500 hover:bg-blue-400', url: 'https://t.me/+_azyX2h9oFhmNjNl', desc: 'Channel update & info terbaru' },
+                  { name: 'Telegram', icon: '✈️', color: 'bg-blue-500/10 border-blue-500/30 text-blue-400', btn: 'bg-blue-500 hover:bg-blue-400', url: 'https://t.me/menolakrugi', desc: 'Channel update & info terbaru' },
                   { name: 'TikTok', icon: '🎵', color: 'bg-gray-800/50 border-gray-700 text-gray-300', btn: 'bg-gray-700 hover:bg-gray-600', url: 'https://tiktok.com/@menolakrugi', desc: 'Konten edukasi trading' },
                   { name: 'YouTube', icon: '▶️', color: 'bg-red-500/10 border-red-500/30 text-red-400', btn: 'bg-red-600 hover:bg-red-500', url: 'https://youtube.com/@MENOLAKRUGI', desc: 'Live session & materi publik' },
                 ].map(p => (
@@ -711,231 +466,6 @@ export default function MemberPage() {
                   </div>
                 ))}
               </div>
-            </div>
-          )}
-
-          {/* Funded Broker */}
-          {activeTab === 'broker' && (
-            <div>
-              <h1 className="text-2xl font-bold text-white mb-2">🏦 Funded Broker</h1>
-              <p className="text-gray-400 text-sm mb-6">Prop firm & broker rekomendasian mentor. Klik untuk daftar.</p>
-              {!brokers.length ? (
-                <div className="bg-[#111827] border border-gray-700/50 rounded-2xl p-10 text-center">
-                  <p className="text-4xl mb-3">🏦</p>
-                  <p className="text-gray-500">Belum ada broker yang ditambahkan. Pantau terus ya!</p>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
-                  {brokers.map(b => (
-                    <div key={b.id} className="bg-[#111827] border border-yellow-500/20 rounded-2xl p-6 flex flex-col gap-3 hover:border-yellow-500/40 transition-all">
-                      <div className="flex items-start justify-between gap-2">
-                        <div>
-                          <h3 className="text-white font-bold text-lg">{b.nama}</h3>
-                          {b.deskripsi && <p className="text-gray-400 text-xs mt-1 leading-relaxed">{b.deskripsi}</p>}
-                        </div>
-                        {b.diskon && (
-                          <span className="flex-shrink-0 bg-green-500/20 text-green-400 border border-green-500/30 text-xs font-bold px-2 py-1 rounded-lg whitespace-nowrap">
-                            🎁 {b.diskon}
-                          </span>
-                        )}
-                      </div>
-                      <a href={b.link} target="_blank" rel="noopener noreferrer"
-                        className="mt-auto w-full flex items-center justify-center gap-2 bg-yellow-500 hover:bg-yellow-400 text-[#0a0f1e] font-bold py-3 rounded-xl transition-all text-sm">
-                        Daftar Sekarang →
-                      </a>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Sertifikat */}
-          {activeTab === 'sertifikat' && (
-            <div className="max-w-xl">
-              <h1 className="text-2xl font-bold text-white mb-2">🏆 Sertifikat Kelulusan</h1>
-              <p className="text-gray-400 text-sm mb-6">Sertifikat kelulusan kelas Advanced kamu.</p>
-              {!isAdvance ? (
-                <div className="bg-[#111827] border border-gray-700/50 rounded-2xl p-8 text-center">
-                  <div className="text-5xl mb-4">🔒</div>
-                  <h3 className="text-white font-bold text-lg mb-2">Belum Tersedia</h3>
-                  <p className="text-gray-400 text-sm">Sertifikat hanya tersedia untuk member yang sudah lulus dan di-approve ke kelas Advanced.</p>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {/* Preview card */}
-                  <div className="bg-gradient-to-br from-[#0d1325] to-[#111827] border-2 border-yellow-500/40 rounded-2xl p-8 text-center relative overflow-hidden">
-                    <div className="absolute inset-0 opacity-5 flex items-center justify-center">
-                      <span className="text-yellow-400 font-bold text-8xl rotate-[-20deg]">MR</span>
-                    </div>
-                    <div className="relative z-10">
-                      <div className="w-16 h-16 bg-yellow-500 rounded-2xl flex items-center justify-center mx-auto mb-3">
-                        <span className="text-[#0a0f1e] font-bold text-2xl">MR</span>
-                      </div>
-                      <p className="text-yellow-400 text-xs font-semibold tracking-widest mb-1">MENOLAK RUGI</p>
-                      <p className="text-white font-bold text-xl mb-1">SERTIFIKAT KELULUSAN</p>
-                      <p className="text-yellow-400 text-xs mb-4">KELAS ADVANCED — SMART MONEY CONCEPT</p>
-                      <p className="text-gray-400 text-sm mb-2">Diberikan kepada</p>
-                      <p className="text-white font-bold text-2xl mb-1">{session?.nama}</p>
-                      <div className="w-48 h-0.5 bg-yellow-500/50 mx-auto mb-4"></div>
-                      <p className="text-gray-500 text-xs">
-                        {approveDate ? new Date(approveDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) : '-'}
-                      </p>
-                    </div>
-                  </div>
-                  <p className="text-gray-500 text-xs text-center">Preview — sertifikat asli lebih detail saat didownload</p>
-                  {/* Tombol download */}
-                  <div className="grid grid-cols-2 gap-3">
-                    <button onClick={() => generateSertifikat('png')}
-                      className="flex items-center justify-center gap-2 bg-yellow-500 hover:bg-yellow-400 text-[#0a0f1e] font-bold py-3.5 rounded-xl transition-all">
-                      🖼️ Download PNG
-                    </button>
-                    <button onClick={() => generateSertifikat('pdf')}
-                      className="flex items-center justify-center gap-2 bg-[#111827] hover:bg-[#1a2336] text-white border border-yellow-500/30 hover:border-yellow-500/60 font-bold py-3.5 rounded-xl transition-all">
-                      📄 Download PDF
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Tulis Ulasan */}
-          {activeTab === 'ulasan' && (
-            <div className="max-w-xl">
-              <h1 className="text-2xl font-bold text-white mb-2">⭐ Tulis Ulasan</h1>
-              <p className="text-gray-400 text-sm mb-6">Bagikan pengalaman kamu belajar di Menolak Rugi. Ulasan akan ditampilkan setelah disetujui mentor.</p>
-              {ulasanSent ? (
-                <div className="bg-green-500/10 border border-green-500/30 rounded-2xl p-8 text-center">
-                  <div className="text-5xl mb-4">🎉</div>
-                  <h3 className="text-white font-bold text-lg mb-2">Ulasan Terkirim!</h3>
-                  <p className="text-gray-400 text-sm">Terima kasih! Ulasan kamu sedang direview oleh mentor dan akan segera ditampilkan di website.</p>
-                </div>
-              ) : (
-                <div className="bg-[#111827] border border-gray-700/50 rounded-2xl p-6 space-y-5">
-                  <div>
-                    <label className="text-gray-400 text-sm block mb-2">Nama</label>
-                    <div className="bg-[#0d1325] border border-gray-700 rounded-xl px-4 py-3 text-gray-400 text-sm">{session?.nama}</div>
-                  </div>
-                  <div>
-                    <label className="text-gray-400 text-sm block mb-2">Kelas</label>
-                    <div className="bg-[#0d1325] border border-gray-700 rounded-xl px-4 py-3 text-gray-400 text-sm">{session?.tier}</div>
-                  </div>
-                  <div>
-                    <label className="text-gray-400 text-sm block mb-3">Rating</label>
-                    <div className="flex gap-2">
-                      {[1,2,3,4,5].map(s => (
-                        <button key={s} onClick={() => setUlasanBintang(s)}
-                          className={`text-3xl transition-all ${s <= ulasanBintang ? 'opacity-100 scale-110' : 'opacity-30'}`}>
-                          ⭐
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                  <div>
-                    <label className="text-gray-400 text-sm block mb-2">Ulasan Kamu</label>
-                    <textarea value={ulasanTeks} onChange={e => setUlasanTeks(e.target.value)} rows={5}
-                      placeholder="Ceritakan pengalaman belajar kamu di Menolak Rugi..."
-                      className="w-full bg-[#0d1325] border border-gray-700 rounded-xl px-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:border-yellow-500/50 resize-none" />
-                    <p className="text-gray-600 text-xs mt-1">{ulasanTeks.length} karakter</p>
-                  </div>
-                  {ulasanErr && <p className="text-red-400 text-sm">{ulasanErr}</p>}
-                  <button onClick={handleKirimUlasan} disabled={ulasanLoading}
-                    className="w-full flex items-center justify-center gap-2 bg-yellow-500 hover:bg-yellow-400 text-[#0a0f1e] font-bold py-3.5 rounded-xl transition-all disabled:opacity-50">
-                    {ulasanLoading ? 'Mengirim...' : '⭐ Kirim Ulasan'}
-                  </button>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Status Trading */}
-          {activeTab === 'funded' && (
-            <div className="max-w-xl">
-              <h1 className="text-2xl font-bold text-white mb-2">🚀 Status Trading</h1>
-              <p className="text-gray-400 text-sm mb-6">Pilih status funded trader kamu. Nickname Discord akan otomatis diupdate sesuai pilihanmu.</p>
-
-              {/* Status saat ini */}
-              {fundedStatus && (
-                <div className="bg-green-500/10 border border-green-500/30 rounded-2xl px-5 py-4 mb-6 flex items-center gap-3">
-                  <span className="text-2xl">✅</span>
-                  <div>
-                    <p className="text-green-400 font-semibold text-sm">Status Aktif</p>
-                    <p className="text-white font-bold">
-                      {fundedStatus === 'P1' && 'Funded Phase 1'}
-                      {fundedStatus === 'P2' && 'Funded Phase 2'}
-                      {fundedStatus === 'Master' && 'Funded Master'}
-                      {fundedStatus === 'MPAID' && 'Master Paidout'}
-                      {fundedStatus === 'Ap' && 'Akun Pribadi'}
-                    </p>
-                  </div>
-                </div>
-              )}
-
-              {/* Pilihan status */}
-              <div className="space-y-3 mb-6">
-                {[
-                  { key: 'P1',    label: 'Funded Phase 1',  emoji: '🥊', desc: 'Sedang menjalani challenge phase 1 prop firm' },
-                  { key: 'P2',    label: 'Funded Phase 2',  emoji: '🥋', desc: 'Sudah lulus phase 1, sekarang di phase 2' },
-                  { key: 'Master',label: 'Funded Master',   emoji: '🏅', desc: 'Sudah lulus semua fase — menjadi funded trader' },
-                  { key: 'MPAID', label: 'Master Paidout',  emoji: '💰', desc: 'Sudah berhasil payout dari prop firm' },
-                  { key: 'Ap',    label: 'Akun Pribadi',    emoji: '💼', desc: 'Trading menggunakan akun modal sendiri' },
-                ].map(opt => (
-                  <button
-                    key={opt.key}
-                    onClick={() => setSelectedFunded(opt.key)}
-                    className={`w-full flex items-center gap-4 px-5 py-4 rounded-xl border transition-all text-left ${
-                      selectedFunded === opt.key
-                        ? 'bg-yellow-500/10 border-yellow-500/60 ring-1 ring-yellow-500/30'
-                        : 'bg-[#111827] border-gray-700/50 hover:border-gray-600'
-                    }`}
-                  >
-                    <span className="text-2xl flex-shrink-0">{opt.emoji}</span>
-                    <div className="flex-1">
-                      <p className={`font-bold text-sm ${selectedFunded === opt.key ? 'text-yellow-400' : 'text-white'}`}>{opt.label}</p>
-                      <p className="text-gray-500 text-xs mt-0.5">{opt.desc}</p>
-                    </div>
-                    <div className={`w-4 h-4 rounded-full border-2 flex-shrink-0 transition-all ${
-                      selectedFunded === opt.key ? 'border-yellow-500 bg-yellow-500' : 'border-gray-600'
-                    }`} />
-                  </button>
-                ))}
-
-                {/* Reset status */}
-                <button
-                  onClick={() => setSelectedFunded(null)}
-                  className={`w-full flex items-center gap-4 px-5 py-4 rounded-xl border transition-all text-left ${
-                    selectedFunded === null
-                      ? 'bg-gray-500/10 border-gray-500/60'
-                      : 'bg-[#111827] border-gray-700/50 hover:border-gray-600'
-                  }`}
-                >
-                  <span className="text-2xl flex-shrink-0">🔄</span>
-                  <div className="flex-1">
-                    <p className="text-gray-300 font-bold text-sm">Tidak Ada / Reset</p>
-                    <p className="text-gray-500 text-xs mt-0.5">Hapus status funded dari nickname kamu</p>
-                  </div>
-                  <div className={`w-4 h-4 rounded-full border-2 flex-shrink-0 ${
-                    selectedFunded === null ? 'border-gray-400 bg-gray-400' : 'border-gray-600'
-                  }`} />
-                </button>
-              </div>
-
-              {fundedMsg && <div className="bg-green-500/10 border border-green-500/30 rounded-xl px-4 py-3 mb-4"><p className="text-green-400 text-sm">{fundedMsg}</p></div>}
-              {fundedErr && <div className="bg-red-500/10 border border-red-500/30 rounded-xl px-4 py-3 mb-4"><p className="text-red-400 text-sm">{fundedErr}</p></div>}
-
-              <button
-                onClick={handleUpdateFundedStatus}
-                disabled={fundedLoading || selectedFunded === fundedStatus}
-                className="w-full bg-yellow-500 hover:bg-yellow-400 disabled:opacity-50 disabled:cursor-not-allowed text-[#0a0f1e] font-bold py-3.5 rounded-xl transition-all"
-              >
-                {fundedLoading ? 'Menyimpan...' : '💾 Simpan & Update Nickname Discord'}
-              </button>
-              {!discordConnected && (
-                <p className="text-gray-600 text-xs text-center mt-3">
-                  ⚠️ Discord belum terhubung — status tersimpan tapi nickname tidak akan berubah otomatis.
-                </p>
-              )}
             </div>
           )}
 
@@ -969,7 +499,6 @@ export default function MemberPage() {
             </div>
           )}
         </div>
-        </div> {/* end flex gap-6 */}
       </div>
     </div>
   );
