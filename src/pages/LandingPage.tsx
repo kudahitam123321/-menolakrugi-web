@@ -427,47 +427,96 @@ function Curriculum() {
 function Testimonials({ testimonials }: { testimonials: Testimonial[] }) {
   const [isMobile, setIsMobile] = React.useState(() => window.matchMedia('(max-width: 767px)').matches);
   React.useEffect(() => { const mq = window.matchMedia('(max-width: 767px)'); const h = (e: MediaQueryListEvent) => setIsMobile(e.matches); mq.addEventListener('change',h); return ()=>mq.removeEventListener('change',h); }, []);
-  const { ref: testiRef, inView: testiInView } = useInView(0.1);
-  const now = new Date();
+  const [cur, setCur] = React.useState(0);
+  const [paused, setPaused] = React.useState(false);
+  const total = testimonials.length;
+  const perView = isMobile ? 1 : 3;
+  const maxIdx = Math.max(0, total - perView);
+  const avgRating = total ? (testimonials.reduce((a: number, t: any) => a + (t.bintang||t.rating||5), 0) / total).toFixed(1) : '5.0';
+  const ACCENT = ['#eab308','#22ab94','#a855f7','#3b82f6','#ec4899','#f59e0b','#06b6d4','#10b981','#f97316','#8b5cf6','#e11d48','#0ea5e9','#84cc16','#d946ef','#fb923c'];
+
+  React.useEffect(() => {
+    if (paused || total <= perView) return;
+    const t = setInterval(() => setCur(c => c >= maxIdx ? 0 : c + 1), 3500);
+    return () => clearInterval(t);
+  }, [paused, total, perView, maxIdx]);
+
   return (
-    <section style={{ padding: '56px 40px', borderBottom: `1px solid ${MR.border}` }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'end', marginBottom: 32 }}>
-        <div>
-          <div style={{ fontFamily: MR.mono, color: MR.dim, fontSize: 11, letterSpacing: 0.8 }}>// TRADE JOURNAL · MEMBER WINS</div>
-          <h2 style={{ fontSize: isMobile ? 28 : 52, letterSpacing: isMobile ? -0.5 : -1.5, lineHeight: 1.1, margin: '16px 0 0', fontWeight: 700 }}>Bukti, bukan promo.</h2>
+    <section style={{ padding: isMobile ? '48px 0' : '72px 0', background: 'linear-gradient(180deg,#060606 0%,#0a0900 50%,#060606 100%)', borderBottom: '1px solid #1a1a1a', overflow: 'hidden', position: 'relative' }}>
+      <div style={{ position:'absolute', top:'40%', left:'50%', transform:'translateX(-50%)', width:800, height:300, background:'radial-gradient(ellipse,rgba(234,179,8,0.03) 0%,transparent 70%)', pointerEvents:'none', zIndex:0 }}/>
+
+      {/* Header */}
+      <div style={{ textAlign:'center' as const, marginBottom: isMobile ? 32 : 48, padding:'0 24px', position:'relative', zIndex:1 }}>
+        <div style={{ display:'inline-flex', alignItems:'center', gap:8, background:'rgba(234,179,8,0.08)', border:'1px solid rgba(234,179,8,0.2)', padding:'5px 16px', borderRadius:20, marginBottom:16 }}>
+          <span style={{ color:MR.gold, fontSize:11 }}>★</span>
+          <span style={{ fontFamily:MR.mono, color:MR.gold, fontSize:10, letterSpacing:1.5 }}>APA KATA MEMBER KAMI</span>
         </div>
-        <div style={{ fontFamily: MR.mono, color: MR.dim, fontSize: 12, textAlign: 'right' }}>
-          DATA TERAKHIR · {now.getDate()} MEI {now.getFullYear()}<br />
-          <span style={{ color: MR.gold }}>★ 4.9</span> · MEMBER AKTIF
+        <h2 style={{ fontSize: isMobile ? 28 : 44, fontWeight:800, letterSpacing:-1.5, margin:'0 0 12px', lineHeight:1.1 }}>
+          Bukan sekadar klaim.<br/>
+          <span style={{ color:MR.gold }}>Bukti nyata dari member.</span>
+        </h2>
+        <div style={{ display:'flex', gap:8, justifyContent:'center', alignItems:'center' }}>
+          <div style={{ display:'flex', gap:2 }}>{[1,2,3,4,5].map(s=><span key={s} style={{ color:MR.gold, fontSize:16 }}>★</span>)}</div>
+          <span style={{ fontFamily:MR.mono, fontWeight:700, color:MR.gold, fontSize:15 }}>{avgRating}</span>
+          <span style={{ color:'#555', fontSize:13 }}>· {total} ulasan</span>
         </div>
       </div>
-      <div ref={testiRef} style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: 16 }}>
-        {testimonials.map((t, i) => { const ta = testiInView ? `mr-testi-${Math.min(i,5)}` : 'mr-hidden'; return (
-          <div key={t.id} className={ta} style={{ border: `1px solid ${MR.border}`, background: MR.panel, display: 'flex', flexDirection: 'column' }}>
-            <div style={{ fontFamily: MR.mono, display: 'flex', justifyContent: 'space-between', padding: '10px 14px', borderBottom: `1px solid ${MR.border}`, fontSize: 11, color: MR.dim, background: MR.darker }}>
-              <span># TRADE-{String(241 - i).padStart(4, '0')}</span>
-              {t.pl_result && <span style={{ color: MR.up }}>{t.pl_result}{t.duration ? ` · ${t.duration}` : ''}</span>}
-            </div>
-            <div style={{ padding: 18, flex: 1 }}>
-              <p style={{ fontSize: 15, lineHeight: 1.55, margin: 0, color: MR.muted }}>"{t.teks || t.content}"</p>
-            </div>
-            <div style={{ borderTop: `1px solid ${MR.border}`, padding: '12px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div>
-                <div style={{ fontWeight: 600, fontSize: 13 }}>{t.member_name || t.nama_akun || t.nama}</div>
-                {t.member_role && <div style={{ fontFamily: MR.mono, color: MR.dim, fontSize: 10, marginTop: 2 }}>{t.member_role}</div>}
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column' as const, alignItems: 'flex-end', gap: 4 }}>
-                <div style={{ display: 'flex', gap: 2 }}>
-                  {[1,2,3,4,5].map(s => <span key={s} style={{ color: (t.rating||5) >= s ? MR.gold : '#333', fontSize: 14 }}>★</span>)}
+
+      {/* Slider */}
+      <div style={{ position:'relative', zIndex:1 }} onMouseEnter={()=>setPaused(true)} onMouseLeave={()=>setPaused(false)}>
+        <div style={{ overflow:'hidden', padding: isMobile ? '12px 24px' : '12px 60px' }}>
+          <div style={{ display:'flex', gap:16, transition:'transform 0.6s cubic-bezier(0.25,0.46,0.45,0.94)', transform:`translateX(calc(-${cur} * (${isMobile?'100%':'calc(33.333% + 5.5px)'} + 0px)))`, willChange:'transform' }}>
+            {testimonials.map((t: any, i: number) => {
+              const accent = ACCENT[i % ACCENT.length];
+              const stars = t.bintang || t.rating || 5;
+              const isActive = i >= cur && i < cur + perView;
+              return (
+                <div key={t.id} style={{ flexShrink:0, width: isMobile ? '100%' : 'calc(33.333% - 11px)', background:'linear-gradient(150deg,#0f0f0f,#0a0a0a)', border:`1px solid ${isActive ? accent+'44' : '#141414'}`, borderRadius:20, padding:'28px 24px', display:'flex', flexDirection:'column' as const, gap:18, position:'relative', overflow:'hidden', transition:'border-color 0.5s,box-shadow 0.5s', boxShadow: isActive ? `0 8px 40px ${accent}0f` : 'none', minHeight:300 }}>
+                  <div style={{ position:'absolute', top:0, left:24, right:24, height:2, background:`linear-gradient(90deg,transparent,${accent},transparent)`, opacity:isActive?1:0.2, transition:'opacity 0.5s' }}/>
+                  <div style={{ position:'absolute', bottom:-15, right:12, fontSize:140, color:accent, opacity:0.04, fontFamily:'Georgia,serif', lineHeight:1, pointerEvents:'none', userSelect:'none' as const }}>"</div>
+                  <div style={{ display:'flex', gap:3 }}>
+                    {[1,2,3,4,5].map(s=><span key={s} style={{ fontSize:13, color:stars>=s?MR.gold:'#222' }}>★</span>)}
+                  </div>
+                  <p style={{ fontSize:13.5, lineHeight:1.8, color:'#aaa8a2', margin:0, flex:1, fontStyle:'italic', display:'-webkit-box', WebkitLineClamp:6, WebkitBoxOrient:'vertical' as const, overflow:'hidden' }}>
+                    "{t.ulasan || t.teks || t.content || ''}"
+                  </p>
+                  <div style={{ display:'flex', alignItems:'center', gap:12, paddingTop:16, borderTop:'1px solid #161616' }}>
+                    <div style={{ width:38, height:38, borderRadius:10, background:`${accent}18`, border:`1px solid ${accent}55`, display:'flex', alignItems:'center', justifyContent:'center', fontWeight:800, fontSize:15, color:accent, flexShrink:0, fontFamily:MR.mono }}>
+                      {(t.nama||t.nama_akun||'?')[0]?.toUpperCase()}
+                    </div>
+                    <div style={{ minWidth:0 }}>
+                      <div style={{ fontWeight:700, fontSize:13, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' as const, color:'#e7e5e4' }}>{t.nama||t.nama_akun}</div>
+                      <div style={{ fontFamily:MR.mono, fontSize:9, color:accent, marginTop:3, letterSpacing:0.5 }}>
+                        {(t.kelas||t.tier||'Member').replace('SMC ','').replace(' Mentorship','').toUpperCase()}
+                      </div>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </div>
+              );
+            })}
           </div>
-        )})}
+        </div>
+
+        {total > perView && <>
+          <button onClick={()=>setCur(c=>Math.max(0,c-1))} disabled={cur===0}
+            style={{ position:'absolute', left: isMobile?4:12, top:'50%', transform:'translateY(-50%)', width:44, height:44, borderRadius:'50%', background:'rgba(8,8,8,0.95)', border:`1px solid ${cur===0?'#1e1e1e':'#3a3a3a'}`, color:cur===0?'#333':'#e7e5e4', fontSize:22, cursor:cur===0?'default':'pointer', display:'flex', alignItems:'center', justifyContent:'center', backdropFilter:'blur(12px)', zIndex:2, transition:'all 0.2s', boxShadow:'0 4px 20px rgba(0,0,0,0.5)' }}>‹</button>
+          <button onClick={()=>setCur(c=>Math.min(maxIdx,c+1))} disabled={cur>=maxIdx}
+            style={{ position:'absolute', right: isMobile?4:12, top:'50%', transform:'translateY(-50%)', width:44, height:44, borderRadius:'50%', background:'rgba(8,8,8,0.95)', border:`1px solid ${cur>=maxIdx?'#1e1e1e':'#3a3a3a'}`, color:cur>=maxIdx?'#333':'#e7e5e4', fontSize:22, cursor:cur>=maxIdx?'default':'pointer', display:'flex', alignItems:'center', justifyContent:'center', backdropFilter:'blur(12px)', zIndex:2, transition:'all 0.2s', boxShadow:'0 4px 20px rgba(0,0,0,0.5)' }}>›</button>
+        </>}
       </div>
+
+      {total > perView && (
+        <div style={{ display:'flex', justifyContent:'center', gap:6, marginTop:28 }}>
+          {Array.from({length:maxIdx+1}).map((_,i)=>(
+            <button key={i} onClick={()=>setCur(i)}
+              style={{ width:cur===i?28:7, height:7, borderRadius:4, background:cur===i?MR.gold:'#2a2a2a', border:'none', cursor:'pointer', transition:'all 0.35s cubic-bezier(0.34,1.56,0.64,1)', padding:0 }}/>
+          ))}
+        </div>
+      )}
     </section>
   );
 }
+
 
 function Pricing({ tiers }: { tiers: PricingTier[] }) {
   const [isMobile, setIsMobile] = React.useState(() => window.matchMedia('(max-width: 767px)').matches);
@@ -891,9 +940,9 @@ export default function LandingPage() {
         fundedCount={stats?.fundedCount ?? 0}
         newThisMonth={stats?.newMembersThisMonth ?? 0}
       />
+      {testimonials.length > 0 && <Testimonials testimonials={testimonials} />}
       <Manifesto />
       <Curriculum />
-      {testimonials.length > 0 && <Testimonials testimonials={testimonials} />}
       <Mentor />
       {tiers.length > 0 && <Pricing tiers={tiers} />}
       <FaqSection />

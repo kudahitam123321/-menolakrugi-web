@@ -60,8 +60,8 @@ export function useApprovedTestimonials(limit = 6) {
   useEffect(() => {
     supabase
       .from('testimonials')
-      .select('*')
-      .in('status', ['approved','disetujui'])
+      .select('id,nama,kelas,ulasan,bintang,status,created_at,member_id')
+      .in('status', ['approved','disetujui','Disetujui','Approved'])
       .order('created_at', { ascending: false })
       .limit(limit)
       .then(({ data, error }) => {

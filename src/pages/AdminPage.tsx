@@ -330,20 +330,15 @@ function MemberTable({ members, loadData }: { members: any[]; loadData: () => vo
   const advanceMembers = members.filter((m:any) => m.is_advance);
 
   useEffect(() => {
-    if (members.length === 0) return;
-    supabase.from('member_progress').select('member_id,status')
+    supabase.from('member_progress_summary').select('member_id,progress_pct')
       .then(({ data }) => {
         if (data) {
-          const countByMember: Record<string,number> = {};
-          data.forEach((p:any) => { if(p.status==='selesai') countByMember[p.member_id]=(countByMember[p.member_id]||0)+1; });
           const map: Record<string,number> = {};
-          Object.entries(countByMember).forEach(([mid, count]) => {
-            map[mid] = videos.length > 0 ? Math.round((count as number)/videos.length*100) : 0;
-          });
+          data.forEach((d:any) => { map[d.member_id] = parseFloat(d.progress_pct)||0; });
           setProgress(map);
         }
       }).catch(()=>{});
-  }, [members, videos]);
+  }, [members]);
 
   const filtered = members.filter((m:any) =>
     (filterLevel === 'all' || (filterLevel === 'basic' ? !m.is_advance : m.is_advance)) &&
@@ -516,13 +511,15 @@ function MemberTable({ members, loadData }: { members: any[]; loadData: () => vo
 
 export default function AdminPage({ initialTab, embedded }: { initialTab?: string; embedded?: boolean } = {}) {
   const [currentAdmin, setCurrentAdmin] = useState<Admin | null>(null);
-  const [tab, setTab] = useState<'member' | 'video' | 'materi' | 'advance' | 'admins' | 'settings' | 'announce' | 'broker' | 'ulasan' | 'claim' | 'jadwal' | 'rating' | 'referral' | 'progress'>((initialTab as any) || 'member');
+  const [tab, setTab] = useState<'member' | 'video' | 'materi' | 'advance' | 'admins' | 'settings' | 'announce' | 'broker' | 'ulasan' | 'claim' | 'jadwal' | 'proprules' | 'rating' | 'referral' | 'progress'>((initialTab as any) || 'member');
   const [ulasanList, setUlasanList] = useState<any[]>([]);
   const [claims, setClaims] = useState<any[]>([]);
   const [claimActionLoading, setClaimActionLoading] = useState<string | null>(null);
   const [liveSchedules, setLiveSchedules] = useState<any[]>([]);
-  const [videoRatingStats, setVideoRatingStats] = useState<any[]>([]);
-  const [adminReferrals, setAdminReferrals]     = useState<any[]>([]);
+  const [propRules, setPropRules]           = useState<any[]>([]);
+  const [newRuleName, setNewRuleName]       = useState('');
+  const [newRuleType, setNewRuleType]       = useState('challenge');
+  const [newRuleContent, setNewRuleContent] = useState('');
   const [jadwalHari, setJadwalHari]   = useState('');
   const [jadwalJam, setJadwalJam]     = useState('');
   const [jadwalSesi, setJadwalSesi]   = useState('');
@@ -648,26 +645,11 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
     const { data: br } = await supabase.from('brokers').select('*').order('urutan', { ascending: true });
     const { data: js } = await supabase.from('live_schedules').select('*').order('urutan', { ascending: true });
     if (js) setLiveSchedules(js);
-    // Referrals
+    // Prop firm rules
     try {
-      const { data: refD } = await supabase.from('referrals')
-        .select('*, referrer:members!referrals_referrer_id_fkey(nama,tier)')
-        .order('created_at', { ascending: false });
-      if (refD) setAdminReferrals(refD);
-    } catch(e) { /* tabel belum dibuat */ }
-    // Video ratings
-    try {
-      const { data: ratD } = await supabase.from('video_ratings').select('video_id,rating');
-      if (ratD) {
-        const stats: Record<string,{judul:string,likes:number,dislikes:number}> = {};
-        ratD.forEach((r:any) => {
-          if (!stats[r.video_id]) stats[r.video_id] = { judul: r.video_id, likes:0, dislikes:0 };
-          if (r.rating===1) stats[r.video_id].likes++;
-          else stats[r.video_id].dislikes++;
-        });
-        setVideoRatingStats(Object.values(stats).sort((a:any,b:any)=>b.likes-a.likes));
-      }
-    } catch(e) { /* tabel belum dibuat */ }
+      const { data: prData } = await supabase.from('prop_firm_rules').select('*').order('created_at', { ascending: false });
+      if (prData) setPropRules(prData);
+    } catch(_e) { /* table may not exist */ }
     const { data: ul } = await supabase.from('testimonials').select('*').order('created_at', { ascending: false });
     const { data: cl } = await supabase.from('partnership_claims').select('*').order('created_at', { ascending: false });
     if (m) setMembers(m);
@@ -1084,10 +1066,7 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
             { id: 'advance', label: 'REQ. ADVANCE', count: pendingRequests.length, warn: true },
             { id: 'announce',label: 'PENGUMUMAN', count: null },
             { id: 'broker',  label: 'BROKER',   count: brokers.length },
-            { id: 'progress', label: 'PROGRES BELAJAR', count: null },
             { id: 'jadwal',  label: 'JADWAL LIVE', count: null },
-            { id: 'rating',  label: 'RATING VIDEO', count: null },
-            { id: 'referral', label: 'REFERRAL', count: adminReferrals.filter((r:any)=>r.status==='pending').length, warn: adminReferrals.some((r:any)=>r.status==='pending') },
             { id: 'ulasan',  label: 'ULASAN',   count: ulasanList.filter(u=>u.status==='pending').length, warn: true },
             { id: 'claim',   label: 'KLAIM PARTNER', count: claims.filter(c=>c.status==='pending').length, warn: true },
             { id: 'settings',label: 'PASSWORD', count: null },
@@ -1764,166 +1743,71 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
           </div>
         )}
 
-
-        {tab === 'progress' && (() => {
-          const totalVids = videos.length || 1;
-          const memberProgress = members.map(m => {
-            // Count from progress state (ratio per member)
-            const pct = progress[m.id] || 0;
-            return { ...m, pct };
-          }).sort((a:any, b:any) => b.pct - a.pct);
-
-          return (
-            <div style={{display:'flex',flexDirection:'column',gap:16,maxWidth:800}}>
-              <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
-                <div style={{fontFamily:'monospace',color:'#eab308',fontSize:11,letterSpacing:1}}>// PROGRES BELAJAR MEMBER</div>
-                <div style={{fontFamily:'monospace',fontSize:10,color:'#666'}}>Total {members.length} member · {videos.length} video</div>
+        {/* ── TAB PROP FIRM RULES ── */}
+        {tab === 'proprules' && (
+          <div style={{display:'flex',flexDirection:'column',gap:16,maxWidth:800}}>
+            <div style={{fontFamily:'monospace',color:'#eab308',fontSize:11,letterSpacing:1}}>// PROP FIRM RULES</div>
+            <div style={{background:'#0d0d0d',border:'1px solid #1f1f1f',borderRadius:8,padding:'18px'}}>
+              <div style={{fontFamily:'monospace',color:'#666',fontSize:10,marginBottom:12,letterSpacing:0.5}}>TAMBAH RULE BARU</div>
+              <div style={{display:'grid',gridTemplateColumns:'1fr 120px',gap:8,marginBottom:8}}>
+                <input value={newRuleName} onChange={e=>setNewRuleName(e.target.value)} placeholder="Nama prop firm (contoh: FTMO, MFF)"
+                  style={{background:'#111',border:'1px solid #2a2a2a',color:'#fff',padding:'10px 14px',fontFamily:'monospace',fontSize:12,borderRadius:6,outline:'none'}}/>
+                <select value={newRuleType} onChange={e=>setNewRuleType(e.target.value)}
+                  style={{background:'#111',border:'1px solid #2a2a2a',color:'#fff',padding:'10px 14px',fontFamily:'monospace',fontSize:12,borderRadius:6,outline:'none'}}>
+                  <option value="challenge">Challenge</option>
+                  <option value="funded">Funded</option>
+                  <option value="instant">Instant</option>
+                </select>
               </div>
-
-              {/* Stats bar */}
-              <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:10}}>
-                {[
-                  {l:'Selesai Semua', v:memberProgress.filter((m:any)=>m.pct>=100).length, c:'#22ab94'},
-                  {l:'Di atas 50%',   v:memberProgress.filter((m:any)=>m.pct>=50&&m.pct<100).length, c:'#eab308'},
-                  {l:'Di bawah 50%',  v:memberProgress.filter((m:any)=>m.pct>0&&m.pct<50).length, c:'#f59e0b'},
-                  {l:'Belum Mulai',   v:memberProgress.filter((m:any)=>m.pct===0).length, c:'#ef4444'},
-                ].map((s,i)=>(
-                  <div key={i} style={{background:'#0d0d0d',border:`1px solid ${s.c}33`,borderRadius:8,padding:'12px',textAlign:'center' as const}}>
-                    <div style={{fontFamily:'monospace',color:s.c,fontSize:22,fontWeight:700}}>{s.v}</div>
-                    <div style={{fontFamily:'monospace',color:'#666',fontSize:9,marginTop:4}}>{s.l}</div>
-                  </div>
-                ))}
-              </div>
-
-              {/* Member list */}
-              <div style={{background:'#0d0d0d',border:'1px solid #1f1f1f',borderRadius:8,overflow:'hidden'}}>
-                <div style={{display:'grid',gridTemplateColumns:'32px 1fr 80px 120px 60px',gap:'4px 12px',fontFamily:'monospace',fontSize:9,color:'#666',padding:'10px 16px',borderBottom:'1px solid #1a1a1a',letterSpacing:0.5}}>
-                  <span>#</span><span>NAMA</span><span>TIER</span><span>PROGRESS</span><span>PCT</span>
-                </div>
-                {memberProgress.slice(0,50).map((m:any,i:number)=>(
-                  <div key={m.id} style={{display:'grid',gridTemplateColumns:'32px 1fr 80px 120px 60px',gap:'4px 12px',alignItems:'center',padding:'10px 16px',borderBottom:'1px solid #0d0d0d'}}>
-                    <span style={{fontFamily:'monospace',color:'#444',fontSize:10}}>{i+1}</span>
-                    <div>
-                      <div style={{fontSize:12,fontWeight:600}}>{m.nama}</div>
-                      {m.is_advance&&<span style={{fontFamily:'monospace',fontSize:8,color:'#a855f7',border:'1px solid #a855f744',padding:'1px 5px',borderRadius:3}}>ADV</span>}
-                    </div>
-                    <span style={{fontFamily:'monospace',fontSize:10,color:'#888'}}>{m.tier?.replace('SMC ','').slice(0,8)}</span>
-                    <div style={{height:5,background:'#111',borderRadius:3,overflow:'hidden'}}>
-                      <div style={{height:'100%',width:m.pct+'%',background:m.pct>=100?'#22ab94':m.pct>=50?'#eab308':'#f59e0b',borderRadius:3,transition:'width 0.5s ease'}}/>
-                    </div>
-                    <span style={{fontFamily:'monospace',fontSize:11,fontWeight:700,color:m.pct>=100?'#22ab94':m.pct>=50?'#eab308':m.pct>0?'#f59e0b':'#444'}}>{m.pct}%</span>
-                  </div>
-                ))}
-                {members.length===0&&<div style={{padding:'32px',textAlign:'center' as const,fontFamily:'monospace',color:'#444',fontSize:12}}>Tidak ada data member.</div>}
-              </div>
+              <textarea value={newRuleContent} onChange={e=>setNewRuleContent(e.target.value)} rows={5}
+                placeholder={'Rules (satu per baris):\nMax Daily Loss: 5%\nMax Total Loss: 10%\nProfit Target: 8%'}
+                style={{width:'100%',background:'#111',border:'1px solid #2a2a2a',color:'#fff',padding:'10px 14px',fontFamily:'monospace',fontSize:12,borderRadius:6,outline:'none',resize:'vertical' as const,boxSizing:'border-box' as const,marginBottom:8}}/>
+              <button onClick={async()=>{
+                if(!newRuleName||!newRuleContent){notify('Isi nama dan rules dulu');return;}
+                try{
+                  const rules=newRuleContent.trim().split('\n').filter(Boolean);
+                  const {error}=await supabase.from('prop_firm_rules').insert({name:newRuleName,type:newRuleType,rules,is_active:true});
+                  if(error)throw error;
+                  notify('Rule berhasil ditambahkan ✅');
+                  setNewRuleName('');setNewRuleContent('');loadData();
+                }catch(e:any){notify('Error: '+e.message);}
+              }} style={{fontFamily:'monospace',fontSize:11,fontWeight:700,color:'#000',background:'#eab308',padding:'10px 20px',border:'none',cursor:'pointer',borderRadius:6}}>
+                + TAMBAH
+              </button>
             </div>
-          );
-        })()}
-
-
-        {tab === 'rating' && (
-          <div style={{display:'flex',flexDirection:'column',gap:12,maxWidth:720}}>
-            <div style={{fontFamily:'monospace',color:'#eab308',fontSize:11,letterSpacing:1,marginBottom:4}}>// RATING VIDEO DARI MEMBER (Bintang 1-5)</div>
-            <div style={{background:'#0d0d0d',border:'1px solid #1f1f1f',borderRadius:8,overflow:'hidden'}}>
-              <div style={{display:'grid',gridTemplateColumns:'1fr 100px 80px 80px',gap:'4px 10px',fontFamily:'monospace',fontSize:9,color:'#666',padding:'10px 16px',borderBottom:'1px solid #1a1a1a',letterSpacing:0.5}}>
-                {['VIDEO','RATING','VOTER','SKOR'].map(h=><span key={h}>{h}</span>)}
+            {propRules.length===0?(
+              <div style={{background:'#0d0d0d',border:'1px solid #1f1f1f',padding:'32px',textAlign:'center' as const,fontFamily:'monospace',color:'#444',fontSize:12,borderRadius:8}}>
+                Belum ada prop firm rules.<br/><span style={{color:'#333',fontSize:10}}>Pastikan tabel prop_firm_rules sudah ada di Supabase.</span>
               </div>
-              {videoRatingStats.length===0&&<div style={{padding:'32px',textAlign:'center' as const,fontFamily:'monospace',color:'#444',fontSize:12}}>Belum ada rating. Pastikan tabel video_ratings sudah dibuat di Supabase.</div>}
-              {videoRatingStats.map((v:any,i:number)=>(
-                <div key={i} style={{display:'grid',gridTemplateColumns:'1fr 100px 80px 80px',gap:'4px 10px',alignItems:'center',padding:'12px 16px',borderBottom:'1px solid #111'}}>
-                  <div style={{fontSize:12,fontWeight:600,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap' as const}}>{v.judul}</div>
-                  <div style={{display:'flex',gap:2}}>
-                    {[1,2,3,4,5].map(s=>(
-                      <span key={s} style={{fontSize:12,color:v.total>=s?'#eab308':'#333'}}>★</span>
-                    ))}
-                  </div>
-                  <span style={{fontFamily:'monospace',color:'#888',fontSize:11}}>{v.count} org</span>
-                  <span style={{fontFamily:'monospace',fontWeight:700,fontSize:12,color:v.total>=4?'#22ab94':v.total>=3?'#eab308':'#ef4444'}}>{v.total}/5</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {tab === 'referral' && (
-          <div style={{display:'flex',flexDirection:'column',gap:16,maxWidth:760}}>
-            <div style={{fontFamily:'monospace',color:'#22ab94',fontSize:11,letterSpacing:1}}>// PROGRAM REFERRAL</div>
-
-            {/* Stats */}
-            <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:10}}>
-              {[
-                {l:'Total Referral',  v:adminReferrals.length,                                                    c:'#e7e5e4'},
-                {l:'Menunggu Verif',  v:adminReferrals.filter((r:any)=>r.status==='pending').length,               c:'#eab308'},
-                {l:'Sudah Diverif',   v:adminReferrals.filter((r:any)=>r.status!=='pending').length,              c:'#22ab94'},
-              ].map((s,i)=>(
-                <div key={i} style={{background:'#0d0d0d',border:'1px solid #1f1f1f',borderRadius:8,padding:'14px 16px',textAlign:'center' as const}}>
-                  <div style={{fontFamily:'monospace',color:'#444',fontSize:9,marginBottom:6}}>{s.l}</div>
-                  <div style={{fontFamily:'monospace',fontSize:24,fontWeight:700,color:s.c}}>{s.v}</div>
-                </div>
-              ))}
-            </div>
-
-            {adminReferrals.length===0 ? (
-              <div style={{background:'#0d0d0d',border:'1px solid #1f1f1f',padding:'32px',textAlign:'center' as const,fontFamily:'monospace',color:'#333',fontSize:12,borderRadius:8}}>
-                Belum ada referral. Pastikan SQL migrations sudah dijalankan.
-              </div>
-            ) : (
-              <div style={{background:'#0d0d0d',border:'1px solid #1f1f1f',borderRadius:8,overflow:'hidden'}}>
-                <div style={{display:'grid',gridTemplateColumns:'1.2fr 1.2fr 90px 90px 110px',gap:'4px 10px',fontFamily:'monospace',fontSize:9,color:'#444',padding:'10px 18px',borderBottom:'1px solid #111'}}>
-                  {['REFERRER','MEMBER BARU','TANGGAL','STATUS','AKSI'].map(h=><span key={h}>{h}</span>)}
-                </div>
-                {adminReferrals.map((r:any)=>(
-                  <div key={r.id} style={{display:'grid',gridTemplateColumns:'1.2fr 1.2fr 90px 90px 110px',gap:'4px 10px',alignItems:'center',padding:'12px 18px',borderBottom:'1px solid #0d0d0d'}}>
-                    <div>
-                      <div style={{fontSize:13,fontWeight:700}}>{r.referrer?.nama||'—'}</div>
-                      <div style={{fontFamily:'monospace',color:'#444',fontSize:9}}>{r.referrer?.tier?.replace('SMC ','')}</div>
-                    </div>
-                    <div>
-                      <div style={{fontSize:13,fontWeight:600,color:'#aaa'}}>{r.referred_name||'—'}</div>
-                    </div>
-                    <div style={{fontFamily:'monospace',color:'#555',fontSize:10}}>
-                      {new Date(r.created_at).toLocaleDateString('id-ID',{day:'numeric',month:'short'})}
-                    </div>
-                    <span style={{fontFamily:'monospace',fontSize:10,fontWeight:700,
-                      color:r.status==='rewarded'?'#eab308':r.status==='verified'?'#22ab94':'#666'}}>
-                      {r.status==='rewarded'?'💰 REWARDED':r.status==='verified'?'✓ VERIFIED':'⏳ PENDING'}
-                    </span>
-                    <div style={{display:'flex',gap:4,flexWrap:'wrap' as const}}>
-                      {r.status==='pending'&&(
-                        <button onClick={async()=>{
-                          await supabase.from('referrals').update({status:'verified'}).eq('id',r.id);
-                          notify(`Referral ${r.referred_name} terverifikasi ✅`);
-                          loadData();
-                        }} style={{fontFamily:'monospace',fontSize:9,fontWeight:700,color:'#22ab94',background:'#0a1a14',border:'1px solid #22ab9444',padding:'4px 10px',cursor:'pointer',borderRadius:4}}>
-                          VERIFIKASI
+            ):(
+              <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(340px,1fr))',gap:12}}>
+                {propRules.map((r:any)=>(
+                  <div key={r.id} style={{background:'#0d0d0d',border:`1px solid ${r.is_active?'#2a2a1a':'#1f1f1f'}`,borderRadius:8,padding:'16px'}}>
+                    <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:10}}>
+                      <div>
+                        <div style={{fontWeight:700,fontSize:14}}>{r.name}</div>
+                        <div style={{fontFamily:'monospace',fontSize:10,color:r.type==='funded'?'#22ab94':r.type==='challenge'?'#eab308':'#a855f7',marginTop:3,textTransform:'uppercase' as const}}>{r.type}</div>
+                      </div>
+                      <div style={{display:'flex',gap:6}}>
+                        <button onClick={async()=>{await supabase.from('prop_firm_rules').update({is_active:!r.is_active}).eq('id',r.id);loadData();}}
+                          style={{fontFamily:'monospace',fontSize:9,color:r.is_active?'#22ab94':'#555',background:r.is_active?'#0a1a14':'#111',border:`1px solid ${r.is_active?'#22ab9444':'#2a2a2a'}`,padding:'3px 8px',cursor:'pointer',borderRadius:4}}>
+                          {r.is_active?'AKTIF':'NONAKTIF'}
                         </button>
-                      )}
-                      {r.status==='verified'&&(
-                        <button onClick={async()=>{
-                          await supabase.from('referrals').update({status:'rewarded'}).eq('id',r.id);
-                          notify(`Reward untuk ${r.referrer?.nama||'member'} berhasil diberikan 💰`);
-                          loadData();
-                        }} style={{fontFamily:'monospace',fontSize:9,fontWeight:700,color:'#eab308',background:'#1a1500',border:'1px solid #3a2e00',padding:'4px 10px',cursor:'pointer',borderRadius:4}}>
-                          BERI REWARD
-                        </button>
-                      )}
-                      {r.status==='rewarded'&&<span style={{fontFamily:'monospace',fontSize:9,color:'#333'}}>selesai</span>}
+                        <button onClick={async()=>{if(!confirm('Hapus?'))return;await supabase.from('prop_firm_rules').delete().eq('id',r.id);loadData();}}
+                          style={{fontFamily:'monospace',fontSize:9,color:'#ef4444',background:'#1a0a0a',border:'1px solid #ef444444',padding:'3px 8px',cursor:'pointer',borderRadius:4}}>HAPUS</button>
+                      </div>
+                    </div>
+                    <div style={{display:'flex',flexDirection:'column' as const,gap:4}}>
+                      {(Array.isArray(r.rules)?r.rules:typeof r.rules==='string'?JSON.parse(r.rules||'[]'):[]).map((rule:string,i:number)=>(
+                        <div key={i} style={{display:'flex',gap:8,alignItems:'flex-start',fontSize:12,color:'#aaa'}}>
+                          <span style={{color:'#eab308',fontFamily:'monospace',flexShrink:0}}>▸</span><span>{rule}</span>
+                        </div>
+                      ))}
                     </div>
                   </div>
                 ))}
               </div>
             )}
-
-            {/* Info box */}
-            <div style={{background:'#0a0c00',border:'1px solid #2a2e00',borderRadius:8,padding:'14px 18px'}}>
-              <div style={{fontFamily:'monospace',color:'#eab308',fontSize:10,marginBottom:6}}>// CARA KERJA REFERRAL</div>
-              <div style={{fontSize:12,color:'#666',lineHeight:1.7}}>
-                1. Member dapat link referral unik: <span style={{color:'#22ab94',fontFamily:'monospace'}}>menolakrugi.pages.dev/signup?ref=KODE</span><br/>
-                2. Member baru daftar lewat link → otomatis tercatat sebagai referral <span style={{color:'#eab308'}}>PENDING</span><br/>
-                3. Admin <span style={{color:'#22ab94'}}>VERIFIKASI</span> setelah member baru melakukan pembayaran dan aktif<br/>
-                4. Admin <span style={{color:'#eab308'}}>BERI REWARD</span> ke referrer (transfer manual / voucher / komisi)
-              </div>
-            </div>
           </div>
         )}
 
