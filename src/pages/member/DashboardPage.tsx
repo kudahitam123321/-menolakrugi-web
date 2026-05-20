@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, memo } from 'react';
 import { supabase } from '../../lib/supabase';
 import LanjutkanBelajar from '../../components/LanjutkanBelajar';
+import JurnalPage from './JurnalPage';
 import { trackVideoWatch } from '../../hooks/useWatchHistory';
 
 const G = { gold: '#16a34a', gold2: '#15803d' };
@@ -27,6 +28,7 @@ const SIDEBAR = [
   { id: 'sertifikat',  label: 'Sertifikat',     icon: '🏆' },
   { id: 'ulasan',      label: 'Tulis Ulasan',   icon: '⭐' },
   { id: 'referral',    label: 'Referral',       icon: '🔗' },
+  { id: 'jurnal',      label: 'Jurnal Trading',  icon: '📓' },
   { id: 'logout',      label: 'Logout',         icon: '⏻' },
 ];
 
@@ -1727,7 +1729,11 @@ export default function DashboardPage() {
           )}
 
           {/* ══ SERTIFIKAT ══ */}
-          {active === 'sertifikat' && (() => {
+          {active === 'jurnal' && member && (
+          <JurnalPage memberId={member.id} />
+        )}
+
+        {active === 'sertifikat' && (() => {
             const isAdvanced = member.is_advance;
             const certDate = advanceReq?.updated_at
               ? new Date(advanceReq.updated_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })

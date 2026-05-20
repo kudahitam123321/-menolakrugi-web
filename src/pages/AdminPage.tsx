@@ -355,6 +355,8 @@ function MemberTable({ members, loadData }: { members: any[]; loadData: () => vo
     if (editNama) updates.nama = editNama;
     if (editTier) updates.tier = editTier;
     if (editPass) updates.password = editPass;
+    // Clear session_token agar member fetch ulang data tier terbaru saat login berikutnya
+    updates.session_token = null;
     await supabase.from('members').update(updates).eq('id', id);
     setEditId(null); loadData();
   }
@@ -429,8 +431,8 @@ function MemberTable({ members, loadData }: { members: any[]; loadData: () => vo
 
       {/* Table */}
       <div style={{background:'#0d0d0d',border:'1px solid #1f1f1f'}}>
-        <div style={{display:'grid',gridTemplateColumns:'28px 1fr 170px 90px 90px 110px 90px 80px',gap:8,padding:'8px 20px',borderBottom:'1px solid #1a1a1a',fontFamily:'monospace',color:'#444',fontSize:10,letterSpacing:0.5}}>
-          <span>#</span><span>NAMA</span><span>TIER</span><span>STATUS</span><span>DISCORD</span><span>LAST LOGIN</span><span>PROGRESS</span><span>AKSI</span>
+        <div style={{display:'grid',gridTemplateColumns:'28px 1fr 170px 90px 90px 110px 90px 80px 90px',gap:8,padding:'8px 20px',borderBottom:'1px solid #1a1a1a',fontFamily:'monospace',color:'#888',fontSize:10,letterSpacing:0.5}}>
+          <span>#</span><span>NAMA</span><span>TIER</span><span>STATUS</span><span>DISCORD</span><span>LAST LOGIN</span><span>PROGRESS</span><span>AKSI</span><span>HAPUS</span>
         </div>
         <div style={{maxHeight:540,overflowY:'auto' as const}}>
           {filtered.length===0 && <div style={{padding:'32px',textAlign:'center' as const,fontFamily:'monospace',color:'#333',fontSize:13}}>— TIDAK ADA MEMBER —</div>}
@@ -444,10 +446,10 @@ function MemberTable({ members, loadData }: { members: any[]; loadData: () => vo
             const isEditing=editId===m.id;
             return (
               <React.Fragment key={m.id}>
-                <div style={{display:'grid',gridTemplateColumns:'28px 1fr 170px 90px 90px 110px 90px 80px',gap:8,padding:'10px 20px',borderBottom:isEditing?'none':'1px solid #111',alignItems:'center',fontSize:12,background:isEditing?'#0a0a0a':'transparent'}}>
-                  <span style={{fontFamily:'monospace',color:'#333',fontSize:10}}>{i+1}</span>
+                <div style={{display:'grid',gridTemplateColumns:'28px 1fr 170px 90px 90px 110px 90px 80px 90px',gap:8,padding:'10px 20px',borderBottom:isEditing?'none':'1px solid #111',alignItems:'center',fontSize:12,background:isEditing?'#0a0a0a':'transparent'}}>
+                  <span style={{fontFamily:'monospace',color:'#666',fontSize:10}}>{i+1}</span>
                   <span style={{fontWeight:600,fontSize:13}}>{m.nama}</span>
-                  <span style={{fontFamily:'monospace',color:'#666',fontSize:11,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap' as const}}>{m.tier}</span>
+                  <span style={{fontFamily:'monospace',color:'#b0b0b0',fontSize:11,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap' as const}}>{m.tier}</span>
                   {/* is_advance badge */}
                   <span style={{fontFamily:'monospace',fontSize:10,fontWeight:700,
                     color:m.is_advance?'#16a34a':'#22ab94',
@@ -456,8 +458,8 @@ function MemberTable({ members, loadData }: { members: any[]; loadData: () => vo
                     padding:'2px 7px',textAlign:'center' as const}}>
                     {m.is_advance?'ADVANCE':'BASIC'}
                   </span>
-                  <span style={{fontFamily:'monospace',color:m.discord_username?'#22ab94':'#333',fontSize:11}}>{m.discord_username||'—'}</span>
-                  <span style={{fontFamily:'monospace',color:isOnline?'#22ab94':'#555',fontSize:11}}>{ago}</span>
+                  <span style={{fontFamily:'monospace',color:m.discord_username?'#22ab94':'#555',fontSize:11}}>{m.discord_username||'—'}</span>
+                  <span style={{fontFamily:'monospace',color:isOnline?'#22ab94':'#888',fontSize:11}}>{ago}</span>
                   <div>
                     {pct>0?(
                       <>
@@ -476,6 +478,16 @@ function MemberTable({ members, loadData }: { members: any[]; loadData: () => vo
                     <button onClick={()=>{setEditId(isEditing?null:m.id);setEditNama(m.nama);setEditTier(m.tier);setEditPass('');}}
                       style={{background:isEditing?'#0a1a0e':'transparent',border:`1px solid ${isEditing?'#16a34a':'#2a2a2a'}`,color:isEditing?'#16a34a':'#666',fontSize:11,padding:'3px 7px',cursor:'pointer'}}>✏</button>
                   </div>
+                  {/* ── DELETE MEMBER ── */}
+                  <button onClick={async()=>{
+                    if(!confirm(`Hapus member "${m.nama}"? Semua data jurnal akan ikut terhapus.`))return;
+                    await supabase.from('trading_journals').delete().eq('member_id',m.id);
+                    await supabase.from('journal_settings').delete().eq('member_id',m.id);
+                    await supabase.from('members').delete().eq('id',m.id);
+                    loadData();
+                  }} style={{background:'#1a0808',border:'1px solid #7f1d1d',color:'#ef4444',fontSize:11,padding:'3px 9px',cursor:'pointer',fontWeight:700,letterSpacing:0.5}}>
+                    🗑
+                  </button>
                 </div>
                 {showPass===m.id&&(
                   <div style={{padding:'6px 20px 6px 76px',background:'#0a0a0a',borderBottom:'1px solid #111',fontFamily:'monospace',fontSize:11}}>
@@ -513,9 +525,327 @@ function MemberTable({ members, loadData }: { members: any[]; loadData: () => vo
 
 
 
+// ─── JurnalAdminTab component ─────────────────────────────────────────────────
+function JurnalAdminTab({ members }: { members: any[] }) {
+  const [jurnalStats, setJurnalStats]     = useState<any[]>([]);
+  const [loadingJ, setLoadingJ]           = useState(false);
+  const [selectedMember, setSelectedMember] = useState<string | null>(null);
+  const [memberEntries, setMemberEntries] = useState<any[]>([]);
+  const [settings, setSettings]           = useState<any>({});
+
+  const C = {
+    panel: '#111', border: '#1e1e1e', border2: '#2a2a2a',
+    dim: '#555', muted: '#888', text: '#e7e5e4',
+    up: '#22c55e', down: '#ef4444', warn: '#f59e0b',
+    mono: '"Geist Mono",monospace',
+  };
+  const G = '#16a34a';
+
+  useEffect(() => { fetchJurnalStats(); }, [members]);
+
+  async function fetchJurnalStats() {
+    if (!members.length) return;
+    setLoadingJ(true);
+    try {
+      // Fetch all journal entries + settings in one go
+      const [{ data: allEntries }, { data: allSettings }] = await Promise.all([
+        supabase.from('trading_journals').select('member_id,hasil,pnl,rr,tanggal'),
+        supabase.from('journal_settings').select('member_id,equity_awal'),
+      ]);
+
+      const settingsMap: Record<string, number> = {};
+      (allSettings || []).forEach((s: any) => { settingsMap[s.member_id] = s.equity_awal || 10000; });
+
+      // Aggregate per member
+      const memberMap: Record<string, any> = {};
+      members.forEach(m => {
+        memberMap[m.id] = {
+          id: m.id, nama: m.nama, tier: m.tier,
+          equity_awal: settingsMap[m.id] || 10000,
+          total: 0, tp: 0, sl: 0, totalPnl: 0,
+          rrSum: 0, rrCount: 0,
+        };
+      });
+
+      (allEntries || []).forEach((e: any) => {
+        const m = memberMap[e.member_id];
+        if (!m) return;
+        m.total++;
+        if (e.hasil === 'Take Profit') { m.tp++; m.rrSum += (e.rr || 0); m.rrCount++; }
+        if (e.hasil === 'Stop Loss') m.sl++;
+        m.totalPnl += (e.pnl || 0);
+      });
+
+      const stats = Object.values(memberMap)
+        .filter((m: any) => m.total > 0)
+        .map((m: any) => ({
+          ...m,
+          winRate: m.total ? ((m.tp / Math.max(1, m.tp + m.sl)) * 100) : 0,
+          avgRR: m.rrCount ? m.rrSum / m.rrCount : 0,
+          equityGain: m.totalPnl,
+          equityGainPct: m.equity_awal ? (m.totalPnl / m.equity_awal) * 100 : 0,
+        }))
+        .sort((a: any, b: any) => b.equityGain - a.equityGain);
+
+      setJurnalStats(stats);
+    } catch(_) {}
+    setLoadingJ(false);
+  }
+
+  async function viewDetail(memberId: string) {
+    setSelectedMember(memberId);
+    const [{ data: entries }, { data: sett }] = await Promise.all([
+      supabase.from('trading_journals').select('*').eq('member_id', memberId).order('tanggal', { ascending: false }),
+      supabase.from('journal_settings').select('*').eq('member_id', memberId).single(),
+    ]);
+    setMemberEntries(entries || []);
+    setSettings(sett || { equity_awal: 10000 });
+  }
+
+  const selectedData = selectedMember ? jurnalStats.find(s => s.id === selectedMember) : null;
+  const tierColor = (tier: string) => {
+    if (tier?.includes('Platinum')) return '#a855f7';
+    if (tier?.includes('Gold')) return '#f59e0b';
+    if (tier?.includes('Silver')) return '#94a3b8';
+    if (tier?.includes('Trial')) return '#22ab94';
+    return '#888';
+  };
+
+  const inp: React.CSSProperties = {
+    background: '#111', border: '1px solid #2a2a2a', color: '#e7e5e4',
+    padding: '6px 10px', fontSize: 11, fontFamily: '"Geist Mono",monospace', outline: 'none',
+  };
+
+  if (loadingJ) return <div style={{ color: '#555', fontFamily: '"Geist Mono",monospace', fontSize: 12, padding: 40, textAlign: 'center' }}>Memuat data jurnal...</div>;
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div>
+          <div style={{ fontFamily: '"Geist Mono",monospace', color: G, fontSize: 11, letterSpacing: 2, marginBottom: 4 }}>// JURNAL MEMBER</div>
+          <div style={{ fontSize: 18, fontWeight: 700 }}>Statistik & Peringkat Jurnal Trading</div>
+        </div>
+        <button onClick={fetchJurnalStats} style={{ background: 'transparent', border: '1px solid #2a2a2a', color: '#888', fontFamily: '"Geist Mono",monospace', fontSize: 11, padding: '6px 14px', cursor: 'pointer' }}>↻ REFRESH</button>
+      </div>
+
+      {jurnalStats.length === 0 && (
+        <div style={{ background: C.panel, border: `1px solid ${C.border}`, borderRadius: 10, padding: '40px 20px', textAlign: 'center', color: C.muted, fontFamily: C.mono, fontSize: 12 }}>
+          Belum ada member yang mengisi jurnal.
+        </div>
+      )}
+
+      {/* ── Ranking Table ── */}
+      {jurnalStats.length > 0 && !selectedMember && (
+        <div style={{ background: C.panel, border: `1px solid ${C.border}`, borderRadius: 10, overflow: 'hidden' }}>
+          {/* podium top 3 */}
+          {jurnalStats.length >= 3 && (
+            <div style={{ display: 'flex', gap: 12, padding: '20px 20px 0', justifyContent: 'center' }}>
+              {[1, 0, 2].map(idx => {
+                const m = jurnalStats[idx];
+                if (!m) return null;
+                const medals = ['🥇','🥈','🥉'];
+                const medalIdx = idx === 0 ? 0 : idx === 1 ? 2 : 1;
+                const isFirst = idx === 0;
+                return (
+                  <div key={m.id} onClick={() => viewDetail(m.id)} style={{ flex: 1, maxWidth: 200, background: '#0a0a0a', border: `1px solid ${isFirst ? G : C.border2}`, borderRadius: 10, padding: '16px 12px', textAlign: 'center', cursor: 'pointer', order: isFirst ? 0 : idx === 1 ? -1 : 1 }}>
+                    <div style={{ fontSize: 28, marginBottom: 6 }}>{medals[medalIdx]}</div>
+                    <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 4, color: C.text }}>{m.nama}</div>
+                    <div style={{ fontFamily: C.mono, fontSize: 10, color: tierColor(m.tier), marginBottom: 8 }}>{m.tier}</div>
+                    <div style={{ fontFamily: C.mono, fontSize: 20, fontWeight: 700, color: m.equityGain >= 0 ? '#22c55e' : '#ef4444' }}>
+                      {m.equityGain >= 0 ? '+' : ''}${m.equityGain.toFixed(0)}
+                    </div>
+                    <div style={{ fontFamily: C.mono, fontSize: 10, color: C.muted }}>
+                      {m.equityGainPct >= 0 ? '+' : ''}{m.equityGainPct.toFixed(1)}% gain
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Full leaderboard */}
+          <div style={{ padding: 20 }}>
+            <div style={{ fontFamily: C.mono, color: G, fontSize: 10, letterSpacing: 1, marginBottom: 12 }}>// PERINGKAT LENGKAP</div>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontFamily: C.mono, fontSize: 11 }}>
+              <thead>
+                <tr style={{ borderBottom: `1px solid ${C.border2}` }}>
+                  {['#','NAMA','TIER','TRADE','WIN RATE','AVG RR','EQUITY GAIN','% GAIN',''].map(h => (
+                    <th key={h} style={{ padding: '7px 10px', textAlign: 'left', color: '#888', fontWeight: 600, whiteSpace: 'nowrap' }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {jurnalStats.map((m: any, i: number) => (
+                  <tr key={m.id} style={{ borderBottom: `1px solid ${C.border}` }}
+                    onMouseEnter={ev => (ev.currentTarget.style.background = '#161616')}
+                    onMouseLeave={ev => (ev.currentTarget.style.background = 'transparent')}>
+                    <td style={{ padding: '8px 10px', color: i < 3 ? ['#f59e0b','#94a3b8','#cd7c2f'][i] : C.muted, fontWeight: 700 }}>{i + 1}</td>
+                    <td style={{ padding: '8px 10px', fontWeight: 600, color: C.text }}>{m.nama}</td>
+                    <td style={{ padding: '8px 10px', color: tierColor(m.tier), fontSize: 10 }}>{m.tier}</td>
+                    <td style={{ padding: '8px 10px' }}>{m.total}</td>
+                    <td style={{ padding: '8px 10px', color: m.winRate >= 50 ? '#22c55e' : '#ef4444' }}>{m.winRate.toFixed(1)}%</td>
+                    <td style={{ padding: '8px 10px', color: '#f59e0b' }}>{m.avgRR ? m.avgRR.toFixed(2) : '—'}</td>
+                    <td style={{ padding: '8px 10px', color: m.equityGain >= 0 ? '#22c55e' : '#ef4444', fontWeight: 700 }}>
+                      {m.equityGain >= 0 ? '+' : ''}${m.equityGain.toFixed(2)}
+                    </td>
+                    <td style={{ padding: '8px 10px', color: m.equityGainPct >= 0 ? '#22c55e' : '#ef4444' }}>
+                      {m.equityGainPct >= 0 ? '+' : ''}{m.equityGainPct.toFixed(1)}%
+                    </td>
+                    <td style={{ padding: '8px 10px' }}>
+                      <button onClick={() => viewDetail(m.id)}
+                        style={{ background: 'transparent', border: `1px solid ${C.border2}`, color: C.muted, padding: '3px 10px', fontSize: 10, cursor: 'pointer', fontFamily: C.mono }}>
+                        DETAIL
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* ── Member Detail View ── */}
+      {selectedMember && selectedData && (
+        <div style={{ background: C.panel, border: `1px solid ${C.border}`, borderRadius: 10, padding: 20 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
+            <button onClick={() => setSelectedMember(null)}
+              style={{ background: 'transparent', border: `1px solid ${C.border2}`, color: C.muted, padding: '5px 12px', cursor: 'pointer', fontFamily: C.mono, fontSize: 11 }}>
+              ← KEMBALI
+            </button>
+            <div>
+              <div style={{ fontWeight: 700, fontSize: 16 }}>{selectedData.nama}</div>
+              <div style={{ fontFamily: C.mono, fontSize: 10, color: tierColor(selectedData.tier) }}>{selectedData.tier}</div>
+            </div>
+          </div>
+
+          {/* Stat cards */}
+          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 20 }}>
+            {[
+              { l: 'TOTAL TRADE', v: String(selectedData.total) },
+              { l: 'WIN RATE', v: selectedData.winRate.toFixed(1) + '%', c: selectedData.winRate >= 50 ? '#22c55e' : '#ef4444' },
+              { l: 'TOTAL PNL', v: (selectedData.equityGain >= 0 ? '+' : '') + '$' + selectedData.equityGain.toFixed(2), c: selectedData.equityGain >= 0 ? '#22c55e' : '#ef4444' },
+              { l: 'EQUITY GAIN', v: (selectedData.equityGainPct >= 0 ? '+' : '') + selectedData.equityGainPct.toFixed(1) + '%', c: selectedData.equityGainPct >= 0 ? '#22c55e' : '#ef4444' },
+              { l: 'AVG RR', v: selectedData.avgRR ? selectedData.avgRR.toFixed(2) : '—', c: '#f59e0b' },
+              { l: 'TP / SL', v: `${selectedData.tp} / ${selectedData.sl}` },
+            ].map(s => (
+              <div key={s.l} style={{ background: '#0a0a0a', border: `1px solid ${C.border}`, borderRadius: 8, padding: '12px 16px', minWidth: 110 }}>
+                <div style={{ fontFamily: C.mono, color: C.dim, fontSize: 10, marginBottom: 5 }}>{s.l}</div>
+                <div style={{ fontFamily: C.mono, fontSize: 18, fontWeight: 700, color: (s as any).c || C.text }}>{s.v}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* Equity Curve mini in admin */}
+          {memberEntries.length >= 2 && (() => {
+            const sorted = [...memberEntries].sort((a: any, b: any) => new Date(a.tanggal).getTime() - new Date(b.tanggal).getTime());
+            const eqAwal = settings.equity_awal || 10000;
+            let eq = eqAwal;
+            const pts = sorted.map((e: any, i: number) => {
+              eq += (e.pnl ?? 0);
+              return { i, eq, pnl: e.pnl ?? 0, label: e.tanggal?.slice(5) || '' };
+            });
+            const W = 600; const H = 120; const PL = 52; const PT = 10; const PB = 24; const PR = 10;
+            const iW = W-PL-PR; const iH = H-PT-PB;
+            const vals = pts.map((p: any) => p.eq);
+            const minV = Math.min(eqAwal, ...vals); const maxV = Math.max(eqAwal, ...vals);
+            const rng = maxV - minV || 1;
+            const toX = (i: number) => PL + (i/(pts.length-1))*iW;
+            const toY = (v: number) => PT + iH - ((v-minV)/rng)*iH;
+            const poly = pts.map((p: any, i: number) => `${toX(i).toFixed(1)},${toY(p.eq).toFixed(1)}`).join(' ');
+            const fill = `${PL},${PT+iH} ${poly} ${PL+iW},${PT+iH}`;
+            const lastEq = pts[pts.length-1].eq;
+            const lc = lastEq >= eqAwal ? '#22c55e' : '#ef4444';
+            const byLine = toY(eqAwal);
+            return (
+              <div style={{ background: '#0a0a0a', border: `1px solid ${C.border}`, borderRadius: 8, padding: '14px 16px', marginBottom: 16 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+                  <div style={{ fontFamily: C.mono, color: G, fontSize: 10, letterSpacing: 1 }}>// EQUITY CURVE</div>
+                  <div style={{ fontFamily: C.mono, fontSize: 11, color: lc, fontWeight: 700 }}>
+                    ${Math.round(eqAwal).toLocaleString()} → ${Math.round(lastEq).toLocaleString()}
+                    <span style={{ marginLeft: 8, opacity: 0.7 }}>({lastEq >= eqAwal ? '+' : ''}{((lastEq - eqAwal) / eqAwal * 100).toFixed(1)}%)</span>
+                  </div>
+                </div>
+                <svg viewBox={`0 0 ${W} ${H}`} width="100%" height={H} style={{ display: 'block' }}>
+                  <defs>
+                    <linearGradient id="ag" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor={lc} stopOpacity="0.2"/>
+                      <stop offset="100%" stopColor={lc} stopOpacity="0"/>
+                    </linearGradient>
+                  </defs>
+                  <line x1={PL} y1={byLine} x2={PL+iW} y2={byLine} stroke="#2a2a2a" strokeWidth="1" strokeDasharray="3,3"/>
+                  <polygon points={fill} fill="url(#ag)"/>
+                  <polyline points={poly} fill="none" stroke={lc} strokeWidth="2" strokeLinejoin="round"/>
+                  {pts.map((p: any, i: number) => (
+                    <circle key={i} cx={toX(i)} cy={toY(p.eq)} r={i===pts.length-1?4:2}
+                      fill={p.pnl>=0?'#22c55e':'#ef4444'} stroke="#0a0a0a" strokeWidth="1"/>
+                  ))}
+                  {[0, Math.floor(pts.length/2), pts.length-1].filter((v,i,a)=>a.indexOf(v)===i).map(i=>(
+                    <text key={i} x={toX(i)} y={H-4} textAnchor="middle" fill="#555" fontSize="8" fontFamily='"Geist Mono",monospace'>
+                      {pts[i].label}
+                    </text>
+                  ))}
+                  <text x={PL-4} y={toY(maxV)+4} textAnchor="end" fill="#444" fontSize="8" fontFamily='"Geist Mono",monospace'>${Math.round(maxV)}</text>
+                  <text x={PL-4} y={toY(minV)+4} textAnchor="end" fill="#444" fontSize="8" fontFamily='"Geist Mono",monospace'>${Math.round(minV)}</text>
+                </svg>
+              </div>
+            );
+          })()}
+
+          {/* Trade list */}
+          <div style={{ fontFamily: C.mono, color: G, fontSize: 10, letterSpacing: 1, marginBottom: 10 }}>// RIWAYAT TRADE ({memberEntries.length})</div>
+          {memberEntries.length === 0 ? (
+            <div style={{ color: C.muted, fontFamily: C.mono, fontSize: 11 }}>Belum ada data.</div>
+          ) : (
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontFamily: C.mono, fontSize: 11 }}>
+                <thead>
+                  <tr style={{ borderBottom: `1px solid ${C.border2}` }}>
+                    {['TGL','PAIR','TF','HASIL','RR','PNL ($)','EMOSI','ALASAN','CHART'].map(h => (
+                      <th key={h} style={{ padding: '6px 10px', textAlign: 'left', color: '#888' }}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {memberEntries.slice(0, 50).map((e: any) => (
+                    <tr key={e.id} style={{ borderBottom: `1px solid ${C.border}` }}>
+                      <td style={{ padding: '6px 10px', whiteSpace: 'nowrap' }}>{e.tanggal}</td>
+                      <td style={{ padding: '6px 10px', color: G, fontWeight: 700 }}>{e.pair}</td>
+                      <td style={{ padding: '6px 10px', color: C.muted }}>{e.timeframe}</td>
+                      <td style={{ padding: '6px 10px', color: e.hasil === 'Take Profit' ? '#22c55e' : e.hasil === 'Stop Loss' ? '#ef4444' : '#f59e0b', fontWeight: 600 }}>{e.hasil}</td>
+                      <td style={{ padding: '6px 10px', color: '#f59e0b' }}>{e.rr ?? '—'}</td>
+                      <td style={{ padding: '6px 10px', color: (e.pnl || 0) >= 0 ? '#22c55e' : '#ef4444', fontWeight: 600 }}>{e.pnl != null ? ((e.pnl >= 0 ? '+' : '') + e.pnl.toFixed(2)) : '—'}</td>
+                      <td style={{ padding: '6px 10px', color: C.muted }}>{e.emosi}</td>
+                      <td style={{ padding: '6px 10px', color: C.muted, maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{e.alasan || '—'}</td>
+                      <td style={{ padding: '6px 10px' }}>
+                        <div style={{ display: 'flex', gap: 4 }}>
+                          {[e.chart1_url, e.chart2_url, e.chart3_url].filter(Boolean).map((url: string, ci: number) => (
+                            <a key={ci} href={url} target="_blank" rel="noopener noreferrer"
+                              style={{ fontFamily: C.mono, fontSize: 9, color: '#3b82f6', background: '#0c1a2e', border: '1px solid #1d4ed8', padding: '2px 7px', borderRadius: 3, textDecoration: 'none', whiteSpace: 'nowrap' }}>
+                              📷 {ci + 1}
+                            </a>
+                          ))}
+                          {![e.chart1_url, e.chart2_url, e.chart3_url].some(Boolean) && (
+                            <span style={{ color: C.dim, fontSize: 10 }}>—</span>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {memberEntries.length > 50 && <div style={{ color: C.muted, fontFamily: C.mono, fontSize: 10, padding: '10px 0' }}>Menampilkan 50 dari {memberEntries.length} trade.</div>}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function AdminPage({ initialTab, embedded }: { initialTab?: string; embedded?: boolean } = {}) {
   const [currentAdmin, setCurrentAdmin] = useState<Admin | null>(null);
-  const [tab, setTab] = useState<'member' | 'video' | 'materi' | 'advance' | 'admins' | 'settings' | 'announce' | 'broker' | 'ulasan' | 'claim' | 'jadwal' | 'proprules' | 'rating' | 'referral' | 'progress'>((initialTab as any) || 'member');
+  const [tab, setTab] = useState<'member' | 'video' | 'materi' | 'advance' | 'admins' | 'settings' | 'announce' | 'broker' | 'ulasan' | 'claim' | 'jadwal' | 'proprules' | 'rating' | 'referral' | 'progress' | 'jurnal'>((initialTab as any) || 'member');
   const [ulasanList, setUlasanList] = useState<any[]>([]);
   const [claims, setClaims] = useState<any[]>([]);
   const [claimActionLoading, setClaimActionLoading] = useState<string | null>(null);
@@ -1094,6 +1424,7 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
             { id: 'ulasan',  label: 'ULASAN',   count: ulasanList.filter(u=>u.status==='pending').length, warn: true },
             { id: 'claim',   label: 'KLAIM PARTNER', count: claims.filter(c=>c.status==='pending').length, warn: true },
             { id: 'settings',label: 'PASSWORD', count: null },
+            { id: 'jurnal',  label: 'JURNAL MEMBER', count: null },
             ...(isSuperAdmin ? [{ id: 'admins', label: 'ADMIN', count: admins.length }] : []),
           ].map(t => (
             <button key={t.id} onClick={() => setTab(t.id as typeof tab)}
@@ -1966,6 +2297,11 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
             passErr={passErr} passMsg={passMsg}
             handleGantiPassword={handleGantiPassword}
           />
+        )}
+
+        {/* ── TAB JURNAL MEMBER ── */}
+        {tab === 'jurnal' && (
+          <JurnalAdminTab members={members} />
         )}
 
     </div>
