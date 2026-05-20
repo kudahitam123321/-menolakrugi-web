@@ -27,6 +27,9 @@ const SIDEBAR_SECTIONS = [
     { id: 'pengumuman', label: 'Pengumuman',      icon: '📢' },
     { id: 'broadcast',  label: 'Pesan Broadcast', icon: '📡' },
   ]},
+  { h: 'TRADING', items: [
+    { id: 'jurnal', label: 'Jurnal Member', icon: '📓' },
+  ]},
   { h: 'SYSTEM', items: [
     { id: 'pengaturan', label: 'Pengaturan',   icon: '⚙' },
     { id: 'log',        label: 'Log Activity', icon: '📋' },
@@ -38,6 +41,7 @@ function getTabId(sidebarId: string): string {
     member:'member', progress:'progress', advance:'advance', admin:'admins',
     video:'video', klaim:'claim', broker:'broker', proprules:'proprules', rating:'rating', referral:'referral',
     pengumuman:'announce', broadcast:'announce',
+    jurnal:'jurnal',
     pengaturan:'settings', log:'settings',
   };
   return map[sidebarId] || sidebarId;
@@ -92,7 +96,7 @@ const TIER_COLORS: Record<string,string> = {
 
 export default function AdminPanel() {
   const [active, setActive] = useState('dashboard');
-  const [fundedModal, setFundedModal] = useState<{status:string;color:string;label:string}|null>(null);
+  const [fundedModal, setFundedModal] = useState<{status:string;color:string;label:string;k:string}|null>(null);
   const [fundedMembers, setFundedMembers] = useState<any[]>([]);
   const [dash, setDash] = useState({
     total:0, active:0, pending:0, advance:0, neverLogin:0, memberProgress:[] as any[],
@@ -334,12 +338,12 @@ export default function AdminPanel() {
         <aside className='ap-sidebar' style={{ width: 220, background: 'linear-gradient(180deg,#07070b,#050508)', borderRight: `1px solid ${C.border}`, flexShrink: 0, overflowY: 'auto' }}>
           {SIDEBAR_SECTIONS.map((section, si) => (
             <div key={si} style={{ padding: section.h ? '16px 0 0' : '8px 0 0' }}>
-              {section.h && <div style={{ fontFamily: C.mono, color: '#2a2a3a', fontSize: 8, letterSpacing: 2, padding: '0 16px 2px', marginBottom: 4, borderBottom: '1px solid #111118', textTransform: 'uppercase' as const }}>// {section.h}</div>}
+              {section.h && <div style={{ fontFamily: C.mono, color: '#666677', fontSize: 8, letterSpacing: 2, padding: '0 16px 2px', marginBottom: 4, borderBottom: '1px solid #111118', textTransform: 'uppercase' as const }}>// {section.h}</div>}
               {section.items.map(item => {
                 const isA = active === item.id;
                 return (
                   <button key={item.id} onClick={() => setActive(item.id)}
-                    className={`ap-sidebar-item${isA ? ' ap-active' : ''}`} style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '9px 16px', border: 'none', borderLeft: isA ? `2px solid ${G.gold}` : '2px solid transparent', background: isA ? 'linear-gradient(90deg,#1a150022,transparent)' : 'transparent', color: isA ? G.gold : '#444', cursor: 'pointer', fontSize: 12, fontFamily: isA ? C.mono : 'inherit', textAlign: 'left' as const, letterSpacing: isA ? 0.3 : 0 }}>
+                    className={`ap-sidebar-item${isA ? ' ap-active' : ''}`} style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '9px 16px', border: 'none', borderLeft: isA ? `2px solid ${G.gold}` : '2px solid transparent', background: isA ? 'linear-gradient(90deg,#1a150022,transparent)' : 'transparent', color: isA ? G.gold : '#9999bb', cursor: 'pointer', fontSize: 12, fontFamily: isA ? C.mono : 'inherit', textAlign: 'left' as const, letterSpacing: isA ? 0.3 : 0 }}>
                     <span>{item.icon}</span>
                     <span>{item.label}</span>
                   </button>
@@ -349,7 +353,7 @@ export default function AdminPanel() {
           ))}
           <div style={{ padding: '16px' }}>
             <button onClick={() => { localStorage.removeItem('mr_admin'); localStorage.removeItem('mr_member'); window.location.href = '/login'; }}
-              style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '8px 0', background: 'none', border: 'none', color: '#555', cursor: 'pointer', fontSize: 13 }}>
+              style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '8px 0', background: 'none', border: 'none', color: '#aaaacc', cursor: 'pointer', fontSize: 13 }}>
               <span>⏻</span> Logout
             </button>
           </div>
@@ -367,10 +371,10 @@ export default function AdminPanel() {
                 <div>
                   <div style={{ fontFamily:C.mono, color:G.gold, fontSize:9, letterSpacing:2.5, marginBottom:8, opacity:0.7 }}>// ADMIN CONTROL CENTER</div>
                   <h1 style={{ fontSize:28, fontWeight:800, margin:0, marginBottom:4, letterSpacing:-1, background:'linear-gradient(90deg,#e2e0ff,#9999bb)', WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent' }}>Dashboard</h1>
-                  <p style={{ color:'#333344', fontSize:12, margin:0, fontFamily:C.mono }}>Selamat datang, <span style={{color:G.gold}}>{adminData.username||'Admin'}</span></p>
+                  <p style={{ color:'#9999bb', fontSize:12, margin:0, fontFamily:C.mono }}>Selamat datang, <span style={{color:G.gold}}>{adminData.username||'Admin'}</span></p>
                 </div>
                 <div style={{ display:'flex', gap:8, alignItems:'center' }}>
-                  <div style={{ fontFamily:C.mono, fontSize:10, color:'#333344', background:'#0a0a12', border:'1px solid #16162a', padding:'8px 14px', borderRadius:8 }}>
+                  <div style={{ fontFamily:C.mono, fontSize:10, color:'#9999bb', background:'#0a0a12', border:'1px solid #16162a', padding:'8px 14px', borderRadius:8 }}>
                     📅 {new Date().toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'})}
                   </div>
                   <button onClick={loadDashboard} style={{ fontFamily:C.mono, fontSize:10, color:G.gold, background:'#0a0a00', border:'1px solid #2a2000', padding:'8px 14px', cursor:'pointer', borderRadius:8, transition:'all 0.2s' }}>↻ Refresh</button>
@@ -391,12 +395,12 @@ export default function AdminPanel() {
                     onMouseLeave={e=>{ (e.currentTarget as HTMLElement).style.transform='translateY(0)'; (e.currentTarget as HTMLElement).style.boxShadow='none'; }}>
                     {/* glow orb */}
                     <div style={{ position:'absolute', top:-20, right:-20, width:80, height:80, borderRadius:'50%', background:`radial-gradient(circle,${s.bg}22,transparent 70%)`, pointerEvents:'none' }}/>
-                    <div style={{ fontFamily:C.mono, color:'#33334a', fontSize:9, letterSpacing:1.5, marginBottom:12, display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+                    <div style={{ fontFamily:C.mono, color:'#8888bb', fontSize:9, letterSpacing:1.5, marginBottom:12, display:'flex', justifyContent:'space-between', alignItems:'center' }}>
                       <span>{s.l}</span>
                       <span style={{ color:s.c, fontSize:16, opacity:0.5 }}>{s.icon}</span>
                     </div>
                     <div style={{ fontSize:36, fontWeight:800, letterSpacing:-2, color:s.c, fontFamily:C.mono, lineHeight:1 }}>{s.v.toLocaleString()}</div>
-                    <div style={{ fontFamily:C.mono, fontSize:9, color:'#333344', marginTop:10, padding:'3px 7px', background:`${s.bg}11`, border:`1px solid ${s.bg}22`, borderRadius:4, display:'inline-block' }}>{s.sub}</div>
+                    <div style={{ fontFamily:C.mono, fontSize:9, color:'#9999bb', marginTop:10, padding:'3px 7px', background:`${s.bg}11`, border:`1px solid ${s.bg}22`, borderRadius:4, display:'inline-block' }}>{s.sub}</div>
                   </div>
                 ))}
               </div>
@@ -409,15 +413,15 @@ export default function AdminPanel() {
                   <div style={{ position:'absolute', top:0, left:0, right:0, height:2, background:'linear-gradient(90deg,transparent,#eab30844,transparent)' }}/>
                   <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:16 }}>
                     <div style={{ fontFamily:C.mono, color:G.gold, fontSize:9, letterSpacing:2 }}>// DISTRIBUSI TIER</div>
-                    <button onClick={()=>setActive('member')} style={{ fontFamily:C.mono, fontSize:9, color:'#333344', background:'#0f0f18', border:'1px solid #1a1a2a', padding:'3px 9px', cursor:'pointer', borderRadius:4 }}>DETAIL ›</button>
+                    <button onClick={()=>setActive('member')} style={{ fontFamily:C.mono, fontSize:9, color:'#9999bb', background:'#0f0f18', border:'1px solid #1a1a2a', padding:'3px 9px', cursor:'pointer', borderRadius:4 }}>DETAIL ›</button>
                   </div>
                   <div style={{ display:'flex', gap:14, alignItems:'flex-start' }}>
                     <DonutSmall segments={dash.tierDist} size={90}/>
                     <div style={{ flex:1, overflow:'hidden' }}>
                       <div style={{ display:'grid', gridTemplateColumns:'1fr auto auto', gap:'4px 8px', fontFamily:C.mono, fontSize:10 }}>
-                        <span style={{color:'#22223a'}}>TIER</span>
-                        <span style={{color:'#22223a',textAlign:'right' as const}}>JML</span>
-                        <span style={{color:'#22223a',textAlign:'right' as const}}>%</span>
+                        <span style={{color:'#666677'}}>TIER</span>
+                        <span style={{color:'#666677',textAlign:'right' as const}}>JML</span>
+                        <span style={{color:'#666677',textAlign:'right' as const}}>%</span>
                         {dash.tierDist.map((t:any)=>(
                           <React.Fragment key={t.label}>
                             <div style={{display:'flex',alignItems:'center',gap:5}}>
@@ -425,7 +429,7 @@ export default function AdminPanel() {
                               <span style={{color:'#555566',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap' as const,fontSize:10}}>{t.label}</span>
                             </div>
                             <span style={{color:C.text,textAlign:'right' as const,fontWeight:700,fontSize:12}}>{t.value}</span>
-                            <span style={{color:'#333344',textAlign:'right' as const,fontSize:10}}>{Math.round(t.value/Math.max(dash.total,1)*100)}%</span>
+                            <span style={{color:'#9999bb',textAlign:'right' as const,fontSize:10}}>{Math.round(t.value/Math.max(dash.total,1)*100)}%</span>
                           </React.Fragment>
                         ))}
                       </div>
@@ -438,7 +442,7 @@ export default function AdminPanel() {
                   <div style={{ position:'absolute', top:0, left:0, right:0, height:2, background:'linear-gradient(90deg,transparent,#00e5a044,transparent)' }}/>
                   <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:16 }}>
                     <div style={{ fontFamily:C.mono, color:C.up, fontSize:9, letterSpacing:2 }}>// PENYELESAIAN MATERI</div>
-                    <button onClick={()=>setActive('progress')} style={{ fontFamily:C.mono, fontSize:9, color:'#333344', background:'#0f0f18', border:'1px solid #1a1a2a', padding:'3px 9px', cursor:'pointer', borderRadius:4 }}>DETAIL ›</button>
+                    <button onClick={()=>setActive('progress')} style={{ fontFamily:C.mono, fontSize:9, color:'#9999bb', background:'#0f0f18', border:'1px solid #1a1a2a', padding:'3px 9px', cursor:'pointer', borderRadius:4 }}>DETAIL ›</button>
                   </div>
                   <div style={{ display:'flex', alignItems:'center', gap:14, marginBottom:16, padding:'12px', background:'#070710', borderRadius:10, border:'1px solid #111120' }}>
                     <div style={{ position:'relative', width:60, height:60, flexShrink:0 }}>
@@ -452,7 +456,7 @@ export default function AdminPanel() {
                       <div style={{ position:'absolute', inset:0, display:'flex', alignItems:'center', justifyContent:'center', fontFamily:C.mono, fontSize:11, fontWeight:700, color:C.up }}>{dash.completionPct}%</div>
                     </div>
                     <div>
-                      <div style={{ fontFamily:C.mono, color:'#333344', fontSize:9, marginBottom:3 }}>TINGKAT PENYELESAIAN</div>
+                      <div style={{ fontFamily:C.mono, color:'#9999bb', fontSize:9, marginBottom:3 }}>TINGKAT PENYELESAIAN</div>
                       <div style={{ fontSize:16, fontWeight:700, color:C.up }}>{dash.completedMembers} selesai</div>
                       <div style={{ fontFamily:C.mono, fontSize:9, color:'#22223a' }}>dari {dash.total} total</div>
                     </div>
@@ -466,8 +470,8 @@ export default function AdminPanel() {
                     return (
                     <div key={i} style={{marginBottom:8}}>
                       <div style={{ display:'flex', justifyContent:'space-between', fontSize:10, marginBottom:4, fontFamily:C.mono }}>
-                        <span style={{color:'#444455'}}>{row.l}</span>
-                        <span style={{color:row.c}}>{row.v} <span style={{color:'#333344'}}>({pct}%)</span></span>
+                        <span style={{color:'#aaaacc'}}>{row.l}</span>
+                        <span style={{color:row.c}}>{row.v} <span style={{color:'#9999bb'}}>({pct}%)</span></span>
                       </div>
                       <div style={{height:3,background:'#111120',borderRadius:2}}>
                         <div style={{height:'100%',width:`${pct}%`,background:`linear-gradient(90deg,${row.c},${row.c}88)`,borderRadius:2,boxShadow:`0 0 6px ${row.c}44`,transition:'width 0.8s ease'}}/>
@@ -542,7 +546,7 @@ export default function AdminPanel() {
                       <div>
                         <div style={{ fontFamily:C.mono, color:fundedModal.color, fontSize:9, letterSpacing:2, marginBottom:6 }}>{fundedModal.k} — {fundedModal.label.toUpperCase()}</div>
                         <div style={{ fontSize:20, fontWeight:800, fontFamily:C.mono, color:fundedModal.color }}>
-                          {fundedMembers.filter(m=>m.funded_status===fundedModal.k).length} <span style={{color:'#333344',fontSize:14,fontWeight:400}}>member</span>
+                          {fundedMembers.filter(m=>m.funded_status===fundedModal.k).length} <span style={{color:'#9999bb',fontSize:14,fontWeight:400}}>member</span>
                         </div>
                       </div>
                       <button onClick={()=>setFundedModal(null)} style={{ background:'#111120', border:'1px solid #22223a', color:'#555566', fontSize:18, cursor:'pointer', width:34, height:34, borderRadius:8, display:'flex', alignItems:'center', justifyContent:'center' }}>×</button>
@@ -555,7 +559,7 @@ export default function AdminPanel() {
                           </div>
                           <div style={{ flex:1, minWidth:0 }}>
                             <div style={{ fontWeight:700, fontSize:13 }}>{m.nama}</div>
-                            <div style={{ fontFamily:C.mono, fontSize:9, color:'#333344', marginTop:2 }}>{m.tier?.replace('SMC ','')}</div>
+                            <div style={{ fontFamily:C.mono, fontSize:9, color:'#9999bb', marginTop:2 }}>{m.tier?.replace('SMC ','')}</div>
                           </div>
                           {m.discord_username && (
                             <div style={{ fontFamily:C.mono, fontSize:10, color:C.up, background:'#00e5a011', border:'1px solid #00e5a022', padding:'2px 8px', borderRadius:4 }}>@{m.discord_username}</div>
@@ -579,14 +583,14 @@ export default function AdminPanel() {
                   <div style={{ fontFamily:C.mono, fontSize:9, color:'#555', background:'#0a0a12', border:'1px solid #1a1a2a', padding:'3px 9px', borderRadius:4 }}>TOP 10</div>
                 </div>
                 {(dash.memberProgress||[]).length === 0 ? (
-                  <div style={{fontFamily:C.mono,color:'#444',fontSize:11,textAlign:'center' as const,padding:'20px 0'}}>Belum ada data progress.</div>
+                  <div style={{fontFamily:C.mono,color:'#888',fontSize:11,textAlign:'center' as const,padding:'20px 0'}}>Belum ada data progress.</div>
                 ) : (
                   (dash.memberProgress||[]).slice(0,10).map((m:any,i:number)=>{
                     const MEDALS=['🥇','🥈','🥉'];
                     const pct = dash.totalVideos ? Math.round(m.selesai/dash.totalVideos*100) : 0;
                     return(
                     <div key={m.id} style={{display:'flex',alignItems:'center',gap:10,padding:'8px 0',borderBottom:'1px solid #0d0d18'}}>
-                      <span style={{fontFamily:C.mono,fontSize:i<3?14:10,color:i<3?G.gold:'#555',width:24,textAlign:'center' as const,flexShrink:0}}>{i<3?MEDALS[i]:i+1}</span>
+                      <span style={{fontFamily:C.mono,fontSize:i<3?14:10,color:i<3?G.gold:'#888',width:24,textAlign:'center' as const,flexShrink:0}}>{i<3?MEDALS[i]:i+1}</span>
                       <div style={{width:30,height:30,borderRadius:8,background:'#0f0f18',border:'1px solid #1e1e2e',display:'flex',alignItems:'center',justifyContent:'center',fontWeight:700,fontSize:12,color:'#fff',flexShrink:0}}>
                         {m.nama?.[0]?.toUpperCase()||'?'}
                       </div>
@@ -610,18 +614,18 @@ export default function AdminPanel() {
                   <div style={{ position:'absolute', top:0, left:0, right:0, height:2, background:'linear-gradient(90deg,transparent,#3b82f644,transparent)' }}/>
                   <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:16 }}>
                     <div style={{ fontFamily:C.mono, color:'#3b82f6', fontSize:9, letterSpacing:2 }}>// KLAIM PARTNERSHIP TERBARU</div>
-                    <button onClick={()=>setActive('klaim')} style={{ fontFamily:C.mono, fontSize:9, color:'#333344', background:'#0f0f18', border:'1px solid #1a1a2a', padding:'3px 9px', cursor:'pointer', borderRadius:4 }}>LIHAT SEMUA ›</button>
+                    <button onClick={()=>setActive('klaim')} style={{ fontFamily:C.mono, fontSize:9, color:'#9999bb', background:'#0f0f18', border:'1px solid #1a1a2a', padding:'3px 9px', cursor:'pointer', borderRadius:4 }}>LIHAT SEMUA ›</button>
                   </div>
-                  <div style={{ fontFamily:C.mono, display:'grid', gridTemplateColumns:'20px 1fr 60px 80px 70px', gap:'4px 8px', fontSize:9, color:'#22223a', paddingBottom:8, borderBottom:'1px solid #111120', marginBottom:6 }}>
+                  <div style={{ fontFamily:C.mono, display:'grid', gridTemplateColumns:'20px 1fr 60px 80px 70px', gap:'4px 8px', fontSize:9, color:'#666677', paddingBottom:8, borderBottom:'1px solid #111120', marginBottom:6 }}>
                     {['#','NAMA','BROKER','TANGGAL','STATUS'].map(h=><span key={h}>{h}</span>)}
                   </div>
-                  {recentClaims.length===0 && <div style={{fontFamily:C.mono,color:'#22223a',fontSize:11,padding:'12px 0'}}>Belum ada klaim.</div>}
+                  {recentClaims.length===0 && <div style={{fontFamily:C.mono,color:'#7777aa',fontSize:11,padding:'12px 0'}}>Belum ada klaim.</div>}
                   {recentClaims.map((cl:any,i:number)=>(
                     <div key={cl.id} style={{ fontFamily:C.mono, display:'grid', gridTemplateColumns:'20px 1fr 60px 80px 70px', gap:'4px 8px', alignItems:'center', padding:'8px 0', borderBottom:'1px solid #0d0d18', fontSize:11 }}>
-                      <span style={{color:'#22223a'}}>{i+1}</span>
+                      <span style={{color:'#7777aa'}}>{i+1}</span>
                       <span style={{fontWeight:600,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap' as const}}>{cl.nama}</span>
-                      <span style={{color:'#444455'}}>{cl.broker}</span>
-                      <span style={{color:'#333344',fontSize:10}}>{new Date(cl.created_at).toLocaleDateString('id-ID',{day:'numeric',month:'short'})}</span>
+                      <span style={{color:'#aaaacc'}}>{cl.broker}</span>
+                      <span style={{color:'#9999bb',fontSize:10}}>{new Date(cl.created_at).toLocaleDateString('id-ID',{day:'numeric',month:'short'})}</span>
                       <span style={{fontWeight:700,fontSize:10,color:cl.status==='approved'||cl.status==='disetujui'?C.up:cl.status==='pending'?G.gold:C.down}}>
                         {cl.status==='approved'||cl.status==='disetujui'?'✓ OK':cl.status==='pending'?'⏳':' ✕'}
                       </span>
@@ -637,8 +641,8 @@ export default function AdminPanel() {
                       <div key={i} style={{ display:'flex', gap:10, alignItems:'flex-start', padding:'10px', background:'#070710', borderRadius:8, border:'1px solid #0f0f18' }}>
                         <span style={{fontSize:14,flexShrink:0}}>{a.icon}</span>
                         <div style={{flex:1,minWidth:0}}>
-                          <div style={{fontSize:12,color:'#6666aa',lineHeight:1.4}}>{a.text}</div>
-                          <div style={{fontFamily:C.mono,fontSize:9,color:'#22223a',marginTop:3}}>{a.time}</div>
+                          <div style={{fontSize:12,color:'#ccccee',lineHeight:1.4}}>{a.text}</div>
+                          <div style={{fontFamily:C.mono,fontSize:9,color:'#7777aa',marginTop:3}}>{a.time}</div>
                         </div>
                         <div style={{width:5,height:5,borderRadius:'50%',background:i<2?C.up:'#1a1a2a',flexShrink:0,marginTop:5,boxShadow:i<2?`0 0 6px ${C.up}`:''}}/>
                       </div>
@@ -653,7 +657,7 @@ export default function AdminPanel() {
                   <div style={{ position:'absolute', top:0, left:0, right:0, height:2, background:'linear-gradient(90deg,transparent,#ec489944,transparent)' }}/>
                   <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:16 }}>
                     <div style={{ fontFamily:C.mono, color:'#ec4899', fontSize:9, letterSpacing:2 }}>// MEMBER PALING AKTIF</div>
-                    <button onClick={()=>setActive('member')} style={{ fontFamily:C.mono, fontSize:9, color:'#333344', background:'#0f0f18', border:'1px solid #1a1a2a', padding:'3px 9px', cursor:'pointer', borderRadius:4 }}>LIHAT ›</button>
+                    <button onClick={()=>setActive('member')} style={{ fontFamily:C.mono, fontSize:9, color:'#9999bb', background:'#0f0f18', border:'1px solid #1a1a2a', padding:'3px 9px', cursor:'pointer', borderRadius:4 }}>LIHAT ›</button>
                   </div>
                   {topMembers.slice(0,5).map((m:any,i:number)=>{
                     const COLORS=['#eab308','#00e5a0','#a855f7','#3b82f6','#ec4899'];
@@ -663,29 +667,29 @@ export default function AdminPanel() {
                     const ago=!m.last_seen?'—':diffMin!==null&&diffMin<60?`${diffMin}m`:diffH!==null&&diffH<24?`${diffH}j`:`${diffD}h`;
                     return (
                       <div key={m.id} style={{ display:'flex', gap:10, alignItems:'center', padding:'8px 0', borderBottom:'1px solid #0d0d18' }}>
-                        <span style={{fontFamily:C.mono,color:'#22223a',fontSize:9,width:16}}>{i+1}</span>
+                        <span style={{fontFamily:C.mono,color:'#7777aa',fontSize:9,width:16}}>{i+1}</span>
                         <div style={{width:32,height:32,borderRadius:'50%',background:`${COLORS[i]}22`,border:`1px solid ${COLORS[i]}44`,display:'flex',alignItems:'center',justifyContent:'center',fontWeight:800,fontSize:12,color:COLORS[i],flexShrink:0,boxShadow:`0 0 8px ${COLORS[i]}22`}}>
                           {(m.nama||'?')[0].toUpperCase()}
                         </div>
                         <div style={{flex:1,minWidth:0}}>
                           <div style={{fontWeight:600,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap' as const,fontSize:12}}>{m.nama}</div>
-                          <div style={{fontFamily:C.mono,color:'#333344',fontSize:9}}>{m.tier?.split(' ').slice(-1)[0]||''}</div>
+                          <div style={{fontFamily:C.mono,color:'#8888bb',fontSize:9}}>{m.tier?.split(' ').slice(-1)[0]||''}</div>
                         </div>
-                        <div style={{fontFamily:C.mono,color:i===0?C.up:'#333344',fontSize:10}}>{i===0?'🟢 ':''}{ago}</div>
+                        <div style={{fontFamily:C.mono,color:i===0?C.up:'#8888bb',fontSize:10}}>{i===0?'🟢 ':''}{ago}</div>
                       </div>
                     );
                   })}
-                  {topMembers.length===0 && <div style={{fontFamily:C.mono,color:'#22223a',fontSize:11,padding:'12px 0'}}>Tidak ada data.</div>}
+                  {topMembers.length===0 && <div style={{fontFamily:C.mono,color:'#7777aa',fontSize:11,padding:'12px 0'}}>Tidak ada data.</div>}
                 </div>
 
                 <div style={{ background:'linear-gradient(145deg,#0b0b14,#080810)', border:'1px solid #1a1a2a', borderRadius:14, padding:'20px', position:'relative', overflow:'hidden' }}>
                   <div style={{ position:'absolute', top:0, left:0, right:0, height:2, background:'linear-gradient(90deg,transparent,#eab30866,transparent)' }}/>
                   <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:16 }}>
                     <div style={{ fontFamily:C.mono, color:G.gold, fontSize:9, letterSpacing:2 }}>// GRAFIK PERTUMBUHAN MEMBER</div>
-                    <div style={{ fontFamily:C.mono, fontSize:9, color:'#333344', background:'#0a0a12', border:'1px solid #1a1a2a', padding:'3px 9px', borderRadius:4 }}>30 HARI TERAKHIR</div>
+                    <div style={{ fontFamily:C.mono, fontSize:9, color:'#9999bb', background:'#0a0a12', border:'1px solid #1a1a2a', padding:'3px 9px', borderRadius:4 }}>30 HARI TERAKHIR</div>
                   </div>
                   <MiniChart data={GROWTH_DATA} color={G.gold} height={130}/>
-                  <div style={{ display:'flex', justifyContent:'space-between', fontFamily:C.mono, fontSize:9, color:'#22223a', marginTop:8 }}>
+                  <div style={{ display:'flex', justifyContent:'space-between', fontFamily:C.mono, fontSize:9, color:'#666677', marginTop:8 }}>
                     <span>28 Apr</span><span>6 Mei</span><span>14 Mei</span><span>22 Mei</span><span>26 Mei</span>
                   </div>
                 </div>
