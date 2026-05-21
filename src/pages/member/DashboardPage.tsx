@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, memo } from 'react';
 import { supabase } from '../../lib/supabase';
 import LanjutkanBelajar from '../../components/LanjutkanBelajar';
 import JurnalPage from './JurnalPage';
+import LeaderboardPage from './LeaderboardPage';
 import { trackVideoWatch } from '../../hooks/useWatchHistory';
 
 const G = { gold: '#16a34a', gold2: '#15803d' };
@@ -16,20 +17,23 @@ const TELEGRAM = 'https://t.me/+_azyX2h9oFhmNjNl';
 const WA_ADMIN = 'https://wa.me/6281242224939';
 
 const SIDEBAR = [
-  { id: 'dashboard',   label: 'Dashboard',    icon: '⊞' },
-  { id: 'kelas',       label: 'Kelas Saya',   icon: '▶' },
-  { id: 'materi',      label: 'Materi',       icon: '📚' },
-  { id: 'news',        label: 'Chart',        icon: '📈' },
-  { id: 'komunitas',   label: 'Komunitas',    icon: '💬' },
-  { id: 'tools',       label: 'Broker',       icon: '🏦' },
-  { id: 'pengaturan',  label: 'Pengaturan',   icon: '⚙' },
-  { id: 'bantuan',     label: 'Bantuan',      icon: '❓' },
-  { id: 'funded',      label: 'Status Trading', icon: '🚀' },
-  { id: 'sertifikat',  label: 'Sertifikat',     icon: '🏆' },
-  { id: 'ulasan',      label: 'Tulis Ulasan',   icon: '⭐' },
-  { id: 'referral',    label: 'Referral',       icon: '🔗' },
-  { id: 'jurnal',      label: 'Jurnal Trading',  icon: '📓' },
-  { id: 'logout',      label: 'Logout',         icon: '⏻' },
+  { id: 'dashboard',  label: 'Dashboard',      icon: '⊞' },
+  { id: 'kelas',      label: 'Kelas Saya',     icon: '▶' },
+  { id: 'materi',     label: 'Materi',         icon: '📚' },
+  { id: 'news',       label: 'Chart',          icon: '📈' },
+  { id: 'jurnal',     label: 'Jurnal Trading', icon: '📓' },
+  { id: 'komunitas',  label: 'Komunitas',      icon: '💬' },
+  { id: 'tools',      label: 'Broker',         icon: '🏦' },
+  { id: 'sep1',       label: 'TOOLS & PROGRESS', icon: '', separator: true },
+  { id: 'funded',     label: 'Status Trading', icon: '🚀' },
+  { id: 'peringkat',  label: 'Peringkat',      icon: '🏆' },
+  { id: 'sertifikat', label: 'Sertifikat',     icon: '🎖' },
+  { id: 'ulasan',     label: 'Tulis Ulasan',   icon: '⭐' },
+  { id: 'referral',   label: 'Referral',       icon: '🔗' },
+  { id: 'sep2',       label: 'ACCOUNT',        icon: '', separator: true },
+  { id: 'pengaturan', label: 'Pengaturan',     icon: '⚙' },
+  { id: 'bantuan',    label: 'Bantuan',        icon: '❓' },
+  { id: 'logout',     label: 'Logout',         icon: '⏻' },
 ];
 
 // ── Mini sparkline ──────────────────────────────────────────────────────────
@@ -218,6 +222,7 @@ function LotCalculator() {
 // ── Halaman utama ──────────────────────────────────────────────────────────
 interface Member { id: string; nama: string; tier: string; is_advance: boolean; discord_username?: string; created_at?: string; funded_status?: string | null; discord_id?: string; }
 
+// ── Certificate Canvas Component — Premium Gold Design ──────────────
 // ── Certificate Canvas Component ──────────────────────────────────────
 function CertificateCanvas({ nama, tier, tanggal }: { nama: string; tier: string; tanggal: string }) {
   const canvasRef = React.useRef<HTMLCanvasElement>(null);
@@ -228,206 +233,48 @@ function CertificateCanvas({ nama, tier, tanggal }: { nama: string; tier: string
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    const W = 1200, H = 848;
+    const W = 600, H = 848;
     canvas.width = W; canvas.height = H;
     canvas.id = 'mr-cert-canvas';
 
-    // ── Background gradient ──
-    const bg = ctx.createLinearGradient(0, 0, W, H);
-    bg.addColorStop(0, '#040a04');
-    bg.addColorStop(0.5, '#060e06');
-    bg.addColorStop(1, '#040604');
-    ctx.fillStyle = bg;
-    ctx.fillRect(0, 0, W, H);
-
-    // ── Subtle grid pattern ──
-    ctx.strokeStyle = 'rgba(22,163,74,0.04)';
-    ctx.lineWidth = 0.5;
-    for (let x = 0; x < W; x += 40) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke(); }
-    for (let y = 0; y < H; y += 40) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke(); }
-
-    // ── Radial glow center ──
-    const glow = ctx.createRadialGradient(W/2, H/2, 0, W/2, H/2, 380);
-    glow.addColorStop(0, 'rgba(22,163,74,0.07)');
-    glow.addColorStop(1, 'transparent');
-    ctx.fillStyle = glow;
-    ctx.fillRect(0, 0, W, H);
-
-    // ── Outer border — green ──
-    ctx.strokeStyle = '#16a34a';
-    ctx.lineWidth = 2;
-    ctx.strokeRect(16, 16, W - 32, H - 32);
-
-    // ── Inner border — thin ──
-    ctx.strokeStyle = 'rgba(22,163,74,0.3)';
-    ctx.lineWidth = 0.5;
-    ctx.strokeRect(28, 28, W - 56, H - 56);
-
-    // ── Corner ornaments ──
-    const drawCorner = (cx: number, cy: number, rot: number) => {
-      ctx.save();
-      ctx.translate(cx, cy);
-      ctx.rotate(rot);
-      ctx.strokeStyle = '#16a34a';
-      ctx.lineWidth = 1.5;
-      // L-shape
-      ctx.beginPath(); ctx.moveTo(0, 24); ctx.lineTo(0, 0); ctx.lineTo(24, 0); ctx.stroke();
-      // Dot
-      ctx.beginPath(); ctx.arc(0, 0, 3, 0, Math.PI*2);
-      ctx.fillStyle = '#16a34a'; ctx.fill();
-      ctx.restore();
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.src = '/certificate-template.png';
+    img.onload = () => {
+      ctx.drawImage(img, 0, 0, W, H);
+      // Nama
+      const nameLen = nama.length;
+      const nameFontSize = nameLen > 24 ? 26 : nameLen > 16 ? 32 : 38;
+      ctx.font = `bold ${nameFontSize}px Georgia, serif`;
+      ctx.fillStyle = '#1a5c2e';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(nama, 300, 400);
+      // Tanggal
+      ctx.font = 'bold 17px Georgia, serif';
+      ctx.fillStyle = '#2d4a2d';
+      ctx.textAlign = 'left';
+      ctx.fillText(tanggal, 92, 703);
+      // Tier
+      ctx.font = '13px Georgia, serif';
+      ctx.fillStyle = '#1a5c2e';
+      ctx.textAlign = 'left';
+      ctx.fillText(tier, 92, 738);
     };
-    drawCorner(36, 36, 0);
-    drawCorner(W - 36, 36, Math.PI / 2);
-    drawCorner(W - 36, H - 36, Math.PI);
-    drawCorner(36, H - 36, -Math.PI / 2);
-
-    // ── Top accent bar ──
-    const topBar = ctx.createLinearGradient(40, 0, W - 40, 0);
-    topBar.addColorStop(0, 'transparent');
-    topBar.addColorStop(0.3, '#16a34a');
-    topBar.addColorStop(0.7, '#16a34a');
-    topBar.addColorStop(1, 'transparent');
-    ctx.fillStyle = topBar;
-    ctx.fillRect(40, 52, W - 80, 2);
-
-    // ── Bottom accent bar ──
-    ctx.fillStyle = topBar;
-    ctx.fillRect(40, H - 54, W - 80, 2);
-
-    // ── Brand name ──
-    ctx.textAlign = 'center';
-    ctx.fillStyle = '#16a34a';
-    ctx.font = 'bold 11px "Courier New", monospace';
-    ctx.fillText('MENOLAK RUGI  ·  ELITE TRADING ENVIRONMENT', W / 2, 44);
-    // ── MR monogram (stylized) ──
-    ctx.font = 'bold 28px "Courier New", monospace';
-    ctx.fillStyle = 'rgba(22,163,74,0.12)';
-    ctx.fillText('MR', W / 2, 115);
-    ctx.fillStyle = 'rgba(22,163,74,0.6)';
-    ctx.font = 'bold 24px "Courier New", monospace';
-    ctx.fillText('MR', W / 2, 113);
-
-    // ── "SERTIFIKAT" title ──
-    ctx.fillStyle = '#ffffff';
-    ctx.font = 'bold 52px Georgia, serif';
-    ctx.fillText('SERTIFIKAT', W / 2, 168);
-
-    // ── Subtitle ──
-    ctx.fillStyle = '#16a34a';
-    ctx.font = 'italic bold 18px Georgia, serif';
-    ctx.fillText('Naik Kelas Advanced — SMC Trading Education', W / 2, 200);
-
-    // ── Thin divider ──
-    const divGrad = ctx.createLinearGradient(W/2 - 200, 0, W/2 + 200, 0);
-    divGrad.addColorStop(0, 'transparent');
-    divGrad.addColorStop(0.5, '#16a34a');
-    divGrad.addColorStop(1, 'transparent');
-    ctx.fillStyle = divGrad;
-    ctx.fillRect(W/2 - 200, 220, 400, 1);
-
-    // ── "Diberikan kepada" ──
-    ctx.fillStyle = 'rgba(255,255,255,0.35)';
-    ctx.font = 'italic 15px Georgia, serif';
-    ctx.fillText('Dengan bangga diberikan kepada', W / 2, 255);
-
-    // ── Member name — hero text ──
-    const nameLen = nama.length;
-    const nameFontSize = nameLen > 24 ? 38 : nameLen > 18 ? 44 : 52;
-    ctx.fillStyle = '#ffffff';
-    ctx.font = `bold ${nameFontSize}px Georgia, serif`;
-    ctx.fillText(nama, W / 2, 322);
-
-    // ── Name underline ──
-    const nameWidth = ctx.measureText(nama).width;
-    const ulGrad = ctx.createLinearGradient(W/2 - nameWidth/2, 0, W/2 + nameWidth/2, 0);
-    ulGrad.addColorStop(0, 'transparent');
-    ulGrad.addColorStop(0.5, '#16a34a');
-    ulGrad.addColorStop(1, 'transparent');
-    ctx.fillStyle = ulGrad;
-    ctx.fillRect(W/2 - nameWidth/2, 334, nameWidth, 1.5);
-
-    // ── Tier badge ──
-    const tierClean = tier.replace('SMC ', '').toUpperCase();
-    ctx.fillStyle = 'rgba(22,163,74,0.12)';
-    ctx.beginPath();
-    const badgeW = ctx.measureText(tierClean).width + 40;
-    ctx.roundRect(W/2 - badgeW/2, 348, badgeW, 26, 13);
-    ctx.fill();
-    ctx.strokeStyle = 'rgba(22,163,74,0.4)';
-    ctx.lineWidth = 0.8;
-    ctx.stroke();
-    ctx.fillStyle = '#16a34a';
-    ctx.font = 'bold 12px "Courier New", monospace';
-    ctx.fillText(tierClean, W / 2, 365);
-
-    // ── Description ──
-    ctx.fillStyle = 'rgba(255,255,255,0.45)';
-    ctx.font = '14px Georgia, serif';
-    ctx.fillText('Telah menyelesaikan seluruh materi Basic dan berhasil', W / 2, 412);
-    ctx.fillText('naik ke kelas Advanced Smart Money Concept (SMC)', W / 2, 432);
-
-    // ── Signature section ──
-    // Left: date
-    ctx.fillStyle = 'rgba(255,255,255,0.5)';
-    ctx.fillRect(120, 510, 180, 0.8);
-    ctx.fillStyle = 'rgba(255,255,255,0.7)';
-    ctx.font = 'bold 13px Georgia, serif';
-    ctx.textAlign = 'center';
-    ctx.fillText(tanggal, 210, 534);
-    ctx.fillStyle = 'rgba(255,255,255,0.3)';
-    ctx.font = '10px "Courier New", monospace';
-    ctx.fillText('TANGGAL DITERBITKAN', 210, 550);
-
-    // Center: green seal
-    ctx.beginPath();
-    ctx.arc(W/2, 525, 38, 0, Math.PI * 2);
-    ctx.fillStyle = 'rgba(22,163,74,0.08)';
-    ctx.fill();
-    ctx.strokeStyle = '#16a34a';
-    ctx.lineWidth = 1.5;
-    ctx.stroke();
-    // Inner circle
-    ctx.beginPath();
-    ctx.arc(W/2, 525, 28, 0, Math.PI * 2);
-    ctx.strokeStyle = 'rgba(22,163,74,0.4)';
-    ctx.lineWidth = 0.8;
-    ctx.stroke();
-    // Checkmark
-    ctx.strokeStyle = '#16a34a';
-    ctx.lineWidth = 2.5;
-    ctx.lineCap = 'round';
-    ctx.beginPath();
-    ctx.moveTo(W/2 - 12, 525);
-    ctx.lineTo(W/2 - 3, 534);
-    ctx.lineTo(W/2 + 14, 515);
-    ctx.stroke();
-
-    // Right: mentor
-    ctx.fillStyle = 'rgba(255,255,255,0.5)';
-    ctx.fillRect(W - 300, 510, 180, 0.8);
-    ctx.fillStyle = 'rgba(255,255,255,0.7)';
-    ctx.font = 'bold italic 15px Georgia, serif';
-    ctx.textAlign = 'center';
-    ctx.fillText('Ikhsan', W - 210, 534);
-    ctx.fillStyle = 'rgba(255,255,255,0.3)';
-    ctx.font = '10px "Courier New", monospace';
-    ctx.fillText('FOUNDER · MENTOR', W - 210, 550);
-
-    // ── Footer ──
-    const footGrad = ctx.createLinearGradient(0, 0, W, 0);
-    footGrad.addColorStop(0, 'transparent');
-    footGrad.addColorStop(0.2, 'rgba(22,163,74,0.15)');
-    footGrad.addColorStop(0.8, 'rgba(22,163,74,0.15)');
-    footGrad.addColorStop(1, 'transparent');
-    ctx.fillStyle = footGrad;
-    ctx.fillRect(40, H - 50, W - 80, 26);
-
-    ctx.fillStyle = 'rgba(22,163,74,0.8)';
-    ctx.font = '9px "Courier New", monospace';
-    ctx.textAlign = 'center';
-    ctx.fillText('menolakrugi.pages.dev  ·  SMART MONEY CONCEPT EDUCATION  ·  VALID & VERIFIED', W / 2, H - 33);
-    }, [nama, tier, tanggal]);
+    img.onerror = () => {
+      ctx.fillStyle = '#f5f5f0';
+      ctx.fillRect(0, 0, W, H);
+      ctx.fillStyle = '#1a5c2e';
+      ctx.font = 'bold 32px Georgia, serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('SERTIFIKAT', W/2, H/2 - 60);
+      ctx.font = 'bold 28px Georgia, serif';
+      ctx.fillText(nama, W/2, H/2);
+      ctx.font = '18px Georgia, serif';
+      ctx.fillStyle = '#555';
+      ctx.fillText(tanggal, W/2, H/2 + 50);
+    };
+  }, [nama, tier, tanggal]);
 
   return (
     <canvas
@@ -455,6 +302,7 @@ export default function DashboardPage() {
   const [settingMsg, setSettingMsg]   = useState('');
   const [liveSchedules, setLiveSchedules] = useState<any[]>([]);
   const [notifications, setNotifications]   = useState<any[]>([]);
+  const [dismissedNotifs, setDismissedNotifs] = useState<Set<string>>(new Set());
   const [advanceReq, setAdvanceReq]         = useState<any | null>(null);
   const [showAdvModal, setShowAdvModal]     = useState(false);
   const [jurnal1, setJurnal1]               = useState('');
@@ -467,6 +315,26 @@ export default function DashboardPage() {
   const [statusSaving, setStatusSaving]     = useState(false);
   const [watchRefreshKey, setWatchRefreshKey] = useState(0);
   const [leaderboard, setLeaderboard]          = useState<any[]>([]);
+  const [jurnalLeaderboard, setJurnalLeaderboard] = useState<any[]>([]);
+  const [viewJurnalMember, setViewJurnalMember]   = useState<any|null>(null);
+  const [viewJurnalEntries, setViewJurnalEntries] = useState<any[]>([]);
+  const [viewJurnalLoading, setViewJurnalLoading] = useState(false);
+
+  // View another member's jurnal
+  const viewMemberJurnal = async (memberData: any) => {
+    setViewJurnalMember(memberData);
+    setViewJurnalLoading(true);
+    setViewJurnalEntries([]);
+    try {
+      const [{ data: entries }, { data: sett }] = await Promise.all([
+        supabase.from('trading_journals').select('*').eq('member_id', memberData.id).order('tanggal', { ascending: false }),
+        supabase.from('journal_settings').select('equity_awal').eq('member_id', memberData.id).single(),
+      ]);
+      setViewJurnalEntries(entries || []);
+      setViewJurnalMember({ ...memberData, equityAwal: sett?.equity_awal || memberData.equityAwal || 10000 });
+    } catch(_) {}
+    setViewJurnalLoading(false);
+  };
   const [videoRatings, setVideoRatings]         = useState<Record<string,number>>({});
   const [referralCode, setReferralCode]         = useState('');
   const [referrals, setReferrals]               = useState<any[]>([]);
@@ -536,13 +404,36 @@ export default function DashboardPage() {
       progAll.forEach((p:any) => { if(p.status==='selesai') counts[p.member_id]=(counts[p.member_id]||0)+1; });
       setLeaderboard(membAll.map((mb:any) => ({...mb,selesai:counts[mb.id]||0})).sort((a:any,b:any)=>b.selesai-a.selesai));
     }
+    // Jurnal Leaderboard
+    try {
+      const [{ data: jEntries }, { data: jSettings }] = await Promise.all([
+        supabase.from('trading_journals').select('member_id,pnl,hasil'),
+        supabase.from('journal_settings').select('member_id,equity_awal'),
+      ]);
+      const { data: membJ } = await supabase.from('members').select('id,nama,tier');
+      if (jEntries && membJ) {
+        const eqMap: Record<string,number> = {};
+        (jSettings||[]).forEach((s:any) => { eqMap[s.member_id] = s.equity_awal||10000; });
+        const pnlMap: Record<string,number> = {};
+        const cntMap: Record<string,number> = {};
+        jEntries.forEach((e:any) => {
+          pnlMap[e.member_id]=(pnlMap[e.member_id]||0)+(e.pnl||0);
+          cntMap[e.member_id]=(cntMap[e.member_id]||0)+1;
+        });
+        setJurnalLeaderboard(membJ.filter((m:any)=>cntMap[m.id]).map((m:any)=>({
+          ...m, totalPnl:pnlMap[m.id]||0, trades:cntMap[m.id]||0,
+          equityAwal:eqMap[m.id]||10000,
+          gainPct:((pnlMap[m.id]||0)/(eqMap[m.id]||10000))*100,
+        })).sort((a:any,b:any)=>b.gainPct-a.gainPct));
+      }
+    } catch(_e) {}
     // Video ratings
     if (m.id) {
       const { data: ratData } = await supabase.from('video_ratings').select('video_id,rating').eq('member_id', m.id);
       if (ratData) { const map: Record<string,number> = {}; ratData.forEach((r:any)=>{ map[r.video_id]=r.rating; }); setVideoRatings(map); }
     }
     // Referral
-    const code = m.referral_code || (m.nama?.toLowerCase().replace(/\s+/g,'') + m.id?.slice(-4));
+    const code = (m as any).referral_code || (m.nama?.toLowerCase().replace(/\s+/g,'') + m.id?.slice(-4));
     setReferralCode(code);
     const { data: refData } = await supabase.from('referrals').select('*').eq('referrer_id', m.id).order('created_at',{ascending:false});
     if (refData) setReferrals(refData);
@@ -860,6 +751,15 @@ export default function DashboardPage() {
             </div>
             <div style={{ flex: 1, paddingTop: 8 }}>
               {SIDEBAR.map(item => {
+                if ((item as any).separator) {
+                  return (
+                    <div key={item.id} style={{ padding: '14px 20px 5px', display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <div style={{ flex: 1, height: 1, background: '#1e1e1e' }}/>
+                      <span style={{ fontFamily: C.mono, fontSize: 8, color: '#333', letterSpacing: 2, whiteSpace: 'nowrap' as const }}>{item.label}</span>
+                      <div style={{ flex: 1, height: 1, background: '#1e1e1e' }}/>
+                    </div>
+                  );
+                }
                 const isA = active === item.id;
                 return (
                   <button key={item.id}
@@ -894,6 +794,15 @@ export default function DashboardPage() {
         <aside className='mr-sidebar' style={{ width: sidebarCollapsed ? 58 : 200, background: C.sidebar, borderRight: `1px solid ${C.border}`, flexShrink: 0, display: 'flex', flexDirection: 'column', overflowY: 'auto', transition: 'width 0.2s ease', overflow: 'hidden' }}>
           <div style={{ flex: 1, paddingTop: 10 }}>
             {SIDEBAR.map(item => {
+              if ((item as any).separator) {
+                return !sidebarCollapsed ? (
+                  <div key={item.id} style={{ padding: '16px 18px 6px', display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <div style={{ flex: 1, height: 1, background: '#1e1e1e' }}/>
+                    <span style={{ fontFamily: C.mono, fontSize: 8, color: '#333', letterSpacing: 2, whiteSpace: 'nowrap' as const }}>{item.label}</span>
+                    <div style={{ flex: 1, height: 1, background: '#1e1e1e' }}/>
+                  </div>
+                ) : <div key={item.id} style={{ margin: '8px 0', borderTop: '1px solid #1a1a1a' }}/>;
+              }
               const isA = active === item.id;
               return (
                 <button key={item.id}
@@ -1729,7 +1638,15 @@ export default function DashboardPage() {
           )}
 
           {/* ══ SERTIFIKAT ══ */}
-          {active === 'jurnal' && member && (
+          {/* ══ PERINGKAT ══ */}
+        {active === 'peringkat' && member && (
+          <div style={{ padding: 24 }}>
+            <LeaderboardPage memberId={member.id} onViewJurnal={viewMemberJurnal} />
+          </div>
+        )}
+
+        {/* ══ JURNAL TRADING ══ */}
+        {active === 'jurnal' && member && (
           <JurnalPage memberId={member.id} />
         )}
 
@@ -1996,6 +1913,69 @@ export default function DashboardPage() {
 
         </main>
       </div>
+
+      {/* ── Member Jurnal View Modal ── */}
+      {viewJurnalMember && (
+        <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.75)', zIndex:1000, display:'flex', alignItems:'flex-start', justifyContent:'flex-end' }}
+          onClick={(e)=>{ if(e.target===e.currentTarget) setViewJurnalMember(null); }}>
+          <div style={{ width:'min(520px,95vw)', height:'100vh', background:'#0d0d0d', borderLeft:'1px solid #1e1e1e', display:'flex', flexDirection:'column', overflowY:'auto' }}>
+            <div style={{ padding:'20px 20px 16px', borderBottom:'1px solid #1e1e1e', position:'sticky', top:0, background:'#0d0d0d', zIndex:1 }}>
+              <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:12 }}>
+                <div style={{ fontFamily:'monospace', color:'#3b82f6', fontSize:10, letterSpacing:1.5 }}>// JURNAL TRADING</div>
+                <button onClick={()=>setViewJurnalMember(null)} style={{ background:'transparent', border:'1px solid #2a2a2a', color:'#888', padding:'4px 10px', cursor:'pointer', borderRadius:5, fontFamily:'monospace', fontSize:11 }}>✕ TUTUP</button>
+              </div>
+              <div style={{ display:'flex', alignItems:'center', gap:12 }}>
+                <div style={{ width:42, height:42, borderRadius:10, background:'#1d4ed8', display:'flex', alignItems:'center', justifyContent:'center', fontWeight:700, fontSize:16, color:'#93c5fd', flexShrink:0 }}>
+                  {viewJurnalMember.nama?.[0]?.toUpperCase()}
+                </div>
+                <div>
+                  <div style={{ fontWeight:700, fontSize:16 }}>{viewJurnalMember.nama}</div>
+                  <div style={{ fontFamily:'monospace', fontSize:10, color:'#3b82f6', marginTop:2 }}>{viewJurnalMember.tier}</div>
+                </div>
+                <div style={{ marginLeft:'auto', textAlign:'right' as const }}>
+                  <div style={{ fontFamily:'monospace', fontSize:18, fontWeight:700, color:viewJurnalMember.gainPct>=0?'#22c55e':'#ef4444' }}>
+                    {viewJurnalMember.gainPct>=0?'+':''}{viewJurnalMember.gainPct?.toFixed(1)}%
+                  </div>
+                  <div style={{ fontFamily:'monospace', fontSize:10, color:'#555' }}>equity gain</div>
+                </div>
+              </div>
+            </div>
+            {viewJurnalLoading ? (
+              <div style={{ padding:40, textAlign:'center' as const, color:'#555', fontFamily:'monospace', fontSize:12 }}>Memuat data...</div>
+            ) : (
+              <div style={{ padding:16 }}>
+                {viewJurnalEntries.length===0 ? (
+                  <div style={{ color:'#555', fontFamily:'monospace', fontSize:12, textAlign:'center' as const, padding:40 }}>Belum ada trade.</div>
+                ) : (
+                  <div style={{ overflowX:'auto' }}>
+                    <table style={{ width:'100%', borderCollapse:'collapse', fontFamily:'monospace', fontSize:11 }}>
+                      <thead>
+                        <tr style={{ borderBottom:'1px solid #2a2a2a' }}>
+                          {['TGL','PAIR','TF','HASIL','RR','PNL'].map((h:string)=>(
+                            <th key={h} style={{ padding:'6px 10px', textAlign:'left' as const, color:'#555', fontWeight:600 }}>{h}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {viewJurnalEntries.slice(0,30).map((e:any)=>(
+                          <tr key={e.id} style={{ borderBottom:'1px solid #1a1a1a' }}>
+                            <td style={{ padding:'6px 10px', whiteSpace:'nowrap' as const }}>{e.tanggal}</td>
+                            <td style={{ padding:'6px 10px', color:'#16a34a', fontWeight:700 }}>{e.pair}</td>
+                            <td style={{ padding:'6px 10px', color:'#555' }}>{e.timeframe}</td>
+                            <td style={{ padding:'6px 10px', color:e.hasil==='Take Profit'?'#22c55e':e.hasil==='Stop Loss'?'#ef4444':'#f59e0b', fontWeight:600 }}>{e.hasil}</td>
+                            <td style={{ padding:'6px 10px', color:'#f59e0b' }}>{e.rr??'—'}</td>
+                            <td style={{ padding:'6px 10px', color:(e.pnl||0)>=0?'#22c55e':'#ef4444', fontWeight:600 }}>{e.pnl!=null?((e.pnl>=0?'+':'')+e.pnl.toFixed(2)):'—'}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* ── Mobile Bottom Nav ── */}
       <nav className='mr-bottom-nav' style={{ background: C.sidebar, borderTop: `1px solid ${C.border}`, display: 'flex', alignItems: 'center', padding: '0 4px' }}>
