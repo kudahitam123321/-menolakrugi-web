@@ -525,69 +525,67 @@ function MemberTable({ members, loadData }: { members: any[]; loadData: () => vo
 
 
 
-// ─── JurnalAdminTab component ─────────────────────────────────────────────────
+// ─── PeringkatAdminTab component ─────────────────────────────────────────────
 function JurnalAdminTab({ members }: { members: any[] }) {
-  const [jurnalStats, setJurnalStats]     = useState<any[]>([]);
-  const [loadingJ, setLoadingJ]           = useState(false);
-  const [selectedMember, setSelectedMember] = useState<string | null>(null);
-  const [memberEntries, setMemberEntries] = useState<any[]>([]);
-  const [settings, setSettings]           = useState<any>({});
+  const [tab, setTab]               = useState<'jurnal'|'progress'>('jurnal');
+  const [jurnalStats, setJurnalStats]   = useState<any[]>([]);
+  const [progressStats, setProgressStats] = useState<any[]>([]);
+  const [totalVideos, setTotalVideos]   = useState(0);
+  const [loadingJ, setLoadingJ]         = useState(false);
+  const [selectedMember, setSelectedMember] = useState<string|null>(null);
+  const [memberEntries, setMemberEntries]   = useState<any[]>([]);
+  const [settings, setSettings]             = useState<any>({});
+  const [editNoteId, setEditNoteId]         = useState<string|null>(null);
+  const [noteText, setNoteText]             = useState('');
+  const [noteSaving, setNoteSaving]         = useState(false);
 
   const C = {
-    panel: '#111', border: '#1e1e1e', border2: '#2a2a2a',
-    dim: '#555', muted: '#888', text: '#e7e5e4',
-    up: '#22c55e', down: '#ef4444', warn: '#f59e0b',
-    mono: '"Geist Mono",monospace',
+    panel:'#111', border:'#1e1e1e', border2:'#2a2a2a',
+    dim:'#555', muted:'#888', text:'#e7e5e4',
+    up:'#22c55e', down:'#ef4444', warn:'#f59e0b',
+    mono:'"Geist Mono",monospace',
   };
   const G = '#16a34a';
 
-  useEffect(() => { fetchJurnalStats(); }, [members]);
+  useEffect(() => { fetchAll(); }, [members]);
 
-  async function fetchJurnalStats() {
+  async function fetchAll() {
     if (!members.length) return;
     setLoadingJ(true);
     try {
-      // Fetch all journal entries + settings in one go
+      // ── Jurnal stats ──────────────────────────────────────────────────────
       const [{ data: allEntries }, { data: allSettings }] = await Promise.all([
         supabase.from('trading_journals').select('member_id,hasil,pnl,rr,tanggal'),
         supabase.from('journal_settings').select('member_id,equity_awal'),
       ]);
-
-      const settingsMap: Record<string, number> = {};
-      (allSettings || []).forEach((s: any) => { settingsMap[s.member_id] = s.equity_awal || 10000; });
-
-      // Aggregate per member
-      const memberMap: Record<string, any> = {};
-      members.forEach(m => {
-        memberMap[m.id] = {
-          id: m.id, nama: m.nama, tier: m.tier,
-          equity_awal: settingsMap[m.id] || 10000,
-          total: 0, tp: 0, sl: 0, totalPnl: 0,
-          rrSum: 0, rrCount: 0,
-        };
-      });
-
-      (allEntries || []).forEach((e: any) => {
-        const m = memberMap[e.member_id];
-        if (!m) return;
+      const settingsMap: Record<string,number> = {};
+      (allSettings||[]).forEach((s:any) => { settingsMap[s.member_id] = s.equity_awal||10000; });
+      const memberMap: Record<string,any> = {};
+      members.forEach(m => { memberMap[m.id] = { id:m.id, nama:m.nama, tier:m.tier, equity_awal:settingsMap[m.id]||10000, total:0, tp:0, sl:0, totalPnl:0, rrSum:0, rrCount:0 }; });
+      (allEntries||[]).forEach((e:any) => {
+        const m = memberMap[e.member_id]; if(!m) return;
         m.total++;
-        if (e.hasil === 'Take Profit') { m.tp++; m.rrSum += (e.rr || 0); m.rrCount++; }
-        if (e.hasil === 'Stop Loss') m.sl++;
-        m.totalPnl += (e.pnl || 0);
+        if(e.hasil==='Take Profit'){m.tp++;m.rrSum+=(e.rr||0);m.rrCount++;}
+        if(e.hasil==='Stop Loss') m.sl++;
+        m.totalPnl+=(e.pnl||0);
       });
+      setJurnalStats(Object.values(memberMap).filter((m:any)=>m.total>0).map((m:any)=>({
+        ...m,
+        winRate: (m.tp+m.sl)>0?(m.tp/(m.tp+m.sl))*100:0,
+        avgRR: m.rrCount?m.rrSum/m.rrCount:0,
+        equityGain: m.totalPnl,
+        equityGainPct: m.equity_awal?(m.totalPnl/m.equity_awal)*100:0,
+      })).sort((a:any,b:any)=>b.equityGainPct-a.equityGainPct));
 
-      const stats = Object.values(memberMap)
-        .filter((m: any) => m.total > 0)
-        .map((m: any) => ({
-          ...m,
-          winRate: m.total ? ((m.tp / Math.max(1, m.tp + m.sl)) * 100) : 0,
-          avgRR: m.rrCount ? m.rrSum / m.rrCount : 0,
-          equityGain: m.totalPnl,
-          equityGainPct: m.equity_awal ? (m.totalPnl / m.equity_awal) * 100 : 0,
-        }))
-        .sort((a: any, b: any) => b.equityGain - a.equityGain);
-
-      setJurnalStats(stats);
+      // ── Progress stats ────────────────────────────────────────────────────
+      const [{ data: vids }, { data: progs }] = await Promise.all([
+        supabase.from('videos').select('id'),
+        supabase.from('member_progress').select('member_id,status'),
+      ]);
+      setTotalVideos(vids?.length||0);
+      const counts: Record<string,number> = {};
+      (progs||[]).forEach((p:any) => { if(p.status==='selesai') counts[p.member_id]=(counts[p.member_id]||0)+1; });
+      setProgressStats(members.map(m=>({...m, selesai:counts[m.id]||0})).sort((a:any,b:any)=>b.selesai-a.selesai));
     } catch(_) {}
     setLoadingJ(false);
   }
@@ -598,193 +596,264 @@ function JurnalAdminTab({ members }: { members: any[] }) {
       supabase.from('trading_journals').select('*').eq('member_id', memberId).order('tanggal', { ascending: false }),
       supabase.from('journal_settings').select('*').eq('member_id', memberId).single(),
     ]);
-    setMemberEntries(entries || []);
-    setSettings(sett || { equity_awal: 10000 });
+    setMemberEntries(entries||[]);
+    setSettings(sett||{ equity_awal:10000 });
   }
 
-  const selectedData = selectedMember ? jurnalStats.find(s => s.id === selectedMember) : null;
-  const tierColor = (tier: string) => {
-    if (tier?.includes('Platinum')) return '#a855f7';
-    if (tier?.includes('Gold')) return '#f59e0b';
-    if (tier?.includes('Silver')) return '#94a3b8';
-    if (tier?.includes('Trial')) return '#22ab94';
+  async function saveNote(entryId: string) {
+    setNoteSaving(true);
+    await supabase.from('trading_journals').update({
+      admin_note: noteText,
+      admin_note_by: 'Admin',
+      admin_note_at: new Date().toISOString(),
+    }).eq('id', entryId);
+    // Update local state
+    setMemberEntries(prev => prev.map(e => e.id === entryId
+      ? { ...e, admin_note: noteText, admin_note_by: 'Admin', admin_note_at: new Date().toISOString() }
+      : e
+    ));
+    setEditNoteId(null);
+    setNoteText('');
+    setNoteSaving(false);
+  }
+
+  const selectedData = selectedMember ? jurnalStats.find(s=>s.id===selectedMember) : null;
+  const tierColor = (tier:string) => {
+    if(tier?.includes('Platinum')) return '#a855f7';
+    if(tier?.includes('Gold'))     return '#f59e0b';
+    if(tier?.includes('Silver'))   return '#94a3b8';
+    if(tier?.includes('Trial'))    return '#22ab94';
     return '#888';
   };
+  const tabBtn = (t:string,label:string): React.CSSProperties => ({
+    fontFamily:C.mono, fontSize:11, letterSpacing:1, padding:'7px 18px',
+    borderRadius:5, cursor:'pointer', border:'none',
+    background:tab===t?G:'transparent', color:tab===t?'#fff':C.muted, transition:'all .15s',
+  });
 
-  const inp: React.CSSProperties = {
-    background: '#111', border: '1px solid #2a2a2a', color: '#e7e5e4',
-    padding: '6px 10px', fontSize: 11, fontFamily: '"Geist Mono",monospace', outline: 'none',
-  };
-
-  if (loadingJ) return <div style={{ color: '#555', fontFamily: '"Geist Mono",monospace', fontSize: 12, padding: 40, textAlign: 'center' }}>Memuat data jurnal...</div>;
+  if(loadingJ) return <div style={{color:C.muted,fontFamily:C.mono,fontSize:12,padding:40,textAlign:'center'}}>Memuat data...</div>;
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+    <div style={{display:'flex',flexDirection:'column',gap:16}}>
+      {/* Header */}
+      <div style={{display:'flex',alignItems:'center',justifyContent:'space-between'}}>
         <div>
-          <div style={{ fontFamily: '"Geist Mono",monospace', color: G, fontSize: 11, letterSpacing: 2, marginBottom: 4 }}>// JURNAL MEMBER</div>
-          <div style={{ fontSize: 18, fontWeight: 700 }}>Statistik & Peringkat Jurnal Trading</div>
+          <div style={{fontFamily:C.mono,color:G,fontSize:11,letterSpacing:2,marginBottom:4}}>// PERINGKAT MEMBER</div>
+          <div style={{fontSize:18,fontWeight:700}}>Peringkat Member</div>
         </div>
-        <button onClick={fetchJurnalStats} style={{ background: 'transparent', border: '1px solid #2a2a2a', color: '#888', fontFamily: '"Geist Mono",monospace', fontSize: 11, padding: '6px 14px', cursor: 'pointer' }}>↻ REFRESH</button>
+        <button onClick={fetchAll} style={{background:'transparent',border:`1px solid ${C.border2}`,color:C.muted,fontFamily:C.mono,fontSize:11,padding:'6px 14px',cursor:'pointer'}}>↻ REFRESH</button>
       </div>
 
-      {jurnalStats.length === 0 && (
-        <div style={{ background: C.panel, border: `1px solid ${C.border}`, borderRadius: 10, padding: '40px 20px', textAlign: 'center', color: C.muted, fontFamily: C.mono, fontSize: 12 }}>
-          Belum ada member yang mengisi jurnal.
+      {/* Tab */}
+      {!selectedMember && (
+        <div style={{display:'flex',gap:4,background:C.panel,border:`1px solid ${C.border}`,borderRadius:8,padding:4,width:'fit-content'}}>
+          <button style={tabBtn('jurnal','📓 JURNAL TRADING')} onClick={()=>setTab('jurnal')}>📓 JURNAL TRADING</button>
+          <button style={tabBtn('progress','📚 PROGRESS BELAJAR')} onClick={()=>setTab('progress')}>📚 PROGRESS BELAJAR</button>
         </div>
       )}
 
-      {/* ── Ranking Table ── */}
-      {jurnalStats.length > 0 && !selectedMember && (
-        <div style={{ background: C.panel, border: `1px solid ${C.border}`, borderRadius: 10, overflow: 'hidden' }}>
-          {/* podium top 3 */}
-          {jurnalStats.length >= 3 && (
-            <div style={{ display: 'flex', gap: 12, padding: '20px 20px 0', justifyContent: 'center' }}>
-              {[1, 0, 2].map(idx => {
-                const m = jurnalStats[idx];
-                if (!m) return null;
-                const medals = ['🥇','🥈','🥉'];
-                const medalIdx = idx === 0 ? 0 : idx === 1 ? 2 : 1;
-                const isFirst = idx === 0;
-                return (
-                  <div key={m.id} onClick={() => viewDetail(m.id)} style={{ flex: 1, maxWidth: 200, background: '#0a0a0a', border: `1px solid ${isFirst ? G : C.border2}`, borderRadius: 10, padding: '16px 12px', textAlign: 'center', cursor: 'pointer', order: isFirst ? 0 : idx === 1 ? -1 : 1 }}>
-                    <div style={{ fontSize: 28, marginBottom: 6 }}>{medals[medalIdx]}</div>
-                    <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 4, color: C.text }}>{m.nama}</div>
-                    <div style={{ fontFamily: C.mono, fontSize: 10, color: tierColor(m.tier), marginBottom: 8 }}>{m.tier}</div>
-                    <div style={{ fontFamily: C.mono, fontSize: 20, fontWeight: 700, color: m.equityGain >= 0 ? '#22c55e' : '#ef4444' }}>
-                      {m.equityGain >= 0 ? '+' : ''}${m.equityGain.toFixed(0)}
+      {/* ── JURNAL TAB ── */}
+      {tab==='jurnal' && !selectedMember && (
+        <div style={{background:C.panel,border:`1px solid ${C.border}`,borderRadius:10,overflow:'hidden'}}>
+          {/* Podium top 3 */}
+          {jurnalStats.length>=1 && (
+            <div style={{display:'flex',alignItems:'flex-end',justifyContent:'center',padding:'20px 16px 0',background:'linear-gradient(180deg,#0a0a0a,#111)'}}>
+              {[1,0,2].map(rankIdx=>{
+                const m=jurnalStats[rankIdx]; if(!m) return null;
+                const COLS=['#f59e0b','#94a3b8','#cd7c2f'];
+                const HEIGHTS=[100,70,55];
+                const MEDALS=['🥇','🥈','🥉'];
+                const col=COLS[rankIdx]; const h=HEIGHTS[rankIdx];
+                return(
+                  <div key={m.id} style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center'}}>
+                    <div style={{height:130,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'flex-end',gap:5,paddingBottom:6,width:'100%'}}>
+                      <div style={{fontSize:rankIdx===0?30:24}}>{MEDALS[rankIdx]}</div>
+                      <div style={{width:rankIdx===0?52:42,height:rankIdx===0?52:42,borderRadius:'50%',background:'#1a1a1a',border:`2px solid ${col}`,display:'flex',alignItems:'center',justifyContent:'center',fontWeight:800,fontSize:rankIdx===0?20:16,color:col}}>
+                        {m.nama?.[0]?.toUpperCase()}
+                      </div>
+                      <div style={{fontWeight:700,fontSize:11,color:C.text,textAlign:'center' as const,maxWidth:90,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap' as const}}>{m.nama}</div>
+                      <div style={{fontFamily:C.mono,fontSize:11,fontWeight:700,color:m.equityGain>=0?C.up:C.down}}>{m.equityGain>=0?'+':''}{m.equityGainPct.toFixed(1)}%</div>
                     </div>
-                    <div style={{ fontFamily: C.mono, fontSize: 10, color: C.muted }}>
-                      {m.equityGainPct >= 0 ? '+' : ''}{m.equityGainPct.toFixed(1)}% gain
+                    <div style={{width:'100%',height:h,background:`linear-gradient(180deg,${col}55,${col}22)`,border:`1px solid ${col}66`,borderBottom:'none',borderRadius:'8px 8px 0 0',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+                      <span style={{fontFamily:C.mono,fontWeight:900,fontSize:rankIdx===0?18:14,color:col}}>#{rankIdx+1}</span>
                     </div>
                   </div>
                 );
               })}
             </div>
           )}
+          {jurnalStats.length===0 && <div style={{padding:'40px 20px',textAlign:'center' as const,color:C.muted,fontFamily:C.mono,fontSize:12}}>Belum ada member yang mengisi jurnal.</div>}
+          {/* Table */}
+          {jurnalStats.length>0 && (
+            <div style={{padding:16,overflowX:'auto'}}>
+              <div style={{fontFamily:C.mono,color:G,fontSize:10,letterSpacing:1,marginBottom:10}}>// PERINGKAT JURNAL ({jurnalStats.length} member)</div>
+              <table style={{width:'100%',borderCollapse:'collapse',fontFamily:C.mono,fontSize:11}}>
+                <thead>
+                  <tr style={{borderBottom:`1px solid ${C.border2}`}}>
+                    {['#','NAMA','TIER','TRADE','WIN RATE','AVG RR','EQUITY GAIN','% GAIN',''].map(h=>(
+                      <th key={h} style={{padding:'7px 10px',textAlign:'left' as const,color:'#888',fontWeight:600,whiteSpace:'nowrap' as const}}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {jurnalStats.map((m:any,i:number)=>(
+                    <tr key={m.id} style={{borderBottom:`1px solid ${C.border}`}}
+                      onMouseEnter={ev=>(ev.currentTarget.style.background='#161616')}
+                      onMouseLeave={ev=>(ev.currentTarget.style.background='transparent')}>
+                      <td style={{padding:'8px 10px',color:i<3?['#f59e0b','#94a3b8','#cd7c2f'][i]:C.muted,fontWeight:700}}>{i+1}</td>
+                      <td style={{padding:'8px 10px',fontWeight:600,color:C.text}}>{m.nama}</td>
+                      <td style={{padding:'8px 10px',color:tierColor(m.tier),fontSize:10}}>{m.tier}</td>
+                      <td style={{padding:'8px 10px'}}>{m.total}</td>
+                      <td style={{padding:'8px 10px',color:m.winRate>=50?C.up:C.down}}>{m.winRate.toFixed(1)}%</td>
+                      <td style={{padding:'8px 10px',color:C.warn}}>{m.avgRR?m.avgRR.toFixed(2):'—'}</td>
+                      <td style={{padding:'8px 10px',color:m.equityGain>=0?C.up:C.down,fontWeight:700}}>{m.equityGain>=0?'+':''}${m.equityGain.toFixed(2)}</td>
+                      <td style={{padding:'8px 10px',color:m.equityGainPct>=0?C.up:C.down,fontWeight:700}}>{m.equityGainPct>=0?'+':''}{m.equityGainPct.toFixed(1)}%</td>
+                      <td style={{padding:'8px 10px'}}>
+                        <button onClick={()=>viewDetail(m.id)} style={{background:'transparent',border:`1px solid ${C.border2}`,color:C.muted,padding:'3px 10px',fontSize:10,cursor:'pointer',fontFamily:C.mono}}>DETAIL</button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
 
-          {/* Full leaderboard */}
-          <div style={{ padding: 20 }}>
-            <div style={{ fontFamily: C.mono, color: G, fontSize: 10, letterSpacing: 1, marginBottom: 12 }}>// PERINGKAT LENGKAP</div>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontFamily: C.mono, fontSize: 11 }}>
+      {/* ── PROGRESS TAB ── */}
+      {tab==='progress' && !selectedMember && (
+        <div style={{background:C.panel,border:`1px solid ${C.border}`,borderRadius:10,overflow:'hidden'}}>
+          {progressStats.filter((m:any)=>m.selesai>0).length>=1 && (
+            <div style={{display:'flex',alignItems:'flex-end',justifyContent:'center',padding:'20px 16px 0',background:'linear-gradient(180deg,#0a0a0a,#111)'}}>
+              {[1,0,2].map(rankIdx=>{
+                const ranked=progressStats.filter((m:any)=>m.selesai>0);
+                const m=ranked[rankIdx]; if(!m) return null;
+                const COLS=['#f59e0b','#94a3b8','#cd7c2f'];
+                const HEIGHTS=[100,70,55];
+                const MEDALS=['🥇','🥈','🥉'];
+                const col=COLS[rankIdx]; const h=HEIGHTS[rankIdx];
+                const pct=totalVideos?Math.round(m.selesai/totalVideos*100):0;
+                return(
+                  <div key={m.id} style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center'}}>
+                    <div style={{height:130,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'flex-end',gap:5,paddingBottom:6,width:'100%'}}>
+                      <div style={{fontSize:rankIdx===0?30:24}}>{MEDALS[rankIdx]}</div>
+                      <div style={{width:rankIdx===0?52:42,height:rankIdx===0?52:42,borderRadius:'50%',background:'#1a1a1a',border:`2px solid ${col}`,display:'flex',alignItems:'center',justifyContent:'center',fontWeight:800,fontSize:rankIdx===0?20:16,color:col}}>
+                        {m.nama?.[0]?.toUpperCase()}
+                      </div>
+                      <div style={{fontWeight:700,fontSize:11,color:C.text,textAlign:'center' as const,maxWidth:90,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap' as const}}>{m.nama}</div>
+                      <div style={{fontFamily:C.mono,fontSize:11,fontWeight:700,color:col}}>{m.selesai}/{totalVideos} ({pct}%)</div>
+                    </div>
+                    <div style={{width:'100%',height:h,background:`linear-gradient(180deg,${col}55,${col}22)`,border:`1px solid ${col}66`,borderBottom:'none',borderRadius:'8px 8px 0 0',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+                      <span style={{fontFamily:C.mono,fontWeight:900,fontSize:rankIdx===0?18:14,color:col}}>#{rankIdx+1}</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+          <div style={{padding:16,overflowX:'auto'}}>
+            <div style={{fontFamily:C.mono,color:G,fontSize:10,letterSpacing:1,marginBottom:10}}>// PERINGKAT PROGRESS ({progressStats.filter((m:any)=>m.selesai>0).length} member aktif)</div>
+            <table style={{width:'100%',borderCollapse:'collapse',fontFamily:C.mono,fontSize:11}}>
               <thead>
-                <tr style={{ borderBottom: `1px solid ${C.border2}` }}>
-                  {['#','NAMA','TIER','TRADE','WIN RATE','AVG RR','EQUITY GAIN','% GAIN',''].map(h => (
-                    <th key={h} style={{ padding: '7px 10px', textAlign: 'left', color: '#888', fontWeight: 600, whiteSpace: 'nowrap' }}>{h}</th>
+                <tr style={{borderBottom:`1px solid ${C.border2}`}}>
+                  {['#','NAMA','TIER','MATERI SELESAI','PROGRESS',''].map(h=>(
+                    <th key={h} style={{padding:'7px 10px',textAlign:'left' as const,color:'#888',fontWeight:600}}>{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
-                {jurnalStats.map((m: any, i: number) => (
-                  <tr key={m.id} style={{ borderBottom: `1px solid ${C.border}` }}
-                    onMouseEnter={ev => (ev.currentTarget.style.background = '#161616')}
-                    onMouseLeave={ev => (ev.currentTarget.style.background = 'transparent')}>
-                    <td style={{ padding: '8px 10px', color: i < 3 ? ['#f59e0b','#94a3b8','#cd7c2f'][i] : C.muted, fontWeight: 700 }}>{i + 1}</td>
-                    <td style={{ padding: '8px 10px', fontWeight: 600, color: C.text }}>{m.nama}</td>
-                    <td style={{ padding: '8px 10px', color: tierColor(m.tier), fontSize: 10 }}>{m.tier}</td>
-                    <td style={{ padding: '8px 10px' }}>{m.total}</td>
-                    <td style={{ padding: '8px 10px', color: m.winRate >= 50 ? '#22c55e' : '#ef4444' }}>{m.winRate.toFixed(1)}%</td>
-                    <td style={{ padding: '8px 10px', color: '#f59e0b' }}>{m.avgRR ? m.avgRR.toFixed(2) : '—'}</td>
-                    <td style={{ padding: '8px 10px', color: m.equityGain >= 0 ? '#22c55e' : '#ef4444', fontWeight: 700 }}>
-                      {m.equityGain >= 0 ? '+' : ''}${m.equityGain.toFixed(2)}
-                    </td>
-                    <td style={{ padding: '8px 10px', color: m.equityGainPct >= 0 ? '#22c55e' : '#ef4444' }}>
-                      {m.equityGainPct >= 0 ? '+' : ''}{m.equityGainPct.toFixed(1)}%
-                    </td>
-                    <td style={{ padding: '8px 10px' }}>
-                      <button onClick={() => viewDetail(m.id)}
-                        style={{ background: 'transparent', border: `1px solid ${C.border2}`, color: C.muted, padding: '3px 10px', fontSize: 10, cursor: 'pointer', fontFamily: C.mono }}>
-                        DETAIL
-                      </button>
-                    </td>
-                  </tr>
-                ))}
+                {progressStats.map((m:any,i:number)=>{
+                  const pct=totalVideos?Math.min(100,Math.round(m.selesai/totalVideos*100)):0;
+                  const col=i<3?['#f59e0b','#94a3b8','#cd7c2f'][i]:C.muted;
+                  return(
+                    <tr key={m.id} style={{borderBottom:`1px solid ${C.border}`}}
+                      onMouseEnter={ev=>(ev.currentTarget.style.background='#161616')}
+                      onMouseLeave={ev=>(ev.currentTarget.style.background='transparent')}>
+                      <td style={{padding:'8px 10px',color:col,fontWeight:700}}>{i+1}</td>
+                      <td style={{padding:'8px 10px',fontWeight:600,color:C.text}}>{m.nama}</td>
+                      <td style={{padding:'8px 10px',color:tierColor(m.tier),fontSize:10}}>{m.tier}</td>
+                      <td style={{padding:'8px 10px',fontFamily:C.mono,color:col,fontWeight:700}}>{m.selesai}<span style={{color:'#333',fontWeight:400}}>/{totalVideos}</span></td>
+                      <td style={{padding:'8px 10px',minWidth:150}}>
+                        <div style={{height:6,background:'#1a1a1a',borderRadius:3}}>
+                          <div style={{height:'100%',width:`${pct}%`,background:i<3?col:G,borderRadius:3,transition:'width 0.8s'}}/>
+                        </div>
+                        <div style={{fontFamily:C.mono,fontSize:9,color:C.dim,marginTop:3}}>{pct}%</div>
+                      </td>
+                      <td style={{padding:'8px 10px'}}></td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
         </div>
       )}
 
-      {/* ── Member Detail View ── */}
+      {/* ── DETAIL JURNAL MEMBER ── */}
       {selectedMember && selectedData && (
-        <div style={{ background: C.panel, border: `1px solid ${C.border}`, borderRadius: 10, padding: 20 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
-            <button onClick={() => setSelectedMember(null)}
-              style={{ background: 'transparent', border: `1px solid ${C.border2}`, color: C.muted, padding: '5px 12px', cursor: 'pointer', fontFamily: C.mono, fontSize: 11 }}>
-              ← KEMBALI
-            </button>
+        <div style={{background:C.panel,border:`1px solid ${C.border}`,borderRadius:10,padding:20}}>
+          <div style={{display:'flex',alignItems:'center',gap:12,marginBottom:20}}>
+            <button onClick={()=>setSelectedMember(null)} style={{background:'transparent',border:`1px solid ${C.border2}`,color:C.muted,padding:'5px 12px',cursor:'pointer',fontFamily:C.mono,fontSize:11}}>← KEMBALI</button>
             <div>
-              <div style={{ fontWeight: 700, fontSize: 16 }}>{selectedData.nama}</div>
-              <div style={{ fontFamily: C.mono, fontSize: 10, color: tierColor(selectedData.tier) }}>{selectedData.tier}</div>
+              <div style={{fontWeight:700,fontSize:16}}>{selectedData.nama}</div>
+              <div style={{fontFamily:C.mono,fontSize:10,color:tierColor(selectedData.tier)}}>{selectedData.tier}</div>
+            </div>
+            <div style={{marginLeft:'auto',textAlign:'right' as const}}>
+              <div style={{fontFamily:C.mono,fontSize:20,fontWeight:700,color:selectedData.equityGain>=0?C.up:C.down}}>
+                {selectedData.equityGain>=0?'+':''}{selectedData.equityGainPct.toFixed(1)}%
+              </div>
+              <div style={{fontFamily:C.mono,fontSize:10,color:C.muted}}>equity gain</div>
             </div>
           </div>
 
           {/* Stat cards */}
-          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 20 }}>
+          <div style={{display:'flex',gap:10,flexWrap:'wrap',marginBottom:20}}>
             {[
-              { l: 'TOTAL TRADE', v: String(selectedData.total) },
-              { l: 'WIN RATE', v: selectedData.winRate.toFixed(1) + '%', c: selectedData.winRate >= 50 ? '#22c55e' : '#ef4444' },
-              { l: 'TOTAL PNL', v: (selectedData.equityGain >= 0 ? '+' : '') + '$' + selectedData.equityGain.toFixed(2), c: selectedData.equityGain >= 0 ? '#22c55e' : '#ef4444' },
-              { l: 'EQUITY GAIN', v: (selectedData.equityGainPct >= 0 ? '+' : '') + selectedData.equityGainPct.toFixed(1) + '%', c: selectedData.equityGainPct >= 0 ? '#22c55e' : '#ef4444' },
-              { l: 'AVG RR', v: selectedData.avgRR ? selectedData.avgRR.toFixed(2) : '—', c: '#f59e0b' },
-              { l: 'TP / SL', v: `${selectedData.tp} / ${selectedData.sl}` },
-            ].map(s => (
-              <div key={s.l} style={{ background: '#0a0a0a', border: `1px solid ${C.border}`, borderRadius: 8, padding: '12px 16px', minWidth: 110 }}>
-                <div style={{ fontFamily: C.mono, color: C.dim, fontSize: 10, marginBottom: 5 }}>{s.l}</div>
-                <div style={{ fontFamily: C.mono, fontSize: 18, fontWeight: 700, color: (s as any).c || C.text }}>{s.v}</div>
+              {l:'TOTAL TRADE',v:String(selectedData.total)},
+              {l:'WIN RATE',v:selectedData.winRate.toFixed(1)+'%',c:selectedData.winRate>=50?C.up:C.down},
+              {l:'TOTAL PNL',v:(selectedData.equityGain>=0?'+':'')+'$'+selectedData.equityGain.toFixed(2),c:selectedData.equityGain>=0?C.up:C.down},
+              {l:'EQUITY GAIN',v:(selectedData.equityGainPct>=0?'+':'')+selectedData.equityGainPct.toFixed(1)+'%',c:selectedData.equityGainPct>=0?C.up:C.down},
+              {l:'AVG RR',v:selectedData.avgRR?selectedData.avgRR.toFixed(2):'—',c:C.warn},
+              {l:'TP / SL',v:`${selectedData.tp} / ${selectedData.sl}`},
+            ].map(s=>(
+              <div key={s.l} style={{background:'#0a0a0a',border:`1px solid ${C.border}`,borderRadius:8,padding:'12px 16px',minWidth:110}}>
+                <div style={{fontFamily:C.mono,color:C.dim,fontSize:10,marginBottom:5}}>{s.l}</div>
+                <div style={{fontFamily:C.mono,fontSize:18,fontWeight:700,color:(s as any).c||C.text}}>{s.v}</div>
               </div>
             ))}
           </div>
 
-          {/* Equity Curve mini in admin */}
-          {memberEntries.length >= 2 && (() => {
-            const sorted = [...memberEntries].sort((a: any, b: any) => new Date(a.tanggal).getTime() - new Date(b.tanggal).getTime());
-            const eqAwal = settings.equity_awal || 10000;
-            let eq = eqAwal;
-            const pts = sorted.map((e: any, i: number) => {
-              eq += (e.pnl ?? 0);
-              return { i, eq, pnl: e.pnl ?? 0, label: e.tanggal?.slice(5) || '' };
-            });
-            const W = 600; const H = 120; const PL = 52; const PT = 10; const PB = 24; const PR = 10;
-            const iW = W-PL-PR; const iH = H-PT-PB;
-            const vals = pts.map((p: any) => p.eq);
-            const minV = Math.min(eqAwal, ...vals); const maxV = Math.max(eqAwal, ...vals);
-            const rng = maxV - minV || 1;
-            const toX = (i: number) => PL + (i/(pts.length-1))*iW;
-            const toY = (v: number) => PT + iH - ((v-minV)/rng)*iH;
-            const poly = pts.map((p: any, i: number) => `${toX(i).toFixed(1)},${toY(p.eq).toFixed(1)}`).join(' ');
-            const fill = `${PL},${PT+iH} ${poly} ${PL+iW},${PT+iH}`;
-            const lastEq = pts[pts.length-1].eq;
-            const lc = lastEq >= eqAwal ? '#22c55e' : '#ef4444';
-            const byLine = toY(eqAwal);
-            return (
-              <div style={{ background: '#0a0a0a', border: `1px solid ${C.border}`, borderRadius: 8, padding: '14px 16px', marginBottom: 16 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-                  <div style={{ fontFamily: C.mono, color: G, fontSize: 10, letterSpacing: 1 }}>// EQUITY CURVE</div>
-                  <div style={{ fontFamily: C.mono, fontSize: 11, color: lc, fontWeight: 700 }}>
-                    ${Math.round(eqAwal).toLocaleString()} → ${Math.round(lastEq).toLocaleString()}
-                    <span style={{ marginLeft: 8, opacity: 0.7 }}>({lastEq >= eqAwal ? '+' : ''}{((lastEq - eqAwal) / eqAwal * 100).toFixed(1)}%)</span>
-                  </div>
+          {/* Equity Curve */}
+          {memberEntries.length>=2&&(()=>{
+            const sorted=[...memberEntries].sort((a:any,b:any)=>new Date(a.tanggal).getTime()-new Date(b.tanggal).getTime());
+            const eqAwal=settings.equity_awal||10000;
+            let eq=eqAwal;
+            const pts=sorted.map((e:any,i:number)=>{eq+=(e.pnl??0);return{i,eq,pnl:e.pnl??0,label:e.tanggal?.slice(5)||''};});
+            const W=600,H=120,PL=52,PT=10,PB=24,PR=10;
+            const iW=W-PL-PR,iH=H-PT-PB;
+            const vals=pts.map((p:any)=>p.eq);
+            const minV=Math.min(eqAwal,...vals),maxV=Math.max(eqAwal,...vals);
+            const rng=maxV-minV||1;
+            const toX=(i:number)=>PL+(i/(pts.length-1))*iW;
+            const toY=(v:number)=>PT+iH-((v-minV)/rng)*iH;
+            const poly=pts.map((p:any,i:number)=>`${toX(i).toFixed(1)},${toY(p.eq).toFixed(1)}`).join(' ');
+            const fill=`${PL},${PT+iH} ${poly} ${PL+iW},${PT+iH}`;
+            const lastEq=pts[pts.length-1].eq;
+            const lc=lastEq>=eqAwal?C.up:C.down;
+            const byLine=toY(eqAwal);
+            return(
+              <div style={{background:'#0a0a0a',border:`1px solid ${C.border}`,borderRadius:8,padding:'14px 16px',marginBottom:16}}>
+                <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:10}}>
+                  <div style={{fontFamily:C.mono,color:G,fontSize:10,letterSpacing:1}}>// EQUITY CURVE</div>
+                  <div style={{fontFamily:C.mono,fontSize:11,color:lc,fontWeight:700}}>${Math.round(eqAwal).toLocaleString()} → ${Math.round(lastEq).toLocaleString()} <span style={{opacity:0.7}}>({lastEq>=eqAwal?'+':''}{((lastEq-eqAwal)/eqAwal*100).toFixed(1)}%)</span></div>
                 </div>
-                <svg viewBox={`0 0 ${W} ${H}`} width="100%" height={H} style={{ display: 'block' }}>
-                  <defs>
-                    <linearGradient id="ag" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor={lc} stopOpacity="0.2"/>
-                      <stop offset="100%" stopColor={lc} stopOpacity="0"/>
-                    </linearGradient>
-                  </defs>
+                <svg viewBox={`0 0 ${W} ${H}`} width="100%" height={H} style={{display:'block'}}>
+                  <defs><linearGradient id="ag" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={lc} stopOpacity="0.2"/><stop offset="100%" stopColor={lc} stopOpacity="0"/></linearGradient></defs>
                   <line x1={PL} y1={byLine} x2={PL+iW} y2={byLine} stroke="#2a2a2a" strokeWidth="1" strokeDasharray="3,3"/>
                   <polygon points={fill} fill="url(#ag)"/>
                   <polyline points={poly} fill="none" stroke={lc} strokeWidth="2" strokeLinejoin="round"/>
-                  {pts.map((p: any, i: number) => (
-                    <circle key={i} cx={toX(i)} cy={toY(p.eq)} r={i===pts.length-1?4:2}
-                      fill={p.pnl>=0?'#22c55e':'#ef4444'} stroke="#0a0a0a" strokeWidth="1"/>
-                  ))}
-                  {[0, Math.floor(pts.length/2), pts.length-1].filter((v,i,a)=>a.indexOf(v)===i).map(i=>(
-                    <text key={i} x={toX(i)} y={H-4} textAnchor="middle" fill="#555" fontSize="8" fontFamily='"Geist Mono",monospace'>
-                      {pts[i].label}
-                    </text>
-                  ))}
+                  {pts.map((p:any,i:number)=>(<circle key={i} cx={toX(i)} cy={toY(p.eq)} r={i===pts.length-1?4:2} fill={p.pnl>=0?C.up:C.down} stroke="#0a0a0a" strokeWidth="1"/>))}
+                  {[0,Math.floor(pts.length/2),pts.length-1].filter((v,i,a)=>a.indexOf(v)===i).map(i=>(<text key={i} x={toX(i)} y={H-4} textAnchor="middle" fill="#555" fontSize="8" fontFamily='"Geist Mono",monospace'>{pts[i].label}</text>))}
                   <text x={PL-4} y={toY(maxV)+4} textAnchor="end" fill="#444" fontSize="8" fontFamily='"Geist Mono",monospace'>${Math.round(maxV)}</text>
                   <text x={PL-4} y={toY(minV)+4} textAnchor="end" fill="#444" fontSize="8" fontFamily='"Geist Mono",monospace'>${Math.round(minV)}</text>
                 </svg>
@@ -792,49 +861,86 @@ function JurnalAdminTab({ members }: { members: any[] }) {
             );
           })()}
 
-          {/* Trade list */}
-          <div style={{ fontFamily: C.mono, color: G, fontSize: 10, letterSpacing: 1, marginBottom: 10 }}>// RIWAYAT TRADE ({memberEntries.length})</div>
-          {memberEntries.length === 0 ? (
-            <div style={{ color: C.muted, fontFamily: C.mono, fontSize: 11 }}>Belum ada data.</div>
-          ) : (
-            <div style={{ overflowX: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontFamily: C.mono, fontSize: 11 }}>
+          {/* Trade list dengan chart links */}
+          <div style={{fontFamily:C.mono,color:G,fontSize:10,letterSpacing:1,marginBottom:10}}>// RIWAYAT TRADE ({memberEntries.length})</div>
+          {memberEntries.length===0?(
+            <div style={{color:C.muted,fontFamily:C.mono,fontSize:11}}>Belum ada data.</div>
+          ):(
+            <div style={{overflowX:'auto'}}>
+              <table style={{width:'100%',borderCollapse:'collapse',fontFamily:C.mono,fontSize:11}}>
                 <thead>
-                  <tr style={{ borderBottom: `1px solid ${C.border2}` }}>
-                    {['TGL','PAIR','TF','HASIL','RR','PNL ($)','EMOSI','ALASAN','CHART'].map(h => (
-                      <th key={h} style={{ padding: '6px 10px', textAlign: 'left', color: '#888' }}>{h}</th>
+                  <tr style={{borderBottom:`1px solid ${C.border2}`}}>
+                    {['TGL','PAIR','TF','SETUP','BIAS','HASIL','RR','PNL ($)','EMOSI','ALASAN','CHART','KOREKSI ADMIN'].map(h=>(
+                      <th key={h} style={{padding:'6px 10px',textAlign:'left' as const,color:'#888',fontSize:10}}>{h}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
-                  {memberEntries.slice(0, 50).map((e: any) => (
-                    <tr key={e.id} style={{ borderBottom: `1px solid ${C.border}` }}>
-                      <td style={{ padding: '6px 10px', whiteSpace: 'nowrap' }}>{e.tanggal}</td>
-                      <td style={{ padding: '6px 10px', color: G, fontWeight: 700 }}>{e.pair}</td>
-                      <td style={{ padding: '6px 10px', color: C.muted }}>{e.timeframe}</td>
-                      <td style={{ padding: '6px 10px', color: e.hasil === 'Take Profit' ? '#22c55e' : e.hasil === 'Stop Loss' ? '#ef4444' : '#f59e0b', fontWeight: 600 }}>{e.hasil}</td>
-                      <td style={{ padding: '6px 10px', color: '#f59e0b' }}>{e.rr ?? '—'}</td>
-                      <td style={{ padding: '6px 10px', color: (e.pnl || 0) >= 0 ? '#22c55e' : '#ef4444', fontWeight: 600 }}>{e.pnl != null ? ((e.pnl >= 0 ? '+' : '') + e.pnl.toFixed(2)) : '—'}</td>
-                      <td style={{ padding: '6px 10px', color: C.muted }}>{e.emosi}</td>
-                      <td style={{ padding: '6px 10px', color: C.muted, maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{e.alasan || '—'}</td>
-                      <td style={{ padding: '6px 10px' }}>
-                        <div style={{ display: 'flex', gap: 4 }}>
-                          {[e.chart1_url, e.chart2_url, e.chart3_url].filter(Boolean).map((url: string, ci: number) => (
+                  {memberEntries.map((e:any)=>(
+                    <tr key={e.id} style={{borderBottom:`1px solid ${C.border}`}}
+                      onMouseEnter={ev=>(ev.currentTarget.style.background='#161616')}
+                      onMouseLeave={ev=>(ev.currentTarget.style.background='transparent')}>
+                      <td style={{padding:'6px 10px',whiteSpace:'nowrap' as const}}>{e.tanggal}</td>
+                      <td style={{padding:'6px 10px',color:G,fontWeight:700}}>{e.pair}</td>
+                      <td style={{padding:'6px 10px',color:C.muted}}>{e.timeframe}</td>
+                      <td style={{padding:'6px 10px',fontSize:10}}>{e.setup}</td>
+                      <td style={{padding:'6px 10px',color:'#60a5fa',fontSize:10}}>{e.bias||'—'}</td>
+                      <td style={{padding:'6px 10px',color:e.hasil==='Take Profit'?C.up:e.hasil==='Stop Loss'?C.down:C.warn,fontWeight:600}}>{e.hasil}</td>
+                      <td style={{padding:'6px 10px',color:C.warn}}>{e.rr??'—'}</td>
+                      <td style={{padding:'6px 10px',color:(e.pnl||0)>=0?C.up:C.down,fontWeight:600}}>{e.pnl!=null?((e.pnl>=0?'+':'')+e.pnl.toFixed(2)):'—'}</td>
+                      <td style={{padding:'6px 10px',color:C.muted}}>{e.emosi||'—'}</td>
+                      <td style={{padding:'6px 10px',color:C.muted,maxWidth:160,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap' as const,cursor:'pointer'}} title={e.alasan}>{e.alasan||'—'}</td>
+                      <td style={{padding:'6px 10px'}}>
+                        <div style={{display:'flex',gap:4,flexWrap:'wrap'}}>
+                          {[e.chart1_url,e.chart2_url,e.chart3_url].filter(Boolean).map((url:string,ci:number)=>(
                             <a key={ci} href={url} target="_blank" rel="noopener noreferrer"
-                              style={{ fontFamily: C.mono, fontSize: 9, color: '#3b82f6', background: '#0c1a2e', border: '1px solid #1d4ed8', padding: '2px 7px', borderRadius: 3, textDecoration: 'none', whiteSpace: 'nowrap' }}>
-                              📷 {ci + 1}
+                              style={{fontFamily:C.mono,fontSize:9,color:'#3b82f6',background:'#0c1a2e',border:'1px solid #1d4ed8',padding:'3px 8px',borderRadius:3,textDecoration:'none',whiteSpace:'nowrap' as const,display:'flex',alignItems:'center',gap:4}}>
+                              📷 Chart {ci+1}
                             </a>
                           ))}
-                          {![e.chart1_url, e.chart2_url, e.chart3_url].some(Boolean) && (
-                            <span style={{ color: C.dim, fontSize: 10 }}>—</span>
+                          {![e.chart1_url,e.chart2_url,e.chart3_url].some(Boolean)&&(
+                            <span style={{color:C.dim,fontSize:10}}>—</span>
                           )}
                         </div>
+                      </td>
+                      {/* Admin Note */}
+                      <td style={{padding:'6px 10px',minWidth:260}}>
+                        {editNoteId===e.id ? (
+                          <div style={{display:'flex',flexDirection:'column',gap:6}}>
+                            <textarea value={noteText} onChange={ev=>setNoteText(ev.target.value)}
+                              rows={3} placeholder="Tulis koreksi/catatan untuk member..."
+                              style={{width:'100%',background:'#0a1a0e',border:'1px solid #16a34a44',color:C.text,padding:'6px 8px',fontSize:10,fontFamily:C.mono,resize:'vertical',outline:'none',borderRadius:4,boxSizing:'border-box' as const}}/>
+                            <div style={{display:'flex',gap:6}}>
+                              <button onClick={()=>saveNote(e.id)} disabled={noteSaving}
+                                style={{background:'#052e16',border:'1px solid #16a34a',color:'#16a34a',fontFamily:C.mono,fontSize:9,padding:'3px 10px',borderRadius:4,cursor:noteSaving?'not-allowed':'pointer',opacity:noteSaving?0.6:1}}>
+                                {noteSaving?'MENYIMPAN...':'💾 SIMPAN'}
+                              </button>
+                              <button onClick={()=>{setEditNoteId(null);setNoteText('');}}
+                                style={{background:'transparent',border:`1px solid ${C.border2}`,color:C.muted,fontFamily:C.mono,fontSize:9,padding:'3px 10px',borderRadius:4,cursor:'pointer'}}>
+                                BATAL
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <div>
+                            {e.admin_note ? (
+                              <div style={{background:'#0a1a0e',border:'1px solid #16a34a33',borderRadius:6,padding:'6px 10px',marginBottom:6}}>
+                                <div style={{fontFamily:C.mono,fontSize:8,color:'#16a34a',letterSpacing:1,marginBottom:4}}>📝 KOREKSI ADMIN</div>
+                                <div style={{fontSize:11,color:C.text,lineHeight:1.5}}>{e.admin_note}</div>
+                                {e.admin_note_at && <div style={{fontFamily:C.mono,fontSize:8,color:C.dim,marginTop:4}}>{new Date(e.admin_note_at).toLocaleDateString('id-ID')}</div>}
+                              </div>
+                            ) : null}
+                            <button onClick={()=>{setEditNoteId(e.id);setNoteText(e.admin_note||'');}}
+                              style={{background:'transparent',border:`1px solid ${e.admin_note?'#16a34a44':C.border2}`,color:e.admin_note?'#16a34a':C.muted,fontFamily:C.mono,fontSize:9,padding:'3px 10px',borderRadius:4,cursor:'pointer',whiteSpace:'nowrap' as const}}>
+                              {e.admin_note?'✏ EDIT KOREKSI':'+ BERI KOREKSI'}
+                            </button>
+                          </div>
+                        )}
                       </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
-              {memberEntries.length > 50 && <div style={{ color: C.muted, fontFamily: C.mono, fontSize: 10, padding: '10px 0' }}>Menampilkan 50 dari {memberEntries.length} trade.</div>}
             </div>
           )}
         </div>
