@@ -795,7 +795,7 @@ export default function JurnalPage({ memberId }: { memberId: string }) {
               <table style={{ width: '100%', borderCollapse: 'collapse', fontFamily: C.mono, fontSize: 11 }}>
                 <thead>
                   <tr style={{ borderBottom: `1px solid ${C.border2}` }}>
-                    {['NO','TGL','PAIR','TF','SETUP','DIR','SESI','HASIL','RR','PNL ($)','EQUITY ($)','EMOSI',''].map(h => (
+                    {['NO','TGL','PAIR','TF','SETUP','DIR','SESI','HASIL','RR','PNL ($)','EQUITY ($)','EMOSI','KOREKSI',''].map(h => (
                       <th key={h} style={{ padding: '8px 10px', textAlign: 'left', color: C.dim, fontWeight: 600, whiteSpace: 'nowrap' }}>{h}</th>
                     ))}
                   </tr>
@@ -821,6 +821,16 @@ export default function JurnalPage({ memberId }: { memberId: string }) {
                       </td>
                       <td style={{ padding: '8px 10px' }}>${e.computedEquity.toFixed(0)}</td>
                       <td style={{ padding: '8px 10px', color: C.muted }}>{e.emosi}</td>
+                      {/* Admin note */}
+                      <td style={{ padding: '8px 10px', minWidth: 200 }}>
+                        {(e as any).admin_note ? (
+                          <div style={{ background: '#0a1a0e', border: '1px solid #16a34a44', borderRadius: 6, padding: '6px 10px' }}>
+                            <div style={{ fontFamily: C.mono, fontSize: 8, color: G.gold, letterSpacing: 1, marginBottom: 3 }}>📝 KOREKSI MENTOR</div>
+                            <div style={{ fontSize: 11, color: C.text, lineHeight: 1.5 }}>{(e as any).admin_note}</div>
+                            {(e as any).admin_note_at && <div style={{ fontFamily: C.mono, fontSize: 8, color: C.muted, marginTop: 3 }}>{new Date((e as any).admin_note_at).toLocaleDateString('id-ID')}</div>}
+                          </div>
+                        ) : <span style={{ color: C.dim, fontSize: 10 }}>—</span>}
+                      </td>
                       <td style={{ padding: '8px 10px', whiteSpace: 'nowrap' }}>
                         <button onClick={() => handleEdit(e)}
                           style={{ background: 'transparent', border: `1px solid ${C.border2}`, color: C.muted, padding: '3px 8px', borderRadius: 4, cursor: 'pointer', fontSize: 10, marginRight: 4 }}>
