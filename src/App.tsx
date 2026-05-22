@@ -39,10 +39,12 @@ function getPage() {
   if (path === '/discord-callback')       return 'discord-callback';
 
   // Member area
+  if (path === '/trading-plan')           return 'trading-plan';
   if (path === '/member/kurikulum')       return 'kurikulum';       // ← baru
   if (path.startsWith('/member'))         return 'member';
 
   // Admin
+  if (path === '/admin/trading-plan')     return 'admin-trading-plan';
   if (path === '/admin/panel')            return 'admin-panel';     // ← baru (URL baru)
   if (path.startsWith('/admin'))          return 'admin';
 
@@ -65,6 +67,8 @@ function App() {
   if (page === 'partnership-confirm')   return <PartnershipPage step="confirm" />;
   if (page === 'calendar')              return <CalendarPage />;
   if (page === 'komunitas')             return <KomunitasPage />;
+  if (page === 'trading-plan')        return <DashboardPage />;
+  if (page === 'admin-trading-plan')  return <AdminPanel />;
   if (page === 'kurikulum')         return <CurriculumPage />;
   if (page === 'admin-panel')       return <AdminPanel />;          // /admin/panel → tampilan baru
 

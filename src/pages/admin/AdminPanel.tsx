@@ -1,6 +1,7 @@
 ﻿import React, { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabase';
 import AdminPage from '../AdminPage';
+import AdminTradingPlan from './AdminTradingPlan';
 
 const G = { gold: 'var(--mr-gold)', gold2: 'var(--mr-gold2)', cyan: '#00d4ff', cyanDim: 'rgba(0,212,255,0.13)' };
 const C = { bg: 'var(--mr-bg)', sidebar: 'var(--mr-sidebar)', panel: 'var(--mr-panel)', border: 'var(--mr-border)', border2: 'var(--mr-border2)', dim: 'var(--mr-dim)', text: 'var(--mr-text)', muted: 'var(--mr-muted)', up: 'var(--mr-up)', down: 'var(--mr-down)', mono: '"Geist Mono",monospace', sans: '"Geist",system-ui,sans-serif' };
@@ -23,8 +24,9 @@ const SIDEBAR_SECTIONS = [
     { id: 'admin',     label: 'Admin',            icon: '🛡' },
   ]},
   { h: 'CONTENT & EDUCATION', items: [
-    { id: 'video',  label: 'Video & Materi', icon: '▶' },
-    { id: 'rating', label: 'Rating Video',   icon: '⭐' },
+    { id: 'video',        label: 'Video & Materi', icon: '▶' },
+    { id: 'rating',       label: 'Rating Video',   icon: '⭐' },
+    { id: 'trading-plan', label: 'Trading Plan',   icon: '📋' },
   ]},
   { h: 'PARTNERSHIP & MONETIZATION', items: [
     { id: 'broker',    label: 'Broker',         icon: '🏦' },
@@ -366,7 +368,7 @@ function LogActivityTab() {
 }
 
 export default function AdminPanel() {
-  const [active, setActive] = useState('dashboard');
+  const [active, setActive] = useState(() => window.location.pathname === '/admin/trading-plan' ? 'trading-plan' : 'dashboard');
   const [fundedModal, setFundedModal] = useState<{status:string;color:string;label:string;k:string}|null>(null);
   const [fundedMembers, setFundedMembers] = useState<any[]>([]);
   const [dash, setDash] = useState({
@@ -777,6 +779,8 @@ export default function AdminPanel() {
             <ApprovalsTab adminName={adminData.username||'admin'} />
           ) : active === 'log' ? (
             <LogActivityTab />
+          ) : active === 'trading-plan' ? (
+            <AdminTradingPlan />
           ) : active !== 'dashboard' ? (
             <AdminPage key={getTabId(active)} embedded={true} initialTab={getTabId(active)} />
           ) : (

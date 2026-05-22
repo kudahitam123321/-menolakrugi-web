@@ -3,6 +3,7 @@ import { supabase } from '../../lib/supabase';
 import LanjutkanBelajar from '../../components/LanjutkanBelajar';
 import JurnalPage from './JurnalPage';
 import LeaderboardPage from './LeaderboardPage';
+import MemberTradingPlan from './MemberTradingPlan';
 import { trackVideoWatch } from '../../hooks/useWatchHistory';
 
 const G = { gold: 'var(--mr-gold)', gold2: 'var(--mr-gold2)' };
@@ -21,7 +22,8 @@ const SIDEBAR = [
   { id: 'kelas',      label: 'Kelas Saya',     icon: '▶' },
   { id: 'materi',     label: 'Materi',         icon: '📚' },
   { id: 'news',       label: 'Chart',          icon: '📈' },
-  { id: 'jurnal',     label: 'Jurnal Trading', icon: '📓' },
+  { id: 'jurnal',       label: 'Jurnal Trading', icon: '📓' },
+  { id: 'trading-plan', label: 'Trading Plan',  icon: '📋' },
   { id: 'komunitas',  label: 'Komunitas',      icon: '💬' },
   { id: 'tools',      label: 'Broker',         icon: '🏦' },
   { id: 'sep1',       label: 'TOOLS & PROGRESS', icon: '', separator: true },
@@ -307,7 +309,7 @@ function CertificateCanvas({ nama, tier, tanggal }: { nama: string; tier: string
 
 export default function DashboardPage() {
   const [member, setMember]           = useState<Member | null>(null);
-  const [active, setActive]           = useState('dashboard');
+  const [active, setActive]           = useState(() => window.location.pathname === '/trading-plan' ? 'trading-plan' : 'dashboard');
   const [videos, setVideos]           = useState<any[]>([]);
   const [files, setFiles]             = useState<any[]>([]);
   const [progress, setProgress]       = useState<Record<string, string>>({});
@@ -1786,6 +1788,10 @@ export default function DashboardPage() {
         {/* ══ JURNAL TRADING ══ */}
         {active === 'jurnal' && member && (
           <JurnalPage memberId={member.id} />
+        )}
+
+        {active === 'trading-plan' && (
+          <MemberTradingPlan />
         )}
 
         {active === 'sertifikat' && (() => {
