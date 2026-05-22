@@ -963,16 +963,61 @@ export default function DashboardPage() {
                 </div>
               </div>
 
-              {/* ── Progress bar ── */}
-              <div style={{ background: C.panel, border: `1px solid ${C.border}`, borderRadius: 10, padding: '12px 16px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                  <div style={{ fontFamily: C.mono, color: '#555', fontSize: 9, letterSpacing: 1 }}>PROGRESS BELAJAR</div>
-                  <div style={{ fontFamily: C.mono, fontSize: 11, fontWeight: 700, color: G.gold }}>{progressPct}%</div>
-                </div>
-                <div style={{ height: 5, background: 'var(--mr-border)', borderRadius: 3, overflow: 'hidden' }}>
-                  <div style={{ height: '100%', width: `${progressPct}%`, background: `linear-gradient(90deg,${G.gold},var(--mr-gold-a80))`, borderRadius: 3, transition: 'width 1s ease', boxShadow: `0 0 8px var(--mr-gold-a27)` }}/>
-                </div>
-              </div>
+              {/* ── Progress belajar per kategori ── */}
+              {(() => {
+                const progCats = [
+                  { key: 'basic',         label: 'Basic',         color: '#22c55e' },
+                  { key: 'advanced',      label: 'Advanced',       color: '#a855f7' },
+                  { key: 'tips-basic',    label: 'Tips Basic',     color: '#0ea5e9' },
+                  { key: 'tips-advanced', label: 'Tips Advanced',  color: '#ec4899' },
+                ];
+                return (
+                  <div style={{ background: C.panel, border: `1px solid ${C.border}`, borderRadius: 12, padding: '14px 16px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+                      <div style={{ fontFamily: C.mono, color: G.gold, fontSize: 9, letterSpacing: 1.5 }}>// PROGRESS BELAJAR</div>
+                      <div style={{ fontFamily: C.mono, fontSize: 9, color: C.dim }}>{progressPct}% total selesai</div>
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(120px,1fr))', gap: 8 }}>
+                      {progCats.map(cat => {
+                        const vids = videos.filter((v: any) => v.kategori === cat.key);
+                        if (!vids.length) return null;
+                        const isLocked = (cat.key === 'advanced' || cat.key === 'tips-advanced') && !member.is_advance;
+                        const done = isLocked ? 0 : vids.filter((v: any) => progress[v.id] === 'selesai').length;
+                        const pct = isLocked ? 0 : Math.round(done / vids.length * 100);
+                        return (
+                          <div key={cat.key} style={{ background: C.bg, border: `1px solid ${isLocked ? C.border : cat.color + '33'}`, borderRadius: 8, padding: '10px 12px' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 5 }}>
+                              <span style={{ fontFamily: C.mono, fontSize: 8, fontWeight: 700, color: isLocked ? '#444' : cat.color, letterSpacing: 0.5 }}>
+                                {isLocked ? '🔒 ' : ''}{cat.label.toUpperCase()}
+                              </span>
+                              <span style={{ fontFamily: C.mono, fontSize: 13, fontWeight: 800, color: isLocked ? '#333' : cat.color }}>
+                                {isLocked ? '—' : `${pct}%`}
+                              </span>
+                            </div>
+                            <div style={{ height: 3, background: C.border, borderRadius: 2, overflow: 'hidden', marginBottom: 5 }}>
+                              <div style={{ width: `${pct}%`, height: '100%', background: isLocked ? '#333' : cat.color, borderRadius: 2, transition: 'width 0.8s ease' }}/>
+                            </div>
+                            <div style={{ fontFamily: C.mono, fontSize: 9, color: isLocked ? '#333' : C.dim }}>
+                              {isLocked ? 'Butuh Advance' : `${done}/${vids.length} video`}
+                            </div>
+                          </div>
+                        );
+                      })}
+                      {/* File Materi */}
+                      <div style={{ background: C.bg, border: `1px solid #f59e0b33`, borderRadius: 8, padding: '10px 12px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 5 }}>
+                          <span style={{ fontFamily: C.mono, fontSize: 8, fontWeight: 700, color: '#f59e0b', letterSpacing: 0.5 }}>FILE MATERI</span>
+                          <span style={{ fontSize: 14 }}>📁</span>
+                        </div>
+                        <div style={{ height: 3, background: C.border, borderRadius: 2, overflow: 'hidden', marginBottom: 5 }}>
+                          <div style={{ width: files.length > 0 ? '100%' : '0%', height: '100%', background: '#f59e0b', borderRadius: 2 }}/>
+                        </div>
+                        <div style={{ fontFamily: C.mono, fontSize: 9, color: C.dim }}>{files.length} file tersedia</div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
 
               {/* ── Status row ── compact 3-col ── */}
               <div className='mr-grid-3' style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 8 }}>
