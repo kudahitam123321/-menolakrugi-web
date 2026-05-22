@@ -230,6 +230,8 @@ export default function JurnalPage({ memberId }: { memberId: string }) {
   const [settingsMsg, setSettingsMsg]       = useState('');
   const [filterPair, setFilterPair] = useState('');
   const [filterHasil, setFilterHasil] = useState('');
+  const [showDeleteAll, setShowDeleteAll] = useState(false);
+  const [deletingAll, setDeletingAll] = useState(false);
 
   // ── Fetch data ──────────────────────────────────────────────────────────────
   const fetchAll = useCallback(async () => {
@@ -369,6 +371,17 @@ export default function JurnalPage({ memberId }: { memberId: string }) {
     await supabase.from('trading_journals').delete().eq('id', id);
     setDeleteId(null);
     await fetchAll();
+  };
+
+  // ── Delete All ───────────────────────────────────────────────────────────────
+  const handleDeleteAll = async () => {
+    setDeletingAll(true);
+    try {
+      await supabase.from('trading_journals').delete().eq('member_id', memberId);
+      setShowDeleteAll(false);
+      await fetchAll();
+    } catch (_) {}
+    setDeletingAll(false);
   };
 
   // ── Edit ──────────────────────────────────────────────────────────────────────
@@ -579,6 +592,10 @@ export default function JurnalPage({ memberId }: { memberId: string }) {
           <button onClick={handleDownload}
             style={{ fontFamily: C.mono, fontSize: 11, background: '#052e16', border: `1px solid ${G.gold}`, color: G.gold, padding: '8px 18px', borderRadius: 6, cursor: 'pointer', letterSpacing: 1 }}>
             📥 DOWNLOAD EXCEL
+          </button>
+          <button onClick={() => setShowDeleteAll(true)}
+            style={{ fontFamily: C.mono, fontSize: 11, background: '#1c0a0a', border: '1px solid #7f1d1d', color: '#ef4444', padding: '8px 18px', borderRadius: 6, cursor: 'pointer', letterSpacing: 1 }}>
+            🗑️ HAPUS SEMUA
           </button>
         </div>
       </div>
@@ -1041,6 +1058,31 @@ export default function JurnalPage({ memberId }: { memberId: string }) {
               {settingsSaving ? 'MENYIMPAN...' : '💾 SIMPAN'}
             </button>
             {settingsMsg && <span style={{ fontFamily: C.mono, fontSize: 11, color: settingsMsg.startsWith('✅') ? C.up : C.down }}>{settingsMsg}</span>}
+          </div>
+        </div>
+      )}
+
+      {/* ── Delete All confirm modal ── */}
+      {showDeleteAll && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 999 }}>
+          <div style={{ background: '#111', border: '1px solid #7f1d1d', borderRadius: 12, padding: 32, maxWidth: 400, width: '90%' }}>
+            <div style={{ fontFamily: C.mono, color: C.down, fontSize: 14, fontWeight: 700, marginBottom: 10 }}>⚠️ HAPUS SEMUA DATA JURNAL?</div>
+            <div style={{ fontFamily: C.sans, color: C.muted, fontSize: 13, marginBottom: 8, lineHeight: 1.6 }}>
+              Semua <span style={{ color: C.text, fontWeight: 700 }}>{entries.length} data trade</span> akan dihapus secara permanen dan tidak bisa dikembalikan.
+            </div>
+            <div style={{ fontFamily: C.mono, color: '#7f1d1d', fontSize: 11, background: '#1c0a0a', border: '1px solid #450a0a', borderRadius: 6, padding: '8px 12px', marginBottom: 22 }}>
+              ❌ Tindakan ini tidak dapat dibatalkan!
+            </div>
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button onClick={handleDeleteAll} disabled={deletingAll}
+                style={{ fontFamily: C.mono, fontSize: 12, background: deletingAll ? '#450a0a' : '#7f1d1d', border: 'none', color: '#fff', padding: '10px 24px', borderRadius: 6, cursor: deletingAll ? 'not-allowed' : 'pointer', opacity: deletingAll ? 0.7 : 1, letterSpacing: 1 }}>
+                {deletingAll ? 'MENGHAPUS...' : '🗑️ YA, HAPUS SEMUA'}
+              </button>
+              <button onClick={() => setShowDeleteAll(false)} disabled={deletingAll}
+                style={{ fontFamily: C.mono, fontSize: 12, background: 'transparent', border: `1px solid ${C.border2}`, color: C.muted, padding: '10px 20px', borderRadius: 6, cursor: 'pointer' }}>
+                BATAL
+              </button>
+            </div>
           </div>
         </div>
       )}
