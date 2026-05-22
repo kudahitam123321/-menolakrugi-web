@@ -1,13 +1,13 @@
-import React, { useState, useEffect, useCallback } from 'react';
+﻿import React, { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../../lib/supabase';
 
 const C = {
-  bg: '#090909', panel: '#111', border: '#1e1e1e', border2: '#2a2a2a',
-  dim: '#555', muted: '#888', text: '#e7e5e4',
-  up: '#22c55e', down: '#ef4444', warn: '#f59e0b',
+  bg: 'var(--mr-bg)', panel: 'var(--mr-panel)', border: 'var(--mr-border)', border2: 'var(--mr-border2)',
+  dim: 'var(--mr-dim)', muted: 'var(--mr-muted)', text: 'var(--mr-text)',
+  up: 'var(--mr-up)', down: 'var(--mr-down)', warn: '#f59e0b',
   mono: '"Geist Mono",monospace', sans: '"Geist",system-ui,sans-serif',
 };
-const G = { gold: '#16a34a' };
+const G = { gold: 'var(--mr-gold)' };
 
 const MEDAL_COLORS = ['#a78bfa', '#f97316', '#94a3b8'];
 const MEDAL_ICONS  = ['🥇', '🥈', '🥉']; // fallback only
@@ -160,7 +160,7 @@ export default function LeaderboardPage({ memberId, onViewJurnal }: { memberId: 
   function MyRankBar({ rank, m, valueLabel }: { rank: number; m: any; valueLabel: string }) {
     if (rank === -1 || rank < 10) return null;
     return (
-      <div style={{ margin: '0 16px 16px', padding: '12px 16px', background: '#0a1a0e', border: `1px solid ${G.gold}33`, borderRadius: 10 }}>
+      <div style={{ margin: '0 16px 16px', padding: '12px 16px', background: 'var(--mr-tint-green)', border: `1px solid var(--mr-gold-a20)`, borderRadius: 10 }}>
         <div style={{ fontFamily: C.mono, color: C.dim, fontSize: 9, textAlign: 'center' as const, marginBottom: 8 }}>· · · POSISIMU · · ·</div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <div style={{ fontFamily: C.mono, fontSize: 13, fontWeight: 700, color: G.gold, minWidth: 36 }}>#{rank + 1}</div>
@@ -244,7 +244,7 @@ export default function LeaderboardPage({ memberId, onViewJurnal }: { memberId: 
                   const pct  = Math.min(100, Math.round(m.selesai / (totalVideos || 1) * 100));
                   const col  = i < 3 ? MEDAL_COLORS[i] : C.muted;
                   return (
-                    <tr key={m.id} style={{ borderBottom: `1px solid ${C.border}`, background: isMe ? '#1a1500' : 'transparent' }}>
+                    <tr key={m.id} style={{ borderBottom: `1px solid ${C.border}`, background: isMe ? 'var(--mr-tint-gold)' : 'transparent' }}>
                       <td style={{ padding: '12px 16px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                           <RankImg rank={i + 1} size={i < 3 ? 36 : 28} />

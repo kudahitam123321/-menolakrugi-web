@@ -1,4 +1,4 @@
-// pages/SignupPage.tsx — Halaman signup / checkout Menolak Rugi (Direction A)
+﻿// pages/SignupPage.tsx — Halaman signup / checkout Menolak Rugi (Direction A)
 // URL: /signup?tier=gold  (tier optional, default ke gold)
 
 import React, { useState } from 'react';
@@ -229,7 +229,7 @@ export default function SignupPage() {
           <p style={{ color: MR.dim, fontSize: 14, lineHeight: 1.55, marginBottom: 28 }}>Email dipakai untuk akses materi & login ke dashboard. Nomor WhatsApp untuk invite ke channel komunitas.</p>
 
           {refCode && (
-            <div style={{ display:'flex', gap:10, alignItems:'center', padding:'10px 14px', background:'#0a1a14', border:'1px solid #22ab9444', borderRadius:8, marginBottom:16 }}>
+            <div style={{ display:'flex', gap:10, alignItems:'center', padding:'10px 14px', background:'var(--mr-tint-green2)', border:'1px solid #22ab9444', borderRadius:8, marginBottom:16 }}>
               <span style={{fontSize:18}}>🔗</span>
               <div>
                 <div style={{fontFamily:MR.mono,color:'#22ab94',fontSize:12,fontWeight:700}}>Diundang dengan kode: <span style={{color:'#fff'}}>{refCode}</span></div>

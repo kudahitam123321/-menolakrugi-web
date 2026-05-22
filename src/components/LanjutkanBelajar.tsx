@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+﻿import { useEffect, useState } from 'react';
 import {
   fetchLastWatched,
   fetchLatestVideos,
@@ -7,13 +7,13 @@ import {
 } from '../hooks/useWatchHistory';
 
 const C = {
-  panel: '#111',
-  border: '#1e1e1e',
-  border2: '#2a2a2a',
-  text: '#e7e5e4',
-  dim: '#888',
-  dimmer: '#555',
-  gold: '#eab308',
+  panel: 'var(--mr-panel)',
+  border: 'var(--mr-border)',
+  border2: 'var(--mr-border2)',
+  text: 'var(--mr-text)',
+  dim: 'var(--mr-muted)',
+  dimmer: 'var(--mr-dim)',
+  gold: 'var(--mr-gold)',
   mono: '"Geist Mono", monospace',
 };
 

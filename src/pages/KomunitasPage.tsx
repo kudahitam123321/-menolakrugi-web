@@ -1,10 +1,10 @@
-// src/pages/KomunitasPage.tsx
+﻿// src/pages/KomunitasPage.tsx
 import React from 'react';
 
 const C = {
-  bg: '#080808', border: '#1a1a1a', border2: '#222',
-  gold: '#eab308', text: '#e7e5e4', dim: '#666', muted: '#888',
-  up: '#22ab94', mono: '"Geist Mono",monospace', sans: '"Geist",system-ui,sans-serif',
+  bg: 'var(--mr-bg)', border: 'var(--mr-border)', border2: 'var(--mr-border2)',
+  gold: 'var(--mr-gold)', text: 'var(--mr-text)', dim: 'var(--mr-dim)', muted: 'var(--mr-muted)',
+  up: 'var(--mr-up)', mono: '"Geist Mono",monospace', sans: '"Geist",system-ui,sans-serif',
 };
 
 const SOCIALS = [
@@ -138,7 +138,7 @@ export default function KomunitasPage() {
             <a key={item.l} href={item.href}
               style={{ fontFamily: C.mono, fontSize: 11, fontWeight: 700, letterSpacing: 0.8, padding: '6px 14px', textDecoration: 'none',
                 color: item.active ? C.gold : C.muted,
-                background: item.active ? '#1a1500' : 'transparent',
+                background: item.active ? 'var(--mr-tint-gold)' : 'transparent',
                 border: item.active ? `1px solid #3a2e00` : '1px solid transparent',
                 borderRadius: 6, transition: 'all 0.15s' }}>
               {item.l}

@@ -1,4 +1,4 @@
-// pages/LoginPage.tsx — Custom auth (nama + tier + password, no email)
+﻿// pages/LoginPage.tsx — Custom auth (nama + tier + password, no email)
 import React, { useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { CANDLE_GRID_STYLE } from '../components/mr';
@@ -13,12 +13,12 @@ function Field({ label, type='text', value, onChange, placeholder, icon }: {
   const isPass = type==='password';
   return (
     <div>
-      <label style={{display:'block',fontSize:13,color:'#a0a0a0',marginBottom:8,fontWeight:500}}>{label}</label>
+      <label style={{display:'block',fontSize:13,color:'var(--mr-muted)',marginBottom:8,fontWeight:500}}>{label}</label>
       <div style={{position:'relative'}}>
         {icon&&<span style={{position:'absolute',left:14,top:'50%',transform:'translateY(-50%)',color:'#555'}}>{icon}</span>}
         <input type={isPass&&show?'text':type} value={value} onChange={e=>onChange(e.target.value)} placeholder={placeholder}
-          style={{width:'100%',background:'#1a1a1a',border:'1px solid #2a2a2a',color:'#e7e5e4',padding:`13px 14px 13px ${icon?'40px':'14px'}`,fontSize:14,outline:'none',boxSizing:'border-box' as const,fontFamily:'inherit',borderRadius:8}}
-          onFocus={e=>e.target.style.borderColor='#eab308'} onBlur={e=>e.target.style.borderColor='#2a2a2a'}/>
+          style={{width:'100%',background:'var(--mr-border)',border:'1px solid #2a2a2a',color:'var(--mr-text)',padding:`13px 14px 13px ${icon?'40px':'14px'}`,fontSize:14,outline:'none',boxSizing:'border-box' as const,fontFamily:'inherit',borderRadius:8}}
+          onFocus={e=>e.target.style.borderColor='#eab308'} onBlur={e=>e.target.style.borderColor='var(--mr-border2)'}/>
         {isPass&&<button onClick={()=>setShow(s=>!s)} style={{position:'absolute',right:14,top:'50%',transform:'translateY(-50%)',background:'none',border:'none',color:'#555',cursor:'pointer',fontSize:16}}>{show?'🙈':'👁'}</button>}
       </div>
     </div>
@@ -43,6 +43,13 @@ function MemberForm({ onForgot }: { onForgot:()=>void }) {
       if (rpcErr) throw rpcErr;
       if (!data) throw new Error('Nama, tier, atau password salah.');
 
+      // Cek status aktif akun (via direct query jika RPC tidak kembalikan is_active)
+      if (data.is_active === false) throw new Error('Akun Anda telah dinonaktifkan. Hubungi admin untuk informasi lebih lanjut.');
+      if (data.id && data.is_active === undefined) {
+        const { data: statusRow } = await supabase.from('members').select('is_active').eq('id', data.id).single();
+        if (statusRow?.is_active === false) throw new Error('Akun Anda telah dinonaktifkan. Hubungi admin untuk informasi lebih lanjut.');
+      }
+
       // Simpan session - localStorage jika ingat, sessionStorage jika tidak
       if (remember) {
         localStorage.setItem('mr_member', JSON.stringify(data));
@@ -62,9 +69,9 @@ function MemberForm({ onForgot }: { onForgot:()=>void }) {
       <Field label="Nama Lengkap" value={nama} onChange={setNama} placeholder="Sesuai data pendaftaran"
         icon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>}/>
       <div>
-        <label style={{display:'block',fontSize:13,color:'#a0a0a0',marginBottom:8,fontWeight:500}}>Tier Kelas</label>
-        <select value={tier} onChange={e=>setTier(e.target.value)} style={{width:'100%',background:'#1a1a1a',border:'1px solid #2a2a2a',color:tier?'#e7e5e4':'#666',padding:'13px 14px',fontSize:14,outline:'none',fontFamily:'inherit',borderRadius:8,appearance:'none' as const,cursor:'pointer',boxSizing:'border-box' as const}}
-          onFocus={e=>e.target.style.borderColor='#eab308'} onBlur={e=>e.target.style.borderColor='#2a2a2a'}>
+        <label style={{display:'block',fontSize:13,color:'var(--mr-muted)',marginBottom:8,fontWeight:500}}>Tier Kelas</label>
+        <select value={tier} onChange={e=>setTier(e.target.value)} style={{width:'100%',background:'var(--mr-border)',border:'1px solid #2a2a2a',color:tier?'var(--mr-text)':'#666',padding:'13px 14px',fontSize:14,outline:'none',fontFamily:'inherit',borderRadius:8,appearance:'none' as const,cursor:'pointer',boxSizing:'border-box' as const}}
+          onFocus={e=>e.target.style.borderColor='#eab308'} onBlur={e=>e.target.style.borderColor='var(--mr-border2)'}>
           <option value="">Pilih tier kelas kamu</option>
           {TIERS.map(t=><option key={t} value={t}>{t}</option>)}
         </select>
@@ -72,10 +79,10 @@ function MemberForm({ onForgot }: { onForgot:()=>void }) {
       <Field label="Password" type="password" value={pass} onChange={setPass} placeholder="Password akun member"/>
       {/* Ingat Saya */}
       <label style={{display:'flex',alignItems:'center',gap:10,cursor:'pointer',userSelect:'none' as const}}>
-        <div onClick={()=>setRemember(r=>!r)} style={{width:20,height:20,borderRadius:5,border:`2px solid ${remember?'#eab308':'#2a2a2a'}`,background:remember?'#eab308':'transparent',display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',flexShrink:0,transition:'all 0.15s'}}>
+        <div onClick={()=>setRemember(r=>!r)} style={{width:20,height:20,borderRadius:5,border:`2px solid ${remember?'#eab308':'var(--mr-border2)'}`,background:remember?'#eab308':'transparent',display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',flexShrink:0,transition:'all 0.15s'}}>
           {remember&&<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#000" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>}
         </div>
-        <span style={{fontSize:13,color:remember?'#e7e5e4':'#666'}}>Ingat saya di perangkat ini</span>
+        <span style={{fontSize:13,color:remember?'var(--mr-text)':'#666'}}>Ingat saya di perangkat ini</span>
       </label>
       {error&&<div style={{color:'#ef4444',fontSize:13,fontFamily:'"Geist Mono",monospace'}}>⚠ {error}</div>}
       <button onClick={handleLogin} disabled={loading} style={{background:'#eab308',color:'#000',fontWeight:700,padding:'16px',fontSize:14,border:'none',cursor:loading?'not-allowed':'pointer',opacity:loading?0.7:1,display:'flex',alignItems:'center',justifyContent:'center',gap:8,marginTop:4,borderRadius:10}}>
@@ -125,10 +132,10 @@ function AdminForm() {
       <Field label="Password" type="password" value={pass} onChange={setPass} placeholder="Password admin"/>
       {/* Ingat Saya */}
       <label style={{display:'flex',alignItems:'center',gap:10,cursor:'pointer',userSelect:'none' as const}}>
-        <div onClick={()=>setRemember(r=>!r)} style={{width:20,height:20,borderRadius:5,border:`2px solid ${remember?'#eab308':'#2a2a2a'}`,background:remember?'#eab308':'transparent',display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',flexShrink:0,transition:'all 0.15s'}}>
+        <div onClick={()=>setRemember(r=>!r)} style={{width:20,height:20,borderRadius:5,border:`2px solid ${remember?'#eab308':'var(--mr-border2)'}`,background:remember?'#eab308':'transparent',display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',flexShrink:0,transition:'all 0.15s'}}>
           {remember&&<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#000" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>}
         </div>
-        <span style={{fontSize:13,color:remember?'#e7e5e4':'#666'}}>Ingat saya di perangkat ini</span>
+        <span style={{fontSize:13,color:remember?'var(--mr-text)':'#666'}}>Ingat saya di perangkat ini</span>
       </label>
       {error&&<div style={{color:'#ef4444',fontSize:13,fontFamily:'"Geist Mono",monospace'}}>⚠ {error}</div>}
       <button onClick={handleLogin} disabled={loading} style={{background:'#ef4444',color:'#fff',fontWeight:700,padding:'16px',fontSize:14,border:'none',cursor:loading?'not-allowed':'pointer',opacity:loading?0.7:1,display:'flex',alignItems:'center',justifyContent:'center',gap:8,marginTop:4,borderRadius:10}}>
@@ -164,13 +171,13 @@ function ForgotForm({ onBack }: { onBack:()=>void }) {
       <Field label="Nama Lengkap" value={nama} onChange={setNama} placeholder="Sesuai data pendaftaran"
         icon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>}/>
       <div>
-        <label style={{display:'block',fontSize:13,color:'#a0a0a0',marginBottom:8,fontWeight:500}}>Tier Kelas</label>
-        <select value={tier} onChange={e=>setTier(e.target.value)} style={{width:'100%',background:'#1a1a1a',border:'1px solid #2a2a2a',color:tier?'#e7e5e4':'#666',padding:'13px 14px',fontSize:14,outline:'none',fontFamily:'inherit',borderRadius:8,appearance:'none' as const,boxSizing:'border-box' as const}}>
+        <label style={{display:'block',fontSize:13,color:'var(--mr-muted)',marginBottom:8,fontWeight:500}}>Tier Kelas</label>
+        <select value={tier} onChange={e=>setTier(e.target.value)} style={{width:'100%',background:'var(--mr-border)',border:'1px solid #2a2a2a',color:tier?'var(--mr-text)':'#666',padding:'13px 14px',fontSize:14,outline:'none',fontFamily:'inherit',borderRadius:8,appearance:'none' as const,boxSizing:'border-box' as const}}>
           <option value="">Pilih tier kelas kamu</option>
           {TIERS.map(t=><option key={t} value={t}>{t}</option>)}
         </select>
       </div>
-      <button onClick={handleReset} style={{background:'#1a1a1a',color:'#e7e5e4',fontWeight:700,padding:'16px',fontSize:14,border:'1px solid #333',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:8,marginTop:4,borderRadius:10}}>
+      <button onClick={handleReset} style={{background:'var(--mr-border)',color:'var(--mr-text)',fontWeight:700,padding:'16px',fontSize:14,border:'1px solid #333',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:8,marginTop:4,borderRadius:10}}>
         Reset Password via WhatsApp
       </button>
       <button onClick={onBack} style={{color:'#666',background:'none',border:'none',cursor:'pointer',fontSize:13,textAlign:'center' as const}}>← Kembali ke Login</button>
@@ -189,7 +196,7 @@ export default function LoginPage() {
     if (admin) { try { JSON.parse(admin); window.location.href = '/admin'; } catch {} }
   }, []);
   return (
-    <div className='mr-lp-outer' style={{fontFamily:'"Geist",system-ui,sans-serif',background:'#080808',minHeight:'100vh',color:'#e7e5e4',WebkitFontSmoothing:'antialiased',overflowX:'hidden',display:'grid',gridTemplateColumns:'1fr 520px'}}>
+    <div className='mr-lp-outer' style={{fontFamily:'"Geist",system-ui,sans-serif',background:'var(--mr-bg)',minHeight:'100vh',color:'var(--mr-text)',WebkitFontSmoothing:'antialiased',overflowX:'hidden',display:'grid',gridTemplateColumns:'1fr 520px'}}>
       <style>{`
         .mr-lp-outer { display: grid; grid-template-columns: 1fr 520px; min-height: 100vh; }
         .mr-lp-left { display: flex; flex-direction: column; justify-content: space-between; overflow: hidden; position: relative; padding: 48px 56px; }
@@ -226,7 +233,7 @@ export default function LoginPage() {
           <div style={{width:48,height:2,background:'#eab308'}}/>
         </div>
         <div style={{position:'relative'}}>
-          <div style={{border:'1px solid #1a1a1a',background:'#0d0d0d',padding:'20px 24px',maxWidth:360}}>
+          <div style={{border:'1px solid #1a1a1a',background:'var(--mr-sidebar)',padding:'20px 24px',maxWidth:360}}>
             <div style={{fontSize:28,color:'#eab308',fontFamily:'serif',lineHeight:1,marginBottom:12}}>"</div>
             <div style={{fontSize:16,fontStyle:'italic',color:'#ccc',lineHeight:1.6}}>Disiplin hari ini, freedom di masa depan.</div>
             <div style={{fontFamily:'"Geist Mono",monospace',color:'#eab308',fontSize:11,marginTop:14}}>— Menolak Rugi</div>
@@ -236,12 +243,12 @@ export default function LoginPage() {
       </div>
 
       {/* Kanan */}
-      <div className='mr-lp-right' style={{background:'#0d0d0d',borderLeft:'1px solid #1a1a1a',display:'flex',alignItems:'center',justifyContent:'center',padding:'48px 40px'}}>
+      <div className='mr-lp-right' style={{background:'var(--mr-sidebar)',borderLeft:'1px solid #1a1a1a',display:'flex',alignItems:'center',justifyContent:'center',padding:'48px 40px'}}>
         <div className='mr-lp-form' style={{width:'100%',maxWidth:400}}>
           {view==='forgot' ? (
             <>
               <div style={{textAlign:'center',marginBottom:36}}>
-                <div style={{width:64,height:64,background:'#1a1a1a',borderRadius:'50%',display:'flex',alignItems:'center',justifyContent:'center',margin:'0 auto 20px',fontSize:28}}>🔑</div>
+                <div style={{width:64,height:64,background:'var(--mr-border)',borderRadius:'50%',display:'flex',alignItems:'center',justifyContent:'center',margin:'0 auto 20px',fontSize:28}}>🔑</div>
                 <h2 style={{fontSize:28,fontWeight:700,margin:'0 0 8px'}}>Recover Access</h2>
                 <p style={{color:'#666',fontSize:14,margin:0}}>Verifikasi data membership untuk reset password.</p>
               </div>
@@ -250,7 +257,7 @@ export default function LoginPage() {
           ) : (
             <>
               <div style={{textAlign:'center',marginBottom:28}}>
-                <div style={{width:64,height:64,background:'#1a1a1a',borderRadius:'50%',display:'flex',alignItems:'center',justifyContent:'center',margin:'0 auto 20px',fontSize:28}}>
+                <div style={{width:64,height:64,background:'var(--mr-border)',borderRadius:'50%',display:'flex',alignItems:'center',justifyContent:'center',margin:'0 auto 20px',fontSize:28}}>
                   {view==='admin'?'🛡':'🔒'}
                 </div>
                 <h2 style={{fontSize:26,fontWeight:700,margin:'0 0 6px'}}>Welcome Back</h2>

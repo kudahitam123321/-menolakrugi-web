@@ -8,9 +8,94 @@
   }
   body {
     font-family: 'Inter', sans-serif;
-    background-color: #0a0f1e;
+    background-color: var(--mr-bg);
   }
 }
+
+/* ══ THEME TOKENS ════════════════════════════════════════════════════════════
+   Dark mode is the default (:root). Light mode overrides via [data-theme="light"]
+   CSS variables work in React inline styles: style={{ color: 'var(--mr-text)' }}
+   ═══════════════════════════════════════════════════════════════════════════ */
+:root {
+  /* Core palette */
+  --mr-bg:      #090909;
+  --mr-sidebar: #0d0d0d;
+  --mr-panel:   #111111;
+  --mr-dark:    #050505;
+  --mr-darker:  #030303;
+  --mr-border:  #1e1e1e;
+  --mr-border2: #2a2a2a;
+  --mr-dim:     #555555;
+  --mr-dimmer:  #444444;
+  --mr-muted:   #888888;
+  --mr-text:    #e7e5e4;
+  --mr-up:      #22c55e;
+  --mr-down:    #ef4444;
+  --mr-gold:    #16a34a;
+  --mr-gold2:   #15803d;
+  /* Alpha variants (for border/shadow/bg with opacity) */
+  --mr-gold-a20: rgba(22,163,74,0.20);
+  --mr-gold-a27: rgba(22,163,74,0.27);
+  --mr-gold-a80: rgba(22,163,74,0.80);
+  --mr-up-a20:   rgba(34,197,94,0.20);
+  --mr-up-a27:   rgba(34,197,94,0.27);
+  --mr-down-a13: rgba(239,68,68,0.13);
+  --mr-down-a20: rgba(239,68,68,0.20);
+  --mr-down-a27: rgba(239,68,68,0.27);
+  /* Tinted panel backgrounds */
+  --mr-tint-gold:    #1a1500;
+  --mr-tint-gold-b:  #3a2e00;
+  --mr-tint-green:   #0a1a0a;
+  --mr-tint-green2:  #0a1a14;
+  --mr-tint-green3:  #0a1410;
+  --mr-tint-green4:  #081a0a;
+  --mr-tint-green-b: #1a4a2a;
+  --mr-tint-red:     #1a0808;
+  --mr-tint-purple:  #0f0a1a;
+  --mr-tint-dark:    #0a0a00;
+}
+
+[data-theme="light"] {
+  --mr-bg:      #f0f2f5;
+  --mr-sidebar: #ffffff;
+  --mr-panel:   #ffffff;
+  --mr-dark:    #e8ecf0;
+  --mr-darker:  #dde3ea;
+  --mr-border:  #e2e8f0;
+  --mr-border2: #cbd5e0;
+  --mr-dim:     #718096;
+  --mr-dimmer:  #a0aec0;
+  --mr-muted:   #a0aec0;
+  --mr-text:    #1a202c;
+  --mr-up:      #16a34a;
+  --mr-down:    #dc2626;
+  --mr-gold:    #16a34a;
+  --mr-gold2:   #15803d;
+  --mr-gold-a20: rgba(22,163,74,0.15);
+  --mr-gold-a27: rgba(22,163,74,0.20);
+  --mr-gold-a80: rgba(22,163,74,0.80);
+  --mr-up-a20:   rgba(22,163,74,0.15);
+  --mr-up-a27:   rgba(22,163,74,0.20);
+  --mr-down-a13: rgba(220,38,38,0.08);
+  --mr-down-a20: rgba(220,38,38,0.12);
+  --mr-down-a27: rgba(220,38,38,0.18);
+  --mr-tint-gold:    #f0fdf4;
+  --mr-tint-gold-b:  #bbf7d0;
+  --mr-tint-green:   #f0fdf4;
+  --mr-tint-green2:  #ecfdf5;
+  --mr-tint-green3:  #ecfdf5;
+  --mr-tint-green4:  #f0fdf4;
+  --mr-tint-green-b: #86efac;
+  --mr-tint-red:     #fef2f2;
+  --mr-tint-purple:  #fdf4ff;
+  --mr-tint-dark:    #f8fafc;
+}
+
+/* Theme toggle button: show correct icon per theme */
+.mr-theme-icon-dark  { display: inline; }
+.mr-theme-icon-light { display: none; }
+[data-theme="light"] .mr-theme-icon-dark  { display: none; }
+[data-theme="light"] .mr-theme-icon-light { display: inline; }
 
 /* ============================================================
    GLOBAL MOBILE RESPONSIVE — Menolak Rugi

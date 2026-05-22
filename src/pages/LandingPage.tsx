@@ -1,4 +1,4 @@
-// pages/LandingPage.tsx — Landing Page Menolak Rugi (Direction A · Terminal)
+﻿// pages/LandingPage.tsx — Landing Page Menolak Rugi (Direction A · Terminal)
 // Data: member count + funded count + testimonials dari Supabase.
 // Pricing dari DB (dengan fallback hardcode jika tabel belum ada).
 
@@ -112,7 +112,7 @@ function NavBar() {
 
   return (
     <>
-    <nav className='mr-nav-topbar' style={{ background: 'linear-gradient(180deg, #0a0a0a 0%, #060606 100%)', padding: '12px 32px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'sticky', top: 0, zIndex: 50, borderBottom: '1px solid #1a1a1a' }}>
+    <nav className='mr-nav-topbar' style={{ background: 'var(--mr-sidebar)', padding: '12px 32px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'sticky', top: 0, zIndex: 50, borderBottom: '1px solid var(--mr-border)' }}>
 
       {/* Logo — always visible */}
       <a href="/" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none', flexShrink: 0 }}>
@@ -120,21 +120,21 @@ function NavBar() {
           <img src="/logo.png" alt="MR" style={{ width: '100%', height: '100%', objectFit: 'contain' }}/>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1 }}>
-          <span style={{ fontWeight: 800, letterSpacing: 0.5, fontSize: 13, color: '#e7e5e4' }}>MENOLAK RUGI</span>
-          <span style={{ color: '#555', fontSize: 9, marginTop: 2, fontFamily: MR.mono, letterSpacing: 1 }}>SMC EDUCATION</span>
+          <span style={{ fontWeight: 800, letterSpacing: 0.5, fontSize: 13, color: 'var(--mr-text)' }}>MENOLAK RUGI</span>
+          <span style={{ color: 'var(--mr-dim)', fontSize: 9, marginTop: 2, fontFamily: MR.mono, letterSpacing: 1 }}>SMC EDUCATION</span>
         </div>
       </a>
 
       {/* Desktop nav tabs */}
-      <div className='mr-nav-links' style={{ display: 'flex', alignItems: 'center', background: '#0d0d0d', border: '1px solid #222', borderRadius: 12, padding: '6px', gap: 2 }}>
+      <div className='mr-nav-links' style={{ display: 'flex', alignItems: 'center', background: 'var(--mr-dark)', border: '1px solid var(--mr-border)', borderRadius: 12, padding: '6px', gap: 2 }}>
         {NAV_ITEMS.map(item => {
           const isActive = active === item.l;
           return (
             <a key={item.l} href={item.href} onClick={() => setActive(item.l)}
               style={{ display: 'flex', flexDirection: 'column' as const, alignItems: 'center', gap: 3, padding: '8px 18px', borderRadius: 9, textDecoration: 'none',
                 color: isActive ? MR.gold : '#666',
-                background: isActive ? 'linear-gradient(180deg,#1a1500,#0f0c00)' : 'transparent',
-                border: isActive ? '1px solid #3a2e00' : '1px solid transparent',
+                background: isActive ? 'var(--mr-tint-gold)' : 'transparent',
+                border: isActive ? '1px solid var(--mr-tint-gold-b)' : '1px solid transparent',
                 transition: 'all .2s' }}>
               <span style={{ fontFamily: MR.mono, fontSize: 10, fontWeight: 700, letterSpacing: 0.8 }}>{item.l}</span>
             </a>
@@ -144,14 +144,20 @@ function NavBar() {
 
       {/* Desktop CTA */}
       <div className='mr-nav-links' style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+        {/* Theme toggle */}
+        <button onClick={() => { const h = document.documentElement; const n = h.getAttribute('data-theme') === 'light' ? 'dark' : 'light'; h.setAttribute('data-theme', n); localStorage.setItem('mr_theme', n); }}
+          title="Toggle tema" style={{ background: 'none', border: '1px solid var(--mr-border2)', borderRadius: 7, width: 34, height: 34, cursor: 'pointer', color: 'var(--mr-dim)', fontSize: 15, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+          <span className="mr-theme-icon-dark">🌙</span>
+          <span className="mr-theme-icon-light">☀️</span>
+        </button>
         {isLoggedIn ? (
           <button onClick={() => window.location.href = '/member'}
-            style={{ fontFamily: MR.mono, fontSize: 11, color: '#22ab94', padding: '9px 16px', border: '1px solid #0f2a1f', background: '#0a1a14', cursor: 'pointer', borderRadius: 7, fontWeight: 700 }}>
+            style={{ fontFamily: MR.mono, fontSize: 11, color: '#22ab94', padding: '9px 16px', border: '1px solid var(--mr-tint-green-b)', background: 'var(--mr-tint-green2)', cursor: 'pointer', borderRadius: 7, fontWeight: 700 }}>
             DASHBOARD ›
           </button>
         ) : (
           <button onClick={() => window.location.href = '/login'}
-            style={{ fontFamily: MR.mono, fontSize: 11, color: '#888', padding: '9px 16px', border: '1px solid #2a2a2a', background: '#0d0d0d', cursor: 'pointer', borderRadius: 7 }}>
+            style={{ fontFamily: MR.mono, fontSize: 11, color: 'var(--mr-muted)', padding: '9px 16px', border: '1px solid var(--mr-border2)', background: 'var(--mr-sidebar)', cursor: 'pointer', borderRadius: 7 }}>
             LOG IN
           </button>
         )}
@@ -165,12 +171,12 @@ function NavBar() {
       <div className='mr-mobile-nav-right' style={{ display: 'none', alignItems: 'center', gap: 8 }}>
         {isLoggedIn ? (
           <button onClick={() => window.location.href = '/member'}
-            style={{ fontFamily: MR.mono, fontSize: 11, color: '#22ab94', padding: '8px 12px', border: '1px solid #0f2a1f', background: '#0a1a14', cursor: 'pointer', borderRadius: 7, fontWeight: 700, whiteSpace: 'nowrap' as const }}>
+            style={{ fontFamily: MR.mono, fontSize: 11, color: '#22ab94', padding: '8px 12px', border: '1px solid var(--mr-tint-green-b)', background: 'var(--mr-tint-green2)', cursor: 'pointer', borderRadius: 7, fontWeight: 700, whiteSpace: 'nowrap' as const }}>
             DASHBOARD ›
           </button>
         ) : (
           <button onClick={() => window.location.href = '/login'}
-            style={{ fontFamily: MR.mono, fontSize: 11, color: '#888', padding: '8px 12px', border: '1px solid #2a2a2a', background: '#0d0d0d', cursor: 'pointer', borderRadius: 7, whiteSpace: 'nowrap' as const }}>
+            style={{ fontFamily: MR.mono, fontSize: 11, color: 'var(--mr-muted)', padding: '8px 12px', border: '1px solid var(--mr-border2)', background: 'var(--mr-sidebar)', cursor: 'pointer', borderRadius: 7, whiteSpace: 'nowrap' as const }}>
             LOG IN
           </button>
         )}
@@ -202,7 +208,7 @@ function NavBar() {
           <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 4, marginBottom: 20 }}>
             {NAV_ITEMS.map(item => (
               <a key={item.l} href={item.href} onClick={() => setMenuOpen(false)}
-                style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 16px', background: '#111', borderRadius: 10, textDecoration: 'none', color: '#e7e5e4', fontSize: 15, fontWeight: 600, border: '1px solid #1a1a1a' }}>
+                style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 16px', background: '#111', borderRadius: 10, textDecoration: 'none', color: 'var(--mr-text)', fontSize: 15, fontWeight: 600, border: '1px solid #1a1a1a' }}>
                 <span style={{ fontSize: 20 }}>{item.icon}</span>
                 {item.l}
               </a>
@@ -212,12 +218,12 @@ function NavBar() {
           <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 10 }}>
             {isLoggedIn ? (
               <button onClick={() => window.location.href = '/member'}
-                style={{ width: '100%', fontFamily: MR.mono, fontSize: 13, fontWeight: 700, color: '#22ab94', padding: '14px', background: '#0a1a14', border: '1px solid #22ab94', cursor: 'pointer', borderRadius: 10 }}>
+                style={{ width: '100%', fontFamily: MR.mono, fontSize: 13, fontWeight: 700, color: '#22ab94', padding: '14px', background: 'var(--mr-tint-green2)', border: '1px solid #22ab94', cursor: 'pointer', borderRadius: 10 }}>
                 BUKA DASHBOARD →
               </button>
             ) : (
               <button onClick={() => window.location.href = '/login'}
-                style={{ width: '100%', fontFamily: MR.mono, fontSize: 13, fontWeight: 700, color: '#e7e5e4', padding: '14px', background: '#111', border: '1px solid #2a2a2a', cursor: 'pointer', borderRadius: 10 }}>
+                style={{ width: '100%', fontFamily: MR.mono, fontSize: 13, fontWeight: 700, color: 'var(--mr-text)', padding: '14px', background: '#111', border: '1px solid #2a2a2a', cursor: 'pointer', borderRadius: 10 }}>
                 LOG IN
               </button>
             )}
@@ -350,7 +356,7 @@ function Curriculum() {
       <div style={{ borderBottom: `1px solid ${MR.border}`, overflow: 'hidden' }}>
         <button onClick={toggle}
           style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 12, padding: '14px 20px', background: isOpen ? (isAdv ? '#0f0c00' : '#051210') : 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left' as const, transition: 'background .2s' }}>
-          <span style={{ fontFamily: MR.mono, fontSize: 10, fontWeight: 700, color: isBonusCard ? '#a855f7' : accent, background: isBonusCard ? '#120a1a' : (isAdv ? '#1a1500' : '#051a14'), border: `1px solid ${isBonusCard ? '#3a1a5a' : (isAdv ? '#3a2e00' : '#0f3a2a')}`, padding: '2px 8px', flexShrink: 0, minWidth: 52, textAlign: 'center' as const }}>
+          <span style={{ fontFamily: MR.mono, fontSize: 10, fontWeight: 700, color: isBonusCard ? '#a855f7' : accent, background: isBonusCard ? '#120a1a' : (isAdv ? 'var(--mr-tint-gold)' : '#051a14'), border: `1px solid ${isBonusCard ? '#3a1a5a' : (isAdv ? 'var(--mr-tint-gold-b)' : '#0f3a2a')}`, padding: '2px 8px', flexShrink: 0, minWidth: 52, textAlign: 'center' as const }}>
             {mod.mod}
           </span>
           <span style={{ flex: 1, fontSize: 14, fontWeight: 600, color: isOpen ? (isBonusCard ? '#c084fc' : accent) : MR.text }}>
@@ -442,7 +448,7 @@ function Testimonials({ testimonials }: { testimonials: Testimonial[] }) {
   }, [paused, total, perView, maxIdx]);
 
   return (
-    <section style={{ padding: isMobile ? '48px 0' : '72px 0', background: 'linear-gradient(180deg,#060606 0%,#0a0900 50%,#060606 100%)', borderBottom: '1px solid #1a1a1a', overflow: 'hidden', position: 'relative' }}>
+    <section style={{ padding: isMobile ? '48px 0' : '72px 0', background: 'linear-gradient(180deg,#060606 0%,#0a0900 50%,#060606 100%)', borderBottom: '1px solid var(--mr-border)', overflow: 'hidden', position: 'relative' }}>
       <div style={{ position:'absolute', top:'40%', left:'50%', transform:'translateX(-50%)', width:800, height:300, background:'radial-gradient(ellipse,rgba(234,179,8,0.03) 0%,transparent 70%)', pointerEvents:'none', zIndex:0 }}/>
 
       {/* Header */}

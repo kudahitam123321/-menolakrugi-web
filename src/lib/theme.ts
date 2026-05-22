@@ -1,40 +1,41 @@
-// lib/theme.ts — Menolak Rugi Brand Colors
-// Primary: Hijau (profit/positif) + Merah (branding logo)
+// lib/theme.ts — Menolak Rugi Brand Tokens
+// Colors are CSS custom properties defined in index.css.
+// Changing data-theme attribute on <html> switches the palette instantly.
 
 export const MR = {
-  // ── Brand utama ──
-  gold:     '#16a34a',   // Hijau — primary accent (was #eab308 gold)
-  gold2:    '#15803d',   // Hijau gelap — hover state
-  
-  // ── Background ──
-  bg:       '#080808',
-  dark:     '#0a0a0a',
-  darker:   '#050505',
-  panel:    '#111',
-  
-  // ── Border ──
-  border:   '#1e1e1e',
-  borderHot:'#2a2a2a',
-  
-  // ── Text ──
-  text:     '#e7e5e4',
-  muted:    '#9a9895',
-  dim:      '#666',
-  dimmer:   '#444',
-  
-  // ── Status ──
-  up:       '#22c55e',   // Hijau terang — profit/aktif
-  down:     '#ef4444',   // Merah — loss/negatif  
-  
-  // ── Typography ──
+  gold:      'var(--mr-gold)',
+  gold2:     'var(--mr-gold2)',
+  bg:        'var(--mr-bg)',
+  dark:      'var(--mr-dark)',
+  darker:    'var(--mr-darker)',
+  panel:     'var(--mr-panel)',
+  border:    'var(--mr-border)',
+  borderHot: 'var(--mr-border2)',
+  text:      'var(--mr-text)',
+  muted:     'var(--mr-muted)',
+  dim:       'var(--mr-dim)',
+  dimmer:    'var(--mr-dimmer)',
+  up:        'var(--mr-up)',
+  down:      'var(--mr-down)',
   sans: '"Geist",system-ui,sans-serif',
   mono: '"Geist Mono",monospace',
 };
 
-// Tier accent colors — logo hijau-merah theme
 export const TIER_ACCENT: Record<string, string> = {
-  'SMC Platinum 1 on 1': '#ef4444',   // Merah — tier tertinggi
-  'SMC Gold Mentorship':  '#16a34a',  // Hijau — tier utama
-  'SMC Silver Mentorship':'#22c55e',  // Hijau muda
-  'SMC Bronze Mentorship':'#4ade80',  // Hijau pastel
+  'SMC Platinum 1 on 1': '#ef4444',
+  'SMC Gold Mentorship':  '#16a34a',
+  'SMC Silver Mentorship':'#22c55e',
+  'SMC Bronze Mentorship':'#4ade80',
 };
+
+export function initTheme(): void {
+  const saved = localStorage.getItem('mr_theme') || 'dark';
+  document.documentElement.setAttribute('data-theme', saved);
+}
+
+export function toggleTheme(): void {
+  const html = document.documentElement;
+  const next = html.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
+  html.setAttribute('data-theme', next);
+  localStorage.setItem('mr_theme', next);
+}

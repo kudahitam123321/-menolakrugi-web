@@ -1,15 +1,15 @@
-import React, { useState, useEffect, useCallback } from 'react';
+﻿import React, { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../../lib/supabase';
 import * as XLSX from 'xlsx';
 
 // ── Constants ────────────────────────────────────────────────────────────────
 const C = {
-  bg: '#090909', panel: '#111', border: '#1e1e1e', border2: '#2a2a2a',
-  dim: '#555', muted: '#888', text: '#e7e5e4',
-  up: '#22c55e', down: '#ef4444', warn: '#f59e0b',
+  bg: 'var(--mr-bg)', panel: 'var(--mr-panel)', border: 'var(--mr-border)', border2: 'var(--mr-border2)',
+  dim: 'var(--mr-dim)', muted: 'var(--mr-muted)', text: 'var(--mr-text)',
+  up: 'var(--mr-up)', down: 'var(--mr-down)', warn: '#f59e0b',
   mono: '"Geist Mono",monospace', sans: '"Geist",system-ui,sans-serif',
 };
-const G = { gold: '#16a34a', gold2: '#15803d' };
+const G = { gold: 'var(--mr-gold)', gold2: 'var(--mr-gold2)' };
 
 const PAIRS    = ['XAUUSD','XAGUSD','GBPUSD','EURUSD','USDJPY','USDCHF','AUDUSD','NZDUSD','USDCAD','GBPJPY','EURJPY','NAS100','US30','SP500'];
 const TFS      = ['M1','M5','M15','M30','H1','H4','D1','W1'];

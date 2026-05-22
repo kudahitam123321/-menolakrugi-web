@@ -1,15 +1,15 @@
-import React, { useState, useEffect, useRef, memo } from 'react';
+﻿import React, { useState, useEffect, useRef, memo } from 'react';
 import { supabase } from '../../lib/supabase';
 import LanjutkanBelajar from '../../components/LanjutkanBelajar';
 import JurnalPage from './JurnalPage';
 import LeaderboardPage from './LeaderboardPage';
 import { trackVideoWatch } from '../../hooks/useWatchHistory';
 
-const G = { gold: '#16a34a', gold2: '#15803d' };
+const G = { gold: 'var(--mr-gold)', gold2: 'var(--mr-gold2)' };
 const C = {
-  bg: '#090909', sidebar: '#0d0d0d', panel: '#111', border: '#1e1e1e',
-  border2: '#2a2a2a', dim: '#555', muted: '#888', text: '#e7e5e4',
-  up: '#22c55e', down: '#ef4444', mono: '"Geist Mono",monospace',
+  bg: 'var(--mr-bg)', sidebar: 'var(--mr-sidebar)', panel: 'var(--mr-panel)', border: 'var(--mr-border)',
+  border2: 'var(--mr-border2)', dim: 'var(--mr-dim)', muted: 'var(--mr-muted)', text: 'var(--mr-text)',
+  up: 'var(--mr-up)', down: 'var(--mr-down)', mono: '"Geist Mono",monospace',
   sans: '"Geist",system-ui,sans-serif',
 };
 const DISCORD  = 'https://discord.gg/d2Tpf6sGMr';
@@ -48,7 +48,7 @@ function Ring({ pct, size = 48, color = G.gold }: { pct: number; size?: number; 
   const r = (size - 6) / 2; const c2 = 2 * Math.PI * r;
   return (
     <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
-      <circle cx={size/2} cy={size/2} r={r} fill="none" stroke="#1a1a1a" strokeWidth="5"/>
+      <circle cx={size/2} cy={size/2} r={r} fill="none" stroke="var(--mr-border2)" strokeWidth="5"/>
       <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={color} strokeWidth="5"
         strokeDasharray={c2} strokeDashoffset={c2-(pct/100)*c2} strokeLinecap="round"
         transform={`rotate(-90 ${size/2} ${size/2})`}/>
@@ -303,6 +303,8 @@ export default function DashboardPage() {
   const [liveSchedules, setLiveSchedules] = useState<any[]>([]);
   const [notifications, setNotifications]   = useState<any[]>([]);
   const [dismissedNotifs, setDismissedNotifs] = useState<Set<string>>(new Set());
+  const [showMemberNotif, setShowMemberNotif] = useState(false);
+  const [notifLastSeen, setNotifLastSeen]     = useState('1970-01-01T00:00:00Z');
   const [advanceReq, setAdvanceReq]         = useState<any | null>(null);
   const [showAdvModal, setShowAdvModal]     = useState(false);
   const [jurnal1, setJurnal1]               = useState('');
@@ -446,6 +448,8 @@ export default function DashboardPage() {
     if (schedRes.data)  setLiveSchedules(schedRes.data);
     if (notifRes.data)  setNotifications(notifRes.data);
     if (advRes.data && advRes.data.length > 0) setAdvanceReq(advRes.data[0]);
+    const savedSeen = localStorage.getItem(`mr_notif_seen_${m.id}`);
+    if (savedSeen) setNotifLastSeen(savedSeen);
     if (progRes.data) {
       const map: Record<string, string> = {};
       progRes.data.forEach((p: any) => { map[p.video_id] = p.status; });
@@ -685,7 +689,7 @@ export default function DashboardPage() {
         .mr-status-anim { animation: mr-kpi-in 0.5s ease 0.5s both; }
         .mr-banner-anim { animation: mr-kpi-in 0.5s ease 0.7s both; }
         @keyframes mr-shimmer { 0% { background-position:-400px 0; } 100% { background-position:400px 0; } }
-        .mr-skeleton { background:linear-gradient(90deg,#111 25%,#1a1a1a 50%,#111 75%); background-size:800px 100%; animation:mr-shimmer 1.4s infinite; border-radius:6px; }
+        .mr-skeleton { background:linear-gradient(90deg,var(--mr-panel) 25%,var(--mr-border) 50%,var(--mr-panel) 75%); background-size:800px 100%; animation:mr-shimmer 1.4s infinite; border-radius:6px; }
         .mr-skeleton-text  { height:14px; margin-bottom:8px; }
         .mr-skeleton-title { height:24px; margin-bottom:12px; }
         .mr-skeleton-card  { height:90px; border-radius:12px; }
@@ -729,13 +733,89 @@ export default function DashboardPage() {
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? 8 : 14 }}>
           {!isMobile && <div style={{ fontFamily: C.mono, fontSize: 10, color: C.dim }}>{member.tier.replace('SMC ', '').toUpperCase()}</div>}
-          {member.is_advance && <span style={{ fontFamily: C.mono, fontSize: 8, background: '#1a1500', border: `1px solid #3a2e00`, color: G.gold, padding: '2px 6px', borderRadius: 4 }}>ADVANCE</span>}
+          {member.is_advance && <span style={{ fontFamily: C.mono, fontSize: 8, background: 'var(--mr-tint-gold)', border: "1px solid var(--mr-tint-gold-b)", color: G.gold, padding: '2px 6px', borderRadius: 4 }}>ADVANCE</span>}
+          {/* ── Bell notification ── */}
+          {(() => {
+            const unreadP = notifications.filter((n:any) => !dismissedNotifs.has(n.id)).length;
+            const unreadA = announcements.filter((a:any) => a.created_at > notifLastSeen).length;
+            const totalUnread = unreadP + unreadA;
+            return (
+              <div style={{ position: 'relative' }}>
+                <button onClick={() => {
+                    const opening = !showMemberNotif;
+                    setShowMemberNotif(opening);
+                    if (opening && member.id) {
+                      const now = new Date().toISOString();
+                      localStorage.setItem(`mr_notif_seen_${member.id}`, now);
+                      setNotifLastSeen(now);
+                    }
+                  }}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <span style={{ fontSize: 18 }}>🔔</span>
+                  {totalUnread > 0 && (
+                    <span style={{ position: 'absolute', top: -2, right: -2, minWidth: 16, height: 16, background: C.down, borderRadius: 8, fontSize: 9, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: C.mono, fontWeight: 700, color: '#fff', padding: '0 3px' }}>
+                      {totalUnread > 9 ? '9+' : totalUnread}
+                    </span>
+                  )}
+                </button>
+                {showMemberNotif && (
+                  <>
+                    <div onClick={() => setShowMemberNotif(false)} style={{ position: 'fixed', inset: 0, zIndex: 49 }}/>
+                    <div style={{ position: 'absolute', top: 'calc(100% + 10px)', right: 0, width: 300, background: C.panel, border: `1px solid ${C.border2}`, borderRadius: 12, boxShadow: '0 8px 32px rgba(0,0,0,0.4)', zIndex: 50, overflow: 'hidden' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', borderBottom: `1px solid ${C.border}` }}>
+                        <span style={{ fontFamily: C.mono, fontSize: 10, color: G.gold, letterSpacing: 1.5 }}>// NOTIFIKASI</span>
+                        <button onClick={() => setShowMemberNotif(false)} style={{ background: 'none', border: 'none', color: C.dim, cursor: 'pointer', fontSize: 18, padding: '0 2px', lineHeight: 1 }}>×</button>
+                      </div>
+                      <div style={{ maxHeight: 360, overflowY: 'auto' }}>
+                        {notifications.filter((n:any) => !dismissedNotifs.has(n.id)).map((n:any) => (
+                          <div key={n.id} style={{ display: 'flex', gap: 10, padding: '12px 14px', borderBottom: `1px solid ${C.border}` }}>
+                            <span style={{ fontSize: 16, flexShrink: 0, marginTop: 1 }}>
+                              {n.type === 'approve' ? '✅' : n.type === 'reject' ? '❌' : 'ℹ️'}
+                            </span>
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 2, color: n.type === 'approve' ? C.up : n.type === 'reject' ? C.down : C.text }}>
+                                {n.type === 'approve' ? 'Advance Disetujui 🎉' : n.type === 'reject' ? 'Advance Ditolak' : 'Info'}
+                              </div>
+                              <div style={{ fontSize: 11, color: C.dim, lineHeight: 1.4 }}>{n.message}</div>
+                              <div style={{ fontFamily: C.mono, fontSize: 9, color: C.dim, marginTop: 3 }}>{new Date(n.created_at).toLocaleDateString('id-ID',{day:'numeric',month:'short',year:'numeric'})}</div>
+                            </div>
+                            <button onClick={() => setDismissedNotifs(s => { const ns = new Set(s); ns.add(n.id); return ns; })}
+                              style={{ background: 'none', border: 'none', color: C.dim, cursor: 'pointer', fontSize: 16, flexShrink: 0, padding: '0 2px', alignSelf: 'flex-start' }}>×</button>
+                          </div>
+                        ))}
+                        {announcements.map((a:any) => (
+                          <div key={a.id || a.created_at} style={{ display: 'flex', gap: 10, padding: '12px 14px', borderBottom: `1px solid ${C.border}` }}>
+                            <span style={{ fontSize: 16, flexShrink: 0, marginTop: 1 }}>📢</span>
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              {a.judul && <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 2 }}>{a.judul}</div>}
+                              <div style={{ fontSize: 11, color: C.dim, lineHeight: 1.4 }}>{a.content || a.message || ''}</div>
+                              <div style={{ fontFamily: C.mono, fontSize: 9, color: C.dim, marginTop: 3 }}>{new Date(a.created_at).toLocaleDateString('id-ID',{day:'numeric',month:'short',year:'numeric'})}</div>
+                            </div>
+                          </div>
+                        ))}
+                        {notifications.filter((n:any) => !dismissedNotifs.has(n.id)).length === 0 && announcements.length === 0 && (
+                          <div style={{ padding: '28px 16px', textAlign: 'center' as const, fontFamily: C.mono, color: C.dim, fontSize: 12 }}>
+                            ✅ Tidak ada notifikasi
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
+            );
+          })()}
           <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
             <div style={{ width: 28, height: 28, background: `linear-gradient(135deg,${G.gold},${G.gold2})`, borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: 11, color: '#000' }}>
               {member.nama[0].toUpperCase()}
             </div>
             {!isMobile && <span style={{ fontSize: 13, fontWeight: 600 }}>{member.nama}</span>}
           </div>
+          <button onClick={() => { const h = document.documentElement; const n = h.getAttribute('data-theme') === 'light' ? 'dark' : 'light'; h.setAttribute('data-theme', n); localStorage.setItem('mr_theme', n); }}
+            title="Toggle tema" style={{ background: 'none', border: `1px solid ${C.border2}`, borderRadius: 7, width: 30, height: 30, cursor: 'pointer', color: C.dim, fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <span className="mr-theme-icon-dark">🌙</span>
+            <span className="mr-theme-icon-light">☀️</span>
+          </button>
           {!isMobile && <button onClick={() => window.location.href = '/'} style={{ fontFamily: C.mono, fontSize: 10, color: C.dim, background: 'none', border: `1px solid ${C.border2}`, padding: '4px 10px', cursor: 'pointer', borderRadius: 5 }}>Web ↗</button>}
         </div>
       </div>
@@ -768,7 +848,7 @@ export default function DashboardPage() {
                       else if (item.id === 'logout') { logout(); }
                       else { setActive(item.id); setMobileMenuOpen(false); }
                     }}
-                    style={{ display: 'flex', alignItems: 'center', gap: 12, width: '100%', padding: '12px 20px', border: 'none', background: isA ? '#1a1500' : 'transparent', borderLeft: isA ? `3px solid ${G.gold}` : '3px solid transparent', color: isA ? G.gold : C.dim, cursor: 'pointer', fontSize: 14, textAlign: 'left' as const }}>
+                    style={{ display: 'flex', alignItems: 'center', gap: 12, width: '100%', padding: '12px 20px', border: 'none', background: isA ? 'var(--mr-tint-gold)' : 'transparent', borderLeft: isA ? `3px solid ${G.gold}` : '3px solid transparent', color: isA ? G.gold : C.dim, cursor: 'pointer', fontSize: 14, textAlign: 'left' as const }}>
                     <span style={{ fontSize: 18 }}>{item.icon}</span>
                     <span style={{ flex: 1 }}>{item.label}</span>
                     {(item as any).badge && <span style={{ fontFamily: C.mono, fontSize: 8, background: C.down, color: '#fff', padding: '1px 5px', borderRadius: 3, fontWeight: 700 }}>{(item as any).badge}</span>}
@@ -801,7 +881,7 @@ export default function DashboardPage() {
                     <span style={{ fontFamily: C.mono, fontSize: 8, color: '#333', letterSpacing: 2, whiteSpace: 'nowrap' as const }}>{item.label}</span>
                     <div style={{ flex: 1, height: 1, background: '#1e1e1e' }}/>
                   </div>
-                ) : <div key={item.id} style={{ margin: '8px 0', borderTop: '1px solid #1a1a1a' }}/>;
+                ) : <div key={item.id} style={{ margin: '8px 0', borderTop: '1px solid var(--mr-border)' }}/>;
               }
               const isA = active === item.id;
               return (
@@ -812,7 +892,7 @@ export default function DashboardPage() {
                     else { setActive(item.id); }
                   }}
                   title={sidebarCollapsed ? item.label : undefined}
-                  style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: sidebarCollapsed ? '11px 0' : '10px 18px', justifyContent: sidebarCollapsed ? 'center' : 'flex-start', border: 'none', background: isA ? '#1a1500' : 'transparent', borderLeft: isA ? `3px solid ${G.gold}` : '3px solid transparent', color: isA ? G.gold : C.dim, cursor: 'pointer', fontSize: 13, textAlign: 'left' as const, transition: 'padding 0.2s' }}>
+                  style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: sidebarCollapsed ? '11px 0' : '10px 18px', justifyContent: sidebarCollapsed ? 'center' : 'flex-start', border: 'none', background: isA ? 'var(--mr-tint-gold)' : 'transparent', borderLeft: isA ? `3px solid ${G.gold}` : '3px solid transparent', color: isA ? G.gold : C.dim, cursor: 'pointer', fontSize: 13, textAlign: 'left' as const, transition: 'padding 0.2s' }}>
                   <span style={{ fontSize: 17, flexShrink: 0 }}>{item.icon}</span>
                   {!sidebarCollapsed && <span style={{ flex: 1, whiteSpace: 'nowrap' as const }}>{item.label}</span>}
                   {!sidebarCollapsed && (item as any).badge && <span style={{ fontFamily: C.mono, fontSize: 8, background: C.down, color: '#fff', padding: '1px 5px', borderRadius: 3, fontWeight: 700 }}>{(item as any).badge}</span>}
@@ -869,14 +949,14 @@ export default function DashboardPage() {
                 </div>
                 {/* Inline stats pills */}
                 <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' as const }}>
-                  <div style={{ fontFamily: C.mono, fontSize: 11, fontWeight: 700, color: G.gold, background: '#1a1200', border: '1px solid #3a2e0044', padding: '6px 14px', borderRadius: 20 }}>
+                  <div style={{ fontFamily: C.mono, fontSize: 11, fontWeight: 700, color: G.gold, background: 'var(--mr-tint-gold)', border: '1px solid var(--mr-gold-a27)', padding: '6px 14px', borderRadius: 20 }}>
                     {progressPct}% selesai
                   </div>
                   <div style={{ fontFamily: C.mono, fontSize: 11, color: C.up, background: '#0a1a1044', border: '1px solid #22ab9422', padding: '6px 14px', borderRadius: 20 }}>
                     {completedVideos}/{totalVideos} video
                   </div>
                   {member.is_advance && (
-                    <div style={{ fontFamily: C.mono, fontSize: 11, color: '#a855f7', background: '#0f0a1a', border: '1px solid #a855f722', padding: '6px 14px', borderRadius: 20 }}>
+                    <div style={{ fontFamily: C.mono, fontSize: 11, color: '#a855f7', background: 'var(--mr-tint-purple)', border: '1px solid #a855f722', padding: '6px 14px', borderRadius: 20 }}>
                       ADVANCE
                     </div>
                   )}
@@ -889,15 +969,15 @@ export default function DashboardPage() {
                   <div style={{ fontFamily: C.mono, color: '#555', fontSize: 9, letterSpacing: 1 }}>PROGRESS BELAJAR</div>
                   <div style={{ fontFamily: C.mono, fontSize: 11, fontWeight: 700, color: G.gold }}>{progressPct}%</div>
                 </div>
-                <div style={{ height: 5, background: '#1a1a1a', borderRadius: 3, overflow: 'hidden' }}>
-                  <div style={{ height: '100%', width: `${progressPct}%`, background: `linear-gradient(90deg,${G.gold},${G.gold}cc)`, borderRadius: 3, transition: 'width 1s ease', boxShadow: `0 0 8px ${G.gold}44` }}/>
+                <div style={{ height: 5, background: 'var(--mr-border)', borderRadius: 3, overflow: 'hidden' }}>
+                  <div style={{ height: '100%', width: `${progressPct}%`, background: `linear-gradient(90deg,${G.gold},var(--mr-gold-a80))`, borderRadius: 3, transition: 'width 1s ease', boxShadow: `0 0 8px var(--mr-gold-a27)` }}/>
                 </div>
               </div>
 
               {/* ── Status row ── compact 3-col ── */}
               <div className='mr-grid-3' style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 8 }}>
                 {/* Status Trading */}
-                <div style={{ background: C.panel, border: `1px solid ${member.funded_status ? '#3a2e0066' : C.border}`, borderRadius: 10, padding: '12px 14px', cursor: 'pointer' }}
+                <div style={{ background: C.panel, border: `1px solid ${member.funded_status ? 'var(--mr-gold-a27)' : C.border}`, borderRadius: 10, padding: '12px 14px', cursor: 'pointer' }}
                   onClick={() => setActive('funded')}>
                   <div style={{ fontFamily: C.mono, color: '#444', fontSize: 9, letterSpacing: 1, marginBottom: 5 }}>STATUS TRADING</div>
                   <div style={{ fontWeight: 700, fontSize: 16, color: member.funded_status ? G.gold : '#333', letterSpacing: -0.3 }}>
@@ -945,7 +1025,7 @@ export default function DashboardPage() {
                       style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px', background: '#0a0c00', border: '1px solid #2a2e0044', borderRadius: 8, cursor: 'pointer', textAlign: 'left' as const, width: '100%' }}>
                       <span style={{ fontSize: 14 }}>🚀</span>
                       <span style={{ fontSize: 12, color: '#666', flex: 1 }}>Set status trading kamu — Demo, Phase, Funded, dll</span>
-                      <span style={{ fontFamily: C.mono, fontSize: 9, color: G.gold, border: '1px solid #3a2e00', padding: '3px 8px', borderRadius: 4, flexShrink: 0 }}>SET STATUS ▸</span>
+                      <span style={{ fontFamily: C.mono, fontSize: 9, color: G.gold, border: '1px solid var(--mr-tint-gold-b)', padding: '3px 8px', borderRadius: 4, flexShrink: 0 }}>SET STATUS ▸</span>
                     </button>
                   )}
                 </div>
@@ -957,6 +1037,48 @@ export default function DashboardPage() {
                 memberTier={member.tier}
               />
 
+              {/* ── Top 3 Jurnal Trading ── */}
+              {jurnalLeaderboard.length > 0 && (
+                <div style={{ background: C.panel, border: `1px solid ${C.border}`, borderRadius: 12, padding: '16px 18px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+                    <div style={{ fontFamily: C.mono, color: G.gold, fontSize: 10, letterSpacing: 1 }}>// TOP 3 JURNAL TRADING</div>
+                    <button onClick={() => setActive('peringkat')} style={{ fontFamily: C.mono, fontSize: 9, color: C.dim, background: 'none', border: `1px solid ${C.border2}`, padding: '3px 8px', borderRadius: 4, cursor: 'pointer' }}>Lihat Semua ›</button>
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
+                    {jurnalLeaderboard.slice(0, 3).map((m: any, i: number) => {
+                      const rankImgs = ['/rank_1.png', '/rank_2.png', '/rank_3.png'];
+                      const isMe = m.id === member.id;
+                      const borderColor = i === 0 ? 'var(--mr-tint-gold-b)' : C.border;
+                      const bgColor = i === 0 ? 'var(--mr-tint-gold)' : i === 1 ? 'var(--mr-tint-green)' : C.panel;
+                      return (
+                        <div key={m.id} style={{ background: bgColor, border: `1px solid ${borderColor}`, borderRadius: 10, padding: '12px', textAlign: 'center' as const, position: 'relative' }}>
+                          {isMe && <div style={{ position: 'absolute', top: 4, right: 6, fontFamily: C.mono, fontSize: 7, color: G.gold, fontWeight: 700 }}>KAMU</div>}
+                          <img src={rankImgs[i]} alt={`rank-${i+1}`} style={{ width: 48, height: 48, objectFit: 'contain', marginBottom: 4 }}/>
+                          <div style={{ fontWeight: 700, fontSize: 12, marginBottom: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}>{m.nama}</div>
+                          <div style={{ fontFamily: C.mono, fontSize: 16, fontWeight: 800, color: m.gainPct >= 0 ? C.up : C.down }}>
+                            {m.gainPct >= 0 ? '+' : ''}{m.gainPct.toFixed(1)}%
+                          </div>
+                          <div style={{ fontFamily: C.mono, fontSize: 9, color: C.dim, marginTop: 2 }}>{m.trades} trade</div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  {(() => {
+                    const myRank = jurnalLeaderboard.findIndex((m: any) => m.id === member.id);
+                    return myRank > 2 ? (
+                      <div style={{ marginTop: 10, padding: '8px 12px', borderTop: `1px solid ${C.border}`, fontFamily: C.mono, fontSize: 10, color: C.dim, display: 'flex', justifyContent: 'space-between' }}>
+                        <span>Posisimu saat ini</span>
+                        <span style={{ color: G.gold, fontWeight: 700 }}>#{myRank + 1} dari {jurnalLeaderboard.length} trader</span>
+                      </div>
+                    ) : myRank >= 0 ? (
+                      <div style={{ marginTop: 10, padding: '8px 12px', borderTop: `1px solid ${C.border}`, fontFamily: C.mono, fontSize: 10, color: C.up, textAlign: 'center' as const }}>
+                        🎉 Kamu ada di Top 3!
+                      </div>
+                    ) : null;
+                  })()}
+                </div>
+              )}
+
               {/* Pengumuman + Market Overview */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.3fr', gap: 16 }}>
                 {/* Pengumuman */}
@@ -964,7 +1086,7 @@ export default function DashboardPage() {
                   <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 14 }}>Pengumuman Terbaru</div>
                   {/* Discord status - compact */}
                   {member.discord_username && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', background: '#0a1a0a', border: `1px solid ${C.up}33`, borderRadius: 7, marginBottom: 12 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', background: 'var(--mr-tint-green)', border: `1px solid var(--mr-up-a20)`, borderRadius: 7, marginBottom: 12 }}>
                       <span style={{ fontSize: 14 }}>✅</span>
                       <div style={{ fontSize: 12, color: C.up, fontFamily: C.mono }}>Discord: @{member.discord_username}</div>
                     </div>
@@ -972,7 +1094,7 @@ export default function DashboardPage() {
                   {/* Notifikasi personal (approve/reject advance) */}
                   {notifications.filter((n:any) => !dismissedNotifs.has(n.id)).map((n: any, ni: number) => (
                     <div key={n.id} style={{ display: 'flex', gap: 10, padding: '12px 14px', borderRadius: 8, marginBottom: 8,
-                      background: n.type === 'approve' ? '#0a1a0a' : n.type === 'reject' ? '#1a0a0a' : '#0a0e1a',
+                      background: n.type === 'approve' ? 'var(--mr-tint-green)' : n.type === 'reject' ? '#1a0a0a' : '#0a0e1a',
                       border: `1px solid ${n.type === 'approve' ? C.up + '44' : n.type === 'reject' ? C.down + '44' : '#1e2a4a'}` }}>
                       <span style={{ fontSize: 18, flexShrink: 0 }}>
                         {n.type === 'approve' ? '✅' : n.type === 'reject' ? '❌' : 'ℹ️'}
@@ -1018,52 +1140,6 @@ export default function DashboardPage() {
                 </div>
               </div>
 
-              {/* ── Leaderboard Widget ── */}
-              <div style={{ background:C.panel, border:`1px solid ${C.border}`, borderRadius:14 }}>
-                <div style={{ padding:'16px 20px', borderBottom:`1px solid ${C.border}` }}>
-                  <div style={{ fontFamily:C.mono, color:G.gold, fontSize:9, letterSpacing:1.5, marginBottom:4 }}>// LEADERBOARD</div>
-                  <div style={{ fontWeight:700, fontSize:15 }}>Top 10 Progress Terbaik</div>
-                </div>
-                <div style={{ padding:'6px 0' }}>
-                  {leaderboard.slice(0,10).map((m:any,idx:number)=>{
-                    const isMe=m.id===member!.id; const MEDALS=['🥇','🥈','🥉'];
-                    const pct=Math.min(100,Math.round(m.selesai/(videos.length||1)*100));
-                    return(
-                      <div key={m.id} style={{ display:'flex', alignItems:'center', gap:12, padding:'9px 20px', background:isMe?'#1a150008':'transparent', borderLeft:isMe?`3px solid ${G.gold}`:'3px solid transparent' }}>
-                        <div style={{ width:24, fontFamily:C.mono, fontSize:idx<3?16:11, color:idx<3?G.gold:'#444', textAlign:'center' as const, flexShrink:0 }}>{idx<3?MEDALS[idx]:idx+1}</div>
-                        <div style={{ width:30, height:30, borderRadius:8, background:isMe?'#2a2000':'#111', display:'flex', alignItems:'center', justifyContent:'center', fontWeight:700, fontSize:12, color:isMe?G.gold:'#444', flexShrink:0 }}>{m.nama?.[0]?.toUpperCase()}</div>
-                        <div style={{ flex:1, minWidth:0 }}>
-                          <div style={{ display:'flex', alignItems:'center', gap:6, marginBottom:4 }}>
-                            <span style={{ fontWeight:600, fontSize:12, color:isMe?G.gold:C.text, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' as const }}>{m.nama}</span>
-                            {isMe&&<span style={{ fontFamily:C.mono, fontSize:8, color:G.gold, border:`1px solid ${G.gold}44`, padding:'1px 5px', borderRadius:3, flexShrink:0 }}>KAMU</span>}
-                          </div>
-                          <div style={{ height:3, background:'#111', borderRadius:2 }}>
-                            <div style={{ height:'100%', width:`${pct}%`, background:isMe?G.gold:C.up, borderRadius:2, transition:'width 0.8s ease' }}/>
-                          </div>
-                        </div>
-                        <div style={{ fontFamily:C.mono, fontSize:12, fontWeight:700, color:isMe?G.gold:C.dim, flexShrink:0, minWidth:40, textAlign:'right' as const }}>{m.selesai}<span style={{color:'#333'}}>/{videos.length}</span></div>
-                      </div>
-                    );
-                  })}
-                </div>
-                {(() => {
-                  const myRank=leaderboard.findIndex((m:any)=>m.id===member!.id);
-                  if(myRank>=10){const me=leaderboard[myRank];const pct=Math.min(100,Math.round(me.selesai/(videos.length||1)*100));return(
-                    <div style={{ borderTop:`1px dashed ${C.border}`, padding:'8px 20px 12px' }}>
-                      <div style={{ fontFamily:C.mono, color:C.dim, fontSize:9, textAlign:'center' as const, marginBottom:6 }}>· · · POSISIMU · · ·</div>
-                      <div style={{ display:'flex', alignItems:'center', gap:12, padding:'10px 12px', background:'#1a150012', border:`1px solid ${G.gold}22`, borderRadius:8 }}>
-                        <div style={{ width:24, fontFamily:C.mono, fontSize:11, color:G.gold, textAlign:'center' as const }}>#{myRank+1}</div>
-                        <div style={{ width:30, height:30, borderRadius:8, background:'#2a2000', display:'flex', alignItems:'center', justifyContent:'center', fontWeight:700, fontSize:12, color:G.gold }}>{me.nama?.[0]?.toUpperCase()}</div>
-                        <div style={{ flex:1, minWidth:0 }}>
-                          <div style={{ fontSize:12, color:G.gold, fontWeight:600, marginBottom:4 }}>{me.nama}</div>
-                          <div style={{ height:3, background:'#111', borderRadius:2 }}><div style={{ height:'100%', width:`${pct}%`, background:G.gold, borderRadius:2 }}/></div>
-                        </div>
-                        <div style={{ fontFamily:C.mono, fontSize:12, fontWeight:700, color:G.gold }}>{me.selesai}<span style={{color:'#333'}}>/{videos.length}</span></div>
-                      </div>
-                    </div>
-                  );}return null;
-                })()}
-              </div>
             </div>
           )}
 
@@ -1126,7 +1202,7 @@ export default function DashboardPage() {
                     {advMsg && <div style={{ fontFamily: C.mono, color: C.down, fontSize: 12, marginBottom: 10 }}>{advMsg}</div>}
                     <div style={{ display: 'flex', gap: 10, marginTop: 20 }}>
                       <button onClick={submitAdvanceRequest} disabled={advSubmitting}
-                        style={{ flex: 1, background: advSubmitting ? '#1a1a1a' : G.gold, color: '#000', fontFamily: C.mono, fontSize: 12, fontWeight: 700, padding: '11px', border: 'none', cursor: 'pointer', borderRadius: 6 }}>
+                        style={{ flex: 1, background: advSubmitting ? 'var(--mr-border2)' : G.gold, color: '#000', fontFamily: C.mono, fontSize: 12, fontWeight: 700, padding: '11px', border: 'none', cursor: 'pointer', borderRadius: 6 }}>
                         {advSubmitting ? 'MENGIRIM...' : '▸ KIRIM REQUEST'}
                       </button>
                       <button onClick={() => { setShowAdvModal(false); setAdvMsg(''); }}
@@ -1167,7 +1243,7 @@ export default function DashboardPage() {
                             Ajukan naik kelas dengan melampirkan 3 jurnal trading.
                           </p>
                           {advanceReq?.status === 'pending' ? (
-                            <div style={{ fontFamily: C.mono, fontSize: 11, color: G.gold, background: '#1a1500', border: `1px solid #3a2e00`, padding: '8px 14px', borderRadius: 6 }}>
+                            <div style={{ fontFamily: C.mono, fontSize: 11, color: G.gold, background: 'var(--mr-tint-gold)', border: "1px solid var(--mr-tint-gold-b)", padding: '8px 14px', borderRadius: 6 }}>
                               ⏳ REQUEST SEDANG DIREVIEW ADMIN
                             </div>
                           ) : advanceReq?.status === 'ditolak' ? (
@@ -1176,7 +1252,7 @@ export default function DashboardPage() {
                                 ❌ REQUEST DITOLAK — {advanceReq.alasan_tolak?.split('\n')[0] || 'Lihat notifikasi'}
                               </div>
                               <button onClick={() => setShowAdvModal(true)}
-                                style={{ fontFamily: C.mono, fontSize: 11, fontWeight: 700, color: '#a855f7', background: '#0f0a1a', border: `1px solid #4a2a8a`, padding: '8px 20px', cursor: 'pointer', borderRadius: 6 }}>
+                                style={{ fontFamily: C.mono, fontSize: 11, fontWeight: 700, color: '#a855f7', background: 'var(--mr-tint-purple)', border: `1px solid #4a2a8a`, padding: '8px 20px', cursor: 'pointer', borderRadius: 6 }}>
                                 AJUKAN ULANG ▸
                               </button>
                             </div>
@@ -1201,7 +1277,7 @@ export default function DashboardPage() {
                                 onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = '#0d0d0d'}
                                 onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = 'transparent'}>
                                 {/* Status icon */}
-                                <div style={{ width: 30, height: 30, background: s==='selesai'?'#0a1a14':s==='mulai'?'#1a1500':'#0a0a0a', border: `1px solid ${s==='selesai'?C.up:s==='mulai'?G.gold:C.border}`, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, flexShrink: 0, marginTop: 2 }}>
+                                <div style={{ width: 30, height: 30, background: s==='selesai'?'var(--mr-tint-green2)':s==='mulai'?'var(--mr-tint-gold)':'#0a0a0a', border: `1px solid ${s==='selesai'?C.up:s==='mulai'?G.gold:C.border}`, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, flexShrink: 0, marginTop: 2 }}>
                                   {s==='selesai'?'✓':s==='mulai'?'▶':'○'}
                                 </div>
                                 {/* Content */}
@@ -1237,7 +1313,7 @@ export default function DashboardPage() {
                                             await trackVideoWatch(member!.id, v.id);
                                             setWatchRefreshKey(k => k + 1);
                                             loadData(member!);
-                                          }} style={{ fontFamily: C.mono, fontSize: 10, color: C.up, background: '#0a1a14', border: `1px solid ${C.up}44`, padding: '4px 10px', cursor: 'pointer', borderRadius: 4 }}>
+                                          }} style={{ fontFamily: C.mono, fontSize: 10, color: C.up, background: 'var(--mr-tint-green2)', border: `1px solid var(--mr-up-a27)`, padding: '4px 10px', cursor: 'pointer', borderRadius: 4 }}>
                                             ✓ SELESAI
                                           </button>
                                         ) : (
@@ -1356,7 +1432,7 @@ export default function DashboardPage() {
                       <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 3 }}>{s.sesi || s.deskripsi}</div>
                       {s.link && (
                         <a href={s.link} target="_blank" rel="noopener noreferrer"
-                          style={{ fontFamily: C.mono, fontSize: 10, color: G.gold, textDecoration: 'none', border: `1px solid #3a2e00`, padding: '2px 8px' }}>
+                          style={{ fontFamily: C.mono, fontSize: 10, color: G.gold, textDecoration: 'none', border: "1px solid var(--mr-tint-gold-b)", padding: '2px 8px' }}>
                           ▸ GABUNG
                         </a>
                       )}
@@ -1406,40 +1482,58 @@ export default function DashboardPage() {
               </div>
 
               {/* Broker Rekomendasi — card grid */}
-              <div style={{ marginBottom: 20 }}>
-                <div style={{ fontFamily: C.mono, color: C.dim, fontSize: 10, letterSpacing: 1, marginBottom: 12 }}>// BROKER & PROP FIRM REKOMENDASI</div>
-                {brokers.length > 0 ? (
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 12 }}>
-                    {brokers.map((b: any) => (
-                      <div key={b.id} style={{ background: C.panel, border: `1px solid ${C.border}`, borderRadius: 12, padding: '18px', display: 'flex', flexDirection: 'column' as const, gap: 8, transition: 'border-color 0.15s' }}
-                        onMouseEnter={e => (e.currentTarget as HTMLElement).style.borderColor = '#3a2e00'}
-                        onMouseLeave={e => (e.currentTarget as HTMLElement).style.borderColor = C.border}>
-                        {/* Icon + Name */}
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                          <div style={{ width: 40, height: 40, background: '#1a1500', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: 13, color: G.gold, flexShrink: 0, border: `1px solid #3a2e00` }}>
-                            {b.nama?.[0]?.toUpperCase()}
-                          </div>
-                          <div>
-                            <div style={{ fontWeight: 700, fontSize: 14 }}>{b.nama}</div>
-                            {b.diskon && <div style={{ fontFamily: C.mono, color: C.up, fontSize: 10 }}>🎁 {b.diskon}</div>}
-                          </div>
-                        </div>
-                        {b.deskripsi && <div style={{ color: C.dim, fontSize: 12, lineHeight: 1.55, flex: 1 }}>{b.deskripsi}</div>}
-                        {b.link && (
-                          <a href={b.link} target="_blank" rel="noopener noreferrer"
-                            style={{ display: 'block', textAlign: 'center' as const, fontFamily: C.mono, fontSize: 11, fontWeight: 700, color: '#000', background: G.gold, padding: '8px', borderRadius: 7, textDecoration: 'none', marginTop: 4 }}>
-                            DAFTAR ▸
-                          </a>
-                        )}
+              {(() => {
+                const brokerList = brokers.filter((b: any) => b.jenis !== 'propfirm');
+                const propfirmList = brokers.filter((b: any) => b.jenis === 'propfirm');
+                const BrokerCard = ({ b }: { b: any }) => (
+                  <div key={b.id} style={{ background: C.panel, border: `1px solid ${C.border}`, borderRadius: 12, padding: '18px', display: 'flex', flexDirection: 'column' as const, gap: 8, transition: 'border-color 0.15s' }}
+                    onMouseEnter={e => (e.currentTarget as HTMLElement).style.borderColor = 'var(--mr-tint-gold-b)'}
+                    onMouseLeave={e => (e.currentTarget as HTMLElement).style.borderColor = C.border}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                      <div style={{ width: 40, height: 40, background: 'var(--mr-tint-gold)', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: 13, color: G.gold, flexShrink: 0, border: "1px solid var(--mr-tint-gold-b)" }}>
+                        {b.nama?.[0]?.toUpperCase()}
                       </div>
-                    ))}
+                      <div>
+                        <div style={{ fontWeight: 700, fontSize: 14 }}>{b.nama}</div>
+                        {b.diskon && <div style={{ fontFamily: C.mono, color: C.up, fontSize: 10 }}>🎁 {b.diskon}</div>}
+                      </div>
+                    </div>
+                    {b.deskripsi && <div style={{ color: C.dim, fontSize: 12, lineHeight: 1.55, flex: 1 }}>{b.deskripsi}</div>}
+                    {b.link && (
+                      <a href={b.link} target="_blank" rel="noopener noreferrer"
+                        style={{ display: 'block', textAlign: 'center' as const, fontFamily: C.mono, fontSize: 11, fontWeight: 700, color: '#000', background: G.gold, padding: '8px', borderRadius: 7, textDecoration: 'none', marginTop: 4 }}>
+                        DAFTAR ▸
+                      </a>
+                    )}
                   </div>
-                ) : (
-                  <div style={{ color: C.dim, fontSize: 13, padding: '20px', background: C.panel, borderRadius: 12, textAlign: 'center' as const }}>
-                    Belum ada rekomendasi broker.
-                  </div>
-                )}
-              </div>
+                );
+                return (
+                  <>
+                    {/* Broker section */}
+                    <div style={{ marginBottom: 20 }}>
+                      <div style={{ fontFamily: C.mono, color: C.dim, fontSize: 10, letterSpacing: 1, marginBottom: 12 }}>// BROKER REKOMENDASI</div>
+                      {brokerList.length > 0 ? (
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 12 }}>
+                          {brokerList.map((b: any) => <BrokerCard key={b.id} b={b} />)}
+                        </div>
+                      ) : (
+                        <div style={{ color: C.dim, fontSize: 13, padding: '20px', background: C.panel, borderRadius: 12, textAlign: 'center' as const }}>
+                          Belum ada rekomendasi broker.
+                        </div>
+                      )}
+                    </div>
+                    {/* Prop Firm Rekomendasi section */}
+                    {propfirmList.length > 0 && (
+                      <div style={{ marginBottom: 20 }}>
+                        <div style={{ fontFamily: C.mono, color: '#a855f7', fontSize: 10, letterSpacing: 1, marginBottom: 12 }}>// PROP FIRM REKOMENDASI</div>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 12 }}>
+                          {propfirmList.map((b: any) => <BrokerCard key={b.id} b={b} />)}
+                        </div>
+                      </div>
+                    )}
+                  </>
+                );
+              })()}
 
               {/* Prop Firm Rules */}
               {propRules.length > 0 && (
@@ -1456,13 +1550,13 @@ export default function DashboardPage() {
                         <div style={{ display: 'flex', gap: 8, marginTop: 'auto' as const, flexWrap: 'wrap' as const }}>
                           {r.link && (
                             <a href={r.link} target="_blank" rel="noopener noreferrer"
-                              style={{ fontFamily: C.mono, fontSize: 10, fontWeight: 700, color: '#a855f7', textDecoration: 'none', border: '1px solid #4a2a8a', padding: '5px 12px', borderRadius: 6, background: '#0f0a1a' }}>
+                              style={{ fontFamily: C.mono, fontSize: 10, fontWeight: 700, color: '#a855f7', textDecoration: 'none', border: '1px solid #4a2a8a', padding: '5px 12px', borderRadius: 6, background: 'var(--mr-tint-purple)' }}>
                               BUKA LINK ▸
                             </a>
                           )}
                           {r.file_url && (
                             <a href={r.file_url} target="_blank" rel="noopener noreferrer"
-                              style={{ fontFamily: C.mono, fontSize: 10, fontWeight: 700, color: C.up, textDecoration: 'none', border: `1px solid ${C.up}44`, padding: '5px 12px', borderRadius: 6, background: '#0a1410' }}>
+                              style={{ fontFamily: C.mono, fontSize: 10, fontWeight: 700, color: C.up, textDecoration: 'none', border: `1px solid var(--mr-up-a27)`, padding: '5px 12px', borderRadius: 6, background: 'var(--mr-tint-green3)' }}>
                               ⬇ DOWNLOAD
                             </a>
                           )}
@@ -1515,7 +1609,7 @@ export default function DashboardPage() {
                       </div>
                     ))}
                     {passErr && <div style={{ background: '#1a0f0f', border: `1px solid ${C.down}`, padding: '8px 12px', fontSize: 12, fontFamily: C.mono, color: C.down, borderRadius: 5 }}>{passErr}</div>}
-                    {passMsg && <div style={{ background: '#0a1a0a', border: `1px solid ${C.up}`, padding: '8px 12px', fontSize: 12, fontFamily: C.mono, color: C.up, borderRadius: 5 }}>{passMsg}</div>}
+                    {passMsg && <div style={{ background: 'var(--mr-tint-green)', border: `1px solid ${C.up}`, padding: '8px 12px', fontSize: 12, fontFamily: C.mono, color: C.up, borderRadius: 5 }}>{passMsg}</div>}
                     <button onClick={handleChangePassword} style={{ background: G.gold, color: '#000', fontFamily: C.mono, fontSize: 12, fontWeight: 700, padding: '10px', border: 'none', cursor: 'pointer', borderRadius: 6 }}>
                       SIMPAN PASSWORD
                     </button>
@@ -1625,7 +1719,7 @@ export default function DashboardPage() {
                 </div>
               )}
               <button onClick={() => handleUpdateStatus(selectedStatus)} disabled={statusSaving}
-                style={{ background: statusSaving ? '#1a1a1a' : G.gold, color: statusSaving ? '#444' : '#000', fontFamily: C.mono, fontSize: 13, fontWeight: 700, padding: '12px 28px', border: 'none', cursor: statusSaving ? 'not-allowed' : 'pointer', borderRadius: 8 }}>
+                style={{ background: statusSaving ? 'var(--mr-border2)' : G.gold, color: statusSaving ? 'var(--mr-dim)' : '#000', fontFamily: C.mono, fontSize: 13, fontWeight: 700, padding: '12px 28px', border: 'none', cursor: statusSaving ? 'not-allowed' : 'pointer', borderRadius: 8 }}>
                 {statusSaving ? 'MENYIMPAN...' : '▸ SIMPAN & UPDATE DISCORD'}
               </button>
 
@@ -1660,7 +1754,7 @@ export default function DashboardPage() {
               const canvas = document.getElementById('mr-cert-canvas') as HTMLCanvasElement;
               if (!canvas) return;
               const link = document.createElement('a');
-              link.download = `Sertifikat_Advanced_${member.nama.replace(/\s+/g,'_')}.png`;
+              link.download = `Sertifikat_Advanced_${member?.nama.replace(/\s+/g,'_')}.png`;
               link.href = canvas.toDataURL('image/png');
               link.click();
             }
@@ -1856,7 +1950,7 @@ export default function DashboardPage() {
                         <div style={{ fontWeight:600, fontSize:13 }}>{r.referred_name||'Member Baru'}</div>
                         <div style={{ fontFamily:C.mono, fontSize:10, color:C.dim, marginTop:2 }}>{new Date(r.created_at).toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'})}</div>
                       </div>
-                      <div style={{ fontFamily:C.mono, fontSize:11, fontWeight:700, color:r.status==='rewarded'?G.gold:r.status==='verified'?C.up:C.dim, background:r.status==='rewarded'?'#1a1500':r.status==='verified'?'#0a1a14':'#111', border:`1px solid ${r.status==='rewarded'?'#3a2e00':r.status==='verified'?'#1a3a28':C.border}`, padding:'3px 10px', borderRadius:6 }}>
+                      <div style={{ fontFamily:C.mono, fontSize:11, fontWeight:700, color:r.status==='rewarded'?G.gold:r.status==='verified'?C.up:C.dim, background:r.status==='rewarded'?'var(--mr-tint-gold)':r.status==='verified'?'var(--mr-tint-green2)':'#111', border:`1px solid ${r.status==='rewarded'?'var(--mr-tint-gold-b)':r.status==='verified'?'#1a3a28':C.border}`, padding:'3px 10px', borderRadius:6 }}>
                         {r.status==='rewarded'?'💰 REWARDED':r.status==='verified'?'✓ VERIFIED':'⏳ PENDING'}
                       </div>
                     </div>
@@ -1958,7 +2052,7 @@ export default function DashboardPage() {
                       </thead>
                       <tbody>
                         {viewJurnalEntries.slice(0,30).map((e:any)=>(
-                          <tr key={e.id} style={{ borderBottom:'1px solid #1a1a1a' }}>
+                          <tr key={e.id} style={{ borderBottom:'1px solid var(--mr-border)' }}>
                             <td style={{ padding:'6px 10px', whiteSpace:'nowrap' as const }}>{e.tanggal}</td>
                             <td style={{ padding:'6px 10px', color:'#16a34a', fontWeight:700 }}>{e.pair}</td>
                             <td style={{ padding:'6px 10px', color:'#555' }}>{e.timeframe}</td>

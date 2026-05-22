@@ -1,9 +1,9 @@
-// pages/PartnershipPage.tsx — Multi-step Partnership Flow
+﻿// pages/PartnershipPage.tsx — Multi-step Partnership Flow
 import React, { useState, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 
-const G  = { gold: '#eab308', gold2: '#ca9e00', goldDim: '#3a2e00', goldGlow: 'rgba(234,179,8,0.25)' };
-const C  = { bg: '#080808', panel: '#0f0f0f', panel2: '#141414', border: '#1f1f1f', border2: '#2a2a2a', dim: '#666', dimmer: '#444', text: '#e7e5e4', muted: '#aaa', up: '#22ab94', mono: '"Geist Mono", monospace', sans: '"Geist", system-ui, sans-serif' };
+const G  = { gold: '#eab308', gold2: '#ca9e00', goldDim: 'var(--mr-tint-gold-b)', goldGlow: 'rgba(234,179,8,0.25)' };
+const C  = { bg: 'var(--mr-bg)', panel: '#0f0f0f', panel2: '#141414', border: '#1f1f1f', border2: 'var(--mr-border2)', dim: 'var(--mr-dim)', dimmer: '#444', text: 'var(--mr-text)', muted: '#aaa', up: '#22ab94', mono: '"Geist Mono", monospace', sans: '"Geist", system-ui, sans-serif' };
 
 const BROKERS = [
   { id: 'HFM', name: 'Broker HFM', url: 'https://www.hfm.com/?refid=30528271', code: '30528271', logo: 'HFM', logoColor: '#e63329', logoBg: '#1a0a09', perks: ['Teregulasi & Terpercaya', 'Spread Kompetitif', 'Eksekusi Cepat'] },
@@ -66,7 +66,7 @@ function StepIntro() {
               {[20,50,80,110,140].map((x, i) => { const h=[70,110,60,130,90][i]; const up=i%2===0; return <g key={x}><line x1={x} x2={x} y1={200-h-15} y2={190} stroke={up?'#22ab94':'#ef4444'} strokeWidth="2.5"/><rect x={x-10} y={200-h} width="20" height={h*0.6} fill={up?'#22ab94':'#ef4444'}/></g>; })}
             </svg>
           </div>
-          <div style={{ width: 64, height: 64, background: '#1a1500', border: `1px solid ${G.goldDim}`, borderRadius: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 24, boxShadow: `0 0 24px ${G.goldGlow}` }}>
+          <div style={{ width: 64, height: 64, background: 'var(--mr-tint-gold)', border: `1px solid ${G.goldDim}`, borderRadius: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 24, boxShadow: `0 0 24px ${G.goldGlow}` }}>
             <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke={G.gold} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><path d="M12 22V7M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7zM12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg>
           </div>
           <h1 style={{ fontSize: 36, fontWeight: 700, letterSpacing: -1, lineHeight: 1.1, margin: '0 0 14px' }}>Join Gratis<br />via <span style={{ color: G.gold }}>Partnership</span></h1>
@@ -156,19 +156,31 @@ function StepConfirm() {
     if (!form.nama || !form.email || !form.whatsapp || !form.broker || !form.nomorAkun) { setError('Semua field wajib diisi.'); return; }
     setLoad(true); setError('');
     try {
-      let screenshotUrl = '';
+      let screenshotUrl: string | null = null;
       if (file) {
         const ext = file.name.split('.').pop();
         const p = `partnership/${Date.now()}.${ext}`;
         const { error: upErr } = await supabase.storage.from('uploads').upload(p, file, { upsert: true });
         if (!upErr) { const { data } = supabase.storage.from('uploads').getPublicUrl(p); screenshotUrl = data.publicUrl; }
       }
-      const { error: dbErr } = await supabase.from('partnership_claims').insert({ nama: form.nama, email: form.email, whatsapp: form.whatsapp, broker: form.broker, nomor_akun: form.nomorAkun, screenshot_url: screenshotUrl || null, status: 'pending' });
-      if (dbErr) throw dbErr;
+      const { error: dbErr } = await supabase.from('partnership_claims').insert({
+        nama_lengkap: form.nama,
+        broker: form.broker,
+        status: 'pending',
+        email: form.email,
+        whatsapp: form.whatsapp,
+        nomor_akun: form.nomorAkun,
+        screenshot_url: screenshotUrl,
+        catatan: `No. Akun: ${form.nomorAkun} | WA: ${form.whatsapp} | Email: ${form.email}`,
+      });
+      if (dbErr) throw new Error(dbErr.message || JSON.stringify(dbErr));
       const msg = encodeURIComponent(`🔔 Klaim Partnership Baru!\n\nNama: ${form.nama}\nBroker: ${form.broker}\nNo. Akun: ${form.nomorAkun}\nWA: ${form.whatsapp}\nEmail: ${form.email}`);
       window.open(`https://wa.me/6281242224939?text=${msg}`, '_blank');
       setSuccess(true);
-    } catch (e: unknown) { setError(e instanceof Error ? e.message : 'Terjadi kesalahan.'); }
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : (e as any)?.message || 'Terjadi kesalahan. Coba lagi.';
+      setError(msg);
+    }
     finally { setLoad(false); }
   }
 
@@ -198,9 +210,9 @@ function StepConfirm() {
     <Wrap showBack backTo="/partnership/broker">
       <div style={{ maxWidth: 680, margin: '0 auto', padding: '40px 24px' }}>
         <div style={{ background: C.panel, border: `1px solid ${C.border}`, borderRadius: 16, padding: '36px' }}>
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: '#1a1500', border: `1px solid ${G.goldDim}`, borderRadius: 6, padding: '5px 12px', marginBottom: 20 }}>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'var(--mr-tint-gold)', border: `1px solid ${G.goldDim}`, borderRadius: 6, padding: '5px 12px', marginBottom: 20 }}>
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={G.gold} strokeWidth="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-            <span style={{ fontFamily: C.mono, fontSize: 10, color: G.gold, letterSpacing: 1.5 }}>LANGKAH 2 DARI 3</span>
+            <span style={{ fontFamily: C.mono, fontSize: 10, color: G.gold, letterSpacing: 1.5 }}>LANGKAH 3 DARI 3</span>
           </div>
           <h2 style={{ fontSize: 28, fontWeight: 700, letterSpacing: -0.8, margin: '0 0 8px' }}>Konfirmasi Pendaftaran</h2>
           <p style={{ color: C.dim, fontSize: 14, marginBottom: 28 }}>Lengkapi form di bawah ini untuk verifikasi akun kamu. Akses akan diaktifkan setelah kami verifikasi.</p>
