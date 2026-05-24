@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Plus, Trash2, Users, Video, ArrowLeft, Eye, EyeOff, Upload, RefreshCw, ChevronUp, ChevronDown, CheckCircle, XCircle, KeyRound, Shield } from 'lucide-react';
+import * as XLSX from 'xlsx';
 import { supabase } from '../lib/supabase';
 
 const TIERS = ['SMC Trial', 'SMC Bronze', 'SMC Gold Mentorship', 'SMC Platinum 1 on 1'];
@@ -560,6 +561,18 @@ function MemberTable({ members, loadData }: { members: any[]; loadData: () => vo
 
 
 
+function normalizeHasilAdmin(raw: string): string {
+  const v = raw.trim().toLowerCase();
+  if (['tp', 'take profit', 'takeprofit'].includes(v)) return 'Take Profit';
+  if (['sl', 'stop loss', 'stop lose', 'stoploss', 'stoplose'].includes(v)) return 'Stop Loss';
+  if (['sl profit', 'slprofit', 'sl-profit'].includes(v)) return 'SL Profit';
+  if (['be', 'bep', 'break even', 'breakeven'].includes(v)) return 'Break Even';
+  if (['miss entry', 'missentry'].includes(v)) return 'Miss Entry';
+  if (['no entry', 'noentry'].includes(v)) return 'No Entry';
+  if (v === 'running') return 'Running';
+  return raw.trim();
+}
+
 // ─── PeringkatAdminTab component ─────────────────────────────────────────────
 function JurnalAdminTab({ members }: { members: any[] }) {
   const [tab, setTab]               = useState<'jurnal'|'progress'>('jurnal');
@@ -573,6 +586,12 @@ function JurnalAdminTab({ members }: { members: any[] }) {
   const [editNoteId, setEditNoteId]         = useState<string|null>(null);
   const [noteText, setNoteText]             = useState('');
   const [noteSaving, setNoteSaving]         = useState(false);
+  const [manageMemberId, setManageMemberId] = useState('');
+  const [importing, setImporting]           = useState(false);
+  const [importMsg, setImportMsg]           = useState('');
+  const [deletingAll, setDeletingAll]       = useState(false);
+  const importAddRef     = useRef<HTMLInputElement>(null);
+  const importReplaceRef = useRef<HTMLInputElement>(null);
 
   const C = {
     panel:'#111', border:'#1e1e1e', border2:'#2a2a2a',
@@ -652,6 +671,92 @@ function JurnalAdminTab({ members }: { members: any[] }) {
     setNoteSaving(false);
   }
 
+  async function handleAdminExport(memberId: string) {
+    const m = members.find((x:any) => x.id === memberId);
+    const { data } = await supabase.from('trading_journals').select('*').eq('member_id', memberId).order('tanggal', { ascending: true });
+    if (!data || data.length === 0) { alert('Tidak ada data jurnal untuk diekspor.'); return; }
+    const headers = ['TANGGAL','PAIR','TIMEFRAME','SETUP','BIAS','DIRECTION','SESI','HASIL','RR','PNL ($)','POI','FIBO','EMOSI','ALASAN','CHART 1','CHART 2','CHART 3','KETERANGAN'];
+    const rows = data.map((e:any) => [
+      e.tanggal, e.pair, e.timeframe, e.setup, e.bias||'', e.direction||'', e.sesi||'', e.hasil||'',
+      e.rr??'', e.pnl??'', e.poi||'', e.fibo||'', e.emosi||'', e.alasan||'',
+      e.chart1_url||'', e.chart2_url||'', e.chart3_url||'', e.keterangan||'',
+    ]);
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+    XLSX.utils.book_append_sheet(wb, ws, 'JOURNAL');
+    XLSX.writeFile(wb, `Jurnal_${m?.nama || memberId}_${new Date().toISOString().slice(0,10)}.xlsx`);
+  }
+
+  async function handleAdminImport(file: File, memberId: string, mode: 'add'|'replace') {
+    setImporting(true); setImportMsg('');
+    try {
+      const buf = await file.arrayBuffer();
+      const wb = XLSX.read(buf, { type: 'array', cellDates: true });
+      const wsName = wb.SheetNames.includes('JOURNAL') ? 'JOURNAL' : wb.SheetNames[0];
+      const rawAll: any[][] = XLSX.utils.sheet_to_json(wb.Sheets[wsName], { header: 1, defval: '' });
+      if (rawAll.length === 0) throw new Error('Sheet kosong.');
+      let headerRowIdx = 0;
+      for (let i = 0; i < Math.min(5, rawAll.length); i++) {
+        if (rawAll[i].some((c:any) => String(c).trim() === 'TANGGAL')) { headerRowIdx = i; break; }
+      }
+      const rows: any[] = XLSX.utils.sheet_to_json(wb.Sheets[wsName], { defval: '', range: headerRowIdx });
+      if (rows.length === 0) throw new Error('Tidak ada data.');
+      const payloads = rows.filter(r => r['TANGGAL'] && r['PAIR']).map(r => {
+        const tgl = r['TANGGAL'] instanceof Date ? r['TANGGAL'].toISOString().split('T')[0] : String(r['TANGGAL']).trim();
+        return {
+          member_id: memberId,
+          tanggal: tgl,
+          pair:       String(r['PAIR']        || 'XAUUSD').trim(),
+          timeframe:  String(r['TIMEFRAME']   || 'H1').trim(),
+          setup:      String(r['SETUP']       || 'Follow Trend BIAS').trim(),
+          bias:       String(r['BIAS']        || 'H1').trim(),
+          direction:  String(r['DIRECTION']   || 'Buy').trim(),
+          sesi:       String(r['SESI']        || 'London').trim(),
+          hasil:      normalizeHasilAdmin(String(r['HASIL'] || 'Take Profit')),
+          rr:         parseFloat(r['RR'])          || null,
+          pnl:        parseFloat(r['PNL ($)'])     || null,
+          poi:        String(r['POI']         || '').trim(),
+          fibo:       String(r['FIBO']        || 'FIBO Entry').trim(),
+          emosi:      String(r['EMOSI']       || 'Tenang').trim(),
+          alasan:     String(r['ALASAN']      || '').trim(),
+          chart1_url: String(r['CHART 1']     || '').trim(),
+          chart2_url: String(r['CHART 2']     || '').trim(),
+          chart3_url: String(r['CHART 3']     || '').trim(),
+          keterangan: String(r['KETERANGAN']  || '').trim(),
+        };
+      });
+      if (payloads.length === 0) throw new Error('Tidak ada baris data valid.');
+      if (mode === 'replace') {
+        const { error: delErr } = await supabase.from('trading_journals').delete().eq('member_id', memberId);
+        if (delErr) throw new Error('Gagal hapus data lama: ' + delErr.message);
+      }
+      const { error } = await supabase.from('trading_journals').insert(payloads);
+      if (error) throw error;
+      setImportMsg(`✅ ${mode === 'replace' ? 'Ganti' : 'Tambah'} ${payloads.length} trade berhasil!`);
+      if (selectedMember === memberId) await viewDetail(memberId);
+      await fetchAll();
+    } catch (err:any) {
+      setImportMsg('❌ ' + (err.message || 'Gagal import'));
+    }
+    setImporting(false);
+  }
+
+  async function handleDeleteAll(memberId: string) {
+    const m = members.find((x:any) => x.id === memberId);
+    if (!confirm(`Hapus SEMUA data jurnal milik "${m?.nama || 'member ini'}"?\nTindakan ini tidak bisa dibatalkan.`)) return;
+    setDeletingAll(true);
+    try {
+      const { error } = await supabase.from('trading_journals').delete().eq('member_id', memberId);
+      if (error) throw error;
+      if (selectedMember === memberId) setMemberEntries([]);
+      setImportMsg(`✅ Semua jurnal "${m?.nama}" dihapus.`);
+      await fetchAll();
+    } catch (err:any) {
+      setImportMsg('❌ Gagal hapus: ' + err.message);
+    }
+    setDeletingAll(false);
+  }
+
   const selectedData = selectedMember ? jurnalStats.find(s=>s.id===selectedMember) : null;
   const tierColor = (tier:string) => {
     if(tier?.includes('Platinum')) return '#a855f7';
@@ -689,6 +794,52 @@ function JurnalAdminTab({ members }: { members: any[] }) {
 
       {/* ── JURNAL TAB ── */}
       {tab==='jurnal' && !selectedMember && (
+        <>
+        {/* Management panel */}
+        <div style={{background:C.panel,border:`1px solid ${C.border}`,borderRadius:10,padding:'16px 20px',display:'flex',flexDirection:'column' as const,gap:10}}>
+          <div style={{fontFamily:C.mono,color:G,fontSize:10,letterSpacing:1}}>// KELOLA JURNAL MEMBER</div>
+          <div style={{display:'flex',gap:8,flexWrap:'wrap' as const,alignItems:'center'}}>
+            <select value={manageMemberId} onChange={e=>{ setManageMemberId(e.target.value); setImportMsg(''); }}
+              style={{fontFamily:C.mono,fontSize:11,padding:'6px 10px',background:'#0a0a0a',border:`1px solid ${C.border2}`,color:manageMemberId?C.text:C.muted,borderRadius:5,cursor:'pointer',minWidth:200}}>
+              <option value="">— Pilih Member —</option>
+              {members.map((m:any)=><option key={m.id} value={m.id}>{m.nama} ({m.tier})</option>)}
+            </select>
+            {manageMemberId && (
+              <>
+                <button onClick={()=>handleAdminExport(manageMemberId)}
+                  style={{fontFamily:C.mono,fontSize:10,fontWeight:700,padding:'6px 14px',background:'#0c1a2e',border:'1px solid #1d4ed8',color:'#60a5fa',borderRadius:5,cursor:'pointer'}}>
+                  📥 Export Excel
+                </button>
+                <label style={{cursor:importing?'not-allowed':'pointer'}}>
+                  <input ref={importAddRef} type="file" accept=".xlsx,.xls" style={{display:'none'}}
+                    disabled={importing}
+                    onChange={async e=>{ const f=e.target.files?.[0]; if(f){await handleAdminImport(f,manageMemberId,'add');} e.target.value=''; }}/>
+                  <span style={{fontFamily:C.mono,fontSize:10,fontWeight:700,padding:'6px 14px',background:importing?'#1a1a1a':'#0a1a0e',border:`1px solid ${importing?C.border:G}`,color:importing?C.muted:G,borderRadius:5,cursor:importing?'not-allowed':'pointer',display:'inline-block'}}>
+                    {importing?'⏳ Mengimport...':'📁 Import Tambah'}
+                  </span>
+                </label>
+                <label style={{cursor:importing?'not-allowed':'pointer'}}>
+                  <input ref={importReplaceRef} type="file" accept=".xlsx,.xls" style={{display:'none'}}
+                    disabled={importing}
+                    onChange={async e=>{ const f=e.target.files?.[0]; if(f){await handleAdminImport(f,manageMemberId,'replace');} e.target.value=''; }}/>
+                  <span style={{fontFamily:C.mono,fontSize:10,fontWeight:700,padding:'6px 14px',background:importing?'#1a1a1a':'#1a0808',border:`1px solid ${importing?C.border:C.down}`,color:importing?C.muted:C.down,borderRadius:5,cursor:importing?'not-allowed':'pointer',display:'inline-block'}}>
+                    {importing?'⏳ Mengimport...':'🔄 Import Ganti Semua'}
+                  </span>
+                </label>
+                <button onClick={()=>handleDeleteAll(manageMemberId)} disabled={deletingAll}
+                  style={{fontFamily:C.mono,fontSize:10,fontWeight:700,padding:'6px 14px',background:'#1a0808',border:`1px solid ${C.down}`,color:C.down,borderRadius:5,cursor:deletingAll?'not-allowed':'pointer',opacity:deletingAll?0.6:1}}>
+                  {deletingAll?'⏳ Menghapus...':'🗑 Hapus Semua Jurnal'}
+                </button>
+              </>
+            )}
+          </div>
+          {importMsg && (
+            <div style={{fontFamily:C.mono,fontSize:11,color:importMsg.startsWith('✅')?G:C.down,padding:'6px 10px',borderRadius:5,background:importMsg.startsWith('✅')?'#0a1a0e':'#1a0808',border:`1px solid ${importMsg.startsWith('✅')?G:C.down}33`}}>
+              {importMsg}
+            </div>
+          )}
+        </div>
+
         <div style={{background:C.panel,border:`1px solid ${C.border}`,borderRadius:10,overflow:'hidden'}}>
           {/* Podium top 3 */}
           {jurnalStats.length>=1 && (
@@ -716,7 +867,7 @@ function JurnalAdminTab({ members }: { members: any[] }) {
               })}
             </div>
           )}
-          {jurnalStats.length===0 && <div style={{padding:'40px 20px',textAlign:'center' as const,color:C.muted,fontFamily:C.mono,fontSize:12}}>Belum ada member yang mengisi jurnal.</div>}
+          {jurnalStats.length===0 && <div style={{padding:'40px 20px',textAlign:'center' as const,color:C.muted,fontFamily:C.mono,fontSize:12}}>Belum ada member yang mengisi jurnal. Gunakan panel Kelola Jurnal di atas untuk import data.</div>}
           {/* Table */}
           {jurnalStats.length>0 && (
             <div style={{padding:16,overflowX:'auto'}}>
@@ -752,6 +903,7 @@ function JurnalAdminTab({ members }: { members: any[] }) {
             </div>
           )}
         </div>
+        </>
       )}
 
       {/* ── PROGRESS TAB ── */}
@@ -825,7 +977,7 @@ function JurnalAdminTab({ members }: { members: any[] }) {
       {/* ── DETAIL JURNAL MEMBER ── */}
       {selectedMember && selectedData && (
         <div style={{background:C.panel,border:`1px solid ${C.border}`,borderRadius:10,padding:20}}>
-          <div style={{display:'flex',alignItems:'center',gap:12,marginBottom:20}}>
+          <div style={{display:'flex',alignItems:'center',gap:12,marginBottom:12,flexWrap:'wrap' as const}}>
             <button onClick={()=>setSelectedMember(null)} style={{background:'transparent',border:`1px solid ${C.border2}`,color:C.muted,padding:'5px 12px',cursor:'pointer',fontFamily:C.mono,fontSize:11}}>← KEMBALI</button>
             <div>
               <div style={{fontWeight:700,fontSize:16}}>{selectedData.nama}</div>
@@ -837,6 +989,36 @@ function JurnalAdminTab({ members }: { members: any[] }) {
               </div>
               <div style={{fontFamily:C.mono,fontSize:10,color:C.muted}}>equity gain</div>
             </div>
+          </div>
+          {/* Action bar */}
+          <div style={{display:'flex',gap:6,flexWrap:'wrap' as const,marginBottom:16,padding:'10px 12px',background:'#0a0a0a',borderRadius:8,border:`1px solid ${C.border}`}}>
+            <button onClick={()=>handleAdminExport(selectedData.id)}
+              style={{fontFamily:C.mono,fontSize:10,fontWeight:700,padding:'5px 12px',background:'#0c1a2e',border:'1px solid #1d4ed8',color:'#60a5fa',borderRadius:5,cursor:'pointer'}}>
+              📥 Export Excel
+            </button>
+            <label style={{cursor:importing?'not-allowed':'pointer'}}>
+              <input type="file" accept=".xlsx,.xls" style={{display:'none'}} disabled={importing}
+                onChange={async e=>{ const f=e.target.files?.[0]; if(f){await handleAdminImport(f,selectedData.id,'add');} e.target.value=''; }}/>
+              <span style={{fontFamily:C.mono,fontSize:10,fontWeight:700,padding:'5px 12px',background:importing?'#1a1a1a':'#0a1a0e',border:`1px solid ${importing?C.border:G}`,color:importing?C.muted:G,borderRadius:5,cursor:importing?'not-allowed':'pointer',display:'inline-block'}}>
+                {importing?'⏳ Mengimport...':'📁 Import Tambah'}
+              </span>
+            </label>
+            <label style={{cursor:importing?'not-allowed':'pointer'}}>
+              <input type="file" accept=".xlsx,.xls" style={{display:'none'}} disabled={importing}
+                onChange={async e=>{ const f=e.target.files?.[0]; if(f){await handleAdminImport(f,selectedData.id,'replace');} e.target.value=''; }}/>
+              <span style={{fontFamily:C.mono,fontSize:10,fontWeight:700,padding:'5px 12px',background:importing?'#1a1a1a':'#1a0808',border:`1px solid ${importing?C.border:C.down}`,color:importing?C.muted:C.down,borderRadius:5,cursor:importing?'not-allowed':'pointer',display:'inline-block'}}>
+                {importing?'⏳ Mengimport...':'🔄 Import Ganti Semua'}
+              </span>
+            </label>
+            <button onClick={()=>handleDeleteAll(selectedData.id)} disabled={deletingAll}
+              style={{fontFamily:C.mono,fontSize:10,fontWeight:700,padding:'5px 12px',background:'#1a0808',border:`1px solid ${C.down}`,color:C.down,borderRadius:5,cursor:deletingAll?'not-allowed':'pointer',opacity:deletingAll?0.6:1}}>
+              {deletingAll?'⏳ Menghapus...':'🗑 Hapus Semua Jurnal'}
+            </button>
+            {importMsg && (
+              <span style={{fontFamily:C.mono,fontSize:10,color:importMsg.startsWith('✅')?G:C.down,alignSelf:'center',marginLeft:4}}>
+                {importMsg}
+              </span>
+            )}
           </div>
 
           {/* Stat cards */}
