@@ -31,12 +31,16 @@ export default function AdminTradingPlan() {
   const [toast,       setToast]       = useState<{ msg: string; ok: boolean } | null>(null);
   const [showNewPlan, setShowNewPlan] = useState(false);
   const [newPlanName, setNewPlanName] = useState('');
+  const [renamingTab, setRenamingTab] = useState<string | null>(null);
+  const [renameValue, setRenameValue] = useState('');
   const newPlanRef    = useRef<HTMLInputElement>(null);
+  const renameRef     = useRef<HTMLInputElement>(null);
   const importRef     = useRef<HTMLInputElement>(null);
   const importNewRef  = useRef<HTMLInputElement>(null);
 
   useEffect(() => { load(); }, []);
   useEffect(() => { if (showNewPlan) newPlanRef.current?.focus(); }, [showNewPlan]);
+  useEffect(() => { if (renamingTab) renameRef.current?.focus(); }, [renamingTab]);
 
   async function load() {
     setLoading(true);
@@ -92,6 +96,34 @@ export default function AdminTradingPlan() {
       showToast('❌ Gagal menghapus plan.', false);
     }
     setDeleting(false);
+  }
+
+  async function renamePlan(oldName: string, newName: string) {
+    const key = newName.trim();
+    if (!key || key === oldName) { setRenamingTab(null); return; }
+    if (planTypes.includes(key)) { showToast(`Plan "${key}" sudah ada.`, false); return; }
+    setSaving(true);
+    try {
+      const config = edited[oldName];
+      if (config) {
+        const { error } = await supabase
+          .from('trading_plan_config')
+          .upsert({ plan_type: key, config, updated_at: new Date().toISOString() }, { onConflict: 'plan_type' });
+        if (error) throw new Error(error.message);
+      }
+      if (saved[oldName]) {
+        await supabase.from('trading_plan_config').delete().eq('plan_type', oldName);
+      }
+      setPlanTypes(prev => prev.map(t => t === oldName ? key : t));
+      setEdited(prev => { const n = { ...prev, [key]: prev[oldName] }; delete n[oldName]; return n; });
+      setSaved(prev => { const n = { ...prev, [key]: config ?? null }; delete n[oldName]; return n; });
+      setActiveTab(key);
+      setRenamingTab(null);
+      showToast(`✅ Plan berganti nama menjadi "${key}".`, true);
+    } catch (e) {
+      showToast(`❌ Gagal rename: ${e instanceof Error ? e.message : 'Error'}`, false);
+    }
+    setSaving(false);
   }
 
   async function save() {
@@ -267,18 +299,56 @@ export default function AdminTradingPlan() {
         {planTypes.map(t => {
           const e = edited[t]; const s = saved[t];
           const dirty = e && s && JSON.stringify(e) !== JSON.stringify(s);
+          const isActive = activeTab === t;
+
+          if (renamingTab === t) {
+            return (
+              <div key={t} style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                <input
+                  ref={renameRef}
+                  value={renameValue}
+                  onChange={ev => setRenameValue(ev.target.value)}
+                  onKeyDown={ev => {
+                    if (ev.key === 'Enter') renamePlan(t, renameValue);
+                    if (ev.key === 'Escape') setRenamingTab(null);
+                  }}
+                  style={{
+                    fontFamily: CV.mono, fontSize: 11, padding: '5px 10px',
+                    background: CV.bg, border: `1px solid ${CV.gold}`,
+                    borderRadius: 6, color: CV.text, outline: 'none', width: 160,
+                  }}
+                />
+                <button onClick={() => renamePlan(t, renameValue)} style={{
+                  fontFamily: CV.mono, fontSize: 10, fontWeight: 700, padding: '5px 12px',
+                  borderRadius: 6, border: 'none', background: CV.gold, color: '#000', cursor: 'pointer',
+                }}>✓</button>
+                <button onClick={() => setRenamingTab(null)} style={{
+                  fontFamily: CV.mono, fontSize: 10, padding: '5px 10px',
+                  borderRadius: 6, border: `1px solid ${CV.border}`, background: 'none', color: CV.dim, cursor: 'pointer',
+                }}>✕</button>
+              </div>
+            );
+          }
+
           return (
             <button key={t} onClick={() => setActiveTab(t)} style={{
               fontFamily: CV.mono, fontSize: 10, fontWeight: 700, padding: '6px 18px',
               borderRadius: 20, cursor: 'pointer',
-              background: activeTab === t ? CV.gold : 'none',
-              border: `1px solid ${activeTab === t ? CV.gold : CV.border}`,
-              color: activeTab === t ? '#000' : CV.dim,
+              background: isActive ? CV.gold : 'none',
+              border: `1px solid ${isActive ? CV.gold : CV.border}`,
+              color: isActive ? '#000' : CV.dim,
               display: 'flex', alignItems: 'center', gap: 6,
             }}>
               {t}
               {dirty && (
-                <span style={{ width: 6, height: 6, borderRadius: '50%', background: activeTab === t ? '#000' : CV.gold, display: 'inline-block' }} />
+                <span style={{ width: 6, height: 6, borderRadius: '50%', background: isActive ? '#000' : CV.gold, display: 'inline-block' }} />
+              )}
+              {isActive && (
+                <span
+                  onClick={ev => { ev.stopPropagation(); setRenamingTab(t); setRenameValue(t); }}
+                  title="Ubah nama plan"
+                  style={{ fontSize: 9, opacity: 0.6, cursor: 'pointer', lineHeight: 1 }}
+                >✏</span>
               )}
             </button>
           );
