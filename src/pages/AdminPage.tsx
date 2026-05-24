@@ -3,6 +3,14 @@ import { Plus, Trash2, Users, Video, ArrowLeft, Eye, EyeOff, Upload, RefreshCw, 
 import { supabase } from '../lib/supabase';
 
 const TIERS = ['SMC Trial', 'SMC Bronze', 'SMC Gold Mentorship', 'SMC Platinum 1 on 1'];
+const RANK_IMGS: Record<string, string> = {
+  '1': '/rank_1.png', '2': '/rank_2.png', '3': '/rank_3.png',
+  '4-10': '/rank_4-10.png', '11+': '/11_sampai_seterusnya.png',
+};
+function RankImg({ rank, size = 28 }: { rank: number; size?: number }) {
+  const src = rank === 1 ? RANK_IMGS['1'] : rank === 2 ? RANK_IMGS['2'] : rank === 3 ? RANK_IMGS['3'] : rank <= 10 ? RANK_IMGS['4-10'] : RANK_IMGS['11+'];
+  return <img src={src} alt={`rank-${rank}`} style={{ width: size, height: size, objectFit: 'contain', flexShrink: 0 }} />;
+}
 
 interface Admin { id: string; username: string; password: string; role: string; }
 interface Member { id: string; nama: string; tier: string; password: string; is_active: boolean; is_advance: boolean; last_seen?: string; discord_id?: string; discord_username?: string; }
@@ -323,6 +331,7 @@ function MemberTable({ members, loadData }: { members: any[]; loadData: () => vo
   const [editTier, setEditTier]     = useState('');
   const [editPass, setEditPass]     = useState('');
   const [progress, setProgress]     = useState<Record<string,number>>({});
+  const [toggling, setToggling]     = useState<string|null>(null);
 
   const uniqueTiers = Array.from(new Set(members.map((m:any) => m.tier).filter(Boolean))).sort() as string[];
 
@@ -359,6 +368,18 @@ function MemberTable({ members, loadData }: { members: any[]; loadData: () => vo
     updates.session_token = null;
     await supabase.from('members').update(updates).eq('id', id);
     setEditId(null); loadData();
+  }
+
+  async function toggleActive(id: string, current: boolean) {
+    setToggling(id);
+    await supabase.from('members').update({ is_active: !current }).eq('id', id);
+    setToggling(null); loadData();
+  }
+
+  async function toggleAdvance(id: string, current: boolean) {
+    setToggling(id + '_adv');
+    await supabase.from('members').update({ is_advance: !current }).eq('id', id);
+    setToggling(null); loadData();
   }
 
   const inp: React.CSSProperties = {
@@ -431,8 +452,8 @@ function MemberTable({ members, loadData }: { members: any[]; loadData: () => vo
 
       {/* Table */}
       <div style={{background:'#0d0d0d',border:'1px solid #1f1f1f'}}>
-        <div style={{display:'grid',gridTemplateColumns:'28px 1fr 170px 90px 90px 110px 90px 80px 90px',gap:8,padding:'8px 20px',borderBottom:'1px solid #1a1a1a',fontFamily:'monospace',color:'#888',fontSize:10,letterSpacing:0.5}}>
-          <span>#</span><span>NAMA</span><span>TIER</span><span>STATUS</span><span>DISCORD</span><span>LAST LOGIN</span><span>PROGRESS</span><span>AKSI</span><span>HAPUS</span>
+        <div style={{display:'grid',gridTemplateColumns:'28px 1fr 150px 78px 78px 90px 110px 80px 100px 44px',gap:8,padding:'8px 20px',borderBottom:'1px solid #1a1a1a',fontFamily:'monospace',color:'#888',fontSize:10,letterSpacing:0.5}}>
+          <span>#</span><span>NAMA</span><span>TIER</span><span>LEVEL</span><span>AKUN</span><span>DISCORD</span><span>LAST LOGIN</span><span>PROGRESS</span><span>AKSI</span><span>🗑</span>
         </div>
         <div style={{maxHeight:540,overflowY:'auto' as const}}>
           {filtered.length===0 && <div style={{padding:'32px',textAlign:'center' as const,fontFamily:'monospace',color:'#333',fontSize:13}}>— TIDAK ADA MEMBER —</div>}
@@ -444,20 +465,34 @@ function MemberTable({ members, loadData }: { members: any[]; loadData: () => vo
             const ago=!m.last_seen?'—':isOnline?'🟢 Online':diffMin!==null&&diffMin<60?`${diffMin}m`:diffH!==null&&diffH<24?`${diffH}j`:`${diffD}h`;
             const pct=progress[m.id]||0;
             const isEditing=editId===m.id;
+            const isActive=m.is_active!==false; // default true jika null/undefined
+            const isBusy=toggling===m.id||toggling===m.id+'_adv';
             return (
               <React.Fragment key={m.id}>
-                <div style={{display:'grid',gridTemplateColumns:'28px 1fr 170px 90px 90px 110px 90px 80px 90px',gap:8,padding:'10px 20px',borderBottom:isEditing?'none':'1px solid #111',alignItems:'center',fontSize:12,background:isEditing?'#0a0a0a':'transparent'}}>
+                <div style={{display:'grid',gridTemplateColumns:'28px 1fr 150px 78px 78px 90px 110px 80px 100px 44px',gap:8,padding:'10px 20px',borderBottom:isEditing?'none':'1px solid #111',alignItems:'center',fontSize:12,background:isEditing?'#0a0a0a':!isActive?'#140808':'transparent',opacity:!isActive?0.7:1}}>
                   <span style={{fontFamily:'monospace',color:'#666',fontSize:10}}>{i+1}</span>
-                  <span style={{fontWeight:600,fontSize:13}}>{m.nama}</span>
+                  <span style={{fontWeight:600,fontSize:13,color:!isActive?'#666':'#e7e5e4'}}>{m.nama}</span>
                   <span style={{fontFamily:'monospace',color:'#b0b0b0',fontSize:11,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap' as const}}>{m.tier}</span>
-                  {/* is_advance badge */}
-                  <span style={{fontFamily:'monospace',fontSize:10,fontWeight:700,
-                    color:m.is_advance?'#16a34a':'#22ab94',
-                    background:m.is_advance?'#0a1a0e':'#0a1a14',
-                    border:`1px solid ${m.is_advance?'#1a3a22':'#0f2a1f'}`,
-                    padding:'2px 7px',textAlign:'center' as const}}>
+                  {/* is_advance badge — klik untuk toggle */}
+                  <button onClick={()=>toggleAdvance(m.id, !!m.is_advance)} disabled={isBusy}
+                    title={m.is_advance?'Klik untuk jadikan Basic':'Klik untuk jadikan Advance'}
+                    style={{fontFamily:'monospace',fontSize:10,fontWeight:700,cursor:'pointer',
+                      color:m.is_advance?'#16a34a':'#22ab94',
+                      background:m.is_advance?'#0a1a0e':'#0a1a14',
+                      border:`1px solid ${m.is_advance?'#1a3a22':'#0f2a1f'}`,
+                      padding:'3px 6px',textAlign:'center' as const,transition:'all 0.15s'}}>
                     {m.is_advance?'ADVANCE':'BASIC'}
-                  </span>
+                  </button>
+                  {/* is_active badge — klik untuk toggle */}
+                  <button onClick={()=>toggleActive(m.id, isActive)} disabled={isBusy}
+                    title={isActive?'Klik untuk nonaktifkan akun':'Klik untuk aktifkan akun'}
+                    style={{fontFamily:'monospace',fontSize:10,fontWeight:700,cursor:'pointer',
+                      color:isActive?'#22c55e':'#ef4444',
+                      background:isActive?'#0a160a':'#160a0a',
+                      border:`1px solid ${isActive?'#1a3a1a':'#3a1a1a'}`,
+                      padding:'3px 6px',textAlign:'center' as const,transition:'all 0.15s'}}>
+                    {isActive?'AKTIF':'NONAKTIF'}
+                  </button>
                   <span style={{fontFamily:'monospace',color:m.discord_username?'#22ab94':'#555',fontSize:11}}>{m.discord_username||'—'}</span>
                   <span style={{fontFamily:'monospace',color:isOnline?'#22ab94':'#888',fontSize:11}}>{ago}</span>
                   <div>
@@ -485,7 +520,7 @@ function MemberTable({ members, loadData }: { members: any[]; loadData: () => vo
                     await supabase.from('journal_settings').delete().eq('member_id',m.id);
                     await supabase.from('members').delete().eq('id',m.id);
                     loadData();
-                  }} style={{background:'#1a0808',border:'1px solid #7f1d1d',color:'#ef4444',fontSize:11,padding:'3px 9px',cursor:'pointer',fontWeight:700,letterSpacing:0.5}}>
+                  }} style={{background:'#1a0808',border:'1px solid #7f1d1d',color:'#ef4444',fontSize:11,padding:'3px 7px',cursor:'pointer',fontWeight:700}}>
                     🗑
                   </button>
                 </div>
@@ -662,12 +697,11 @@ function JurnalAdminTab({ members }: { members: any[] }) {
                 const m=jurnalStats[rankIdx]; if(!m) return null;
                 const COLS=['#f59e0b','#94a3b8','#cd7c2f'];
                 const HEIGHTS=[100,70,55];
-                const MEDALS=['🥇','🥈','🥉'];
                 const col=COLS[rankIdx]; const h=HEIGHTS[rankIdx];
                 return(
                   <div key={m.id} style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center'}}>
                     <div style={{height:130,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'flex-end',gap:5,paddingBottom:6,width:'100%'}}>
-                      <div style={{fontSize:rankIdx===0?30:24}}>{MEDALS[rankIdx]}</div>
+                      <RankImg rank={rankIdx+1} size={rankIdx===0?44:36} />
                       <div style={{width:rankIdx===0?52:42,height:rankIdx===0?52:42,borderRadius:'50%',background:'#1a1a1a',border:`2px solid ${col}`,display:'flex',alignItems:'center',justifyContent:'center',fontWeight:800,fontSize:rankIdx===0?20:16,color:col}}>
                         {m.nama?.[0]?.toUpperCase()}
                       </div>
@@ -700,7 +734,7 @@ function JurnalAdminTab({ members }: { members: any[] }) {
                     <tr key={m.id} style={{borderBottom:`1px solid ${C.border}`}}
                       onMouseEnter={ev=>(ev.currentTarget.style.background='#161616')}
                       onMouseLeave={ev=>(ev.currentTarget.style.background='transparent')}>
-                      <td style={{padding:'8px 10px',color:i<3?['#f59e0b','#94a3b8','#cd7c2f'][i]:C.muted,fontWeight:700}}>{i+1}</td>
+                      <td style={{padding:'8px 10px'}}><RankImg rank={i+1} size={i<3?28:22} /></td>
                       <td style={{padding:'8px 10px',fontWeight:600,color:C.text}}>{m.nama}</td>
                       <td style={{padding:'8px 10px',color:tierColor(m.tier),fontSize:10}}>{m.tier}</td>
                       <td style={{padding:'8px 10px'}}>{m.total}</td>
@@ -730,13 +764,12 @@ function JurnalAdminTab({ members }: { members: any[] }) {
                 const m=ranked[rankIdx]; if(!m) return null;
                 const COLS=['#f59e0b','#94a3b8','#cd7c2f'];
                 const HEIGHTS=[100,70,55];
-                const MEDALS=['🥇','🥈','🥉'];
                 const col=COLS[rankIdx]; const h=HEIGHTS[rankIdx];
                 const pct=totalVideos?Math.round(m.selesai/totalVideos*100):0;
                 return(
                   <div key={m.id} style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center'}}>
                     <div style={{height:130,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'flex-end',gap:5,paddingBottom:6,width:'100%'}}>
-                      <div style={{fontSize:rankIdx===0?30:24}}>{MEDALS[rankIdx]}</div>
+                      <RankImg rank={rankIdx+1} size={rankIdx===0?44:36} />
                       <div style={{width:rankIdx===0?52:42,height:rankIdx===0?52:42,borderRadius:'50%',background:'#1a1a1a',border:`2px solid ${col}`,display:'flex',alignItems:'center',justifyContent:'center',fontWeight:800,fontSize:rankIdx===0?20:16,color:col}}>
                         {m.nama?.[0]?.toUpperCase()}
                       </div>
@@ -769,7 +802,7 @@ function JurnalAdminTab({ members }: { members: any[] }) {
                     <tr key={m.id} style={{borderBottom:`1px solid ${C.border}`}}
                       onMouseEnter={ev=>(ev.currentTarget.style.background='#161616')}
                       onMouseLeave={ev=>(ev.currentTarget.style.background='transparent')}>
-                      <td style={{padding:'8px 10px',color:col,fontWeight:700}}>{i+1}</td>
+                      <td style={{padding:'8px 10px'}}><RankImg rank={i+1} size={i<3?28:22} /></td>
                       <td style={{padding:'8px 10px',fontWeight:600,color:C.text}}>{m.nama}</td>
                       <td style={{padding:'8px 10px',color:tierColor(m.tier),fontSize:10}}>{m.tier}</td>
                       <td style={{padding:'8px 10px',fontFamily:C.mono,color:col,fontWeight:700}}>{m.selesai}<span style={{color:'#333',fontWeight:400}}>/{totalVideos}</span></td>
@@ -949,6 +982,42 @@ function JurnalAdminTab({ members }: { members: any[] }) {
   );
 }
 
+function SettingsTab({ oldPass, setOldPass, newPass, setNewPass, confirmPass, setConfirmPass, passErr, passMsg, handleGantiPassword }: {
+  oldPass: string; setOldPass: (v: string) => void;
+  newPass: string; setNewPass: (v: string) => void;
+  confirmPass: string; setConfirmPass: (v: string) => void;
+  passErr: string; passMsg: string;
+  handleGantiPassword: () => void;
+}) {
+  const S = { panel:'#111', border:'#1e1e1e', muted:'#888', text:'#e7e5e4', mono:'"Geist Mono",monospace', up:'#22c55e', down:'#ef4444' };
+  const inputStyle: React.CSSProperties = { width:'100%', background:'#0a0a0a', border:`1px solid ${S.border}`, color:S.text, padding:'10px 14px', borderRadius:8, fontFamily:S.mono, fontSize:13, outline:'none', boxSizing:'border-box' };
+  return (
+    <div style={{ maxWidth:480, margin:'0 auto', padding:'32px 16px' }}>
+      <div style={{ fontFamily:S.mono, color:'#16a34a', fontSize:10, letterSpacing:2, marginBottom:8 }}>// PENGATURAN AKUN</div>
+      <h2 style={{ fontSize:20, fontWeight:700, color:S.text, marginBottom:24 }}>Ganti Password</h2>
+      <div style={{ background:S.panel, border:`1px solid ${S.border}`, borderRadius:12, padding:24, display:'flex', flexDirection:'column', gap:14 }}>
+        <div>
+          <label style={{ fontFamily:S.mono, fontSize:10, color:S.muted, display:'block', marginBottom:6 }}>PASSWORD LAMA</label>
+          <input type="password" value={oldPass} onChange={e => setOldPass(e.target.value)} placeholder="Password saat ini" style={inputStyle} />
+        </div>
+        <div>
+          <label style={{ fontFamily:S.mono, fontSize:10, color:S.muted, display:'block', marginBottom:6 }}>PASSWORD BARU</label>
+          <input type="password" value={newPass} onChange={e => setNewPass(e.target.value)} placeholder="Minimal 6 karakter" style={inputStyle} />
+        </div>
+        <div>
+          <label style={{ fontFamily:S.mono, fontSize:10, color:S.muted, display:'block', marginBottom:6 }}>KONFIRMASI PASSWORD BARU</label>
+          <input type="password" value={confirmPass} onChange={e => setConfirmPass(e.target.value)} placeholder="Ulangi password baru" style={inputStyle} />
+        </div>
+        {passErr && <div style={{ fontFamily:S.mono, fontSize:12, color:S.down, background:'#1a0808', border:`1px solid ${S.down}33`, borderRadius:6, padding:'8px 12px' }}>{passErr}</div>}
+        {passMsg && <div style={{ fontFamily:S.mono, fontSize:12, color:S.up, background:'#081a0a', border:`1px solid ${S.up}33`, borderRadius:6, padding:'8px 12px' }}>{passMsg}</div>}
+        <button onClick={handleGantiPassword} style={{ background:'#16a34a', color:'#fff', border:'none', borderRadius:8, padding:'11px 0', fontFamily:S.mono, fontSize:13, fontWeight:700, cursor:'pointer', marginTop:4 }}>
+          Simpan Password
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export default function AdminPage({ initialTab, embedded }: { initialTab?: string; embedded?: boolean } = {}) {
   const [currentAdmin, setCurrentAdmin] = useState<Admin | null>(null);
   const [tab, setTab] = useState<'member' | 'video' | 'materi' | 'advance' | 'admins' | 'settings' | 'announce' | 'broker' | 'ulasan' | 'claim' | 'jadwal' | 'proprules' | 'rating' | 'referral' | 'progress' | 'jurnal'>((initialTab as any) || 'member');
@@ -977,18 +1046,21 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
   const [bDiskon, setBDiskon] = useState('');
   const [bDesc, setBDesc] = useState('');
   const [bUrutan, setBUrutan] = useState('');
+  const [bJenis, setBJenis] = useState<'broker'|'propfirm'>('broker');
   const [editBrokerId, setEditBrokerId] = useState<string | null>(null);
   const [editBNama, setEditBNama] = useState('');
   const [editBLink, setEditBLink] = useState('');
   const [editBDiskon, setEditBDiskon] = useState('');
   const [editBDesc, setEditBDesc] = useState('');
   const [editBUrutan, setEditBUrutan] = useState('');
+  const [editBJenis, setEditBJenis] = useState<'broker'|'propfirm'>('broker');
   const [announceChannel, setAnnounceChannel] = useState('');
   const [announceMsg, setAnnounceMsg] = useState('');
   const [announceSending, setAnnounceSending] = useState(false);
   const [members, setMembers] = useState<Member[]>([]);
   const [videos, setVideos] = useState<VideoItem[]>([]);
   const [requests, setRequests] = useState<AdvanceRequest[]>([]);
+  const [progress, setProgress] = useState<Record<string,number>>({});
   const [admins, setAdmins] = useState<Admin[]>([]);
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState('');
@@ -1120,32 +1192,47 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
     if (br) setBrokers(br);
     if (ul) setUlasanList(ul);
     if (cl) setClaims(cl);
+    // Progress per member (persentase)
+    try {
+      const [{ data: progData }, { count: vidCount }] = await Promise.all([
+        supabase.from('member_progress').select('member_id,status'),
+        supabase.from('videos').select('id', { count: 'exact', head: true }),
+      ]);
+      if (progData && vidCount) {
+        const counts: Record<string,number> = {};
+        progData.forEach((p:any) => { if (p.status === 'selesai') counts[p.member_id] = (counts[p.member_id] || 0) + 1; });
+        const map: Record<string,number> = {};
+        Object.entries(counts).forEach(([mid, n]) => { map[mid] = Math.round((n as number) / vidCount * 100); });
+        setProgress(map);
+      }
+    } catch(_) {}
   }
 
   // Broker CRUD
   async function addBroker() {
     if (!bNama || !bLink) { notify('Nama dan link wajib diisi.', 'err'); return; }
     setLoading(true);
-    const { error } = await supabase.from('brokers').insert({ nama: bNama, link: bLink, diskon: bDiskon || null, deskripsi: bDesc || null, urutan: parseInt(bUrutan) || 0 });
+    const { error } = await supabase.from('brokers').insert({ nama: bNama, link: bLink, diskon: bDiskon || null, deskripsi: bDesc || null, urutan: parseInt(bUrutan) || 0, jenis: bJenis });
     if (error) notify('Error: ' + error.message, 'err');
-    else { notify('Broker berhasil ditambahkan!'); setBNama(''); setBLink(''); setBDiskon(''); setBDesc(''); setBUrutan(''); loadData(); }
+    else { notify('Berhasil ditambahkan!'); setBNama(''); setBLink(''); setBDiskon(''); setBDesc(''); setBUrutan(''); setBJenis('broker'); loadData(); }
     setLoading(false);
   }
   async function deleteBroker(id: string) {
-    if (!confirm('Hapus broker ini?')) return;
+    if (!confirm('Hapus item ini?')) return;
     await supabase.from('brokers').delete().eq('id', id);
     loadData();
   }
   function startEditBroker(b: any) {
     setEditBrokerId(b.id); setEditBNama(b.nama); setEditBLink(b.link);
     setEditBDiskon(b.diskon || ''); setEditBDesc(b.deskripsi || ''); setEditBUrutan(String(b.urutan || 0));
+    setEditBJenis(b.jenis === 'propfirm' ? 'propfirm' : 'broker');
   }
   async function saveEditBroker() {
     if (!editBrokerId || !editBNama || !editBLink) { notify('Nama dan link wajib diisi.', 'err'); return; }
     setLoading(true);
-    const { error } = await supabase.from('brokers').update({ nama: editBNama, link: editBLink, diskon: editBDiskon || null, deskripsi: editBDesc || null, urutan: parseInt(editBUrutan) || 0 }).eq('id', editBrokerId);
+    const { error } = await supabase.from('brokers').update({ nama: editBNama, link: editBLink, diskon: editBDiskon || null, deskripsi: editBDesc || null, urutan: parseInt(editBUrutan) || 0, jenis: editBJenis }).eq('id', editBrokerId);
     if (error) notify('Error: ' + error.message, 'err');
-    else { notify('Broker berhasil diupdate!'); setEditBrokerId(null); loadData(); }
+    else { notify('Berhasil diupdate!'); setEditBrokerId(null); loadData(); }
     setLoading(false);
   }
 
@@ -1760,12 +1847,21 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
         {tab === 'broker' && (
           <div style={{display:'flex',flexDirection:'column',gap:16}}>
             <div style={{background:'#0d0d0d',border:'1px solid #1f1f1f',padding:'20px 24px'}}>
-              <div style={{fontFamily:'monospace',color:'#16a34a',fontSize:11,letterSpacing:1,marginBottom:16}}>// TAMBAH PROP FIRM / BROKER</div>
+              <div style={{fontFamily:'monospace',color:'#16a34a',fontSize:11,letterSpacing:1,marginBottom:16}}>// TAMBAH BROKER / PROP FIRM</div>
+              {/* Jenis toggle */}
+              <div style={{display:'flex',gap:8,marginBottom:12}}>
+                {(['broker','propfirm'] as const).map(j=>(
+                  <button key={j} onClick={()=>setBJenis(j)}
+                    style={{fontFamily:'monospace',fontSize:11,fontWeight:700,padding:'6px 18px',border:`1px solid ${bJenis===j?'#16a34a':'#2a2a2a'}`,background:bJenis===j?'#0a1a0e':'transparent',color:bJenis===j?'#16a34a':'#555',cursor:'pointer'}}>
+                    {j==='broker'?'🏦 BROKER':'🏢 PROP FIRM'}
+                  </button>
+                ))}
+              </div>
               <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginBottom:10}}>
                 {[
-                  {v:bNama,s:setBNama,ph:'Nama Broker/Prop Firm'},
+                  {v:bNama,s:setBNama,ph:bJenis==='broker'?'Nama Broker':'Nama Prop Firm'},
                   {v:bLink,s:setBLink,ph:'Link Daftar (URL)'},
-                  {v:bDiskon,s:setBDiskon,ph:'Diskon (opsional)'},
+                  {v:bDiskon,s:setBDiskon,ph:bJenis==='broker'?'Diskon/Bonus (opsional)':'Challenge Fee (opsional)'},
                   {v:bUrutan,s:setBUrutan,ph:'Urutan tampil',type:'number'},
                 ].map((f,i)=>(
                   <input key={i} type={f.type||'text'} value={f.v} onChange={e=>f.s(e.target.value)} placeholder={f.ph}
@@ -1778,17 +1874,25 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
                 onFocus={e=>e.target.style.borderColor='#16a34a'} onBlur={e=>e.target.style.borderColor='#2a2a2a'}/>
               <button onClick={addBroker} disabled={loading}
                 style={{background:loading?'#1a1a1a':'#16a34a',color:loading?'#444':'#000',fontFamily:'monospace',fontSize:12,fontWeight:700,padding:'10px 20px',border:'none',cursor:loading?'not-allowed':'pointer',letterSpacing:0.5}}>
-                {loading?'MENYIMPAN...':'+ TAMBAH BROKER'}
+                {loading?'MENYIMPAN...':`+ TAMBAH ${bJenis==='broker'?'BROKER':'PROP FIRM'}`}
               </button>
             </div>
             <div style={{background:'#0d0d0d',border:'1px solid #1f1f1f'}}>
-              <div style={{padding:'12px 20px',borderBottom:'1px solid #1a1a1a'}}><span style={{fontFamily:'monospace',color:'#555',fontSize:11,letterSpacing:1}}>// DAFTAR BROKER ({brokers.length})</span></div>
-              {!brokers.length && <div style={{padding:'32px',textAlign:'center' as const,fontFamily:'monospace',color:'#333',fontSize:13}}>— BELUM ADA BROKER —</div>}
-              {brokers.map(b=>(
+              <div style={{padding:'12px 20px',borderBottom:'1px solid #1a1a1a',display:'flex',gap:16,alignItems:'center'}}>
+                <span style={{fontFamily:'monospace',color:'#555',fontSize:11,letterSpacing:1}}>// DAFTAR ({brokers.length})</span>
+                <span style={{fontFamily:'monospace',fontSize:10,color:'#22ab94'}}>🏦 Broker: {brokers.filter(b=>b.jenis!=='propfirm').length}</span>
+                <span style={{fontFamily:'monospace',fontSize:10,color:'#a855f7'}}>🏢 Prop Firm: {brokers.filter(b=>b.jenis==='propfirm').length}</span>
+              </div>
+              {!brokers.length && <div style={{padding:'32px',textAlign:'center' as const,fontFamily:'monospace',color:'#333',fontSize:13}}>— BELUM ADA DATA —</div>}
+              {brokers.map(b=>{
+                const isProp = b.jenis === 'propfirm';
+                const accentColor = isProp ? '#a855f7' : '#22ab94';
+                return (
                 <div key={b.id} style={{borderBottom:'1px solid #111'}}>
                   <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'14px 20px',gap:12}}>
                     <div style={{flex:1,minWidth:0}}>
                       <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:4}}>
+                        <span style={{fontFamily:'monospace',fontSize:9,fontWeight:700,color:accentColor,background:`${accentColor}11`,border:`1px solid ${accentColor}33`,padding:'2px 7px'}}>{isProp?'PROP FIRM':'BROKER'}</span>
                         <span style={{fontWeight:700,fontSize:14}}>{b.nama}</span>
                         {b.diskon&&<span style={{fontFamily:'monospace',fontSize:10,background:'#0a1a0a',border:'1px solid #22ab94',color:'#22ab94',padding:'1px 6px'}}>{b.diskon}</span>}
                       </div>
@@ -1802,7 +1906,15 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
                   </div>
                   {editBrokerId===b.id&&(
                     <div style={{padding:'16px 20px',background:'#111',borderTop:'1px solid #1a1a1a'}}>
-                      <div style={{fontFamily:'monospace',color:'#16a34a',fontSize:10,marginBottom:10}}>// EDIT BROKER</div>
+                      <div style={{fontFamily:'monospace',color:'#16a34a',fontSize:10,marginBottom:10}}>// EDIT</div>
+                      <div style={{display:'flex',gap:8,marginBottom:10}}>
+                        {(['broker','propfirm'] as const).map(j=>(
+                          <button key={j} onClick={()=>setEditBJenis(j)}
+                            style={{fontFamily:'monospace',fontSize:10,fontWeight:700,padding:'5px 14px',border:`1px solid ${editBJenis===j?'#16a34a':'#2a2a2a'}`,background:editBJenis===j?'#0a1a0e':'transparent',color:editBJenis===j?'#16a34a':'#555',cursor:'pointer'}}>
+                            {j==='broker'?'🏦 BROKER':'🏢 PROP FIRM'}
+                          </button>
+                        ))}
+                      </div>
                       <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:8}}>
                         {[
                           {v:editBNama,s:setEditBNama,ph:'Nama'},
@@ -1818,13 +1930,14 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
                       <textarea value={editBDesc} onChange={e=>setEditBDesc(e.target.value)} placeholder="Deskripsi" rows={2}
                         style={{width:'100%',background:'#0d0d0d',border:'1px solid #2a2a2a',color:'#e7e5e4',padding:'8px 12px',fontSize:13,fontFamily:'monospace',outline:'none',resize:'vertical' as const,boxSizing:'border-box' as const,marginBottom:8}}/>
                       <div style={{display:'flex',gap:8}}>
-                        <button onClick={()=>saveEditBroker(b.id)} style={{background:'#16a34a',color:'#fff',fontFamily:'monospace',fontSize:11,fontWeight:700,padding:'7px 16px',border:'none',cursor:'pointer'}}>SIMPAN</button>
+                        <button onClick={()=>saveEditBroker()} style={{background:'#16a34a',color:'#fff',fontFamily:'monospace',fontSize:11,fontWeight:700,padding:'7px 16px',border:'none',cursor:'pointer'}}>SIMPAN</button>
                         <button onClick={()=>setEditBrokerId(null)} style={{background:'transparent',color:'#666',fontFamily:'monospace',fontSize:11,padding:'7px 12px',border:'1px solid #2a2a2a',cursor:'pointer'}}>BATAL</button>
                       </div>
                     </div>
                   )}
                 </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         )}
