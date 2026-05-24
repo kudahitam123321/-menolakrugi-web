@@ -27,6 +27,7 @@ export interface TreeResult {
   cls: 'rc-ok' | 'rc-warn' | 'rc-danger';
   title: string;
   steps: PlanStep[];
+  imageUrl?: string;
 }
 
 export type TreeNode = TreeQuestion | TreeResult;

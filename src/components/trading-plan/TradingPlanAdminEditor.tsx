@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
+import { supabase } from '../../lib/supabase';
 import type {
   TreePlanConfig, TreeNode, TreeQuestion, TreeResult,
   TreeChoice, PlanStep, PlanLevel, PlanType,
@@ -203,7 +204,10 @@ function VisualNode({ nodeId, nodes, rootId, selectedId, onSelect, visited }: VN
 
 // ── Main editor ───────────────────────────────────────────────────────────────
 export default function TradingPlanAdminEditor({ config, onChange }: Props) {
-  const [selectedId, setSelectedId] = useState<string | null>(config.rootId || null);
+  const [selectedId,   setSelectedId]   = useState<string | null>(config.rootId || null);
+  const [uploadingImg, setUploadingImg] = useState(false);
+  const [imgError,     setImgError]     = useState<string | null>(null);
+  const imgInputRef = useRef<HTMLInputElement>(null);
   const { nodes, rootId, keyrules } = config;
 
   const questions = Object.values(nodes).filter((n): n is TreeQuestion => n.type === 'question');
@@ -283,6 +287,27 @@ export default function TradingPlanAdminEditor({ config, onChange }: Props) {
   function updResult(id: string, patch: Partial<Omit<TreeResult, 'id' | 'type'>>) {
     const r = nodes[id] as TreeResult;
     updNodes({ ...nodes, [id]: { ...r, ...patch } });
+  }
+
+  async function uploadImage(id: string, file: File) {
+    setUploadingImg(true);
+    setImgError(null);
+    try {
+      const ext  = file.name.split('.').pop() || 'jpg';
+      const path = `result_${id}_${Date.now()}.${ext}`;
+      const { error: upErr } = await supabase.storage
+        .from('trading-plan-images')
+        .upload(path, file, { upsert: true });
+      if (upErr) throw upErr;
+      const { data: urlData } = supabase.storage
+        .from('trading-plan-images')
+        .getPublicUrl(path);
+      updResult(id, { imageUrl: urlData.publicUrl });
+    } catch (e) {
+      setImgError(e instanceof Error ? e.message : 'Upload gagal');
+    }
+    setUploadingImg(false);
+    if (imgInputRef.current) imgInputRef.current.value = '';
   }
 
   const selectedNode = selectedId ? nodes[selectedId] : null;
@@ -526,6 +551,53 @@ export default function TradingPlanAdminEditor({ config, onChange }: Props) {
                     placeholder="Contoh: Setup ideal — boleh entry BUY"
                     style={{ ...inp, background: CV.panel }}
                   />
+                </div>
+
+                {/* Image */}
+                <div>
+                  <div style={{ fontFamily: CV.mono, fontSize: 9, color: CV.dim, marginBottom: 6 }}>GAMBAR (opsional)</div>
+                  {r.imageUrl && (
+                    <div style={{ position: 'relative', marginBottom: 8 }}>
+                      <img
+                        src={r.imageUrl}
+                        alt="result"
+                        style={{ width: '100%', maxHeight: 160, objectFit: 'contain', borderRadius: 7, background: '#0003', border: `1px solid ${bord}` }}
+                      />
+                      <button
+                        onClick={() => updResult(selectedId!, { imageUrl: undefined })}
+                        style={{
+                          position: 'absolute', top: 5, right: 5,
+                          fontFamily: CV.mono, fontSize: 9, padding: '2px 7px',
+                          borderRadius: 4, cursor: 'pointer',
+                          background: 'rgba(0,0,0,0.7)', border: `1px solid ${CV.down}`, color: CV.down,
+                        }}
+                      >✕ Hapus</button>
+                    </div>
+                  )}
+                  <label style={{ cursor: uploadingImg ? 'not-allowed' : 'pointer', display: 'block' }}>
+                    <input
+                      ref={imgInputRef}
+                      type="file"
+                      accept="image/*"
+                      style={{ display: 'none' }}
+                      disabled={uploadingImg}
+                      onChange={e => { const f = e.target.files?.[0]; if (f) uploadImage(selectedId!, f); }}
+                    />
+                    <span style={{
+                      display: 'block', textAlign: 'center' as const,
+                      fontFamily: CV.mono, fontSize: 9, padding: '7px 0',
+                      borderRadius: 6, border: `1px dashed ${bord}`, color,
+                      background: 'none', opacity: uploadingImg ? 0.5 : 1,
+                    }}>
+                      {uploadingImg ? '⏳ Mengupload...' : (r.imageUrl ? '🖼 Ganti Gambar' : '🖼 Upload Gambar')}
+                    </span>
+                  </label>
+                  {imgError && (
+                    <div style={{ fontFamily: CV.mono, fontSize: 9, color: CV.down, marginTop: 5, lineHeight: 1.5 }}>
+                      ❌ {imgError}<br />
+                      <span style={{ opacity: 0.7 }}>Pastikan bucket "trading-plan-images" sudah dibuat di Supabase Storage dengan akses public.</span>
+                    </div>
+                  )}
                 </div>
 
                 {/* Steps */}

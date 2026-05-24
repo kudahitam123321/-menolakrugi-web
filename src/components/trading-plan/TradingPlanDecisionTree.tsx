@@ -205,6 +205,19 @@ export default function TradingPlanDecisionTree({ planType, config }: Props) {
                   </div>
                 </div>
               </div>
+              {currentNode.imageUrl && (
+                <div style={{ padding: '0 16px 12px' }}>
+                  <img
+                    src={currentNode.imageUrl}
+                    alt="Ilustrasi hasil"
+                    style={{
+                      width: '100%', maxHeight: 280, objectFit: 'contain',
+                      borderRadius: 8, background: 'rgba(0,0,0,0.25)',
+                      border: `1px solid ${clr.border}`,
+                    }}
+                  />
+                </div>
+              )}
               {currentNode.steps.length > 0 && (
                 <div style={{ padding: '12px 16px', display: 'flex', flexDirection: 'column' as const, gap: 8 }}>
                   {currentNode.steps.map((step, i) => (
