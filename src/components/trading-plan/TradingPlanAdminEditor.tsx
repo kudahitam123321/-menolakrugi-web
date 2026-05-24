@@ -201,10 +201,33 @@ function VisualNode({ nodeId, nodes, rootId, selectedId, onSelect, visited }: VN
   );
 }
 
+// ── Compress image to base64 JPEG (max 900px wide, quality 0.82) ─────────────
+function compressImage(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = reject;
+    reader.onload = ev => {
+      const img = new Image();
+      img.onerror = reject;
+      img.onload = () => {
+        const MAX = 900;
+        const scale = img.width > MAX ? MAX / img.width : 1;
+        const canvas = document.createElement('canvas');
+        canvas.width  = Math.round(img.width  * scale);
+        canvas.height = Math.round(img.height * scale);
+        canvas.getContext('2d')!.drawImage(img, 0, 0, canvas.width, canvas.height);
+        resolve(canvas.toDataURL('image/jpeg', 0.82));
+      };
+      img.src = ev.target!.result as string;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
 // ── Main editor ───────────────────────────────────────────────────────────────
 export default function TradingPlanAdminEditor({ config, onChange }: Props) {
   const [selectedId,  setSelectedId]  = useState<string | null>(config.rootId || null);
-  const [imgUrlInput, setImgUrlInput] = useState('');
+  const [uploading,   setUploading]   = useState(false);
   const { nodes, rootId, keyrules } = config;
 
   const questions = Object.values(nodes).filter((n): n is TreeQuestion => n.type === 'question');
@@ -539,30 +562,45 @@ export default function TradingPlanAdminEditor({ config, onChange }: Props) {
                         src={r.imageUrl}
                         alt="preview"
                         onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}
-                        style={{ width: '100%', maxHeight: 140, objectFit: 'contain', borderRadius: 7, background: 'rgba(0,0,0,0.2)', border: `1px solid ${bord}` }}
+                        style={{ width: '100%', maxHeight: 160, objectFit: 'contain', borderRadius: 7, background: 'rgba(0,0,0,0.2)', border: `1px solid ${bord}` }}
                       />
+                      <button
+                        onClick={() => updResult(selectedId!, { imageUrl: undefined })}
+                        style={{ position: 'absolute', top: 6, right: 6, fontFamily: CV.mono, fontSize: 9, padding: '2px 8px', borderRadius: 4, cursor: 'pointer', background: 'rgba(0,0,0,0.75)', border: `1px solid ${CV.down}`, color: CV.down }}
+                      >✕ Hapus</button>
                     </div>
                   )}
-                  <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                  {/* Upload from device */}
+                  <label style={{ display: 'block', cursor: uploading ? 'not-allowed' : 'pointer', marginBottom: 6 }}>
                     <input
-                      value={r.imageUrl ? imgUrlInput || r.imageUrl : imgUrlInput}
-                      onChange={e => {
-                        setImgUrlInput(e.target.value);
-                        updResult(selectedId!, { imageUrl: e.target.value || undefined });
+                      type="file"
+                      accept="image/*"
+                      style={{ display: 'none' }}
+                      disabled={uploading}
+                      onChange={async e => {
+                        const file = e.target.files?.[0];
+                        if (!file) return;
+                        setUploading(true);
+                        try {
+                          const dataUrl = await compressImage(file);
+                          updResult(selectedId!, { imageUrl: dataUrl });
+                        } catch { /* ignore */ }
+                        setUploading(false);
+                        e.target.value = '';
                       }}
-                      onFocus={() => setImgUrlInput(r.imageUrl || '')}
-                      placeholder="Paste URL gambar... (https://...)"
-                      style={{ ...inp, flex: 1, fontSize: 10 }}
                     />
-                    {r.imageUrl && (
-                      <button
-                        onClick={() => { updResult(selectedId!, { imageUrl: undefined }); setImgUrlInput(''); }}
-                        style={{ fontFamily: CV.mono, fontSize: 9, padding: '6px 10px', borderRadius: 5, cursor: 'pointer', background: 'none', border: `1px solid ${CV.down}40`, color: CV.down, flexShrink: 0 }}
-                      >✕</button>
-                    )}
-                  </div>
-                  <div style={{ fontFamily: CV.mono, fontSize: 8, color: CV.dim, marginTop: 4, lineHeight: 1.6 }}>
-                    Paste link gambar dari Google Drive, Imgur, atau hosting lain. Pastikan link langsung ke file gambar (berakhiran .jpg/.png/.webp).
+                    <span style={{
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                      fontFamily: CV.mono, fontSize: 10, padding: '9px 0',
+                      borderRadius: 7, border: `1px dashed ${bord}`, color,
+                      background: uploading ? 'rgba(0,0,0,0.1)' : 'none',
+                      opacity: uploading ? 0.6 : 1,
+                    }}>
+                      {uploading ? '⏳ Memproses...' : '🖼 Upload dari Perangkat'}
+                    </span>
+                  </label>
+                  <div style={{ fontFamily: CV.mono, fontSize: 8, color: CV.dim, lineHeight: 1.6 }}>
+                    Format: JPG, PNG, WEBP, GIF. Gambar otomatis dikompresi sebelum disimpan.
                   </div>
                 </div>
 
