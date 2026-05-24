@@ -464,6 +464,19 @@ export default function JurnalPage({ memberId }: { memberId: string }) {
   const [importMsg, setImportMsg]   = useState('');
   const [showImport, setShowImport] = useState(false);
 
+  function normalizeHasil(raw: string): string {
+    const v = raw.trim().toLowerCase();
+    if (['tp', 'take profit', 'takeprofit'].includes(v)) return 'Take Profit';
+    if (['sl', 'stop loss', 'stop lose', 'stoploss', 'stoplose'].includes(v)) return 'Stop Loss';
+    if (['sl profit', 'slprofit', 'sl-profit'].includes(v)) return 'SL Profit';
+    if (['be', 'bep', 'break even', 'breakeven'].includes(v)) return 'Break Even';
+    if (['miss entry', 'missentry'].includes(v)) return 'Miss Entry';
+    if (['no entry', 'noentry'].includes(v)) return 'No Entry';
+    if (v === 'running') return 'Running';
+    // Fallback: return original trimmed value
+    return raw.trim();
+  }
+
   const REQUIRED_COLS = ['TANGGAL','PAIR','TIMEFRAME','SETUP','DIRECTION','SESI','HASIL','RR','PNL ($)'];
 
   const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -524,7 +537,7 @@ export default function JurnalPage({ memberId }: { memberId: string }) {
             bias:        String(r['BIAS']        || 'H1').trim(),
             direction:   String(r['DIRECTION']   || 'Buy').trim(),
             sesi:        String(r['SESI']        || 'London').trim(),
-            hasil:       String(r['HASIL']       || 'Take Profit').trim(),
+            hasil:       normalizeHasil(String(r['HASIL'] || 'Take Profit')),
             rr:          parseFloat(r['RR'])          || null,
             pnl:         parseFloat(r['PNL ($)'])     || null,
             poi:         String(r['POI']         || '').trim(),
