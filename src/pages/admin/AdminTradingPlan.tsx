@@ -31,7 +31,9 @@ export default function AdminTradingPlan() {
   const [toast,       setToast]       = useState<{ msg: string; ok: boolean } | null>(null);
   const [showNewPlan, setShowNewPlan] = useState(false);
   const [newPlanName, setNewPlanName] = useState('');
-  const newPlanRef = useRef<HTMLInputElement>(null);
+  const newPlanRef    = useRef<HTMLInputElement>(null);
+  const importRef     = useRef<HTMLInputElement>(null);
+  const importNewRef  = useRef<HTMLInputElement>(null);
 
   useEffect(() => { load(); }, []);
   useEffect(() => { if (showNewPlan) newPlanRef.current?.focus(); }, [showNewPlan]);
@@ -117,6 +119,65 @@ export default function AdminTradingPlan() {
     setTimeout(() => setToast(null), 3500);
   }
 
+  // ── Export / Import ───────────────────────────────────────────────────────
+  function exportPlan() {
+    const config = edited[activeTab];
+    if (!config) { showToast('Tidak ada konfigurasi untuk diekspor.', false); return; }
+    const payload = JSON.stringify({ plan_type: activeTab, config }, null, 2);
+    const blob = new Blob([payload], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `TradingPlan_${activeTab.replace(/\s+/g, '_')}_${new Date().toISOString().slice(0, 10)}.json`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  }
+
+  function parseImportFile(text: string): TreePlanConfig {
+    const parsed = JSON.parse(text);
+    // Support { plan_type, config } wrapper OR direct TreePlanConfig
+    if (isTreeConfig(parsed)) return parsed;
+    if (parsed?.config && isTreeConfig(parsed.config)) return parsed.config;
+    throw new Error('Format file tidak valid. Pastikan file adalah ekspor Trading Plan.');
+  }
+
+  async function handleImportReplace(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const cfg = parseImportFile(await file.text());
+      if (edited[activeTab] && !confirm(`Import akan menimpa konfigurasi plan "${activeTab}" saat ini. Lanjutkan?`)) return;
+      setEdited(prev => ({ ...prev, [activeTab]: cfg }));
+      showToast('✅ Berhasil diimport! Klik SIMPAN untuk menyimpan.', true);
+    } catch (err) {
+      showToast(`❌ ${err instanceof Error ? err.message : 'File tidak valid'}`, false);
+    }
+    e.target.value = '';
+  }
+
+  async function handleImportAsNew(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const raw = await file.text();
+      const parsed = JSON.parse(raw);
+      const cfg = parseImportFile(raw);
+      // Suggest name from file's plan_type or filename
+      const suggested = parsed?.plan_type
+        || file.name.replace(/\.json$/i, '').replace(/^TradingPlan_/i, '').replace(/_\d{4}-\d{2}-\d{2}$/, '').replace(/_/g, ' ');
+      const name = prompt('Nama untuk plan baru:', suggested)?.trim();
+      if (!name) return;
+      if (planTypes.includes(name)) { showToast(`Plan "${name}" sudah ada.`, false); return; }
+      setPlanTypes(prev => [...prev, name]);
+      setEdited(prev => ({ ...prev, [name]: cfg }));
+      setSaved(prev => ({ ...prev, [name]: null }));
+      setActiveTab(name);
+      showToast(`✅ Plan "${name}" berhasil diimport! Klik SIMPAN untuk menyimpan.`, true);
+    } catch (err) {
+      showToast(`❌ ${err instanceof Error ? err.message : 'File tidak valid'}`, false);
+    }
+    e.target.value = '';
+  }
+
   const currentConfig = activeTab ? edited[activeTab] : null;
 
   return (
@@ -166,6 +227,39 @@ export default function AdminTradingPlan() {
             }}
           >{saving ? '⏳ MENYIMPAN...' : '💾 SIMPAN'}</button>
         </div>
+      </div>
+
+      {/* Import / Export toolbar */}
+      <div style={{ display: 'flex', gap: 8, marginBottom: 14, padding: '10px 16px', background: CV.panel, border: `1px solid ${CV.border}`, borderRadius: 8, alignItems: 'center', flexWrap: 'wrap' as const }}>
+        <span style={{ fontFamily: CV.mono, fontSize: 9, color: CV.dim, letterSpacing: 1 }}>// IMPORT / EXPORT</span>
+        {activeTab && edited[activeTab] && (
+          <button onClick={exportPlan} style={{
+            fontFamily: CV.mono, fontSize: 10, fontWeight: 700, padding: '5px 12px',
+            background: '#0c1a2e', border: '1px solid #1d4ed8', color: '#60a5fa',
+            borderRadius: 5, cursor: 'pointer',
+          }}>📥 Export Plan Ini (.json)</button>
+        )}
+        {activeTab && (
+          <label style={{ cursor: 'pointer' }}>
+            <input ref={importRef} type="file" accept=".json" style={{ display: 'none' }} onChange={handleImportReplace} />
+            <span style={{
+              fontFamily: CV.mono, fontSize: 10, fontWeight: 700, padding: '5px 12px',
+              background: 'var(--mr-tint-gold)', border: `1px solid ${CV.gold}44`, color: CV.gold,
+              borderRadius: 5, cursor: 'pointer', display: 'inline-block',
+            }}>📁 Import → Timpa Plan Ini</span>
+          </label>
+        )}
+        <label style={{ cursor: 'pointer' }}>
+          <input ref={importNewRef} type="file" accept=".json" style={{ display: 'none' }} onChange={handleImportAsNew} />
+          <span style={{
+            fontFamily: CV.mono, fontSize: 10, fontWeight: 700, padding: '5px 12px',
+            background: 'var(--mr-tint-green)', border: `1px solid ${CV.up}44`, color: CV.up,
+            borderRadius: 5, cursor: 'pointer', display: 'inline-block',
+          }}>📁 Import → Plan Baru</span>
+        </label>
+        <span style={{ fontFamily: CV.mono, fontSize: 9, color: CV.dim, marginLeft: 4 }}>
+          Format: .json hasil export dari halaman ini
+        </span>
       </div>
 
       {/* Plan tabs + Add new */}
