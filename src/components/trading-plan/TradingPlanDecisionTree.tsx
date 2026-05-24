@@ -3,7 +3,7 @@ import { CheckCircle, AlertTriangle, Ban, Eye } from 'lucide-react';
 import type { TreePlanConfig, TreeNode, TreeResult, PlanLevel } from '../../types/tradingPlan';
 
 interface Props {
-  planType: 'basic' | 'advanced';
+  planType: string;
   config: TreePlanConfig;
   memberName?: string;
 }
@@ -70,9 +70,10 @@ export default function TradingPlanDecisionTree({ planType, config }: Props) {
     setPath(prev => [...prev, { fromId: currentId, choiceLabel, nextId }]);
   }
 
-  const pill = planType === 'basic'
-    ? { text: 'Basic Plan',    bg: 'rgba(59,130,246,0.12)', border: 'rgba(59,130,246,0.28)', color: '#60a5fa' }
-    : { text: 'Advanced Plan', bg: 'rgba(234,179,8,0.10)',  border: 'rgba(234,179,8,0.28)',  color: CV.gold   };
+  const isBasicPill = planType.toLowerCase().includes('basic');
+  const pill = isBasicPill
+    ? { text: planType, bg: 'rgba(59,130,246,0.12)', border: 'rgba(59,130,246,0.28)', color: '#60a5fa' }
+    : { text: planType, bg: 'rgba(234,179,8,0.10)',  border: 'rgba(234,179,8,0.28)',  color: CV.gold   };
 
   // ── Guard: not configured ─────────────────────────────────────────────────
   if (!rootId || !nodes[rootId]) {

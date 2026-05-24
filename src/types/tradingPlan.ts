@@ -1,5 +1,5 @@
 export type PlanLevel = 'ok' | 'warn' | 'danger' | 'eye';
-export type PlanType  = 'basic' | 'advanced';
+export type PlanType  = string; // dynamic — admin can create any named plan
 
 export interface PlanStep {
   level: PlanLevel;
