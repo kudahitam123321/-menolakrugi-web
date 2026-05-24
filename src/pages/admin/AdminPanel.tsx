@@ -19,7 +19,7 @@ const SIDEBAR_SECTIONS = [
   { h: 'USER MANAGEMENT', items: [
     { id: 'member',    label: 'Member',           icon: '👥' },
     { id: 'progress',  label: 'Progress Belajar', icon: '📊' },
-    { id: 'jurnal',    label: 'Jurnal Member',    icon: '📓' },
+    { id: 'jurnal',    label: 'Peringkat Member',  icon: '🏆' },
     { id: 'approvals', label: 'Persetujuan',      icon: '✅' },
     { id: 'admin',     label: 'Admin',            icon: '🛡' },
   ]},
