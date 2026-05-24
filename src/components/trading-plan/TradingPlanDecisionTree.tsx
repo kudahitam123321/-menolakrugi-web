@@ -206,14 +206,13 @@ export default function TradingPlanDecisionTree({ planType, config }: Props) {
                 </div>
               </div>
               {currentNode.imageUrl && (
-                <div style={{ padding: '0 16px 12px' }}>
+                <div style={{ padding: '12px 16px', borderBottom: `1px solid ${clr.border}` }}>
                   <img
                     src={currentNode.imageUrl}
                     alt="Ilustrasi hasil"
                     style={{
-                      width: '100%', maxHeight: 280, objectFit: 'contain',
-                      borderRadius: 8, background: 'rgba(0,0,0,0.25)',
-                      border: `1px solid ${clr.border}`,
+                      width: '100%', maxHeight: 320, objectFit: 'contain',
+                      borderRadius: 8, display: 'block',
                     }}
                   />
                 </div>
