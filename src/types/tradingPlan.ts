@@ -1,33 +1,45 @@
 export type PlanLevel = 'ok' | 'warn' | 'danger' | 'eye';
-export type PlanType = 'basic' | 'advanced';
-export type ScenarioKey =
-  | 'same_kecil'
-  | 'same_besar_pijakan'
-  | 'same_besar_nopijakan'
-  | 'opp_blocked'
-  | 'opp_allowed_pijakan'
-  | 'opp_allowed_nopijakan';
+export type PlanType  = 'basic' | 'advanced';
 
 export interface PlanStep {
   level: PlanLevel;
   text: string;
 }
 
-export interface PlanScenario {
+// ─── Tree node types ──────────────────────────────────────────────────────────
+
+export interface TreeChoice {
+  id: string;
+  label: string;
+  nextId: string; // ID of next question or result; empty string = unconnected
+}
+
+export interface TreeQuestion {
+  id: string;
+  type: 'question';
+  text: string;
+  choices: TreeChoice[];
+}
+
+export interface TreeResult {
+  id: string;
+  type: 'result';
   cls: 'rc-ok' | 'rc-warn' | 'rc-danger';
-  icon: 'check' | 'triangle' | 'ban';
   title: string;
   steps: PlanStep[];
 }
 
-export interface PlanConfig {
-  keyrules: PlanStep[];
-  scenarios: Record<ScenarioKey, PlanScenario>;
+export type TreeNode = TreeQuestion | TreeResult;
+
+export interface TreePlanConfig {
+  rootId: string;                  // ID of the starting question
+  nodes: Record<string, TreeNode>; // all nodes keyed by ID
+  keyrules: PlanStep[];            // always shown after any result
 }
 
 export interface TradingPlanConfigRow {
   id: string;
   plan_type: PlanType;
-  config: PlanConfig;
+  config: TreePlanConfig;
   updated_at: string;
 }

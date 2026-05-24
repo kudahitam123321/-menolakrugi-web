@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabase';
 import TradingPlanDecisionTree from '../../components/trading-plan/TradingPlanDecisionTree';
-import type { PlanConfig, PlanType, TradingPlanConfigRow } from '../../types/tradingPlan';
+import type { TreePlanConfig, PlanType, TradingPlanConfigRow } from '../../types/tradingPlan';
 
 const CV = {
   bg: 'var(--mr-bg)', panel: 'var(--mr-panel)', border: 'var(--mr-border)',
@@ -11,8 +11,7 @@ const CV = {
 
 function tierToPlanType(tier: string): PlanType {
   const t = tier.toLowerCase();
-  if (t.includes('platinum') || t.includes('gold')) return 'advanced';
-  return 'basic';
+  return t.includes('platinum') || t.includes('gold') ? 'advanced' : 'basic';
 }
 
 function canSeeAdvanced(tier: string): boolean {
@@ -20,13 +19,18 @@ function canSeeAdvanced(tier: string): boolean {
   return t.includes('platinum') || t.includes('gold');
 }
 
+function isTreeConfig(c: unknown): c is TreePlanConfig {
+  return !!c && typeof (c as Record<string, unknown>).nodes === 'object'
+             && typeof (c as Record<string, unknown>).rootId === 'string';
+}
+
 export default function MemberTradingPlan() {
   const [memberTier, setMemberTier] = useState('');
   const [memberNama, setMemberNama] = useState('');
-  const [planType, setPlanType] = useState<PlanType>('basic');
-  const [config, setConfig]     = useState<PlanConfig | null>(null);
-  const [loading, setLoading]   = useState(true);
-  const [error, setError]       = useState<string | null>(null);
+  const [planType,   setPlanType]   = useState<PlanType>('basic');
+  const [config,     setConfig]     = useState<TreePlanConfig | null>(null);
+  const [loading,    setLoading]    = useState(true);
+  const [error,      setError]      = useState<string | null>(null);
 
   useEffect(() => {
     const raw = localStorage.getItem('mr_member') || sessionStorage.getItem('mr_member');
@@ -54,9 +58,14 @@ export default function MemberTradingPlan() {
         .eq('plan_type', type)
         .single();
       if (err || !data) {
-        setError('Gagal memuat Trading Plan, coba refresh. (Pastikan tabel sudah dibuat di Supabase)');
+        setError('Trading Plan belum tersedia. Silakan hubungi admin.');
       } else {
-        setConfig((data as TradingPlanConfigRow).config);
+        const raw = (data as TradingPlanConfigRow).config;
+        if (isTreeConfig(raw)) {
+          setConfig(raw);
+        } else {
+          setError('Format Trading Plan tidak valid. Silakan hubungi admin untuk memperbarui konfigurasi.');
+        }
       }
     } catch {
       setError('Gagal memuat Trading Plan, coba refresh.');
@@ -77,11 +86,11 @@ export default function MemberTradingPlan() {
         <div style={{ fontFamily: CV.mono, color: CV.gold, fontSize: 10, letterSpacing: 1, marginBottom: 6 }}>// TRADING PLAN</div>
         <h2 style={{ fontSize: 22, fontWeight: 700, margin: 0, letterSpacing: -0.5 }}>Trading Plan</h2>
         <p style={{ color: CV.dim, fontSize: 13, margin: '6px 0 0', lineHeight: 1.5 }}>
-          Ikuti decision tree di bawah untuk menentukan keputusan trading yang tepat berdasarkan kondisi pasar.
+          Ikuti decision tree di bawah untuk menentukan keputusan trading berdasarkan kondisi pasar.
         </p>
       </div>
 
-      {/* Tab switcher for Gold/Platinum */}
+      {/* Plan tab switcher (Gold/Platinum only) */}
       {memberTier && canSeeAdvanced(memberTier) && !loading && !error && (
         <div style={{ display: 'flex', gap: 6, marginBottom: 18 }}>
           {(['basic', 'advanced'] as PlanType[]).map(t => (
@@ -91,14 +100,11 @@ export default function MemberTradingPlan() {
               background: planType === t ? CV.gold : 'none',
               border: `1px solid ${planType === t ? CV.gold : CV.border}`,
               color: planType === t ? '#000' : CV.dim,
-            }}>
-              {t === 'basic' ? 'Basic Plan' : 'Advanced Plan'}
-            </button>
+            }}>{t === 'basic' ? 'Basic Plan' : 'Advanced Plan'}</button>
           ))}
         </div>
       )}
 
-      {/* States */}
       {loading && (
         <div style={{ padding: '48px 0', textAlign: 'center' as const, fontFamily: CV.mono, color: CV.dim }}>
           <div style={{ fontSize: 28, marginBottom: 10 }}>⏳</div>
