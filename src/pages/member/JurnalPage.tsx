@@ -59,6 +59,18 @@ interface JurnalSettings {
   monthly_target: number;
 }
 
+function normalizeHasil(raw: string): string {
+  const v = raw.trim().toLowerCase();
+  if (['tp', 'take profit', 'takeprofit'].includes(v)) return 'Take Profit';
+  if (['sl', 'stop loss', 'stop lose', 'stoploss', 'stoplose'].includes(v)) return 'Stop Loss';
+  if (['sl profit', 'slprofit', 'sl-profit'].includes(v)) return 'SL Profit';
+  if (['be', 'bep', 'break even', 'breakeven'].includes(v)) return 'Break Even';
+  if (['miss entry', 'missentry'].includes(v)) return 'Miss Entry';
+  if (['no entry', 'noentry'].includes(v)) return 'No Entry';
+  if (v === 'running') return 'Running';
+  return raw.trim();
+}
+
 const EMPTY_FORM = {
   tanggal: new Date().toISOString().split('T')[0],
   pair: 'XAUUSD', timeframe: 'H1', setup: 'Follow Trend BIAS',
@@ -241,7 +253,7 @@ export default function JurnalPage({ memberId }: { memberId: string }) {
         supabase.from('trading_journals').select('*').eq('member_id', memberId).order('tanggal', { ascending: false }),
         supabase.from('journal_settings').select('*').eq('member_id', memberId).single(),
       ]);
-      if (jData) setEntries(jData);
+      if (jData) setEntries(jData.map((e: any) => ({ ...e, hasil: normalizeHasil(e.hasil || '') })));
       if (sData) setSettings(sData);
     } catch (_) {}
     setLoading(false);
@@ -463,19 +475,6 @@ export default function JurnalPage({ memberId }: { memberId: string }) {
   const [importing, setImporting]   = useState(false);
   const [importMsg, setImportMsg]   = useState('');
   const [showImport, setShowImport] = useState(false);
-
-  function normalizeHasil(raw: string): string {
-    const v = raw.trim().toLowerCase();
-    if (['tp', 'take profit', 'takeprofit'].includes(v)) return 'Take Profit';
-    if (['sl', 'stop loss', 'stop lose', 'stoploss', 'stoplose'].includes(v)) return 'Stop Loss';
-    if (['sl profit', 'slprofit', 'sl-profit'].includes(v)) return 'SL Profit';
-    if (['be', 'bep', 'break even', 'breakeven'].includes(v)) return 'Break Even';
-    if (['miss entry', 'missentry'].includes(v)) return 'Miss Entry';
-    if (['no entry', 'noentry'].includes(v)) return 'No Entry';
-    if (v === 'running') return 'Running';
-    // Fallback: return original trimmed value
-    return raw.trim();
-  }
 
   const REQUIRED_COLS = ['TANGGAL','PAIR','TIMEFRAME','SETUP','DIRECTION','SESI','HASIL','RR','PNL ($)'];
 
