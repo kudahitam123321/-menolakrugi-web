@@ -14,7 +14,7 @@ const CV = {
   bg: 'var(--mr-bg)', panel: 'var(--mr-panel)', border: 'var(--mr-border)',
   border2: 'var(--mr-border2)', text: 'var(--mr-text)', dim: 'var(--mr-dim)',
   up: 'var(--mr-up)', down: 'var(--mr-down)', gold: 'var(--mr-gold)',
-  mono: '"Geist Mono",monospace',
+  mono: '"Geist Mono",monospace', sans: '"Geist",system-ui,sans-serif',
 };
 
 const LEVEL_OPTS: { level: PlanLevel; label: string; color: string }[] = [
@@ -30,8 +30,8 @@ const CLS_OPTS: { cls: TreeResult['cls']; label: string; color: string }[] = [
   { cls: 'rc-danger', label: '✕ Bahaya',    color: 'var(--mr-down)' },
 ];
 
-function uid(prefix: string) {
-  return `${prefix}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 5)}`;
+function uid(p: string) {
+  return `${p}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 5)}`;
 }
 function clsColor(cls: TreeResult['cls']) {
   return cls === 'rc-ok' ? CV.up : cls === 'rc-warn' ? CV.gold : CV.down;
@@ -41,6 +41,9 @@ function clsBg(cls: TreeResult['cls']) {
 }
 function clsBorder(cls: TreeResult['cls']) {
   return cls === 'rc-ok' ? 'var(--mr-up-a27)' : cls === 'rc-warn' ? 'var(--mr-gold-a27)' : 'var(--mr-down-a20)';
+}
+function clsIcon(cls: TreeResult['cls']) {
+  return cls === 'rc-ok' ? '✓' : cls === 'rc-warn' ? '!' : '✕';
 }
 
 // ── Level picker ──────────────────────────────────────────────────────────────
@@ -60,7 +63,7 @@ function LevelPicker({ current, onChange }: { current: PlanLevel; onChange: (l: 
   );
 }
 
-// ── Step row ───────────────────────────────────────────────────────────────────
+// ── Step row ──────────────────────────────────────────────────────────────────
 function StepRow({ step, onChange, onDelete }: {
   step: PlanStep; onChange: (s: PlanStep) => void; onDelete: () => void;
 }) {
@@ -71,73 +74,128 @@ function StepRow({ step, onChange, onDelete }: {
         value={step.text}
         onChange={e => onChange({ ...step, text: e.target.value })}
         placeholder="Teks langkah..."
-        style={{
-          flex: 1, background: CV.bg, border: `1px solid ${CV.border2}`, color: CV.text,
-          borderRadius: 5, padding: '6px 10px', fontFamily: CV.mono, fontSize: 11, outline: 'none',
-        }}
+        style={{ flex: 1, background: CV.bg, border: `1px solid ${CV.border2}`, color: CV.text, borderRadius: 5, padding: '6px 10px', fontFamily: CV.mono, fontSize: 11, outline: 'none' }}
       />
-      <button onClick={onDelete} style={{
-        background: 'none', border: `1px solid ${CV.border}`, color: CV.down,
-        borderRadius: 4, width: 24, height: 24, cursor: 'pointer', fontSize: 14, flexShrink: 0,
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-      }}>×</button>
+      <button onClick={onDelete} style={{ background: 'none', border: `1px solid ${CV.border}`, color: CV.down, borderRadius: 4, width: 24, height: 24, cursor: 'pointer', fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>×</button>
     </div>
   );
 }
 
-// ── Tree map (recursive visual preview) ───────────────────────────────────────
-function TreeMapNode({ nodeId, nodes, visited }: {
+// ── Visual tree node (recursive) ──────────────────────────────────────────────
+interface VNProps {
   nodeId: string;
   nodes: Record<string, TreeNode>;
+  rootId: string;
+  selectedId: string | null;
+  onSelect: (id: string) => void;
   visited: Set<string>;
-}) {
-  if (visited.has(nodeId)) {
-    return <span style={{ fontFamily: CV.mono, fontSize: 10, color: '#ef4444' }}>⚠ Siklus!</span>;
-  }
-  const node = nodes[nodeId];
-  if (!node) {
-    return <span style={{ fontFamily: CV.mono, fontSize: 10, color: CV.dim, fontStyle: 'italic' }}>? tidak ditemukan</span>;
-  }
-  const newVisited = new Set([...visited, nodeId]);
+}
 
-  if (node.type === 'result') {
-    const color = clsColor(node.cls);
-    const icon  = node.cls === 'rc-ok' ? '✓' : node.cls === 'rc-warn' ? '!' : '✕';
+function VisualNode({ nodeId, nodes, rootId, selectedId, onSelect, visited }: VNProps) {
+  if (visited.has(nodeId)) {
     return (
-      <span style={{ fontFamily: CV.mono, fontSize: 10, color, fontWeight: 700 }}>
-        [{icon} {node.title || '(tanpa judul)'}]
-      </span>
+      <div style={{ fontFamily: CV.mono, fontSize: 9, color: CV.down, padding: '3px 8px', background: 'rgba(239,68,68,0.1)', borderRadius: 4, border: '1px solid var(--mr-down-a20)', display: 'inline-block' }}>
+        ⚠ siklus
+      </div>
     );
   }
 
+  const node = nodes[nodeId];
+  if (!node) return null;
+
+  const newVisited = new Set([...visited, nodeId]);
+  const isSel = selectedId === nodeId;
+  const isRoot = rootId === nodeId;
+
+  // ── Result leaf ─────────────────────────────────────────────────────────────
+  if (node.type === 'result') {
+    return (
+      <div
+        onClick={() => onSelect(nodeId)}
+        title="Klik untuk edit"
+        style={{
+          display: 'inline-flex', alignItems: 'center', gap: 6,
+          padding: '5px 10px', borderRadius: 7, cursor: 'pointer',
+          background: clsBg(node.cls),
+          border: `2px solid ${isSel ? CV.gold : clsBorder(node.cls)}`,
+          boxShadow: isSel ? `0 0 0 3px ${CV.gold}25` : 'none',
+          maxWidth: 220,
+        }}
+      >
+        <span style={{ fontFamily: CV.mono, fontSize: 11, fontWeight: 700, color: clsColor(node.cls), flexShrink: 0 }}>{clsIcon(node.cls)}</span>
+        <span style={{ fontFamily: CV.mono, fontSize: 9, color: clsColor(node.cls), overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}>
+          {node.title || <em style={{ opacity: 0.6 }}>tanpa judul</em>}
+        </span>
+      </div>
+    );
+  }
+
+  // ── Question node ───────────────────────────────────────────────────────────
   return (
-    <div>
-      <span style={{ fontFamily: CV.mono, fontSize: 10, color: '#60a5fa', fontWeight: 700 }}>
-        [❓ {node.text || '(tanpa teks)'}]
-      </span>
-      <div style={{ paddingLeft: 14 }}>
+    <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 0 }}>
+      <div
+        onClick={() => onSelect(nodeId)}
+        title="Klik untuk edit"
+        style={{
+          display: 'inline-flex', alignItems: 'center', gap: 6,
+          padding: '5px 10px', borderRadius: 7, cursor: 'pointer',
+          background: 'rgba(59,130,246,0.08)',
+          border: `2px solid ${isSel ? CV.gold : isRoot ? 'rgba(59,130,246,0.5)' : 'rgba(59,130,246,0.22)'}`,
+          boxShadow: isSel ? `0 0 0 3px ${CV.gold}25` : 'none',
+          maxWidth: 240,
+        }}
+      >
+        {isRoot && (
+          <span style={{ fontFamily: CV.mono, fontSize: 7, background: '#3b82f6', color: '#fff', padding: '1px 5px', borderRadius: 3, flexShrink: 0 }}>ROOT</span>
+        )}
+        <span style={{ fontSize: 10, flexShrink: 0 }}>❓</span>
+        <span style={{ fontFamily: CV.mono, fontSize: 9, color: '#93c5fd', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}>
+          {node.text || <em style={{ opacity: 0.6, color: CV.dim }}>tanpa teks</em>}
+        </span>
+        <span style={{ fontFamily: CV.mono, fontSize: 8, color: CV.dim, flexShrink: 0 }}>({node.choices.length})</span>
+      </div>
+
+      {/* Choices + children */}
+      <div style={{ paddingLeft: 8 }}>
         {node.choices.length === 0 && (
-          <div style={{ fontFamily: CV.mono, fontSize: 9, color: CV.dim, fontStyle: 'italic', marginTop: 2 }}>
+          <div style={{ fontFamily: CV.mono, fontSize: 8, color: CV.dim, fontStyle: 'italic', paddingLeft: 8, marginTop: 3 }}>
             (tidak ada pilihan)
           </div>
         )}
-        {node.choices.map((choice, i) => (
-          <div key={choice.id} style={{ display: 'flex', alignItems: 'flex-start', gap: 5, marginTop: 3 }}>
-            <span style={{ fontFamily: CV.mono, fontSize: 10, color: CV.dim, flexShrink: 0, marginTop: 1 }}>
-              {i === node.choices.length - 1 ? '└─' : '├─'}
-            </span>
-            <div>
-              <span style={{ fontFamily: CV.mono, fontSize: 10, color: CV.text }}>
-                {choice.label || <span style={{ fontStyle: 'italic', color: CV.dim }}>(kosong)</span>}
+        {node.choices.map((choice, i) => {
+          const last = i === node.choices.length - 1;
+          const hasChild = !!choice.nextId && !!nodes[choice.nextId];
+          return (
+            <div key={choice.id} style={{ display: 'flex', alignItems: 'flex-start', marginTop: 4 }}>
+              {/* Branch connector */}
+              <span style={{ fontFamily: 'monospace', fontSize: 11, color: CV.dim, flexShrink: 0, lineHeight: 1, paddingTop: 7, minWidth: 14 }}>
+                {last ? '└' : '├'}
               </span>
-              <span style={{ fontFamily: CV.mono, fontSize: 10, color: CV.dim }}> → </span>
-              {choice.nextId
-                ? <TreeMapNode nodeId={choice.nextId} nodes={nodes} visited={newVisited} />
-                : <span style={{ fontFamily: CV.mono, fontSize: 10, color: CV.dim, fontStyle: 'italic' }}>(belum ditetapkan)</span>
-              }
+              {/* Choice label + arrow + child */}
+              <div style={{ flex: 1, display: 'flex', alignItems: 'flex-start', gap: 4, flexWrap: 'nowrap' as const }}>
+                <span style={{
+                  fontFamily: CV.mono, fontSize: 8, background: CV.panel,
+                  border: `1px solid ${CV.border}`, borderRadius: 3,
+                  padding: '3px 7px', flexShrink: 0, color: CV.text,
+                  maxWidth: 110, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const,
+                  marginTop: 3,
+                }}>
+                  {choice.label || <em style={{ color: CV.dim }}>…</em>}
+                </span>
+                <span style={{ fontFamily: CV.mono, fontSize: 9, color: CV.dim, paddingTop: 5, flexShrink: 0 }}>›</span>
+                <div style={{ marginTop: 2 }}>
+                  {hasChild ? (
+                    <VisualNode nodeId={choice.nextId} nodes={nodes} rootId={rootId} selectedId={selectedId} onSelect={onSelect} visited={newVisited} />
+                  ) : (
+                    <span style={{ fontFamily: CV.mono, fontSize: 8, color: CV.dim, fontStyle: 'italic', display: 'inline-block', paddingTop: 7 }}>
+                      —
+                    </span>
+                  )}
+                </div>
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
@@ -145,47 +203,52 @@ function TreeMapNode({ nodeId, nodes, visited }: {
 
 // ── Main editor ───────────────────────────────────────────────────────────────
 export default function TradingPlanAdminEditor({ config, onChange }: Props) {
-  const [openNodes, setOpenNodes] = useState<Record<string, boolean>>({});
-  const [showMap,   setShowMap]   = useState(false);
-  const tog = (k: string) => setOpenNodes(p => ({ ...p, [k]: !p[k] }));
-
+  const [selectedId, setSelectedId] = useState<string | null>(config.rootId || null);
   const { nodes, rootId, keyrules } = config;
+
   const questions = Object.values(nodes).filter((n): n is TreeQuestion => n.type === 'question');
   const results   = Object.values(nodes).filter((n): n is TreeResult   => n.type === 'result');
 
-  // ── Config helpers ─────────────────────────────────────────────────────────
-  function updNodes(newNodes: Record<string, TreeNode>) {
-    onChange({ ...config, nodes: newNodes });
+  // Find nodes reachable from root (to detect orphans)
+  function collectReachable(id: string, vis: Set<string> = new Set()): Set<string> {
+    if (!id || vis.has(id) || !nodes[id]) return vis;
+    vis.add(id);
+    const n = nodes[id];
+    if (n.type === 'question') n.choices.forEach(c => { if (c.nextId) collectReachable(c.nextId, vis); });
+    return vis;
   }
-  function setRoot(id: string) { onChange({ ...config, rootId: id }); }
+  const reachable = rootId ? collectReachable(rootId) : new Set<string>();
+  const orphans   = Object.keys(nodes).filter(id => !reachable.has(id));
 
-  // ── Keyrules ───────────────────────────────────────────────────────────────
-  function updRule(i: number, s: PlanStep) {
-    onChange({ ...config, keyrules: keyrules.map((r, idx) => idx === i ? s : r) });
-  }
-  function delRule(i: number) {
-    onChange({ ...config, keyrules: keyrules.filter((_, idx) => idx !== i) });
-  }
-  function addRule() {
-    onChange({ ...config, keyrules: [...keyrules, { level: 'ok' as PlanLevel, text: '' }] });
-  }
+  // ── Config helpers ──────────────────────────────────────────────────────────
+  function upd(patch: Partial<TreePlanConfig>) { onChange({ ...config, ...patch }); }
+  function updNodes(n: Record<string, TreeNode>) { upd({ nodes: n }); }
 
-  // ── Question CRUD ──────────────────────────────────────────────────────────
-  function addQuestion() {
+  function addQuestion(wiredToChoice?: { qId: string; ci: number }) {
     const id = uid('q');
     const node: TreeQuestion = { id, type: 'question', text: '', choices: [] };
-    const newNodes = { ...nodes, [id]: node };
-    // Auto-set root if first question
+    let newNodes: Record<string, TreeNode> = { ...nodes, [id]: node };
+    if (wiredToChoice) {
+      const q = newNodes[wiredToChoice.qId] as TreeQuestion;
+      newNodes[wiredToChoice.qId] = { ...q, choices: q.choices.map((c, i) => i === wiredToChoice.ci ? { ...c, nextId: id } : c) };
+    }
     onChange({ ...config, nodes: newNodes, rootId: rootId || id });
-    setOpenNodes(p => ({ ...p, [id]: true }));
+    setSelectedId(id);
   }
 
-  function updQuestion(id: string, upd: Partial<Omit<TreeQuestion, 'id' | 'type'>>) {
-    const q = nodes[id] as TreeQuestion;
-    updNodes({ ...nodes, [id]: { ...q, ...upd } });
+  function addResult(wiredToChoice?: { qId: string; ci: number }) {
+    const id = uid('r');
+    const node: TreeResult = { id, type: 'result', cls: 'rc-ok', title: '', steps: [] };
+    let newNodes: Record<string, TreeNode> = { ...nodes, [id]: node };
+    if (wiredToChoice) {
+      const q = newNodes[wiredToChoice.qId] as TreeQuestion;
+      newNodes[wiredToChoice.qId] = { ...q, choices: q.choices.map((c, i) => i === wiredToChoice.ci ? { ...c, nextId: id } : c) };
+    }
+    updNodes(newNodes);
+    setSelectedId(id);
   }
 
-  function delQuestion(id: string) {
+  function delNode(id: string) {
     const { [id]: _, ...rest } = nodes;
     const cleaned: Record<string, TreeNode> = {};
     for (const [k, n] of Object.entries(rest)) {
@@ -194,335 +257,321 @@ export default function TradingPlanAdminEditor({ config, onChange }: Props) {
         : n;
     }
     onChange({ ...config, nodes: cleaned, rootId: rootId === id ? '' : rootId });
+    if (selectedId === id) setSelectedId(null);
   }
 
-  // ── Choice CRUD ────────────────────────────────────────────────────────────
+  function updQuestion(id: string, patch: Partial<Omit<TreeQuestion, 'id' | 'type'>>) {
+    const q = nodes[id] as TreeQuestion;
+    updNodes({ ...nodes, [id]: { ...q, ...patch } });
+  }
+
   function addChoice(qId: string) {
     const q = nodes[qId] as TreeQuestion;
     updNodes({ ...nodes, [qId]: { ...q, choices: [...q.choices, { id: uid('c'), label: '', nextId: '' }] } });
   }
-  function updChoice(qId: string, ci: number, upd: Partial<TreeChoice>) {
+
+  function updChoice(qId: string, ci: number, patch: Partial<TreeChoice>) {
     const q = nodes[qId] as TreeQuestion;
-    updNodes({ ...nodes, [qId]: { ...q, choices: q.choices.map((c, i) => i === ci ? { ...c, ...upd } : c) } });
+    updNodes({ ...nodes, [qId]: { ...q, choices: q.choices.map((c, i) => i === ci ? { ...c, ...patch } : c) } });
   }
+
   function delChoice(qId: string, ci: number) {
     const q = nodes[qId] as TreeQuestion;
     updNodes({ ...nodes, [qId]: { ...q, choices: q.choices.filter((_, i) => i !== ci) } });
   }
 
-  // ── Result CRUD ────────────────────────────────────────────────────────────
-  function addResult() {
-    const id = uid('r');
-    const node: TreeResult = { id, type: 'result', cls: 'rc-ok', title: '', steps: [] };
-    updNodes({ ...nodes, [id]: node });
-    setOpenNodes(p => ({ ...p, [id]: true }));
-  }
-  function updResult(id: string, upd: Partial<Omit<TreeResult, 'id' | 'type'>>) {
+  function updResult(id: string, patch: Partial<Omit<TreeResult, 'id' | 'type'>>) {
     const r = nodes[id] as TreeResult;
-    updNodes({ ...nodes, [id]: { ...r, ...upd } });
-  }
-  function delResult(id: string) {
-    const { [id]: _, ...rest } = nodes;
-    const cleaned: Record<string, TreeNode> = {};
-    for (const [k, n] of Object.entries(rest)) {
-      cleaned[k] = n.type === 'question'
-        ? { ...n, choices: n.choices.map(c => c.nextId === id ? { ...c, nextId: '' } : c) }
-        : n;
-    }
-    onChange({ ...config, nodes: cleaned });
-  }
-  function addStep(id: string) {
-    const r = nodes[id] as TreeResult;
-    updResult(id, { steps: [...r.steps, { level: 'ok' as PlanLevel, text: '' }] });
-  }
-  function updStep(id: string, si: number, s: PlanStep) {
-    const r = nodes[id] as TreeResult;
-    updResult(id, { steps: r.steps.map((st, i) => i === si ? s : st) });
-  }
-  function delStep(id: string, si: number) {
-    const r = nodes[id] as TreeResult;
-    updResult(id, { steps: r.steps.filter((_, i) => i !== si) });
+    updNodes({ ...nodes, [id]: { ...r, ...patch } });
   }
 
-  // ── Shared styles ──────────────────────────────────────────────────────────
+  const selectedNode = selectedId ? nodes[selectedId] : null;
+
   const inp: React.CSSProperties = {
     background: CV.bg, border: `1px solid ${CV.border2}`, color: CV.text,
     borderRadius: 5, padding: '7px 10px', fontFamily: CV.mono, fontSize: 11,
-    outline: 'none', boxSizing: 'border-box' as const,
+    outline: 'none', boxSizing: 'border-box' as const, width: '100%',
   };
   const sel: React.CSSProperties = {
     background: CV.bg, border: `1px solid ${CV.border2}`, color: CV.text,
     borderRadius: 5, padding: '6px 8px', fontFamily: CV.mono, fontSize: 11,
-    outline: 'none', cursor: 'pointer',
+    outline: 'none', cursor: 'pointer', width: '100%',
   };
-  const addBtn = (color: string, borderColor: string): React.CSSProperties => ({
-    fontFamily: CV.mono, fontSize: 10, color,
-    background: 'none', border: `1px dashed ${borderColor}`,
-    padding: '8px 14px', borderRadius: 8, cursor: 'pointer', width: '100%', marginTop: 4,
+  const dashBtn = (color: string, border: string): React.CSSProperties => ({
+    width: '100%', fontFamily: CV.mono, fontSize: 9, padding: '7px 0',
+    borderRadius: 6, cursor: 'pointer', background: 'none',
+    border: `1px dashed ${border}`, color,
   });
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 14 }}>
+    <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 16 }}>
 
-      {/* ── Kunci Utama ─────────────────────────────────────────────── */}
+      {/* ── Two-panel: Tree | Editor ─────────────────────────────────────────── */}
+      <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start', flexWrap: 'wrap' as const }}>
+
+        {/* LEFT — Visual tree panel */}
+        <div style={{ flex: '0 0 calc(50% - 8px)', minWidth: 280, background: CV.panel, border: `1px solid ${CV.border}`, borderRadius: 12, padding: 16, display: 'flex', flexDirection: 'column' as const, gap: 12 }}>
+
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <span style={{ fontFamily: CV.mono, fontSize: 9, color: CV.gold, letterSpacing: 1.5 }}>// POHON KEPUTUSAN</span>
+            <span style={{ fontFamily: CV.mono, fontSize: 8, color: CV.dim }}>klik node untuk edit →</span>
+          </div>
+
+          {/* Tree canvas */}
+          <div style={{ overflowX: 'auto', overflowY: 'auto', maxHeight: 520, paddingBottom: 4 }}>
+            {rootId && nodes[rootId] ? (
+              <VisualNode
+                nodeId={rootId}
+                nodes={nodes}
+                rootId={rootId}
+                selectedId={selectedId}
+                onSelect={setSelectedId}
+                visited={new Set()}
+              />
+            ) : (
+              <div style={{ fontFamily: CV.mono, fontSize: 11, color: CV.dim, textAlign: 'center' as const, padding: '32px 0', lineHeight: 1.8 }}>
+                Belum ada node.<br />Klik tombol di bawah untuk mulai.
+              </div>
+            )}
+          </div>
+
+          {/* Orphan nodes */}
+          {orphans.length > 0 && (
+            <div>
+              <div style={{ fontFamily: CV.mono, fontSize: 8, color: CV.dim, letterSpacing: 1, marginBottom: 6 }}>// TIDAK TERHUBUNG</div>
+              <div style={{ display: 'flex', flexWrap: 'wrap' as const, gap: 5 }}>
+                {orphans.map(id => {
+                  const n = nodes[id];
+                  const isSel = selectedId === id;
+                  const isQ = n.type === 'question';
+                  return (
+                    <div
+                      key={id}
+                      onClick={() => setSelectedId(id)}
+                      title="Klik untuk edit"
+                      style={{
+                        fontFamily: CV.mono, fontSize: 8, padding: '3px 9px', borderRadius: 5, cursor: 'pointer',
+                        background: isQ ? 'rgba(59,130,246,0.08)' : clsBg((n as TreeResult).cls),
+                        border: `1px solid ${isSel ? CV.gold : (isQ ? 'rgba(59,130,246,0.3)' : clsBorder((n as TreeResult).cls))}`,
+                        color: isQ ? '#93c5fd' : clsColor((n as TreeResult).cls),
+                        overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const, maxWidth: 160,
+                      }}
+                    >
+                      {isQ ? '❓' : clsIcon((n as TreeResult).cls)}{' '}
+                      {isQ ? ((n as TreeQuestion).text || 'tanpa teks').slice(0, 25) : ((n as TreeResult).title || 'tanpa judul').slice(0, 25)}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Add buttons */}
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button onClick={() => addQuestion()} style={{ flex: 1, fontFamily: CV.mono, fontSize: 9, padding: '7px 0', borderRadius: 6, cursor: 'pointer', background: 'rgba(59,130,246,0.08)', border: '1px dashed rgba(96,165,250,0.4)', color: '#60a5fa' }}>
+              + Pertanyaan
+            </button>
+            <button onClick={() => addResult()} style={{ flex: 1, fontFamily: CV.mono, fontSize: 9, padding: '7px 0', borderRadius: 6, cursor: 'pointer', background: 'rgba(22,163,74,0.06)', border: `1px dashed ${CV.up}44`, color: CV.up }}>
+              + Hasil Akhir
+            </button>
+          </div>
+        </div>
+
+        {/* RIGHT — Node editor */}
+        <div style={{ flex: 1, minWidth: 280 }}>
+
+          {/* Nothing selected */}
+          {!selectedNode && (
+            <div style={{ background: CV.panel, border: `1px solid ${CV.border}`, borderRadius: 12, padding: 32, textAlign: 'center' as const, fontFamily: CV.mono, fontSize: 11, color: CV.dim, lineHeight: 2 }}>
+              ← Klik node pada pohon<br />untuk mulai mengedit
+            </div>
+          )}
+
+          {/* Question editor */}
+          {selectedNode && selectedNode.type === 'question' && (() => {
+            const q = selectedNode as TreeQuestion;
+            return (
+              <div style={{ background: CV.panel, border: `2px solid rgba(59,130,246,0.35)`, borderRadius: 12, padding: 16, display: 'flex', flexDirection: 'column' as const, gap: 14 }}>
+                {/* Header */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    {rootId === selectedId && (
+                      <span style={{ fontFamily: CV.mono, fontSize: 7, background: '#3b82f6', color: '#fff', padding: '2px 6px', borderRadius: 3 }}>ROOT</span>
+                    )}
+                    <span style={{ fontFamily: CV.mono, fontSize: 10, color: '#60a5fa', fontWeight: 700 }}>❓ Pertanyaan</span>
+                  </div>
+                  <div style={{ display: 'flex', gap: 5 }}>
+                    {rootId !== selectedId && (
+                      <button onClick={() => upd({ rootId: selectedId! })} style={{ fontFamily: CV.mono, fontSize: 8, color: '#60a5fa', background: 'none', border: '1px solid rgba(96,165,250,0.35)', padding: '3px 8px', borderRadius: 4, cursor: 'pointer' }}>
+                        ⚑ Set ROOT
+                      </button>
+                    )}
+                    <button onClick={() => delNode(selectedId!)} style={{ fontFamily: CV.mono, fontSize: 8, color: CV.down, background: 'none', border: `1px solid ${CV.down}40`, padding: '3px 8px', borderRadius: 4, cursor: 'pointer' }}>
+                      🗑 Hapus
+                    </button>
+                  </div>
+                </div>
+
+                {/* Question text */}
+                <div>
+                  <div style={{ fontFamily: CV.mono, fontSize: 9, color: CV.dim, marginBottom: 5 }}>TEKS PERTANYAAN</div>
+                  <input
+                    value={q.text}
+                    onChange={e => updQuestion(selectedId!, { text: e.target.value })}
+                    placeholder="Contoh: Bagaimana kondisi MTF saat ini?"
+                    style={inp}
+                  />
+                </div>
+
+                {/* Choices */}
+                <div>
+                  <div style={{ fontFamily: CV.mono, fontSize: 9, color: CV.dim, marginBottom: 8 }}>PILIHAN JAWABAN</div>
+                  <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 8 }}>
+                    {q.choices.map((choice, ci) => (
+                      <div key={choice.id} style={{ background: CV.bg, border: `1px solid ${CV.border}`, borderRadius: 8, padding: '10px 12px', display: 'flex', flexDirection: 'column' as const, gap: 8 }}>
+                        {/* Label */}
+                        <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                          <span style={{ fontFamily: CV.mono, fontSize: 10, color: CV.dim, flexShrink: 0 }}>{ci + 1}.</span>
+                          <input
+                            value={choice.label}
+                            onChange={e => updChoice(selectedId!, ci, { label: e.target.value })}
+                            placeholder="Teks pilihan..."
+                            style={{ ...inp, flex: 1, width: 'auto' }}
+                          />
+                          <button onClick={() => delChoice(selectedId!, ci)} style={{ background: 'none', border: `1px solid ${CV.border2}`, color: CV.down, borderRadius: 4, width: 24, height: 24, cursor: 'pointer', fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>×</button>
+                        </div>
+
+                        {/* Destination */}
+                        <div>
+                          <div style={{ fontFamily: CV.mono, fontSize: 8, color: CV.dim, marginBottom: 4 }}>→ MENUJU:</div>
+                          <select value={choice.nextId} onChange={e => updChoice(selectedId!, ci, { nextId: e.target.value })} style={sel}>
+                            <option value="">— Belum ditetapkan —</option>
+                            {questions.filter(qq => qq.id !== selectedId).length > 0 && (
+                              <optgroup label="PERTANYAAN">
+                                {questions.filter(qq => qq.id !== selectedId).map(qq => (
+                                  <option key={qq.id} value={qq.id}>❓ {qq.text.slice(0, 52) || '(tanpa teks)'}</option>
+                                ))}
+                              </optgroup>
+                            )}
+                            {results.length > 0 && (
+                              <optgroup label="HASIL AKHIR">
+                                {results.map(r => (
+                                  <option key={r.id} value={r.id}>{clsIcon(r.cls)} {r.title.slice(0, 52) || '(tanpa judul)'}</option>
+                                ))}
+                              </optgroup>
+                            )}
+                          </select>
+                        </div>
+
+                        {/* Quick-create shortcuts (only when unconnected) */}
+                        {!choice.nextId && (
+                          <div style={{ display: 'flex', gap: 5 }}>
+                            <button onClick={() => addQuestion({ qId: selectedId!, ci })} style={{ flex: 1, fontFamily: CV.mono, fontSize: 8, padding: '4px 0', borderRadius: 4, cursor: 'pointer', background: 'rgba(59,130,246,0.07)', border: '1px dashed rgba(96,165,250,0.35)', color: '#60a5fa' }}>
+                              + Buat Pertanyaan Baru
+                            </button>
+                            <button onClick={() => addResult({ qId: selectedId!, ci })} style={{ flex: 1, fontFamily: CV.mono, fontSize: 8, padding: '4px 0', borderRadius: 4, cursor: 'pointer', background: 'rgba(22,163,74,0.06)', border: `1px dashed ${CV.up}40`, color: CV.up }}>
+                              + Buat Hasil Akhir Baru
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                  <button onClick={() => addChoice(selectedId!)} style={{ ...dashBtn('#60a5fa', 'rgba(96,165,250,0.35)'), marginTop: 6 }}>
+                    + Tambah Pilihan Jawaban
+                  </button>
+                </div>
+              </div>
+            );
+          })()}
+
+          {/* Result editor */}
+          {selectedNode && selectedNode.type === 'result' && (() => {
+            const r = selectedNode as TreeResult;
+            const color = clsColor(r.cls);
+            const bord  = clsBorder(r.cls);
+            return (
+              <div style={{ background: clsBg(r.cls), border: `2px solid ${bord}`, borderRadius: 12, padding: 16, display: 'flex', flexDirection: 'column' as const, gap: 14 }}>
+                {/* Header */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <span style={{ fontFamily: CV.mono, fontSize: 10, color, fontWeight: 700 }}>
+                    {clsIcon(r.cls)} Hasil Akhir
+                  </span>
+                  <button onClick={() => delNode(selectedId!)} style={{ fontFamily: CV.mono, fontSize: 8, color: CV.down, background: 'none', border: `1px solid ${CV.down}40`, padding: '3px 8px', borderRadius: 4, cursor: 'pointer' }}>
+                    🗑 Hapus
+                  </button>
+                </div>
+
+                {/* Style picker */}
+                <div>
+                  <div style={{ fontFamily: CV.mono, fontSize: 9, color: CV.dim, marginBottom: 6 }}>GAYA HASIL</div>
+                  <div style={{ display: 'flex', gap: 5 }}>
+                    {CLS_OPTS.map(opt => (
+                      <button key={opt.cls} onClick={() => updResult(selectedId!, { cls: opt.cls })} style={{
+                        flex: 1, fontFamily: CV.mono, fontSize: 9, padding: '5px 0', borderRadius: 5, cursor: 'pointer',
+                        border: `1px solid ${r.cls === opt.cls ? opt.color : CV.border2}`,
+                        background: r.cls === opt.cls ? `${opt.color}20` : CV.panel,
+                        color: r.cls === opt.cls ? opt.color : CV.dim,
+                      }}>{opt.label}</button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Title */}
+                <div>
+                  <div style={{ fontFamily: CV.mono, fontSize: 9, color: CV.dim, marginBottom: 5 }}>JUDUL KEPUTUSAN</div>
+                  <input
+                    value={r.title}
+                    onChange={e => updResult(selectedId!, { title: e.target.value })}
+                    placeholder="Contoh: Setup ideal — boleh entry BUY"
+                    style={{ ...inp, background: CV.panel }}
+                  />
+                </div>
+
+                {/* Steps */}
+                <div>
+                  <div style={{ fontFamily: CV.mono, fontSize: 9, color: CV.dim, marginBottom: 8 }}>LANGKAH-LANGKAH</div>
+                  <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 7 }}>
+                    {r.steps.map((step, si) => (
+                      <StepRow
+                        key={si}
+                        step={step}
+                        onChange={s => updResult(selectedId!, { steps: r.steps.map((st, i) => i === si ? s : st) })}
+                        onDelete={() => updResult(selectedId!, { steps: r.steps.filter((_, i) => i !== si) })}
+                      />
+                    ))}
+                  </div>
+                  <button onClick={() => updResult(selectedId!, { steps: [...r.steps, { level: 'ok' as PlanLevel, text: '' }] })} style={{ ...dashBtn(color, bord), marginTop: 6 }}>
+                    + Tambah langkah
+                  </button>
+                </div>
+              </div>
+            );
+          })()}
+        </div>
+      </div>
+
+      {/* ── Kunci Utama ─────────────────────────────────────────────────────── */}
       <div style={{ background: CV.panel, border: `1px solid ${CV.border}`, borderRadius: 10, padding: '14px 16px' }}>
-        <div style={{ fontFamily: CV.mono, fontSize: 10, color: CV.gold, letterSpacing: 1, marginBottom: 12 }}>// KUNCI UTAMA</div>
-        <p style={{ fontFamily: CV.mono, fontSize: 9, color: CV.dim, margin: '0 0 10px', lineHeight: 1.6 }}>
-          Aturan yang selalu ditampilkan di bawah setiap hasil akhir.
+        <div style={{ fontFamily: CV.mono, fontSize: 9, color: CV.gold, letterSpacing: 1, marginBottom: 4 }}>// KUNCI UTAMA</div>
+        <p style={{ fontFamily: CV.mono, fontSize: 8, color: CV.dim, margin: '0 0 10px', lineHeight: 1.6 }}>
+          Aturan ini selalu ditampilkan di bawah setiap hasil akhir saat member menggunakan trading plan.
         </p>
         <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 8 }}>
           {keyrules.map((rule, i) => (
-            <StepRow key={i} step={rule} onChange={s => updRule(i, s)} onDelete={() => delRule(i)} />
+            <StepRow
+              key={i}
+              step={rule}
+              onChange={s => upd({ keyrules: keyrules.map((r, idx) => idx === i ? s : r) })}
+              onDelete={() => upd({ keyrules: keyrules.filter((_, idx) => idx !== i) })}
+            />
           ))}
         </div>
-        <button onClick={addRule} style={addBtn(CV.gold, CV.border2)}>+ Tambah kunci</button>
-      </div>
-
-      {/* ── Pertanyaan Awal ──────────────────────────────────────────── */}
-      <div style={{ background: CV.panel, border: `1px solid ${CV.border}`, borderRadius: 10, padding: '14px 16px' }}>
-        <div style={{ fontFamily: CV.mono, fontSize: 10, color: CV.gold, letterSpacing: 1, marginBottom: 8 }}>// PERTANYAAN AWAL (ROOT)</div>
-        <p style={{ fontFamily: CV.mono, fontSize: 9, color: CV.dim, margin: '0 0 10px', lineHeight: 1.6 }}>
-          Pertanyaan pertama yang dilihat member saat membuka Trading Plan.
-        </p>
-        <select value={rootId} onChange={e => setRoot(e.target.value)} style={{ ...sel, width: '100%' }}>
-          <option value="">— Pilih pertanyaan awal —</option>
-          {questions.map(q => (
-            <option key={q.id} value={q.id}>{q.text.slice(0, 80) || '(pertanyaan tanpa teks)'}</option>
-          ))}
-        </select>
-      </div>
-
-      {/* ── Peta Pohon ──────────────────────────────────────────────── */}
-      {rootId && nodes[rootId] && (
-        <div style={{ background: CV.panel, border: `1px solid ${CV.border}`, borderRadius: 10, overflow: 'hidden' }}>
-          <button
-            onClick={() => setShowMap(p => !p)}
-            style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '11px 16px', background: 'none', border: 'none', cursor: 'pointer' }}
-          >
-            <span style={{ fontFamily: CV.mono, fontSize: 10, color: CV.gold, letterSpacing: 1 }}>// PETA POHON KEPUTUSAN</span>
-            <span style={{ fontFamily: CV.mono, fontSize: 10, color: CV.dim }}>{showMap ? '▾' : '▸'}</span>
-          </button>
-          {showMap && (
-            <div style={{ padding: '4px 16px 16px', overflowX: 'auto' as const }}>
-              <TreeMapNode nodeId={rootId} nodes={nodes} visited={new Set()} />
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* ── Pertanyaan ──────────────────────────────────────────────── */}
-      <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 8 }}>
-        <div style={{ fontFamily: CV.mono, fontSize: 10, color: '#60a5fa', letterSpacing: 1 }}>// PERTANYAAN</div>
-        <p style={{ fontFamily: CV.mono, fontSize: 9, color: CV.dim, margin: 0, lineHeight: 1.6 }}>
-          Tambah pertanyaan, lalu buat pilihan jawaban. Tiap jawaban bisa mengarah ke pertanyaan lain atau ke hasil akhir.
-        </p>
-
-        {questions.map((q) => {
-          const isOpen = !!openNodes[q.id];
-          const isRoot = rootId === q.id;
-          return (
-            <div key={q.id} style={{ border: `1px solid ${isRoot ? '#3b82f6' : CV.border}`, borderRadius: 10, overflow: 'hidden' }}>
-              {/* Header */}
-              <div style={{ display: 'flex', alignItems: 'center', background: isRoot ? 'rgba(59,130,246,0.07)' : CV.panel }}>
-                <button onClick={() => tog(q.id)} style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 8, padding: '11px 14px', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' as const, minWidth: 0 }}>
-                  {isRoot && (
-                    <span style={{ fontFamily: CV.mono, fontSize: 8, background: '#3b82f6', color: '#fff', padding: '2px 7px', borderRadius: 3, flexShrink: 0 }}>ROOT</span>
-                  )}
-                  <span style={{ fontSize: 13, flexShrink: 0 }}>❓</span>
-                  <span style={{ fontFamily: CV.mono, fontSize: 10, color: CV.text, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}>
-                    {q.text || <span style={{ color: CV.dim, fontStyle: 'italic' }}>pertanyaan tanpa teks</span>}
-                  </span>
-                  <span style={{ fontFamily: CV.mono, fontSize: 9, color: CV.dim, flexShrink: 0 }}>{q.choices.length} pilihan</span>
-                </button>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 4, paddingRight: 10 }}>
-                  <button onClick={() => delQuestion(q.id)} title="Hapus pertanyaan" style={{
-                    background: 'none', border: `1px solid ${CV.border2}`, color: CV.down,
-                    borderRadius: 4, width: 22, height: 22, cursor: 'pointer', fontSize: 13,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-                  }}>×</button>
-                  <span style={{ fontFamily: CV.mono, fontSize: 11, color: CV.dim, width: 14, textAlign: 'center' as const }}>{isOpen ? '▾' : '▸'}</span>
-                </div>
-              </div>
-
-              {/* Body */}
-              {isOpen && (
-                <div style={{ padding: '14px 16px', background: CV.bg, display: 'flex', flexDirection: 'column' as const, gap: 14 }}>
-                  {/* Question text */}
-                  <div>
-                    <div style={{ fontFamily: CV.mono, fontSize: 9, color: CV.dim, marginBottom: 6 }}>TEKS PERTANYAAN</div>
-                    <input
-                      value={q.text}
-                      onChange={e => updQuestion(q.id, { text: e.target.value })}
-                      placeholder="Contoh: Bagaimana kondisi MTF saat ini?"
-                      style={{ ...inp, width: '100%' }}
-                    />
-                  </div>
-
-                  {/* Choices */}
-                  <div>
-                    <div style={{ fontFamily: CV.mono, fontSize: 9, color: CV.dim, marginBottom: 8 }}>
-                      PILIHAN JAWABAN &amp; ALUR
-                    </div>
-                    <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 6 }}>
-                      {q.choices.map((choice, ci) => (
-                        <div key={choice.id} style={{
-                          background: CV.panel, borderRadius: 7, border: `1px solid ${CV.border}`,
-                          padding: '10px 12px',
-                        }}>
-                          <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-                            <span style={{ fontFamily: CV.mono, fontSize: 10, color: CV.dim, flexShrink: 0, minWidth: 18 }}>
-                              {ci + 1}.
-                            </span>
-                            <input
-                              value={choice.label}
-                              onChange={e => updChoice(q.id, ci, { label: e.target.value })}
-                              placeholder="Teks pilihan jawaban..."
-                              style={{ ...inp, flex: 1 }}
-                            />
-                            <button onClick={() => delChoice(q.id, ci)} style={{
-                              background: 'none', border: `1px solid ${CV.border2}`, color: CV.down,
-                              borderRadius: 4, width: 24, height: 24, cursor: 'pointer', fontSize: 14, flexShrink: 0,
-                              display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            }}>×</button>
-                          </div>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8, paddingLeft: 24 }}>
-                            <span style={{ fontFamily: CV.mono, fontSize: 10, color: CV.dim, flexShrink: 0 }}>→ menuju:</span>
-                            <select
-                              value={choice.nextId}
-                              onChange={e => updChoice(q.id, ci, { nextId: e.target.value })}
-                              style={{ ...sel, flex: 1 }}
-                            >
-                              <option value="">— Belum ditetapkan —</option>
-                              {questions.filter(qq => qq.id !== q.id).length > 0 && (
-                                <optgroup label="PERTANYAAN LAIN">
-                                  {questions.filter(qq => qq.id !== q.id).map(qq => (
-                                    <option key={qq.id} value={qq.id}>
-                                      ❓ {qq.text.slice(0, 55) || '(tanpa teks)'}
-                                    </option>
-                                  ))}
-                                </optgroup>
-                              )}
-                              {results.length > 0 && (
-                                <optgroup label="HASIL AKHIR">
-                                  {results.map(r => {
-                                    const icon = r.cls === 'rc-ok' ? '✓' : r.cls === 'rc-warn' ? '!' : '✕';
-                                    return (
-                                      <option key={r.id} value={r.id}>
-                                        {icon} {r.title.slice(0, 55) || '(tanpa judul)'}
-                                      </option>
-                                    );
-                                  })}
-                                </optgroup>
-                              )}
-                            </select>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                    <button onClick={() => addChoice(q.id)} style={addBtn('#60a5fa', 'rgba(96,165,250,0.4)')}>
-                      + Tambah Pilihan Jawaban
-                    </button>
-                  </div>
-
-                  {/* Set as root */}
-                  {!isRoot && (
-                    <button onClick={() => setRoot(q.id)} style={{
-                      fontFamily: CV.mono, fontSize: 9, color: '#60a5fa',
-                      background: 'none', border: '1px solid rgba(96,165,250,0.35)',
-                      padding: '5px 12px', borderRadius: 5, cursor: 'pointer', alignSelf: 'flex-start' as const,
-                    }}>⚑ Jadikan Pertanyaan Awal (ROOT)</button>
-                  )}
-                </div>
-              )}
-            </div>
-          );
-        })}
-
-        <button onClick={addQuestion} style={addBtn('#60a5fa', 'rgba(96,165,250,0.4)')}>
-          + Tambah Pertanyaan
+        <button onClick={() => upd({ keyrules: [...keyrules, { level: 'ok' as PlanLevel, text: '' }] })} style={{ ...dashBtn(CV.gold, CV.border2), marginTop: 8 }}>
+          + Tambah kunci
         </button>
       </div>
 
-      {/* ── Hasil Akhir ─────────────────────────────────────────────── */}
-      <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 8 }}>
-        <div style={{ fontFamily: CV.mono, fontSize: 10, color: CV.gold, letterSpacing: 1 }}>// HASIL AKHIR</div>
-        <p style={{ fontFamily: CV.mono, fontSize: 9, color: CV.dim, margin: 0, lineHeight: 1.6 }}>
-          Kotak keputusan final. Pilihan jawaban dari pertanyaan akan mengarah ke salah satu hasil ini.
-        </p>
-
-        {results.map((r) => {
-          const isOpen  = !!openNodes[r.id];
-          const color   = clsColor(r.cls);
-          const bg      = clsBg(r.cls);
-          const bord    = clsBorder(r.cls);
-          const icon    = r.cls === 'rc-ok' ? '✓' : r.cls === 'rc-warn' ? '!' : '✕';
-
-          return (
-            <div key={r.id} style={{ border: `1px solid ${bord}`, borderRadius: 10, overflow: 'hidden' }}>
-              <div style={{ display: 'flex', alignItems: 'center', background: bg }}>
-                <button onClick={() => tog(r.id)} style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 8, padding: '11px 14px', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' as const, minWidth: 0 }}>
-                  <span style={{ fontFamily: CV.mono, fontSize: 13, color, fontWeight: 700, flexShrink: 0 }}>{icon}</span>
-                  <span style={{ fontFamily: CV.mono, fontSize: 10, color, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}>
-                    {r.title || <span style={{ fontStyle: 'italic', opacity: 0.7 }}>hasil tanpa judul</span>}
-                  </span>
-                  <span style={{ fontFamily: CV.mono, fontSize: 9, color, opacity: 0.7, flexShrink: 0 }}>{r.steps.length} langkah</span>
-                </button>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 4, paddingRight: 10 }}>
-                  <button onClick={() => delResult(r.id)} title="Hapus hasil" style={{
-                    background: 'none', border: `1px solid ${bord}`, color: CV.down,
-                    borderRadius: 4, width: 22, height: 22, cursor: 'pointer', fontSize: 13,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-                  }}>×</button>
-                  <span style={{ fontFamily: CV.mono, fontSize: 11, color, width: 14, textAlign: 'center' as const }}>{isOpen ? '▾' : '▸'}</span>
-                </div>
-              </div>
-
-              {isOpen && (
-                <div style={{ padding: '14px 16px', background: CV.panel, display: 'flex', flexDirection: 'column' as const, gap: 12 }}>
-                  {/* Cls picker */}
-                  <div>
-                    <div style={{ fontFamily: CV.mono, fontSize: 9, color: CV.dim, marginBottom: 7 }}>GAYA HASIL</div>
-                    <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' as const }}>
-                      {CLS_OPTS.map(opt => (
-                        <button key={opt.cls} onClick={() => updResult(r.id, { cls: opt.cls })} style={{
-                          fontFamily: CV.mono, fontSize: 9, padding: '5px 12px', borderRadius: 5, cursor: 'pointer',
-                          border: `1px solid ${r.cls === opt.cls ? opt.color : CV.border2}`,
-                          background: r.cls === opt.cls ? `${opt.color}20` : CV.bg,
-                          color: r.cls === opt.cls ? opt.color : CV.dim,
-                        }}>{opt.label}</button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Title */}
-                  <div>
-                    <div style={{ fontFamily: CV.mono, fontSize: 9, color: CV.dim, marginBottom: 5 }}>JUDUL KEPUTUSAN</div>
-                    <input
-                      value={r.title}
-                      onChange={e => updResult(r.id, { title: e.target.value })}
-                      placeholder="Contoh: Setup ideal — boleh entry BUY"
-                      style={{ ...inp, width: '100%' }}
-                    />
-                  </div>
-
-                  {/* Steps */}
-                  <div>
-                    <div style={{ fontFamily: CV.mono, fontSize: 9, color: CV.dim, marginBottom: 8 }}>LANGKAH-LANGKAH</div>
-                    <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 7 }}>
-                      {r.steps.map((step, si) => (
-                        <StepRow key={si} step={step} onChange={s => updStep(r.id, si, s)} onDelete={() => delStep(r.id, si)} />
-                      ))}
-                    </div>
-                    <button onClick={() => addStep(r.id)} style={addBtn(color, bord)}>+ Tambah langkah</button>
-                  </div>
-                </div>
-              )}
-            </div>
-          );
-        })}
-
-        <button onClick={addResult} style={addBtn(CV.gold, CV.border2)}>+ Tambah Hasil Akhir</button>
-      </div>
     </div>
   );
 }
