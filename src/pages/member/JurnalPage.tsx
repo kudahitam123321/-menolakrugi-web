@@ -285,9 +285,11 @@ export default function JurnalPage({ memberId }: { memberId: string }) {
     const equityAkhir  = settings.equity_awal + totalPnl;
 
     // Best trade / worst trade
-    const pnls = entries.map(e => e.pnl ?? 0);
-    const bestTrade  = pnls.length ? Math.max(...pnls) : 0;
-    const worstTrade = pnls.length ? Math.min(...pnls) : 0;
+    const pnls        = entries.map(e => e.pnl ?? 0);
+    const profitPnls  = pnls.filter(p => p > 0);
+    const lossPnls    = pnls.filter(p => p < 0);
+    const bestTrade   = profitPnls.length ? Math.max(...profitPnls) : 0;
+    const worstTrade  = lossPnls.length   ? Math.min(...lossPnls)   : 0;
 
     // Best day profit (group by tanggal, sum PNL per day, pick highest)
     const dayMap: Record<string, number> = {};
@@ -660,8 +662,8 @@ export default function JurnalPage({ memberId }: { memberId: string }) {
       </div>
       {/* ── Stat bar row 2 ── */}
       <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 20 }}>
-        <StatCard label="PROFIT TERBESAR" value={s.total ? fmt(s.bestTrade, '$') : '—'} color={C.up} sub="Trade terbaik" />
-        <StatCard label="LOSS TERBESAR" value={s.total ? fmt(s.worstTrade, '$') : '—'} color={C.down} sub="Trade terburuk" />
+        <StatCard label="PROFIT TERBESAR" value={s.bestTrade > 0 ? fmt(s.bestTrade, '$') : '—'} color={C.up} sub="Trade terbaik" />
+        <StatCard label="LOSS TERBESAR" value={s.worstTrade < 0 ? fmt(s.worstTrade, '$') : '—'} color={C.down} sub="Trade terburuk" />
         <StatCard label="WIN STREAK" value={s.total ? String(s.winStreak) : '—'} color={C.up} sub="Consecutive TP" />
         <StatCard label="LOSE STREAK" value={s.total ? String(s.loseStreak) : '—'} color={C.down} sub="Consecutive SL" />
         <StatCard
