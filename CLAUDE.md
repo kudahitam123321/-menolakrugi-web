@@ -14,6 +14,10 @@ npm run typecheck    # TypeScript check (tsc --noEmit -p tsconfig.app.json)
 
 There is no test suite. Validate changes by running the dev server.
 
+## Deployment
+
+The app is deployed on **Cloudflare Pages**. Pushing to `main` triggers an automatic deploy. There is no manual deploy step.
+
 ## Architecture
 
 **Menolak Rugi** is a React + TypeScript SPA for a trading education platform (Smart Money Concept). All content is in Indonesian.
@@ -46,7 +50,15 @@ There are legacy page files (`src/pages/DashboardPage.tsx`, `src/pages/MemberPag
 
 ### Session Management
 
-No auth library. Session stored in `localStorage` under key `mr_session` as a plain object `{ type: 'member', nama, tier, ... }`. Checked via `getSession()` calls in components — not a context or global store.
+No auth library. Session stored in `localStorage` under key `mr_session` as a plain object. Each component that needs the session reads it directly — there is no shared `getSession` utility; the pattern is copy-pasted inline:
+
+```ts
+const raw = localStorage.getItem('mr_session');
+const session = raw ? JSON.parse(raw) : null;
+// session shape: { id, nama, tier, role, email, ... }
+```
+
+Logout is done by calling `localStorage.removeItem('mr_session')` then redirecting to `/login`.
 
 ### Data Layer
 
@@ -57,6 +69,8 @@ Queries are raw `.from('table').select()...` chains — no ORM. Custom hooks in 
 Key tables: `members`, `pricing_tiers`, `videos`, `journals`, `watch_history`, `testimonials`, `funded_brokers`, `partnerships`, `activity_log`, `trading_plan_config`, `advance_requests`, `partnership_claims`.
 
 Admin operations are logged via the module-level `logActivity(action, detail, adminName)` function in `AdminPanel.tsx`, which writes to `activity_log`.
+
+The `xlsx` package is available for data exports (e.g., exporting member lists or journal data from the admin panel).
 
 ### State Management
 
@@ -110,6 +124,12 @@ Four membership tiers: **Trial**, **Bronze**, **Gold**, **Platinum**. Tier contr
 - **System**: `log` · `pengaturan`
 
 The `ApprovalsTab` component (inside AdminPanel) handles three sub-tabs: `ulasan` (testimonials), `advance` (advance_requests), `klaim` (partnership_claims).
+
+**Sidebar → tab ID mapping gotcha**: the `admin` sidebar item maps to tab ID `admins` (not `admin`). The `jurnal` sidebar item in AdminPanel renders `LeaderboardPage` (member rankings), not a journal view — the label "Peringkat Member" in the sidebar reflects this, but the sidebar ID `jurnal` can be misleading.
+
+### Shared Components
+
+`src/components/mr/index.tsx` and `src/components/mr/mr-components.tsx` both live in the same directory — `index.tsx` is the primary export barrel. Import shared components from `src/components/mr` (the index), not from `mr-components.tsx` directly.
 
 ### TradingView Widgets
 

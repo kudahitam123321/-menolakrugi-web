@@ -114,6 +114,8 @@ function ApprovalsTab({ adminName }: { adminName: string }) {
   const [advance, setAdvance] = useState<any[]>([]);
   const [klaim,   setKlaim]   = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [rejectingId, setRejectingId]     = useState<string | null>(null);
+  const [rejectReason, setRejectReason]   = useState('');
 
   useEffect(() => {
     (async () => {
@@ -172,20 +174,24 @@ function ApprovalsTab({ adminName }: { adminName: string }) {
     setAdvance(l => l.map(x => x.id === id ? { ...x, status: 'approved' } : x));
     await logActivity('approve_advance', `Request advance disetujui (id: ${id})`, adminName);
   }
-  async function rejectAdvance(id: string, reason = '') {
-    if (!await dbUpdate('advance_requests', id, { status: 'rejected', alasan_tolak: reason || 'Ditolak oleh admin' })) return;
-    setAdvance(l => l.map(x => x.id === id ? { ...x, status: 'rejected' } : x));
-    await logActivity('reject_advance', `Request advance ditolak (id: ${id})`, adminName);
+  async function rejectAdvance(id: string, reason: string) {
+    const finalReason = reason.trim() || 'Ditolak oleh admin';
+    if (!await dbUpdate('advance_requests', id, { status: 'rejected', alasan_tolak: finalReason })) return;
+    setAdvance(l => l.map(x => x.id === id ? { ...x, status: 'rejected', alasan_tolak: finalReason } : x));
+    setRejectingId(null);
+    await logActivity('reject_advance', `Request advance ditolak (id: ${id}): ${finalReason}`, adminName);
   }
   async function approveKlaim(id: string) {
     if (!await dbUpdate('partnership_claims', id, { status: 'approved' })) return;
     setKlaim(l => l.map(x => x.id === id ? { ...x, status: 'approved' } : x));
     await logActivity('approve_klaim', `Klaim partnership disetujui (id: ${id})`, adminName);
   }
-  async function rejectKlaim(id: string) {
-    if (!await dbUpdate('partnership_claims', id, { status: 'rejected' })) return;
-    setKlaim(l => l.map(x => x.id === id ? { ...x, status: 'rejected' } : x));
-    await logActivity('reject_klaim', `Klaim partnership ditolak (id: ${id})`, adminName);
+  async function rejectKlaim(id: string, reason: string) {
+    const finalReason = reason.trim() || 'Ditolak oleh admin';
+    if (!await dbUpdate('partnership_claims', id, { status: 'rejected', alasan_tolak: finalReason })) return;
+    setKlaim(l => l.map(x => x.id === id ? { ...x, status: 'rejected', alasan_tolak: finalReason } : x));
+    setRejectingId(null);
+    await logActivity('reject_klaim', `Klaim partnership ditolak (id: ${id}): ${finalReason}`, adminName);
   }
 
   const statusBadge = (s: string) => {
@@ -257,12 +263,28 @@ function ApprovalsTab({ adminName }: { adminName: string }) {
                 </div>
                 {statusBadge(r.status)}
               </div>
-              {r.alasan_tolak && <div style={{ fontFamily:C.mono, fontSize:11, color:C.down, marginBottom:8 }}>Alasan tolak: {r.alasan_tolak}</div>}
+              {r.status === 'rejected' && r.alasan_tolak && <div style={{ fontFamily:C.mono, fontSize:11, color:C.down, marginBottom:8 }}>Alasan tolak: {r.alasan_tolak}</div>}
               {r.status === 'pending' && (
-                <div style={{ display:'flex', gap:8 }}>
-                  <button onClick={() => approveAdvance(r.id, r.member_id)} style={{ background:'var(--mr-tint-green)', border:`1px solid ${C.up}`, color:C.up, fontFamily:C.mono, fontSize:11, padding:'6px 16px', borderRadius:6, cursor:'pointer', fontWeight:700 }}>✓ Setujui Advance</button>
-                  <button onClick={() => rejectAdvance(r.id)} style={{ background:'var(--mr-tint-red)', border:`1px solid ${C.down}`, color:C.down, fontFamily:C.mono, fontSize:11, padding:'6px 16px', borderRadius:6, cursor:'pointer' }}>✕ Tolak</button>
-                </div>
+                rejectingId === r.id ? (
+                  <div style={{ marginTop:8 }}>
+                    <textarea
+                      value={rejectReason}
+                      onChange={e => setRejectReason(e.target.value)}
+                      placeholder="Tulis alasan penolakan untuk member... (opsional)"
+                      rows={2}
+                      style={{ width:'100%', background:'var(--mr-bg)', border:`1px solid ${C.down}44`, color:C.text, padding:'8px 10px', borderRadius:6, fontFamily:C.mono, fontSize:11, resize:'vertical' as const, outline:'none', boxSizing:'border-box' as const }}
+                    />
+                    <div style={{ display:'flex', gap:6, marginTop:6 }}>
+                      <button onClick={() => rejectAdvance(r.id, rejectReason)} style={{ background:'var(--mr-tint-red)', border:`1px solid ${C.down}`, color:C.down, fontFamily:C.mono, fontSize:11, padding:'6px 16px', borderRadius:6, cursor:'pointer', fontWeight:700 }}>✕ Konfirmasi Tolak</button>
+                      <button onClick={() => setRejectingId(null)} style={{ background:'transparent', border:`1px solid ${C.border}`, color:C.muted, fontFamily:C.mono, fontSize:11, padding:'6px 12px', borderRadius:6, cursor:'pointer' }}>Batal</button>
+                    </div>
+                  </div>
+                ) : (
+                  <div style={{ display:'flex', gap:8 }}>
+                    <button onClick={() => approveAdvance(r.id, r.member_id)} style={{ background:'var(--mr-tint-green)', border:`1px solid ${C.up}`, color:C.up, fontFamily:C.mono, fontSize:11, padding:'6px 16px', borderRadius:6, cursor:'pointer', fontWeight:700 }}>✓ Setujui Advance</button>
+                    <button onClick={() => { setRejectingId(r.id); setRejectReason(''); }} style={{ background:'var(--mr-tint-red)', border:`1px solid ${C.down}`, color:C.down, fontFamily:C.mono, fontSize:11, padding:'6px 16px', borderRadius:6, cursor:'pointer' }}>✕ Tolak</button>
+                  </div>
+                )
               )}
             </div>
           ))}
@@ -292,11 +314,28 @@ function ApprovalsTab({ adminName }: { adminName: string }) {
                 </div>
                 {statusBadge(cl.status)}
               </div>
+              {cl.status === 'rejected' && cl.alasan_tolak && <div style={{ fontFamily:C.mono, fontSize:11, color:C.down, marginBottom:8 }}>Alasan tolak: {cl.alasan_tolak}</div>}
               {cl.status === 'pending' && (
-                <div style={{ display:'flex', gap:8 }}>
-                  <button onClick={() => approveKlaim(cl.id)} style={{ background:'var(--mr-tint-green)', border:`1px solid ${C.up}`, color:C.up, fontFamily:C.mono, fontSize:11, padding:'6px 16px', borderRadius:6, cursor:'pointer', fontWeight:700 }}>✓ Setujui Klaim</button>
-                  <button onClick={() => rejectKlaim(cl.id)} style={{ background:'var(--mr-tint-red)', border:`1px solid ${C.down}`, color:C.down, fontFamily:C.mono, fontSize:11, padding:'6px 16px', borderRadius:6, cursor:'pointer' }}>✕ Tolak</button>
-                </div>
+                rejectingId === cl.id ? (
+                  <div style={{ marginTop:8 }}>
+                    <textarea
+                      value={rejectReason}
+                      onChange={e => setRejectReason(e.target.value)}
+                      placeholder="Tulis alasan penolakan klaim... (opsional)"
+                      rows={2}
+                      style={{ width:'100%', background:'var(--mr-bg)', border:`1px solid ${C.down}44`, color:C.text, padding:'8px 10px', borderRadius:6, fontFamily:C.mono, fontSize:11, resize:'vertical' as const, outline:'none', boxSizing:'border-box' as const }}
+                    />
+                    <div style={{ display:'flex', gap:6, marginTop:6 }}>
+                      <button onClick={() => rejectKlaim(cl.id, rejectReason)} style={{ background:'var(--mr-tint-red)', border:`1px solid ${C.down}`, color:C.down, fontFamily:C.mono, fontSize:11, padding:'6px 16px', borderRadius:6, cursor:'pointer', fontWeight:700 }}>✕ Konfirmasi Tolak</button>
+                      <button onClick={() => setRejectingId(null)} style={{ background:'transparent', border:`1px solid ${C.border}`, color:C.muted, fontFamily:C.mono, fontSize:11, padding:'6px 12px', borderRadius:6, cursor:'pointer' }}>Batal</button>
+                    </div>
+                  </div>
+                ) : (
+                  <div style={{ display:'flex', gap:8 }}>
+                    <button onClick={() => approveKlaim(cl.id)} style={{ background:'var(--mr-tint-green)', border:`1px solid ${C.up}`, color:C.up, fontFamily:C.mono, fontSize:11, padding:'6px 16px', borderRadius:6, cursor:'pointer', fontWeight:700 }}>✓ Setujui Klaim</button>
+                    <button onClick={() => { setRejectingId(cl.id); setRejectReason(''); }} style={{ background:'var(--mr-tint-red)', border:`1px solid ${C.down}`, color:C.down, fontFamily:C.mono, fontSize:11, padding:'6px 16px', borderRadius:6, cursor:'pointer' }}>✕ Tolak</button>
+                  </div>
+                )
               )}
             </div>
           ))}

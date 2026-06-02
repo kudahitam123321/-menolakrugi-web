@@ -1292,7 +1292,7 @@ export default function DashboardPage() {
                             <div style={{ fontFamily: C.mono, fontSize: 11, color: G.gold, background: 'var(--mr-tint-gold)', border: "1px solid var(--mr-tint-gold-b)", padding: '8px 14px', borderRadius: 6 }}>
                               ⏳ REQUEST SEDANG DIREVIEW ADMIN
                             </div>
-                          ) : advanceReq?.status === 'ditolak' ? (
+                          ) : advanceReq?.status === 'rejected' ? (
                             <div>
                               <div style={{ fontFamily: C.mono, fontSize: 11, color: C.down, background: '#1a0a0a', border: `1px solid #3a1010`, padding: '8px 14px', borderRadius: 6, marginBottom: 10 }}>
                                 ❌ REQUEST DITOLAK — {advanceReq.alasan_tolak?.split('\n')[0] || 'Lihat notifikasi'}
