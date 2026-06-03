@@ -135,6 +135,7 @@ export default function CheckoutPage() {
   function handlePilih(course: typeof courses[0]) {
     const finalAmount = Math.round(course.amount * (1 - diskon / 100));
     const params = new URLSearchParams({
+      tier: course.id,
       kelas: course.title,
       harga: formatRupiah(finalAmount),
       hargaAsli: course.price,
