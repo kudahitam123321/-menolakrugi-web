@@ -8,7 +8,7 @@ import { MR, TIER_ACCENT } from '../lib/theme';
 import { MRLogo, Ticker, StatusBar, TVTickerTape, CandleChart, CANDLE_GRID_STYLE } from '../components/mr';
 import { useLandingStats, useApprovedTestimonials, usePricing } from '../hooks';
 import type { PricingTier, Testimonial } from '../types/mr.types';
-import TradingViewWidget from '../components/mr/TradingViewWidget';
+import { supabase } from '../lib/supabase';
 
 // ─── Static data ──────────────────────────────────────────────────────────────
 
@@ -280,49 +280,40 @@ function Hero({ memberCount, fundedCount, newThisMonth }: { memberCount: number;
   const cMonthly = useCounter(newThisMonth, 1000);
 
   return (
-    <section id="kelas" style={{ position: 'relative', padding: '64px 40px 48px', borderBottom: `1px solid ${MR.border}` }}>
+    <section id="kelas" style={{ position: 'relative', padding: isMobile ? '48px 20px 40px' : '72px 40px 56px', borderBottom: `1px solid ${MR.border}` }}>
       <div style={{ position: 'absolute', inset: 0, opacity: 0.5, ...CANDLE_GRID_STYLE }} />
-      <div className='mr-hero-grid' style={{ position: 'relative', display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 32, alignItems: 'stretch' }}>
-        {/* Left */}
-        <div>
-          <div className='mr-anim-badge' style={{ fontFamily: MR.mono, display: 'inline-flex', gap: 8, alignItems: 'center', padding: '6px 10px', border: `1px solid ${MR.border}`, color: MR.dim, fontSize: 11, letterSpacing: 0.6 }}>
-            <span className="mr-blink" style={{ color: MR.up }}>●</span>
-            {memberCount}+ MEMBER · FUNDED CASES TIAP MINGGU
-          </div>
-          <h1 className='mr-hero-h1' style={{ fontSize: isMobile ? 36 : 84, lineHeight: isMobile ? 1.1 : 0.96, letterSpacing: isMobile ? -1 : -3, margin: '26px 0 24px', fontWeight: 700 } as React.CSSProperties}>
-            <span className='mr-anim-h1-1' style={{ display:'block' }}>Berhenti trading</span>
-            <span className='mr-anim-h1-2' style={{ display:'block', color: MR.dim }}>tanpa arah.</span>
-            <span className='mr-anim-h1-3' style={{ display:'block' }}>Mulai pahami</span>
-            <span className='mr-anim-h1-4' style={{ display:'block', color: MR.up }}>market structure.</span>
-          </h1>
-          <p className='mr-anim-desc' style={{ fontSize: 17, color: MR.dim, lineHeight: 1.55, maxWidth: 520, marginBottom: 36 }}>
-            Smart Money Concept yang kami gunakan langsung di funded account. Belajar membaca arah market lewat struktur yang jelas — dari trend, BOS, CHoCH, sampai validasi entry. Bukan sekadar entry karena feeling.
-          </p>
-          <div className='mr-anim-cta' style={{ display: 'flex', gap: 12, marginBottom: 40 }}>
-            <button onClick={() => window.location.href = '/signup'} style={{ fontFamily: MR.mono, background: MR.gold, color: '#181000', fontWeight: 700, padding: '16px 22px', letterSpacing: 0.4, fontSize: 13, border: 'none', cursor: 'pointer' }}>PILIH KELAS ▸</button>
-            <button onClick={() => document.getElementById('kurikulum')?.scrollIntoView({ behavior: 'smooth' })} style={{ fontFamily: MR.mono, border: `1px solid ${MR.borderHot}`, padding: '16px 22px', letterSpacing: 0.4, fontSize: 13, background: 'transparent', color: MR.text, cursor: 'pointer' }}>LIHAT KURIKULUM</button>
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(4, 1fr)', borderTop: `1px solid ${MR.border}` }}>
-            {[
-              { k: 'MEMBER AKTIF',  v: cMember.toString(),   d: `+${cMonthly} 30D`, up: true  },
-              { k: 'FUNDED LULUS',  v: cFunded.toString(),   d: '+5 30D',               up: true  },
-              { k: 'RATING KELAS',  v: '4.9',                    d: '/ 5.0',                up: null  },
-              { k: 'AKSES MATERI',  v: '∞',                      d: 'LIFETIME',             up: null  },
-            ].map((s, i) => (
-              <div key={i} className={`mr-anim-stat-${i}`} style={{ borderRight: i < 3 ? `1px solid ${MR.border}` : 0, padding: '18px 14px 14px 0' }}>
-                <div style={{ fontFamily: MR.mono, color: MR.dimmer, fontSize: 10, letterSpacing: 0.8 }}>{s.k}</div>
-                <div style={{ fontWeight: 700, fontSize: 32, marginTop: 6, letterSpacing: -1 }}>{s.v}</div>
-                <div style={{ fontFamily: MR.mono, fontSize: 10, color: s.up === true ? MR.up : MR.dim, marginTop: 2 }}>{s.up ? '▲ ' : ''}{s.d}</div>
-              </div>
-            ))}
-          </div>
+      <div style={{ position: 'relative', maxWidth: 900 }}>
+        <div className='mr-anim-badge' style={{ fontFamily: MR.mono, display: 'inline-flex', gap: 8, alignItems: 'center', padding: '6px 10px', border: `1px solid ${MR.border}`, color: MR.dim, fontSize: 11, letterSpacing: 0.6 }}>
+          <span className="mr-blink" style={{ color: MR.up }}>●</span>
+          {memberCount}+ MEMBER · FUNDED CASES TIAP MINGGU
         </div>
-
-        {/* Right — TradingView Live Chart */}
-        <div className='mr-anim-chart' style={{ height: 580 }}>
-          <TradingViewWidget />
+        <h1 className='mr-hero-h1' style={{ fontSize: isMobile ? 38 : 92, lineHeight: isMobile ? 1.1 : 0.93, letterSpacing: isMobile ? -1 : -4, margin: '26px 0 28px', fontWeight: 700 } as React.CSSProperties}>
+          <span className='mr-anim-h1-1' style={{ display:'block' }}>Berhenti trading</span>
+          <span className='mr-anim-h1-2' style={{ display:'block', color: MR.dim }}>tanpa arah.</span>
+          <span className='mr-anim-h1-3' style={{ display:'block' }}>Mulai pahami</span>
+          <span className='mr-anim-h1-4' style={{ display:'block', color: MR.up }}>market structure.</span>
+        </h1>
+        <p className='mr-anim-desc' style={{ fontSize: isMobile ? 15 : 18, color: MR.dim, lineHeight: 1.6, maxWidth: 620, marginBottom: 36 }}>
+          Smart Money Concept yang kami gunakan langsung di funded account. Belajar membaca arah market lewat struktur yang jelas — dari trend, BOS, CHoCH, sampai validasi entry. Bukan sekadar entry karena feeling.
+        </p>
+        <div className='mr-anim-cta' style={{ display: 'flex', gap: 12, marginBottom: 44, flexWrap: 'wrap' as const }}>
+          <button onClick={() => window.location.href = '/signup'} style={{ fontFamily: MR.mono, background: MR.gold, color: '#181000', fontWeight: 700, padding: '16px 28px', letterSpacing: 0.4, fontSize: 13, border: 'none', cursor: 'pointer' }}>PILIH KELAS ▸</button>
+          <button onClick={() => document.getElementById('kurikulum')?.scrollIntoView({ behavior: 'smooth' })} style={{ fontFamily: MR.mono, border: `1px solid ${MR.borderHot}`, padding: '16px 28px', letterSpacing: 0.4, fontSize: 13, background: 'transparent', color: MR.text, cursor: 'pointer' }}>LIHAT KURIKULUM</button>
         </div>
-
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(4, 1fr)', borderTop: `1px solid ${MR.border}`, maxWidth: 680 }}>
+          {[
+            { k: 'MEMBER AKTIF',  v: cMember.toString(),  d: `+${cMonthly} 30D`, up: true  },
+            { k: 'FUNDED LULUS',  v: cFunded.toString(),  d: '+5 30D',            up: true  },
+            { k: 'RATING KELAS',  v: '4.9',               d: '/ 5.0',             up: null  },
+            { k: 'AKSES MATERI',  v: '∞',                 d: 'LIFETIME',          up: null  },
+          ].map((s, i) => (
+            <div key={i} className={`mr-anim-stat-${i}`} style={{ borderRight: i < 3 ? `1px solid ${MR.border}` : 0, padding: '18px 14px 14px 0' }}>
+              <div style={{ fontFamily: MR.mono, color: MR.dimmer, fontSize: 10, letterSpacing: 0.8 }}>{s.k}</div>
+              <div style={{ fontWeight: 700, fontSize: 32, marginTop: 6, letterSpacing: -1 }}>{s.v}</div>
+              <div style={{ fontFamily: MR.mono, fontSize: 10, color: s.up === true ? MR.up : MR.dim, marginTop: 2 }}>{s.up ? '▲ ' : ''}{s.d}</div>
+            </div>
+          ))}
+        </div>
       </div>
     </section>
   );
@@ -429,6 +420,109 @@ function Curriculum() {
   );
 }
 
+
+function GallerySlider() {
+  const [images, setImages] = React.useState<{url: string; caption?: string}[]>([]);
+  const [cur, setCur] = React.useState(0);
+  const [paused, setPaused] = React.useState(false);
+  const [isMobile, setIsMobile] = React.useState(() => window.matchMedia('(max-width: 767px)').matches);
+
+  React.useEffect(() => {
+    const mq = window.matchMedia('(max-width: 767px)');
+    const h = (e: MediaQueryListEvent) => setIsMobile(e.matches);
+    mq.addEventListener('change', h);
+    return () => mq.removeEventListener('change', h);
+  }, []);
+
+  React.useEffect(() => {
+    supabase.from('landing_gallery').select('url,caption,urutan').eq('active', true).order('urutan').then(({ data }) => {
+      if (data && data.length > 0) setImages(data);
+    });
+  }, []);
+
+  React.useEffect(() => {
+    if (paused || images.length <= 1) return;
+    const t = setInterval(() => setCur(c => (c + 1) % images.length), 2000);
+    return () => clearInterval(t);
+  }, [paused, images.length]);
+
+  if (images.length === 0) return null;
+
+  const prev = () => setCur(c => (c - 1 + images.length) % images.length);
+  const next = () => setCur(c => (c + 1) % images.length);
+
+  return (
+    <section style={{ borderBottom: `1px solid ${MR.border}`, background: '#060606' }}>
+      <div style={{ padding: isMobile ? '32px 20px 20px' : '48px 40px 28px' }}>
+        <div style={{ fontFamily: MR.mono, color: MR.dim, fontSize: 11, letterSpacing: 0.8, marginBottom: 8 }}>// GALERI</div>
+        <h2 style={{ fontSize: isMobile ? 22 : 34, fontWeight: 700, margin: 0, letterSpacing: -0.5 }}>Hasil Nyata Member Kami</h2>
+      </div>
+
+      <div
+        style={{ position: 'relative', userSelect: 'none' as const }}
+        onMouseEnter={() => setPaused(true)}
+        onMouseLeave={() => setPaused(false)}
+      >
+        {/* Slider track */}
+        <div style={{ overflow: 'hidden' }}>
+          <div style={{
+            display: 'flex',
+            transition: 'transform 0.55s cubic-bezier(0.25,0.46,0.45,0.94)',
+            transform: `translateX(-${cur * 100}%)`,
+            willChange: 'transform',
+          }}>
+            {images.map((img, i) => (
+              <div key={i} style={{ flexShrink: 0, width: '100%', position: 'relative' }}>
+                <img
+                  src={img.url}
+                  alt={img.caption || `galeri-${i + 1}`}
+                  style={{ width: '100%', height: isMobile ? 240 : 500, objectFit: 'cover', display: 'block' }}
+                />
+                {img.caption && (
+                  <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'linear-gradient(transparent,rgba(0,0,0,0.72))', padding: '32px 28px 18px', color: '#e7e5e4', fontSize: 14, lineHeight: 1.5 }}>
+                    {img.caption}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Arrows */}
+        {images.length > 1 && <>
+          <button onClick={prev}
+            style={{ position: 'absolute', left: isMobile ? 8 : 20, top: '50%', transform: 'translateY(-50%)', width: 44, height: 44, borderRadius: '50%', background: 'rgba(6,6,6,0.88)', border: '1px solid #3a3a3a', color: '#e7e5e4', fontSize: 22, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(8px)', zIndex: 2, transition: 'border-color 0.2s' }}
+            onMouseEnter={e => (e.currentTarget as HTMLElement).style.borderColor = MR.gold}
+            onMouseLeave={e => (e.currentTarget as HTMLElement).style.borderColor = '#3a3a3a'}
+          >‹</button>
+          <button onClick={next}
+            style={{ position: 'absolute', right: isMobile ? 8 : 20, top: '50%', transform: 'translateY(-50%)', width: 44, height: 44, borderRadius: '50%', background: 'rgba(6,6,6,0.88)', border: '1px solid #3a3a3a', color: '#e7e5e4', fontSize: 22, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(8px)', zIndex: 2, transition: 'border-color 0.2s' }}
+            onMouseEnter={e => (e.currentTarget as HTMLElement).style.borderColor = MR.gold}
+            onMouseLeave={e => (e.currentTarget as HTMLElement).style.borderColor = '#3a3a3a'}
+          >›</button>
+        </>}
+
+        {/* Counter badge */}
+        {images.length > 1 && (
+          <div style={{ position: 'absolute', bottom: 16, right: 20, fontFamily: MR.mono, fontSize: 10, color: '#aaa', background: 'rgba(0,0,0,0.6)', padding: '3px 9px', borderRadius: 12, backdropFilter: 'blur(4px)' }}>
+            {cur + 1} / {images.length}
+          </div>
+        )}
+      </div>
+
+      {/* Dot indicators */}
+      {images.length > 1 && (
+        <div style={{ display: 'flex', justifyContent: 'center', gap: 6, padding: '18px 0 28px' }}>
+          {images.map((_, i) => (
+            <button key={i} onClick={() => setCur(i)}
+              style={{ width: cur === i ? 28 : 7, height: 7, borderRadius: 4, background: cur === i ? MR.gold : '#2a2a2a', border: 'none', cursor: 'pointer', transition: 'all 0.35s cubic-bezier(0.34,1.56,0.64,1)', padding: 0 }}
+            />
+          ))}
+        </div>
+      )}
+    </section>
+  );
+}
 
 function Testimonials({ testimonials }: { testimonials: Testimonial[] }) {
   const [isMobile, setIsMobile] = React.useState(() => window.matchMedia('(max-width: 767px)').matches);
@@ -946,9 +1040,10 @@ export default function LandingPage() {
         fundedCount={stats?.fundedCount ?? 0}
         newThisMonth={stats?.newMembersThisMonth ?? 0}
       />
-      {testimonials.length > 0 && <Testimonials testimonials={testimonials} />}
       <Manifesto />
       <Curriculum />
+      <GallerySlider />
+      {testimonials.length > 0 && <Testimonials testimonials={testimonials} />}
       <Mentor />
       {tiers.length > 0 && <Pricing tiers={tiers} />}
       <FaqSection />

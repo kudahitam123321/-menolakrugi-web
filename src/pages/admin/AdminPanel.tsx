@@ -38,8 +38,9 @@ const SIDEBAR_SECTIONS = [
     { id: 'broadcast',  label: 'Pesan Broadcast', icon: '📡' },
   ]},
   { h: 'SYSTEM', items: [
-    { id: 'log',        label: 'Log Activity', icon: '📜' },
-    { id: 'pengaturan', label: 'Pengaturan',   icon: '⚙' },
+    { id: 'galeri',     label: 'Galeri Landing', icon: '🖼' },
+    { id: 'log',        label: 'Log Activity',   icon: '📜' },
+    { id: 'pengaturan', label: 'Pengaturan',     icon: '⚙' },
   ]},
 ];
 
@@ -340,6 +341,123 @@ function ApprovalsTab({ adminName }: { adminName: string }) {
             </div>
           ))}
           {klaim.length === 0 && <div style={{ fontFamily:C.mono, color:C.muted, fontSize:12, padding:'32px 0', textAlign:'center' as const }}>Belum ada klaim partnership.</div>}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── GALLERY ADMIN TAB ─────────────────────────────────────────────────────────
+function GalleryAdminTab({ adminName }: { adminName: string }) {
+  const [images, setImages]     = useState<any[]>([]);
+  const [loading, setLoading]   = useState(true);
+  const [newUrl, setNewUrl]     = useState('');
+  const [newCaption, setNewCaption] = useState('');
+  const [saving, setSaving]     = useState(false);
+
+  useEffect(() => { load(); }, []);
+
+  async function load() {
+    setLoading(true);
+    const { data } = await supabase.from('landing_gallery').select('*').order('urutan');
+    setImages(data || []);
+    setLoading(false);
+  }
+
+  async function addImage() {
+    if (!newUrl.trim()) return;
+    setSaving(true);
+    const maxUrutan = images.length > 0 ? Math.max(...images.map((x:any) => x.urutan || 0)) + 1 : 1;
+    const { data, error } = await (supabase.from('landing_gallery').insert({ url: newUrl.trim(), caption: newCaption.trim() || null, urutan: maxUrutan, active: true }).select().single() as any);
+    if (!error && data) {
+      setImages(l => [...l, data]);
+      setNewUrl(''); setNewCaption('');
+      await logActivity('gallery_add', `Tambah gambar galeri: ${newUrl.trim()}`, adminName);
+    } else if (error) {
+      alert(`Gagal: ${error.message}`);
+    }
+    setSaving(false);
+  }
+
+  async function toggleActive(id: string, current: boolean) {
+    await supabase.from('landing_gallery').update({ active: !current }).eq('id', id);
+    setImages(l => l.map((x:any) => x.id === id ? { ...x, active: !current } : x));
+  }
+
+  async function deleteImage(id: string) {
+    if (!confirm('Hapus gambar ini?')) return;
+    await supabase.from('landing_gallery').delete().eq('id', id);
+    setImages(l => l.filter((x:any) => x.id !== id));
+    await logActivity('gallery_delete', `Hapus gambar galeri (id: ${id})`, adminName);
+  }
+
+  async function swap(idx: number, dir: -1 | 1) {
+    const other = idx + dir;
+    if (other < 0 || other >= images.length) return;
+    const a = images[idx], b = images[other];
+    await Promise.all([
+      supabase.from('landing_gallery').update({ urutan: b.urutan }).eq('id', a.id),
+      supabase.from('landing_gallery').update({ urutan: a.urutan }).eq('id', b.id),
+    ]);
+    const next = [...images];
+    next[idx] = { ...a, urutan: b.urutan };
+    next[other] = { ...b, urutan: a.urutan };
+    setImages(next.sort((x:any, y:any) => x.urutan - y.urutan));
+  }
+
+  return (
+    <div style={{ padding: 24 }}>
+      <div style={{ fontFamily:C.mono, color:G.gold, fontSize:10, letterSpacing:2, marginBottom:8 }}>// GALERI LANDING PAGE</div>
+      <h2 style={{ fontSize:20, fontWeight:700, marginBottom:6 }}>Manajemen Galeri</h2>
+      <p style={{ fontFamily:C.mono, fontSize:11, color:C.muted, marginBottom:20 }}>Gambar ditampilkan sebagai slider otomatis di landing page, di atas seksi Ulasan.</p>
+
+      {/* Add form */}
+      <div style={{ background:'var(--mr-panel)', border:`1px solid var(--mr-border)`, borderRadius:10, padding:16, marginBottom:20 }}>
+        <div style={{ fontFamily:C.mono, fontSize:11, color:C.dim, marginBottom:10 }}>+ Tambah Gambar Baru</div>
+        <input value={newUrl} onChange={e => setNewUrl(e.target.value)} placeholder="URL gambar (https://...)"
+          style={{ width:'100%', background:'var(--mr-bg)', border:`1px solid var(--mr-border)`, color:C.text, padding:'8px 12px', borderRadius:6, fontFamily:C.mono, fontSize:12, outline:'none', boxSizing:'border-box' as const, marginBottom:8 }}
+        />
+        <input value={newCaption} onChange={e => setNewCaption(e.target.value)} placeholder="Keterangan / caption (opsional)"
+          style={{ width:'100%', background:'var(--mr-bg)', border:`1px solid var(--mr-border)`, color:C.text, padding:'8px 12px', borderRadius:6, fontFamily:C.mono, fontSize:12, outline:'none', boxSizing:'border-box' as const, marginBottom:10 }}
+        />
+        <button onClick={addImage} disabled={saving || !newUrl.trim()}
+          style={{ background:'var(--mr-tint-gold)', border:`1px solid ${G.gold}`, color:G.gold, fontFamily:C.mono, fontSize:11, padding:'8px 20px', borderRadius:6, cursor:'pointer', fontWeight:700, opacity:(!newUrl.trim()||saving)?0.5:1 }}>
+          {saving ? 'Menyimpan...' : '+ Tambah Gambar'}
+        </button>
+      </div>
+
+      {/* Image list */}
+      {loading ? (
+        <div style={{ fontFamily:C.mono, color:C.muted, fontSize:12, padding:'32px 0', textAlign:'center' as const }}>Memuat...</div>
+      ) : images.length === 0 ? (
+        <div style={{ fontFamily:C.mono, color:C.muted, fontSize:12, padding:'32px 0', textAlign:'center' as const }}>
+          Belum ada gambar. Tambahkan URL di atas.<br/>
+          <span style={{ fontSize:10, marginTop:8, display:'block' }}>Pastikan tabel <code>landing_gallery</code> sudah dibuat di Supabase.</span>
+        </div>
+      ) : (
+        <div style={{ display:'flex', flexDirection:'column' as const, gap:8 }}>
+          {images.map((img:any, idx:number) => (
+            <div key={img.id} style={{ background:'var(--mr-panel)', border:`1px solid ${img.active ? G.gold+'44' : 'var(--mr-border)'}`, borderRadius:10, padding:12, display:'flex', alignItems:'center', gap:12 }}>
+              <img src={img.url} alt="preview"
+                style={{ width:80, height:56, objectFit:'cover', borderRadius:6, flexShrink:0, background:'#111' }}
+                onError={e => { (e.target as HTMLImageElement).style.opacity='0.3'; }}
+              />
+              <div style={{ flex:1, minWidth:0 }}>
+                <div style={{ fontFamily:C.mono, fontSize:11, color:C.text, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' as const }}>{img.url}</div>
+                {img.caption && <div style={{ fontFamily:C.mono, fontSize:10, color:C.dim, marginTop:2 }}>{img.caption}</div>}
+                <div style={{ fontFamily:C.mono, fontSize:9, color:C.muted, marginTop:3 }}>Urutan: {img.urutan}</div>
+              </div>
+              <div style={{ display:'flex', gap:4, alignItems:'center', flexShrink:0 }}>
+                <button onClick={() => swap(idx, -1)} disabled={idx===0} style={{ background:'transparent', border:`1px solid ${C.border}`, color:idx===0?'#333':C.dim, fontFamily:C.mono, fontSize:12, width:28, height:28, borderRadius:5, cursor:idx===0?'default':'pointer' }}>↑</button>
+                <button onClick={() => swap(idx, 1)} disabled={idx===images.length-1} style={{ background:'transparent', border:`1px solid ${C.border}`, color:idx===images.length-1?'#333':C.dim, fontFamily:C.mono, fontSize:12, width:28, height:28, borderRadius:5, cursor:idx===images.length-1?'default':'pointer' }}>↓</button>
+                <button onClick={() => toggleActive(img.id, img.active)}
+                  style={{ background:img.active?'var(--mr-tint-green)':'transparent', border:`1px solid ${img.active?C.up:C.border}`, color:img.active?C.up:C.muted, fontFamily:C.mono, fontSize:9, padding:'4px 8px', borderRadius:5, cursor:'pointer', fontWeight:700 }}>
+                  {img.active ? 'AKTIF' : 'NONAKTIF'}
+                </button>
+                <button onClick={() => deleteImage(img.id)} style={{ background:'var(--mr-tint-red)', border:`1px solid ${C.down}`, color:C.down, fontFamily:C.mono, fontSize:11, width:28, height:28, borderRadius:5, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>✕</button>
+              </div>
+            </div>
+          ))}
         </div>
       )}
     </div>
@@ -816,6 +934,8 @@ export default function AdminPanel() {
         <main style={{ flex: 1, overflowY: 'auto', background: 'radial-gradient(ellipse at 20% 0%, #0a0a1400 0%, transparent 60%), radial-gradient(ellipse at 80% 100%, #0a1a0a08 0%, transparent 50%)' }}>
           {active === 'approvals' ? (
             <ApprovalsTab adminName={adminData.username||'admin'} />
+          ) : active === 'galeri' ? (
+            <GalleryAdminTab adminName={adminData.username||'admin'} />
           ) : active === 'log' ? (
             <LogActivityTab />
           ) : active === 'trading-plan' ? (
