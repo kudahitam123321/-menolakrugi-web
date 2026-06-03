@@ -6,10 +6,10 @@ import { supabase } from '../lib/supabase';
 const TIERS = ['SMC Trial', 'SMC Bronze', 'SMC Gold Mentorship', 'SMC Platinum 1 on 1'];
 const RANK_IMGS: Record<string, string> = {
   '1': '/rank_1.png', '2': '/rank_2.png', '3': '/rank_3.png',
-  '4-10': '/rank_4-10.png', '11+': '/11_sampai_seterusnya.png',
+  '4-10': '/rank_4-10.png', '11-20': '/rank_11-20.png', '21+': '/rank_21-sampai_seterusnya.png',
 };
 function RankImg({ rank, size = 28 }: { rank: number; size?: number }) {
-  const src = rank === 1 ? RANK_IMGS['1'] : rank === 2 ? RANK_IMGS['2'] : rank === 3 ? RANK_IMGS['3'] : rank <= 10 ? RANK_IMGS['4-10'] : RANK_IMGS['11+'];
+  const src = rank === 1 ? RANK_IMGS['1'] : rank === 2 ? RANK_IMGS['2'] : rank === 3 ? RANK_IMGS['3'] : rank <= 10 ? RANK_IMGS['4-10'] : rank <= 20 ? RANK_IMGS['11-20'] : RANK_IMGS['21+'];
   return <img src={src} alt={`rank-${rank}`} style={{ width: size, height: size, objectFit: 'contain', flexShrink: 0 }} />;
 }
 

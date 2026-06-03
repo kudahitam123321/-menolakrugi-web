@@ -12,11 +12,12 @@ const G = { gold: 'var(--mr-gold)' };
 const MEDAL_COLORS = ['#a78bfa', '#f97316', '#94a3b8'];
 const MEDAL_ICONS  = ['🥇', '🥈', '🥉']; // fallback only
 const RANK_IMGS: Record<string, string> = {
-  '1':   '/rank_1.png',
-  '2':   '/rank_2.png',
-  '3':   '/rank_3.png',
-  '4-10':'/rank_4-10.png',
-  '11+': '/11_sampai_seterusnya.png',
+  '1':    '/rank_1.png',
+  '2':    '/rank_2.png',
+  '3':    '/rank_3.png',
+  '4-10': '/rank_4-10.png',
+  '11-20':'/rank_11-20.png',
+  '21+':  '/rank_21-sampai_seterusnya.png',
 };
 const PODIUM_BG    = ['#1c1200', '#12161c', '#1a0f00'];
 function RankImg({ rank, size = 32 }: { rank: number; size?: number }) {
@@ -24,7 +25,8 @@ function RankImg({ rank, size = 32 }: { rank: number; size?: number }) {
             : rank === 2 ? RANK_IMGS['2']
             : rank === 3 ? RANK_IMGS['3']
             : rank <= 10 ? RANK_IMGS['4-10']
-            : RANK_IMGS['11+'];
+            : rank <= 20 ? RANK_IMGS['11-20']
+            : RANK_IMGS['21+'];
   return <img src={src} alt={`rank-${rank}`} style={{ width: size, height: size, objectFit: 'contain', flexShrink: 0 }} />;
 }
 

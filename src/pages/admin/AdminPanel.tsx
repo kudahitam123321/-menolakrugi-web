@@ -7,10 +7,10 @@ const G = { gold: 'var(--mr-gold)', gold2: 'var(--mr-gold2)', cyan: '#00d4ff', c
 const C = { bg: 'var(--mr-bg)', sidebar: 'var(--mr-sidebar)', panel: 'var(--mr-panel)', border: 'var(--mr-border)', border2: 'var(--mr-border2)', dim: 'var(--mr-dim)', text: 'var(--mr-text)', muted: 'var(--mr-muted)', up: 'var(--mr-up)', down: 'var(--mr-down)', mono: '"Geist Mono",monospace', sans: '"Geist",system-ui,sans-serif' };
 const RANK_IMGS: Record<string, string> = {
   '1': '/rank_1.png', '2': '/rank_2.png', '3': '/rank_3.png',
-  '4-10': '/rank_4-10.png', '11+': '/11_sampai_seterusnya.png',
+  '4-10': '/rank_4-10.png', '11-20': '/rank_11-20.png', '21+': '/rank_21-sampai_seterusnya.png',
 };
 function RankImg({ rank, size = 28 }: { rank: number; size?: number }) {
-  const src = rank === 1 ? RANK_IMGS['1'] : rank === 2 ? RANK_IMGS['2'] : rank === 3 ? RANK_IMGS['3'] : rank <= 10 ? RANK_IMGS['4-10'] : RANK_IMGS['11+'];
+  const src = rank === 1 ? RANK_IMGS['1'] : rank === 2 ? RANK_IMGS['2'] : rank === 3 ? RANK_IMGS['3'] : rank <= 10 ? RANK_IMGS['4-10'] : rank <= 20 ? RANK_IMGS['11-20'] : RANK_IMGS['21+'];
   return <img src={src} alt={`rank-${rank}`} style={{ width: size, height: size, objectFit: 'contain', flexShrink: 0 }} />;
 }
 
