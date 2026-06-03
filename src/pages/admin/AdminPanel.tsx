@@ -349,12 +349,12 @@ function ApprovalsTab({ adminName }: { adminName: string }) {
 
 // ── GALLERY ADMIN TAB ─────────────────────────────────────────────────────────
 function GalleryAdminTab({ adminName }: { adminName: string }) {
-  const [images, setImages]         = useState<any[]>([]);
-  const [loading, setLoading]       = useState(true);
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [newCaption, setNewCaption]  = useState('');
-  const [saving, setSaving]          = useState(false);
-  const [uploadMsg, setUploadMsg]    = useState('');
+  const [images, setImages]           = useState<any[]>([]);
+  const [loading, setLoading]         = useState(true);
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [newCaption, setNewCaption]   = useState('');
+  const [saving, setSaving]           = useState(false);
+  const [uploadProgress, setUploadProgress] = useState('');
   const fileRef = React.useRef<HTMLInputElement>(null);
 
   useEffect(() => { load(); }, []);
@@ -366,40 +366,55 @@ function GalleryAdminTab({ adminName }: { adminName: string }) {
     setLoading(false);
   }
 
-  async function addImage() {
-    if (!selectedFile) return;
+  function clearForm() {
+    setSelectedFiles([]);
+    setNewCaption('');
+    setUploadProgress('');
+    if (fileRef.current) fileRef.current.value = '';
+  }
+
+  async function addImages() {
+    if (selectedFiles.length === 0) return;
     setSaving(true);
-    setUploadMsg('Mengupload gambar...');
 
-    const ext = selectedFile.name.split('.').pop();
-    const fileName = `gallery_${Date.now()}.${ext}`;
+    const failed: string[] = [];
+    let currentMax = images.length > 0 ? Math.max(...images.map((x:any) => x.urutan || 0)) : 0;
+    const added: any[] = [];
 
-    const { error: storageErr } = await supabase.storage
-      .from('gallery')
-      .upload(fileName, selectedFile, { cacheControl: '3600', upsert: false });
+    for (let i = 0; i < selectedFiles.length; i++) {
+      const file = selectedFiles[i];
+      setUploadProgress(`Mengupload ${i + 1} / ${selectedFiles.length}: ${file.name}`);
 
-    if (storageErr) {
-      alert(`Gagal upload: ${storageErr.message}\n\nPastikan bucket "gallery" sudah dibuat di Supabase Storage dengan akses public.`);
-      setSaving(false); setUploadMsg(''); return;
+      const ext = file.name.split('.').pop();
+      const fileName = `gallery_${Date.now()}_${i}.${ext}`;
+
+      const { error: storageErr } = await supabase.storage
+        .from('gallery')
+        .upload(fileName, file, { cacheControl: '3600', upsert: false });
+
+      if (storageErr) {
+        failed.push(file.name);
+        continue;
+      }
+
+      const { data: urlData } = supabase.storage.from('gallery').getPublicUrl(fileName);
+      currentMax += 1;
+
+      const { data, error } = await (supabase.from('landing_gallery')
+        .insert({ url: urlData.publicUrl, caption: newCaption.trim() || null, urutan: currentMax, active: true, file_name: fileName })
+        .select().single() as any);
+
+      if (!error && data) {
+        added.push(data);
+        await logActivity('gallery_add', `Tambah gambar galeri: ${fileName}`, adminName);
+      } else if (error) {
+        failed.push(file.name);
+      }
     }
 
-    const { data: urlData } = supabase.storage.from('gallery').getPublicUrl(fileName);
-    const publicUrl = urlData.publicUrl;
-
-    const maxUrutan = images.length > 0 ? Math.max(...images.map((x:any) => x.urutan || 0)) + 1 : 1;
-    const { data, error } = await (supabase.from('landing_gallery')
-      .insert({ url: publicUrl, caption: newCaption.trim() || null, urutan: maxUrutan, active: true, file_name: fileName })
-      .select().single() as any);
-
-    if (!error && data) {
-      setImages(l => [...l, data]);
-      setSelectedFile(null); setNewCaption(''); setUploadMsg('');
-      if (fileRef.current) fileRef.current.value = '';
-      await logActivity('gallery_add', `Tambah gambar galeri: ${fileName}`, adminName);
-    } else if (error) {
-      alert(`Gagal simpan ke DB: ${error.message}`);
-      setUploadMsg('');
-    }
+    if (added.length > 0) setImages(l => [...l, ...added]);
+    if (failed.length > 0) alert(`Gagal upload ${failed.length} gambar:\n${failed.join('\n')}`);
+    clearForm();
     setSaving(false);
   }
 
@@ -441,37 +456,51 @@ function GalleryAdminTab({ adminName }: { adminName: string }) {
         <div style={{ fontFamily:C.mono, fontSize:11, color:C.dim, marginBottom:10 }}>+ Upload Gambar Baru</div>
 
         {/* File picker */}
-        <label style={{ display:'flex', alignItems:'center', gap:10, background:'var(--mr-bg)', border:`1px dashed ${selectedFile ? G.gold : 'var(--mr-border)'}`, borderRadius:6, padding:'10px 14px', cursor:'pointer', marginBottom:8 }}>
+        <label style={{ display:'flex', alignItems:'center', gap:10, background:'var(--mr-bg)', border:`1px dashed ${selectedFiles.length > 0 ? G.gold : 'var(--mr-border)'}`, borderRadius:6, padding:'10px 14px', cursor:'pointer', marginBottom:8 }}>
           <span style={{ fontSize:18 }}>🖼</span>
           <div style={{ flex:1, minWidth:0 }}>
-            {selectedFile ? (
-              <span style={{ fontFamily:C.mono, fontSize:12, color:G.gold }}>{selectedFile.name}</span>
-            ) : (
-              <span style={{ fontFamily:C.mono, fontSize:12, color:C.muted }}>Klik untuk pilih gambar (JPG, PNG, WebP...)</span>
+            {selectedFiles.length === 0 && (
+              <span style={{ fontFamily:C.mono, fontSize:12, color:C.muted }}>Klik untuk pilih gambar — bisa pilih banyak sekaligus (JPG, PNG, WebP...)</span>
+            )}
+            {selectedFiles.length === 1 && (
+              <span style={{ fontFamily:C.mono, fontSize:12, color:G.gold }}>{selectedFiles[0].name}</span>
+            )}
+            {selectedFiles.length > 1 && (
+              <span style={{ fontFamily:C.mono, fontSize:12, color:G.gold }}>{selectedFiles.length} gambar dipilih</span>
             )}
           </div>
-          <input ref={fileRef} type="file" accept="image/*" style={{ display:'none' }}
-            onChange={e => setSelectedFile(e.target.files?.[0] || null)}
+          <input ref={fileRef} type="file" accept="image/*" multiple style={{ display:'none' }}
+            onChange={e => setSelectedFiles(Array.from(e.target.files || []))}
           />
         </label>
 
+        {/* File list preview */}
+        {selectedFiles.length > 1 && (
+          <div style={{ background:'var(--mr-bg)', border:`1px solid var(--mr-border)`, borderRadius:6, padding:'8px 12px', marginBottom:8, maxHeight:120, overflowY:'auto' as const }}>
+            {selectedFiles.map((f, i) => (
+              <div key={i} style={{ fontFamily:C.mono, fontSize:10, color:C.dim, padding:'2px 0', borderBottom: i < selectedFiles.length-1 ? `1px solid var(--mr-border)` : 'none' }}>
+                {i + 1}. {f.name} <span style={{ color:C.muted }}>({(f.size/1024).toFixed(0)} KB)</span>
+              </div>
+            ))}
+          </div>
+        )}
+
         <input value={newCaption} onChange={e => setNewCaption(e.target.value)}
-          placeholder="Keterangan / caption (opsional)"
+          placeholder={selectedFiles.length > 1 ? 'Caption untuk semua gambar (opsional)' : 'Keterangan / caption (opsional)'}
           style={{ width:'100%', background:'var(--mr-bg)', border:`1px solid var(--mr-border)`, color:C.text, padding:'8px 12px', borderRadius:6, fontFamily:C.mono, fontSize:12, outline:'none', boxSizing:'border-box' as const, marginBottom:10 }}
         />
 
         <div style={{ display:'flex', alignItems:'center', gap:12 }}>
-          <button onClick={addImage} disabled={saving || !selectedFile}
-            style={{ background:'var(--mr-tint-gold)', border:`1px solid ${G.gold}`, color:G.gold, fontFamily:C.mono, fontSize:11, padding:'8px 20px', borderRadius:6, cursor:'pointer', fontWeight:700, opacity:(!selectedFile||saving)?0.5:1 }}>
-            {saving ? '↑ Mengupload...' : '↑ Upload & Simpan'}
+          <button onClick={addImages} disabled={saving || selectedFiles.length === 0}
+            style={{ background:'var(--mr-tint-gold)', border:`1px solid ${G.gold}`, color:G.gold, fontFamily:C.mono, fontSize:11, padding:'8px 20px', borderRadius:6, cursor:'pointer', fontWeight:700, opacity:(selectedFiles.length === 0 || saving)?0.5:1 }}>
+            {saving ? `↑ ${uploadProgress || 'Mengupload...'}` : `↑ Upload${selectedFiles.length > 1 ? ` ${selectedFiles.length} Gambar` : ' & Simpan'}`}
           </button>
-          {selectedFile && !saving && (
-            <button onClick={() => { setSelectedFile(null); if (fileRef.current) fileRef.current.value = ''; }}
+          {selectedFiles.length > 0 && !saving && (
+            <button onClick={clearForm}
               style={{ background:'transparent', border:`1px solid ${C.border}`, color:C.muted, fontFamily:C.mono, fontSize:11, padding:'8px 12px', borderRadius:6, cursor:'pointer' }}>
               Batal
             </button>
           )}
-          {uploadMsg && <span style={{ fontFamily:C.mono, fontSize:11, color:G.gold }}>{uploadMsg}</span>}
         </div>
       </div>
 

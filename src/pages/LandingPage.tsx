@@ -271,48 +271,259 @@ function useCounter(target: number, duration = 1400) {
   return val;
 }
 
-function Hero({ memberCount, fundedCount, newThisMonth }: { memberCount: number; fundedCount: number; newThisMonth: number }) {
+function Hero() {
   const [isMobile, setIsMobile] = React.useState(() => window.matchMedia('(max-width: 767px)').matches);
   React.useEffect(() => { const mq = window.matchMedia('(max-width: 767px)'); const h = (e: MediaQueryListEvent) => setIsMobile(e.matches); mq.addEventListener('change',h); return ()=>mq.removeEventListener('change',h); }, []);
-  
-  const cMember  = useCounter(memberCount, 1600);
-  const cFunded  = useCounter(fundedCount, 1200);
-  const cMonthly = useCounter(newThisMonth, 1000);
 
   return (
-    <section id="kelas" style={{ position: 'relative', padding: isMobile ? '48px 20px 40px' : '72px 40px 56px', borderBottom: `1px solid ${MR.border}` }}>
-      <div style={{ position: 'absolute', inset: 0, opacity: 0.5, ...CANDLE_GRID_STYLE }} />
+    <section id="kelas" style={{ position: 'relative', padding: isMobile ? '56px 20px 64px' : '88px 40px 96px' }}>
+      <div style={{ position: 'absolute', inset: 0, opacity: 0.4, ...CANDLE_GRID_STYLE }} />
+      <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 120, background: 'linear-gradient(transparent, var(--mr-bg))', pointerEvents: 'none' }} />
       <div style={{ position: 'relative', maxWidth: 900 }}>
-        <div className='mr-anim-badge' style={{ fontFamily: MR.mono, display: 'inline-flex', gap: 8, alignItems: 'center', padding: '6px 10px', border: `1px solid ${MR.border}`, color: MR.dim, fontSize: 11, letterSpacing: 0.6 }}>
+        <div className='mr-anim-badge' style={{ fontFamily: MR.mono, display: 'inline-flex', gap: 8, alignItems: 'center', padding: '6px 10px', border: `1px solid ${MR.border}`, color: MR.dim, fontSize: 11, letterSpacing: 0.6, marginBottom: 28 }}>
           <span className="mr-blink" style={{ color: MR.up }}>●</span>
-          {memberCount}+ MEMBER · FUNDED CASES TIAP MINGGU
+          LIVE · SMART MONEY CONCEPT EDUCATION PLATFORM
         </div>
-        <h1 className='mr-hero-h1' style={{ fontSize: isMobile ? 38 : 92, lineHeight: isMobile ? 1.1 : 0.93, letterSpacing: isMobile ? -1 : -4, margin: '26px 0 28px', fontWeight: 700 } as React.CSSProperties}>
+        <h1 className='mr-hero-h1' style={{ fontSize: isMobile ? 38 : 96, lineHeight: isMobile ? 1.1 : 0.92, letterSpacing: isMobile ? -1 : -4.5, margin: '0 0 32px', fontWeight: 700 } as React.CSSProperties}>
           <span className='mr-anim-h1-1' style={{ display:'block' }}>Berhenti trading</span>
           <span className='mr-anim-h1-2' style={{ display:'block', color: MR.dim }}>tanpa arah.</span>
           <span className='mr-anim-h1-3' style={{ display:'block' }}>Mulai pahami</span>
           <span className='mr-anim-h1-4' style={{ display:'block', color: MR.up }}>market structure.</span>
         </h1>
-        <p className='mr-anim-desc' style={{ fontSize: isMobile ? 15 : 18, color: MR.dim, lineHeight: 1.6, maxWidth: 620, marginBottom: 36 }}>
+        <p className='mr-anim-desc' style={{ fontSize: isMobile ? 15 : 18, color: MR.dim, lineHeight: 1.65, maxWidth: 600, marginBottom: 40 }}>
           Smart Money Concept yang kami gunakan langsung di funded account. Belajar membaca arah market lewat struktur yang jelas — dari trend, BOS, CHoCH, sampai validasi entry. Bukan sekadar entry karena feeling.
         </p>
-        <div className='mr-anim-cta' style={{ display: 'flex', gap: 12, marginBottom: 44, flexWrap: 'wrap' as const }}>
-          <button onClick={() => window.location.href = '/signup'} style={{ fontFamily: MR.mono, background: MR.gold, color: '#181000', fontWeight: 700, padding: '16px 28px', letterSpacing: 0.4, fontSize: 13, border: 'none', cursor: 'pointer' }}>PILIH KELAS ▸</button>
+        <div className='mr-anim-cta' style={{ display: 'flex', gap: 12, flexWrap: 'wrap' as const }}>
+          <button onClick={() => window.location.href = '/signup'} style={{ fontFamily: MR.mono, background: MR.gold, color: '#fff', fontWeight: 700, padding: '16px 32px', letterSpacing: 0.4, fontSize: 13, border: 'none', cursor: 'pointer' }}>PILIH KELAS ▸</button>
           <button onClick={() => document.getElementById('kurikulum')?.scrollIntoView({ behavior: 'smooth' })} style={{ fontFamily: MR.mono, border: `1px solid ${MR.borderHot}`, padding: '16px 28px', letterSpacing: 0.4, fontSize: 13, background: 'transparent', color: MR.text, cursor: 'pointer' }}>LIHAT KURIKULUM</button>
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(4, 1fr)', borderTop: `1px solid ${MR.border}`, maxWidth: 680 }}>
-          {[
-            { k: 'MEMBER AKTIF',  v: cMember.toString(),  d: `+${cMonthly} 30D`, up: true  },
-            { k: 'FUNDED LULUS',  v: cFunded.toString(),  d: '+5 30D',            up: true  },
-            { k: 'RATING KELAS',  v: '4.9',               d: '/ 5.0',             up: null  },
-            { k: 'AKSES MATERI',  v: '∞',                 d: 'LIFETIME',          up: null  },
-          ].map((s, i) => (
-            <div key={i} className={`mr-anim-stat-${i}`} style={{ borderRight: i < 3 ? `1px solid ${MR.border}` : 0, padding: '18px 14px 14px 0' }}>
-              <div style={{ fontFamily: MR.mono, color: MR.dimmer, fontSize: 10, letterSpacing: 0.8 }}>{s.k}</div>
-              <div style={{ fontWeight: 700, fontSize: 32, marginTop: 6, letterSpacing: -1 }}>{s.v}</div>
-              <div style={{ fontFamily: MR.mono, fontSize: 10, color: s.up === true ? MR.up : MR.dim, marginTop: 2 }}>{s.up ? '▲ ' : ''}{s.d}</div>
+      </div>
+    </section>
+  );
+}
+
+function StatsBar({ memberCount, fundedCount, newThisMonth }: { memberCount: number; fundedCount: number; newThisMonth: number }) {
+  const { ref, inView } = useInView(0.2);
+  const cMember  = useCounter(inView ? memberCount : 0, 1600);
+  const cFunded  = useCounter(inView ? fundedCount  : 0, 1200);
+  const cMonthly = useCounter(inView ? newThisMonth : 0, 1000);
+  const [isMobile, setIsMobile] = React.useState(() => window.matchMedia('(max-width: 767px)').matches);
+  React.useEffect(() => { const mq = window.matchMedia('(max-width: 767px)'); const h = (e: MediaQueryListEvent) => setIsMobile(e.matches); mq.addEventListener('change',h); return ()=>mq.removeEventListener('change',h); }, []);
+
+  const STATS = [
+    { k: 'MEMBER AKTIF',  v: cMember.toString(), d: `+${cMonthly} bulan ini`, up: true,  glow: 'rgba(22,163,74,0.12)'   },
+    { k: 'FUNDED LULUS',  v: cFunded.toString(), d: '+5 bulan ini',            up: true,  glow: 'rgba(22,163,74,0.08)'   },
+    { k: 'RATING KELAS',  v: '4.9',              d: '/ 5.0',                   up: null,  glow: 'rgba(234,179,8,0.07)'   },
+    { k: 'AKSES MATERI',  v: '∞',                d: 'Lifetime access',         up: null,  glow: 'rgba(100,100,100,0.06)' },
+  ];
+
+  return (
+    <section ref={ref} style={{ background: 'linear-gradient(180deg,#060606,#040404)', padding: isMobile ? '48px 20px' : '64px 40px', position: 'relative', overflow: 'hidden' }}>
+      <div style={{ position: 'absolute', top: '50%', left: '25%', transform: 'translate(-50%,-50%)', width: 400, height: 200, background: 'radial-gradient(ellipse,rgba(22,163,74,0.05) 0%,transparent 70%)', pointerEvents: 'none' }} />
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(4, 1fr)', gap: isMobile ? '32px 16px' : 0, maxWidth: 960, margin: '0 auto' }}>
+        {STATS.map((s, i) => (
+          <div key={i} className={`mr-anim-stat-${i}`} style={{ textAlign: 'center' as const, padding: isMobile ? '0' : '0 24px', position: 'relative' }}>
+            {!isMobile && i < 3 && <div style={{ position: 'absolute', right: 0, top: '15%', bottom: '15%', width: 1, background: `linear-gradient(180deg,transparent,${MR.border},transparent)` }} />}
+            <div style={{ fontWeight: 800, fontSize: isMobile ? 40 : 56, letterSpacing: -3, lineHeight: 1, marginBottom: 10, background: `radial-gradient(ellipse at center, ${s.up ? '#22c55e' : '#d4af37'} 0%, ${MR.text} 60%)`, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>{s.v}</div>
+            <div style={{ fontFamily: MR.mono, color: MR.dim, fontSize: 10, letterSpacing: 1.2, marginBottom: 4 }}>{s.k}</div>
+            <div style={{ fontFamily: MR.mono, fontSize: 10, color: s.up === true ? MR.up : '#666' }}>{s.up ? '▲ ' : ''}{s.d}</div>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function LandingLeaderboard() {
+  const [entries, setEntries] = React.useState<any[]>([]);
+  const [loading, setLoading] = React.useState(true);
+  const [isMobile, setIsMobile] = React.useState(() => window.matchMedia('(max-width: 767px)').matches);
+  React.useEffect(() => { const mq = window.matchMedia('(max-width: 767px)'); const h = (e: MediaQueryListEvent) => setIsMobile(e.matches); mq.addEventListener('change',h); return ()=>mq.removeEventListener('change',h); }, []);
+
+  const TIER_COLOR: Record<string, string> = { platinum: '#e879f9', gold: '#eab308', bronze: '#f97316', trial: '#6b7280' };
+
+  React.useEffect(() => {
+    (async () => {
+      try {
+        const [{ data: members }, { data: journals }, { data: settings }] = await Promise.all([
+          supabase.from('members').select('id,nama,tier'),
+          supabase.from('trading_journals').select('member_id,hasil,pnl'),
+          supabase.from('journal_settings').select('member_id,equity_awal'),
+        ]);
+        if (!members || !journals) { setLoading(false); return; }
+
+        const eqMap: Record<string, number> = {};
+        (settings || []).forEach((s: any) => { eqMap[s.member_id] = s.equity_awal || 10000; });
+
+        const map: Record<string, { tp: number; sl: number; total: number; tier: string; nama: string; pnl: number }> = {};
+        members.forEach((m: any) => { map[m.id] = { tp: 0, sl: 0, total: 0, tier: m.tier || 'trial', nama: m.nama || 'Anon', pnl: 0 }; });
+        journals.forEach((j: any) => {
+          if (!map[j.member_id]) return;
+          map[j.member_id].total++;
+          map[j.member_id].pnl += (j.pnl || 0);
+          if (j.hasil === 'Take Profit') map[j.member_id].tp++;
+          if (j.hasil === 'Stop Loss')   map[j.member_id].sl++;
+        });
+
+        const sorted = Object.entries(map)
+          .filter(([, e]) => e.total > 0)
+          .map(([id, e]) => {
+            const ea = eqMap[id] || 10000;
+            const winRate = (e.tp + e.sl) > 0 ? (e.tp / (e.tp + e.sl)) * 100 : 0;
+            const gainPct = (e.pnl / ea) * 100;
+            return { ...e, winRate, gainPct };
+          })
+          .sort((a, b) => b.gainPct - a.gainPct)
+          .slice(0, 10);
+        setEntries(sorted);
+      } catch {}
+      setLoading(false);
+    })();
+  }, []);
+
+  if (loading || entries.length === 0) return null;
+
+  const RANK_SRC  = (i: number) => i === 0 ? '/rank_1.png' : i === 1 ? '/rank_2.png' : i === 2 ? '/rank_3.png' : i < 10 ? '/rank_4-10.png' : '/rank_11-20.png';
+  const TOP3_META = [
+    { border: '#eab308', bg: 'linear-gradient(135deg,#1a1200 0%,#0d0d0d 100%)', glow: 'rgba(234,179,8,0.12)', label: '🥇 #1' },
+    { border: '#94a3b8', bg: 'linear-gradient(135deg,#101418 0%,#0d0d0d 100%)', glow: 'rgba(148,163,184,0.10)', label: '🥈 #2' },
+    { border: '#cd7c3a', bg: 'linear-gradient(135deg,#130d00 0%,#0d0d0d 100%)', glow: 'rgba(205,124,58,0.10)',  label: '🥉 #3' },
+  ];
+
+  return (
+    <section style={{ background: 'linear-gradient(180deg,#080808,#060606)', padding: isMobile ? '56px 20px' : '80px 40px', position: 'relative', overflow: 'hidden' }}>
+      <div style={{ position: 'absolute', top: 0, right: 0, width: 320, height: 320, background: 'radial-gradient(ellipse at top right,rgba(22,163,74,0.04) 0%,transparent 70%)', pointerEvents: 'none' }} />
+      <div style={{ maxWidth: 760, margin: '0 auto' }}>
+
+        {/* Header */}
+        <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 36, flexWrap: 'wrap' as const, gap: 12 }}>
+          <div>
+            <div style={{ fontFamily: MR.mono, color: MR.gold, fontSize: 10, letterSpacing: 2, marginBottom: 10 }}>// LEADERBOARD</div>
+            <h2 style={{ fontSize: isMobile ? 26 : 38, fontWeight: 700, letterSpacing: -1, margin: 0, lineHeight: 1.1 }}>Top Performer<br/>Member Kami</h2>
+          </div>
+          <p style={{ color: MR.dim, fontSize: 13, maxWidth: 260, lineHeight: 1.6, margin: 0 }}>
+            Win rate & equity gain dari member yang aktif journaling setiap hari.
+          </p>
+        </div>
+
+        {/* Top 3 — podium cards */}
+        <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 8, marginBottom: 16 }}>
+          {entries.slice(0, 3).map((e, i) => {
+            const wr      = Math.round(e.winRate);
+            const gainPct: number = e.gainPct;
+            const tierKey = (e.tier || 'trial').toLowerCase().replace('smc ', '').replace(' mentorship', '').replace(' 1 on 1', '');
+            const accent  = TIER_COLOR[tierKey] || '#6b7280';
+            const m       = TOP3_META[i];
+            return (
+              <div key={i} style={{ position: 'relative', display: 'grid', gridTemplateColumns: isMobile ? '32px 1fr auto auto' : '48px 1fr auto auto', gap: '0 16px', alignItems: 'center', padding: isMobile ? '16px 16px' : '20px 24px', background: m.bg, border: `1px solid ${m.border}44`, borderLeft: `3px solid ${m.border}`, borderRadius: 12, boxShadow: `0 0 32px ${m.glow}, inset 0 1px 0 ${m.border}22`, overflow: 'hidden' }}>
+                {/* glow blob */}
+                <div style={{ position: 'absolute', top: -20, left: -20, width: 120, height: 120, background: `radial-gradient(ellipse,${m.glow} 0%,transparent 70%)`, pointerEvents: 'none' }} />
+                {/* rank badge */}
+                <div style={{ display: 'flex', flexDirection: 'column' as const, alignItems: 'center', gap: 2, position: 'relative' }}>
+                  <img src={RANK_SRC(i)} alt={m.label} style={{ width: isMobile ? 28 : 36, height: isMobile ? 28 : 36, objectFit: 'contain' }} />
+                  <span style={{ fontFamily: MR.mono, fontSize: 8, color: m.border, letterSpacing: 0.5 }}>#{i+1}</span>
+                </div>
+                {/* name + tier */}
+                <div style={{ minWidth: 0, position: 'relative' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' as const }}>
+                    <span style={{ fontWeight: 800, fontSize: isMobile ? 15 : 18 }}>{e.nama.split(' ')[0]}</span>
+                    <span style={{ fontFamily: MR.mono, fontSize: 8, color: accent, background: accent + '22', padding: '2px 6px', borderRadius: 3, letterSpacing: 0.5 }}>
+                      {tierKey.toUpperCase()}
+                    </span>
+                  </div>
+                </div>
+                {/* win rate */}
+                <div style={{ textAlign: 'right' as const }}>
+                  <div style={{ fontFamily: MR.mono, fontSize: isMobile ? 18 : 22, fontWeight: 700, color: wr >= 65 ? MR.up : wr >= 55 ? '#eab308' : MR.dim, letterSpacing: -0.5 }}>{wr}<span style={{ fontSize: 11 }}>%</span></div>
+                  <div style={{ fontFamily: MR.mono, fontSize: 8, color: MR.dimmer, marginTop: 2 }}>WIN RATE</div>
+                </div>
+                {/* equity gain */}
+                <div style={{ textAlign: 'right' as const }}>
+                  <div style={{ fontFamily: MR.mono, fontSize: isMobile ? 18 : 22, fontWeight: 700, color: gainPct >= 0 ? MR.up : MR.down, letterSpacing: -0.5 }}>
+                    {gainPct >= 0 ? '+' : ''}{gainPct.toFixed(1)}<span style={{ fontSize: 11 }}>%</span>
+                  </div>
+                  <div style={{ fontFamily: MR.mono, fontSize: 8, color: MR.dimmer, marginTop: 2 }}>EQUITY GAIN</div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Rank 4–10 — compact rows */}
+        {entries.length > 3 && (
+          <>
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr auto auto' : '40px 1fr auto auto', gap: '0 16px', padding: '6px 12px', marginBottom: 2 }}>
+              {!isMobile && <div />}
+              <div style={{ fontFamily: MR.mono, fontSize: 9, color: MR.dimmer, letterSpacing: 1 }}>TRADER</div>
+              <div style={{ fontFamily: MR.mono, fontSize: 9, color: MR.dimmer, letterSpacing: 1, textAlign: 'right' as const }}>WIN RATE</div>
+              <div style={{ fontFamily: MR.mono, fontSize: 9, color: MR.dimmer, letterSpacing: 1, textAlign: 'right' as const }}>EQUITY GAIN</div>
             </div>
-          ))}
+            <div style={{ display: 'flex', flexDirection: 'column' as const }}>
+              {entries.slice(3).map((e, j) => {
+                const i       = j + 3;
+                const wr      = Math.round(e.winRate);
+                const gainPct: number = e.gainPct;
+                const tierKey = (e.tier || 'trial').toLowerCase().replace('smc ', '').replace(' mentorship', '').replace(' 1 on 1', '');
+                const accent  = TIER_COLOR[tierKey] || '#6b7280';
+                return (
+                  <div key={i} style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr auto auto' : '40px 1fr auto auto', gap: '0 16px', alignItems: 'center', padding: '12px 12px', borderBottom: `1px solid ${MR.border}` }}>
+                    {!isMobile && <img src={RANK_SRC(i)} alt={`#${i+1}`} style={{ width: 24, height: 24, objectFit: 'contain' }} />}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
+                      {isMobile && <img src={RANK_SRC(i)} alt={`#${i+1}`} style={{ width: 20, height: 20, objectFit: 'contain', flexShrink: 0 }} />}
+                      <span style={{ fontWeight: 600, fontSize: 14 }}>{e.nama.split(' ')[0]}</span>
+                      <span style={{ fontFamily: MR.mono, fontSize: 8, color: accent, background: accent + '18', padding: '1px 5px', borderRadius: 3, letterSpacing: 0.5, flexShrink: 0 }}>{tierKey.toUpperCase()}</span>
+                    </div>
+                    <div style={{ textAlign: 'right' as const, fontFamily: MR.mono, fontSize: 15, fontWeight: 700, color: wr >= 65 ? MR.up : wr >= 55 ? '#eab308' : MR.dim }}>{wr}<span style={{ fontSize: 10 }}>%</span></div>
+                    <div style={{ textAlign: 'right' as const, fontFamily: MR.mono, fontSize: 15, fontWeight: 700, color: gainPct >= 0 ? MR.up : MR.down }}>{gainPct >= 0 ? '+' : ''}{gainPct.toFixed(1)}<span style={{ fontSize: 10 }}>%</span></div>
+                  </div>
+                );
+              })}
+            </div>
+          </>
+        )}
+
+        <div style={{ marginTop: 28, textAlign: 'center' as const }}>
+          <button onClick={() => window.location.href = '/login'}
+            style={{ fontFamily: MR.mono, fontSize: 11, padding: '11px 24px', background: 'transparent', border: `1px solid ${MR.border}`, color: MR.dim, cursor: 'pointer', letterSpacing: 0.5 }}>
+            LIHAT SEMUA PERINGKAT ▸
+          </button>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function DiscordCTA() {
+  const [isMobile, setIsMobile] = React.useState(() => window.matchMedia('(max-width: 767px)').matches);
+  React.useEffect(() => { const mq = window.matchMedia('(max-width: 767px)'); const h = (e: MediaQueryListEvent) => setIsMobile(e.matches); mq.addEventListener('change',h); return ()=>mq.removeEventListener('change',h); }, []);
+  return (
+    <section style={{ borderBottom: `1px solid ${MR.border}`, background: 'linear-gradient(180deg,#060606 0%,#06100a 50%,#060606 100%)', padding: isMobile ? '56px 20px' : '96px 40px', textAlign: 'center' as const, position: 'relative', overflow: 'hidden' }}>
+      <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: 700, height: 400, background: 'radial-gradient(ellipse,rgba(22,163,74,0.06) 0%,transparent 70%)', pointerEvents: 'none' }} />
+      <div style={{ position: 'relative', maxWidth: 600, margin: '0 auto' }}>
+        <div style={{ fontFamily: MR.mono, color: MR.gold, fontSize: 11, letterSpacing: 1.5, marginBottom: 20 }}>// KOMUNITAS</div>
+        <h2 style={{ fontSize: isMobile ? 32 : 56, fontWeight: 700, letterSpacing: isMobile ? -1 : -2, lineHeight: 1.05, margin: '0 0 20px' }}>
+          Belajar lebih cepat<br/>
+          <span style={{ color: MR.gold }}>di dalam komunitas.</span>
+        </h2>
+        <p style={{ color: MR.dim, fontSize: isMobile ? 14 : 16, lineHeight: 1.65, maxWidth: 460, margin: '0 auto 40px' }}>
+          Bergabung dengan ribuan trader Indonesia. Share setup, diskusi market live, dan tumbuh bersama member yang serius setiap hari.
+        </p>
+        <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' as const, marginBottom: 24 }}>
+          <a href="https://discord.gg/d2Tpf6sGMr" target="_blank" rel="noreferrer" style={{ textDecoration: 'none' }}>
+            <button style={{ fontFamily: MR.mono, background: '#5865F2', color: '#fff', fontWeight: 700, padding: isMobile ? '14px 22px' : '16px 30px', fontSize: 13, letterSpacing: 0.4, border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 10 }}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994a.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03z"/></svg>
+              GABUNG DISCORD
+            </button>
+          </a>
+          <a href="https://t.me/+_azyX2h9oFhmNjNl" target="_blank" rel="noreferrer" style={{ textDecoration: 'none' }}>
+            <button style={{ fontFamily: MR.mono, background: 'transparent', color: MR.text, fontWeight: 600, padding: isMobile ? '14px 22px' : '16px 30px', fontSize: 13, letterSpacing: 0.4, border: `1px solid ${MR.borderHot}`, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 10 }}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12L7.17 13.367l-2.965-.924c-.643-.204-.657-.643.136-.953l11.57-4.461c.537-.194 1.006.131.983.192z"/></svg>
+              TELEGRAM CHANNEL
+            </button>
+          </a>
+        </div>
+        <div style={{ fontFamily: MR.mono, fontSize: 11, color: MR.dimmer }}>
+          Gratis · Aktif setiap hari · 500+ member online
         </div>
       </div>
     </section>
@@ -476,7 +687,7 @@ function GallerySlider() {
                 <img
                   src={img.url}
                   alt={img.caption || `galeri-${i + 1}`}
-                  style={{ width: '100%', height: isMobile ? 240 : 500, objectFit: 'cover', display: 'block' }}
+                  style={{ width: '100%', height: isMobile ? 280 : 520, objectFit: 'contain', display: 'block', background: '#060606' }}
                 />
                 {img.caption && (
                   <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'linear-gradient(transparent,rgba(0,0,0,0.72))', padding: '32px 28px 18px', color: '#e7e5e4', fontSize: 14, lineHeight: 1.5 }}>
@@ -935,119 +1146,86 @@ function Footer() {
 
 export default function LandingPage() {
   const { stats }        = useLandingStats();
-  const { testimonials } = useApprovedTestimonials(6);
+  const { testimonials } = useApprovedTestimonials(12);
   const { tiers }        = usePricing();
-
-  const [isMobile, setIsMobile] = React.useState(() => window.matchMedia('(max-width: 767px)').matches);
-  React.useEffect(() => {
-    const mq = window.matchMedia('(max-width: 767px)');
-    const h = (e: MediaQueryListEvent) => setIsMobile(e.matches);
-    mq.addEventListener('change', h);
-    return () => mq.removeEventListener('change', h);
-  }, []);
 
   return (
     <div style={{ fontFamily: MR.sans, color: MR.text, background: MR.bg, minHeight: '100vh', WebkitFontSmoothing: 'antialiased', overflowX: 'hidden' }}>
       <style>{`
         .mr-nav-links { display: flex; }
-        .mr-hero-section { padding: 96px 40px 80px; }
-        .mr-hero-grid { grid-template-columns: 1fr 1fr; }
-        .mr-hero-widget { display: block; }
-        .mr-stats-row { padding: 32px 40px; flex-wrap: nowrap; }
         .mr-section-pad { padding: 80px 40px; }
         .mr-curriculum-grid { grid-template-columns: 1fr 1fr; }
-        .mr-pricing-grid { grid-template-columns: 1fr 1fr; }
-        .mr-cta-row { flex-direction: row; }
         @media (max-width: 767px) {
           .mr-nav-links { display: none !important; }
-          .mr-nav-topbar { padding: 0 16px !important; }
-          .mr-hero-section { padding: 40px 16px 32px !important; }
-          .mr-hero-h1 { font-size: 36px !important; letter-spacing: -1px !important; line-height: 1.1 !important; }
-          .mr-hero-subtext { font-size: 14px !important; }
-          .mr-hero-cta { flex-direction: column !important; }
-          .mr-hero-cta a, .mr-hero-cta button { width: 100% !important; text-align: center !important; justify-content: center !important; }
-          .mr-hero-grid { grid-template-columns: 1fr !important; }
-          .mr-hero-widget { display: none !important; }
-          .mr-stats-row { padding: 20px 16px !important; flex-wrap: wrap !important; gap: 12px !important; }
-          .mr-stats-row > * { min-width: calc(50% - 8px); }
+          .mr-nav-topbar { padding: 10px 16px !important; }
+          .mr-mobile-nav-right { display: flex !important; }
+          .mr-hero-h1 { font-size: 38px !important; letter-spacing: -1.5px !important; line-height: 1.08 !important; }
           .mr-section-pad { padding: 40px 16px !important; }
           .mr-curriculum-grid { grid-template-columns: 1fr !important; }
-          .mr-pricing-grid { grid-template-columns: 1fr !important; }
-          .mr-cta-row { flex-direction: column !important; }
-          .mr-cta-row button { width: 100% !important; }
-          .mr-mentor-grid { grid-template-columns: 1fr !important; }
-          .mr-faq-item { padding: 16px !important; }
-          .mr-footer-grid { grid-template-columns: 1fr 1fr !important; }
-          /* Mobile navbar */
-          .mr-nav-topbar { padding: 10px 16px !important; }
-          .mr-nav-links { display: none !important; }
-          .mr-mobile-nav-right { display: flex !important; }
-          /* Pricing 1 col */
-          .mr-pricing-grid { grid-template-columns: 1fr !important; }
         }
-
-        /* ── Animations ─────────────────────────────── */
         @keyframes mr-fadeup {
-          from { opacity: 0; transform: translateY(28px); }
+          from { opacity: 0; transform: translateY(24px); }
           to   { opacity: 1; transform: translateY(0); }
         }
         @keyframes mr-fadein {
           from { opacity: 0; }
           to   { opacity: 1; }
         }
-        @keyframes mr-slideright {
-          from { opacity: 0; transform: translateX(-20px); }
-          to   { opacity: 1; transform: translateX(0); }
-        }
-        .mr-anim-badge   { animation: mr-fadein   0.5s ease both; }
-        .mr-anim-h1-1    { animation: mr-fadeup   0.6s ease 0.15s both; }
-        .mr-anim-h1-2    { animation: mr-fadeup   0.6s ease 0.28s both; }
-        .mr-anim-h1-3    { animation: mr-fadeup   0.6s ease 0.41s both; }
-        .mr-anim-h1-4    { animation: mr-fadeup   0.6s ease 0.54s both; }
-        .mr-anim-desc    { animation: mr-fadeup   0.6s ease 0.65s both; }
-        .mr-anim-cta     { animation: mr-fadeup   0.6s ease 0.78s both; }
-        .mr-anim-stat-0  { animation: mr-fadeup   0.5s ease 0.85s both; }
-        .mr-anim-stat-1  { animation: mr-fadeup   0.5s ease 0.95s both; }
-        .mr-anim-stat-2  { animation: mr-fadeup   0.5s ease 1.05s both; }
-        .mr-anim-stat-3  { animation: mr-fadeup   0.5s ease 1.15s both; }
-        .mr-anim-chart   { animation: mr-fadein   0.8s ease 0.4s  both; }
-
-        @keyframes mr-scaleup {
-          from { opacity: 0; transform: scale(0.92) translateY(20px); }
-          to   { opacity: 1; transform: scale(1) translateY(0); }
-        }
-        @keyframes mr-slidefromright {
-          from { opacity: 0; transform: translateX(40px); }
-          to   { opacity: 1; transform: translateX(0); }
-        }
-        .mr-card-anim-0 { animation: mr-scaleup 0.5s ease 0s    both; }
-        .mr-card-anim-1 { animation: mr-scaleup 0.5s ease 0.1s  both; }
-        .mr-card-anim-2 { animation: mr-scaleup 0.5s ease 0.2s  both; }
-        .mr-card-anim-3 { animation: mr-scaleup 0.5s ease 0.3s  both; }
-        .mr-testi-0  { animation: mr-slidefromright 0.5s ease 0s   both; }
-        .mr-testi-1  { animation: mr-slidefromright 0.5s ease 0.1s both; }
-        .mr-testi-2  { animation: mr-slidefromright 0.5s ease 0.2s both; }
-        .mr-testi-3  { animation: mr-slidefromright 0.5s ease 0.3s both; }
-        .mr-testi-4  { animation: mr-slidefromright 0.5s ease 0.4s both; }
-        .mr-testi-5  { animation: mr-slidefromright 0.5s ease 0.5s both; }
-        .mr-hidden   { opacity: 0; }
+        .mr-anim-badge { animation: mr-fadein  0.4s ease both; }
+        .mr-anim-h1-1  { animation: mr-fadeup  0.6s ease 0.12s both; }
+        .mr-anim-h1-2  { animation: mr-fadeup  0.6s ease 0.24s both; }
+        .mr-anim-h1-3  { animation: mr-fadeup  0.6s ease 0.36s both; }
+        .mr-anim-h1-4  { animation: mr-fadeup  0.6s ease 0.48s both; }
+        .mr-anim-desc  { animation: mr-fadeup  0.6s ease 0.58s both; }
+        .mr-anim-cta   { animation: mr-fadeup  0.6s ease 0.68s both; }
+        .mr-anim-stat-0 { animation: mr-fadeup 0.5s ease 0s   both; }
+        .mr-anim-stat-1 { animation: mr-fadeup 0.5s ease 0.1s both; }
+        .mr-anim-stat-2 { animation: mr-fadeup 0.5s ease 0.2s both; }
+        .mr-anim-stat-3 { animation: mr-fadeup 0.5s ease 0.3s both; }
+        @keyframes mr-blink { 0%,49%{opacity:1}50%,100%{opacity:0} }
+        .mr-blink { animation: mr-blink 1s steps(1) infinite; }
+        @keyframes mr-ticker { 0%{transform:translateX(0)}100%{transform:translateX(-33.333%)} }
       `}</style>
-      <TVTickerTape />
+
+      {/* 1 — Ticker pair (chrome paling atas) */}
+      <Ticker />
+
+      {/* 2 — Navbar */}
       <StatusBar />
       <NavBar />
-      <Hero
+
+      {/* 3 — Hero */}
+      <Hero />
+
+      {/* 4 — Stats bar */}
+      <StatsBar
         memberCount={stats?.memberCount ?? 0}
         fundedCount={stats?.fundedCount ?? 0}
         newThisMonth={stats?.newMembersThisMonth ?? 0}
       />
-      <Manifesto />
-      <Curriculum />
-      <GallerySlider />
-      {testimonials.length > 0 && <Testimonials testimonials={testimonials} />}
-      <Mentor />
+
+      {/* 5 — Tier / Pricing */}
       {tiers.length > 0 && <Pricing tiers={tiers} />}
+
+      {/* 6 — Kurikulum */}
+      <Curriculum />
+
+      {/* 7 — Leaderboard */}
+      <LandingLeaderboard />
+
+      {/* 8 — Galeri hasil nyata */}
+      <GallerySlider />
+
+      {/* 9 — Testimonial */}
+      {testimonials.length > 0 && <Testimonials testimonials={testimonials} />}
+
+      {/* 10 — Discord CTA */}
+      <DiscordCTA />
+
+      {/* 11 — FAQ */}
       <FaqSection />
-      <CTA />
+
+      {/* 12 — Footer */}
       <Footer />
     </div>
   );

@@ -12,7 +12,7 @@ npm run preview      # Preview production build
 npm run typecheck    # TypeScript check (tsc --noEmit -p tsconfig.app.json)
 ```
 
-There is no test suite. Validate changes by running the dev server.
+There is no test suite. Validate changes by running the dev server. Playwright is installed as a dev dependency but has no written tests.
 
 ## Deployment
 
@@ -99,11 +99,11 @@ Primary accent (`--mr-gold`) is **green** (`#16a34a`), not yellow — it maps to
 | `--mr-up` | `#22c55e` | Profit / positive |
 | `--mr-down` | `#ef4444` | Loss / negative |
 
-Responsive layout uses CSS variables like `--pad-page` and `--font-hero` overridden at mobile breakpoints. Tailwind is used for utility classes alongside inline styles.
+Fonts are **Geist** (sans-serif) and **Geist Mono** (monospace), referenced as `'"Geist",system-ui,sans-serif'` and `'"Geist Mono",monospace'` in inline styles. `lucide-react` is available for icons. Responsive layout uses CSS variables like `--pad-page` and `--font-hero` overridden at mobile breakpoints. Tailwind is used for utility classes alongside inline styles.
 
 ### Tier System
 
-Four membership tiers: **Trial**, **Bronze**, **Gold**, **Platinum**. Tier controls video access (`tier_access` column on `videos`). Tier accent colors are mapped in `theme.ts` via `TIER_ACCENT`. Admin roles: `member`, `admin`, `superadmin`.
+Four primary membership tiers: **Trial**, **Bronze**, **Gold**, **Platinum**. A legacy `smc silver` value also exists in the `Member` type. Tier controls video access (`tier_access` column on `videos`). Tier accent colors are mapped in `theme.ts` via `TIER_ACCENT`. Admin roles: `member`, `admin`, `superadmin`.
 
 ### Member Dashboard Tabs
 
@@ -121,11 +121,11 @@ Four membership tiers: **Trial**, **Bronze**, **Gold**, **Platinum**. Tier contr
 - **Content & Education**: `video` · `rating` · `trading-plan`
 - **Partnership & Monetization**: `broker` · `referral` · `proprules`
 - **Communication**: `pengumuman` / `broadcast` (both map to `announce` tab)
-- **System**: `log` · `pengaturan`
+- **System**: `galeri` · `log` · `pengaturan`
 
 The `ApprovalsTab` component (inside AdminPanel) handles three sub-tabs: `ulasan` (testimonials), `advance` (advance_requests), `klaim` (partnership_claims).
 
-**Sidebar → tab ID mapping gotcha**: the `admin` sidebar item maps to tab ID `admins` (not `admin`). The `jurnal` sidebar item in AdminPanel renders `LeaderboardPage` (member rankings), not a journal view — the label "Peringkat Member" in the sidebar reflects this, but the sidebar ID `jurnal` can be misleading.
+**Sidebar → tab ID mapping gotcha**: the `admin` sidebar item maps to tab ID `admins` (not `admin`); `pengaturan` maps to `settings`; `pengumuman` and `broadcast` both map to `announce`. The `jurnal` sidebar item in AdminPanel renders `LeaderboardPage` (member rankings), not a journal view — the label "Peringkat Member" in the sidebar reflects this, but the sidebar ID `jurnal` can be misleading.
 
 ### Shared Components
 
