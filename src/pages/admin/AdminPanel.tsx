@@ -349,11 +349,13 @@ function ApprovalsTab({ adminName }: { adminName: string }) {
 
 // ── GALLERY ADMIN TAB ─────────────────────────────────────────────────────────
 function GalleryAdminTab({ adminName }: { adminName: string }) {
-  const [images, setImages]     = useState<any[]>([]);
-  const [loading, setLoading]   = useState(true);
-  const [newUrl, setNewUrl]     = useState('');
-  const [newCaption, setNewCaption] = useState('');
-  const [saving, setSaving]     = useState(false);
+  const [images, setImages]         = useState<any[]>([]);
+  const [loading, setLoading]       = useState(true);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [newCaption, setNewCaption]  = useState('');
+  const [saving, setSaving]          = useState(false);
+  const [uploadMsg, setUploadMsg]    = useState('');
+  const fileRef = React.useRef<HTMLInputElement>(null);
 
   useEffect(() => { load(); }, []);
 
@@ -365,16 +367,38 @@ function GalleryAdminTab({ adminName }: { adminName: string }) {
   }
 
   async function addImage() {
-    if (!newUrl.trim()) return;
+    if (!selectedFile) return;
     setSaving(true);
+    setUploadMsg('Mengupload gambar...');
+
+    const ext = selectedFile.name.split('.').pop();
+    const fileName = `gallery_${Date.now()}.${ext}`;
+
+    const { error: storageErr } = await supabase.storage
+      .from('gallery')
+      .upload(fileName, selectedFile, { cacheControl: '3600', upsert: false });
+
+    if (storageErr) {
+      alert(`Gagal upload: ${storageErr.message}\n\nPastikan bucket "gallery" sudah dibuat di Supabase Storage dengan akses public.`);
+      setSaving(false); setUploadMsg(''); return;
+    }
+
+    const { data: urlData } = supabase.storage.from('gallery').getPublicUrl(fileName);
+    const publicUrl = urlData.publicUrl;
+
     const maxUrutan = images.length > 0 ? Math.max(...images.map((x:any) => x.urutan || 0)) + 1 : 1;
-    const { data, error } = await (supabase.from('landing_gallery').insert({ url: newUrl.trim(), caption: newCaption.trim() || null, urutan: maxUrutan, active: true }).select().single() as any);
+    const { data, error } = await (supabase.from('landing_gallery')
+      .insert({ url: publicUrl, caption: newCaption.trim() || null, urutan: maxUrutan, active: true, file_name: fileName })
+      .select().single() as any);
+
     if (!error && data) {
       setImages(l => [...l, data]);
-      setNewUrl(''); setNewCaption('');
-      await logActivity('gallery_add', `Tambah gambar galeri: ${newUrl.trim()}`, adminName);
+      setSelectedFile(null); setNewCaption(''); setUploadMsg('');
+      if (fileRef.current) fileRef.current.value = '';
+      await logActivity('gallery_add', `Tambah gambar galeri: ${fileName}`, adminName);
     } else if (error) {
-      alert(`Gagal: ${error.message}`);
+      alert(`Gagal simpan ke DB: ${error.message}`);
+      setUploadMsg('');
     }
     setSaving(false);
   }
@@ -384,8 +408,9 @@ function GalleryAdminTab({ adminName }: { adminName: string }) {
     setImages(l => l.map((x:any) => x.id === id ? { ...x, active: !current } : x));
   }
 
-  async function deleteImage(id: string) {
+  async function deleteImage(id: string, fileName?: string) {
     if (!confirm('Hapus gambar ini?')) return;
+    if (fileName) await supabase.storage.from('gallery').remove([fileName]);
     await supabase.from('landing_gallery').delete().eq('id', id);
     setImages(l => l.filter((x:any) => x.id !== id));
     await logActivity('gallery_delete', `Hapus gambar galeri (id: ${id})`, adminName);
@@ -411,19 +436,43 @@ function GalleryAdminTab({ adminName }: { adminName: string }) {
       <h2 style={{ fontSize:20, fontWeight:700, marginBottom:6 }}>Manajemen Galeri</h2>
       <p style={{ fontFamily:C.mono, fontSize:11, color:C.muted, marginBottom:20 }}>Gambar ditampilkan sebagai slider otomatis di landing page, di atas seksi Ulasan.</p>
 
-      {/* Add form */}
+      {/* Upload form */}
       <div style={{ background:'var(--mr-panel)', border:`1px solid var(--mr-border)`, borderRadius:10, padding:16, marginBottom:20 }}>
-        <div style={{ fontFamily:C.mono, fontSize:11, color:C.dim, marginBottom:10 }}>+ Tambah Gambar Baru</div>
-        <input value={newUrl} onChange={e => setNewUrl(e.target.value)} placeholder="URL gambar (https://...)"
-          style={{ width:'100%', background:'var(--mr-bg)', border:`1px solid var(--mr-border)`, color:C.text, padding:'8px 12px', borderRadius:6, fontFamily:C.mono, fontSize:12, outline:'none', boxSizing:'border-box' as const, marginBottom:8 }}
-        />
-        <input value={newCaption} onChange={e => setNewCaption(e.target.value)} placeholder="Keterangan / caption (opsional)"
+        <div style={{ fontFamily:C.mono, fontSize:11, color:C.dim, marginBottom:10 }}>+ Upload Gambar Baru</div>
+
+        {/* File picker */}
+        <label style={{ display:'flex', alignItems:'center', gap:10, background:'var(--mr-bg)', border:`1px dashed ${selectedFile ? G.gold : 'var(--mr-border)'}`, borderRadius:6, padding:'10px 14px', cursor:'pointer', marginBottom:8 }}>
+          <span style={{ fontSize:18 }}>🖼</span>
+          <div style={{ flex:1, minWidth:0 }}>
+            {selectedFile ? (
+              <span style={{ fontFamily:C.mono, fontSize:12, color:G.gold }}>{selectedFile.name}</span>
+            ) : (
+              <span style={{ fontFamily:C.mono, fontSize:12, color:C.muted }}>Klik untuk pilih gambar (JPG, PNG, WebP...)</span>
+            )}
+          </div>
+          <input ref={fileRef} type="file" accept="image/*" style={{ display:'none' }}
+            onChange={e => setSelectedFile(e.target.files?.[0] || null)}
+          />
+        </label>
+
+        <input value={newCaption} onChange={e => setNewCaption(e.target.value)}
+          placeholder="Keterangan / caption (opsional)"
           style={{ width:'100%', background:'var(--mr-bg)', border:`1px solid var(--mr-border)`, color:C.text, padding:'8px 12px', borderRadius:6, fontFamily:C.mono, fontSize:12, outline:'none', boxSizing:'border-box' as const, marginBottom:10 }}
         />
-        <button onClick={addImage} disabled={saving || !newUrl.trim()}
-          style={{ background:'var(--mr-tint-gold)', border:`1px solid ${G.gold}`, color:G.gold, fontFamily:C.mono, fontSize:11, padding:'8px 20px', borderRadius:6, cursor:'pointer', fontWeight:700, opacity:(!newUrl.trim()||saving)?0.5:1 }}>
-          {saving ? 'Menyimpan...' : '+ Tambah Gambar'}
-        </button>
+
+        <div style={{ display:'flex', alignItems:'center', gap:12 }}>
+          <button onClick={addImage} disabled={saving || !selectedFile}
+            style={{ background:'var(--mr-tint-gold)', border:`1px solid ${G.gold}`, color:G.gold, fontFamily:C.mono, fontSize:11, padding:'8px 20px', borderRadius:6, cursor:'pointer', fontWeight:700, opacity:(!selectedFile||saving)?0.5:1 }}>
+            {saving ? '↑ Mengupload...' : '↑ Upload & Simpan'}
+          </button>
+          {selectedFile && !saving && (
+            <button onClick={() => { setSelectedFile(null); if (fileRef.current) fileRef.current.value = ''; }}
+              style={{ background:'transparent', border:`1px solid ${C.border}`, color:C.muted, fontFamily:C.mono, fontSize:11, padding:'8px 12px', borderRadius:6, cursor:'pointer' }}>
+              Batal
+            </button>
+          )}
+          {uploadMsg && <span style={{ fontFamily:C.mono, fontSize:11, color:G.gold }}>{uploadMsg}</span>}
+        </div>
       </div>
 
       {/* Image list */}
@@ -431,19 +480,21 @@ function GalleryAdminTab({ adminName }: { adminName: string }) {
         <div style={{ fontFamily:C.mono, color:C.muted, fontSize:12, padding:'32px 0', textAlign:'center' as const }}>Memuat...</div>
       ) : images.length === 0 ? (
         <div style={{ fontFamily:C.mono, color:C.muted, fontSize:12, padding:'32px 0', textAlign:'center' as const }}>
-          Belum ada gambar. Tambahkan URL di atas.<br/>
-          <span style={{ fontSize:10, marginTop:8, display:'block' }}>Pastikan tabel <code>landing_gallery</code> sudah dibuat di Supabase.</span>
+          Belum ada gambar. Upload gambar di atas.<br/>
+          <span style={{ fontSize:10, marginTop:8, display:'block', color:'#555' }}>
+            Pastikan tabel <code>landing_gallery</code> & bucket Storage <code>gallery</code> sudah dibuat di Supabase.
+          </span>
         </div>
       ) : (
         <div style={{ display:'flex', flexDirection:'column' as const, gap:8 }}>
           {images.map((img:any, idx:number) => (
             <div key={img.id} style={{ background:'var(--mr-panel)', border:`1px solid ${img.active ? G.gold+'44' : 'var(--mr-border)'}`, borderRadius:10, padding:12, display:'flex', alignItems:'center', gap:12 }}>
               <img src={img.url} alt="preview"
-                style={{ width:80, height:56, objectFit:'cover', borderRadius:6, flexShrink:0, background:'#111' }}
-                onError={e => { (e.target as HTMLImageElement).style.opacity='0.3'; }}
+                style={{ width:88, height:60, objectFit:'cover', borderRadius:6, flexShrink:0, background:'#111' }}
+                onError={e => { (e.target as HTMLImageElement).style.opacity='0.2'; }}
               />
               <div style={{ flex:1, minWidth:0 }}>
-                <div style={{ fontFamily:C.mono, fontSize:11, color:C.text, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' as const }}>{img.url}</div>
+                <div style={{ fontFamily:C.mono, fontSize:10, color:C.text, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' as const }}>{img.file_name || img.url}</div>
                 {img.caption && <div style={{ fontFamily:C.mono, fontSize:10, color:C.dim, marginTop:2 }}>{img.caption}</div>}
                 <div style={{ fontFamily:C.mono, fontSize:9, color:C.muted, marginTop:3 }}>Urutan: {img.urutan}</div>
               </div>
@@ -454,7 +505,7 @@ function GalleryAdminTab({ adminName }: { adminName: string }) {
                   style={{ background:img.active?'var(--mr-tint-green)':'transparent', border:`1px solid ${img.active?C.up:C.border}`, color:img.active?C.up:C.muted, fontFamily:C.mono, fontSize:9, padding:'4px 8px', borderRadius:5, cursor:'pointer', fontWeight:700 }}>
                   {img.active ? 'AKTIF' : 'NONAKTIF'}
                 </button>
-                <button onClick={() => deleteImage(img.id)} style={{ background:'var(--mr-tint-red)', border:`1px solid ${C.down}`, color:C.down, fontFamily:C.mono, fontSize:11, width:28, height:28, borderRadius:5, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>✕</button>
+                <button onClick={() => deleteImage(img.id, img.file_name)} style={{ background:'var(--mr-tint-red)', border:`1px solid ${C.down}`, color:C.down, fontFamily:C.mono, fontSize:11, width:28, height:28, borderRadius:5, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>✕</button>
               </div>
             </div>
           ))}
