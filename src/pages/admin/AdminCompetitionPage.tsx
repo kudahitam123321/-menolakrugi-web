@@ -196,12 +196,18 @@ export default function AdminCompetitionPage({ adminName = 'admin' }: { adminNam
     };
 
     try {
-      let error;
+      let error: any = null;
       if (form.id) {
-        ({ error } = await supabase.from('competitions').update(payload).eq('id', form.id) as any);
+        const { data: updated, error: updateErr } = await supabase
+          .from('competitions').update(payload).eq('id', form.id).select() as any;
+        error = updateErr;
+        if (!updateErr && (!updated || updated.length === 0)) {
+          error = { message: 'Update diblokir database (RLS). Jalankan SQL fix di Supabase — lihat file supabase-competition-rls-fix.sql' };
+        }
       } else {
         const { data, error: e } = await supabase.from('competitions').insert(payload).select().single() as any;
         error = e;
+        if (!e && !data) error = { message: 'Insert diblokir database (RLS). Jalankan SQL fix di Supabase — lihat file supabase-competition-rls-fix.sql' };
         if (data) setField('id', data.id);
       }
 
@@ -209,9 +215,7 @@ export default function AdminCompetitionPage({ adminName = 'admin' }: { adminNam
         setMsg({ text: `Gagal menyimpan: ${error.message}`, ok: false });
       } else {
         setMsg({ text: '✓ Kompetisi berhasil disimpan!', ok: true });
-        // Reload leaderboard
         loadLeaderboard(payload.starts_at, payload.ends_at);
-        // Log
         await supabase.from('activity_log').insert({ action: 'save_competition', detail: `Simpan kompetisi: ${form.title}`, admin_name: adminName });
       }
     } catch (e: any) {
