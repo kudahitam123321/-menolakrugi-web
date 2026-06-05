@@ -69,10 +69,27 @@ function VideoMateriTab({ videos, loadData, addVideo, uploadFile, deleteVideo, d
   async function saveEdit() {
     if (!editId || !editJudul) return;
     const table = editIsFile ? 'files' : 'videos';
-    const updates: any = { judul: editJudul, deskripsi: editDesc, kategori: editKat, urutan: parseInt(editUrutan)||0 };
+    const newUrutan = parseInt(editUrutan) || 0;
+    const updates: any = { judul: editJudul, deskripsi: editDesc, kategori: editKat, urutan: newUrutan };
     if (!editIsFile) updates.youtube_url = editUrl;
     await supabase.from(table).update(updates).eq('id', editId);
     setEditId(null);
+
+    // Hitung halaman target berdasarkan urutan baru dan filter aktif saat ini
+    // agar item tidak "hilang" setelah urutan diubah
+    const base2 = editIsFile
+      ? (videos || []).filter((v: any) =>  v.kategori?.startsWith('file-'))
+      : (videos || []).filter((v: any) => !v.kategori?.startsWith('file-'));
+    const filtered2 = base2.filter((v: any) =>
+      filterKat === 'all' || v.kategori === filterKat
+    );
+    // Simulasikan posisi item setelah urutan baru (sort by urutan)
+    const sorted2 = [...filtered2.map((v: any) =>
+      v.id === editId ? { ...v, urutan: newUrutan } : v
+    )].sort((a: any, b: any) => a.urutan - b.urutan);
+    const newIdx = sorted2.findIndex((v: any) => v.id === editId);
+    if (newIdx >= 0) setPage(Math.floor(newIdx / PER_PAGE) + 1);
+
     loadData();
   }
 

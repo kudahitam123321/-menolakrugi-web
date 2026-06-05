@@ -24,6 +24,7 @@ import AdminPanel        from './pages/admin/AdminPanel';
 import PartnershipPage   from './pages/PartnershipPage';
 import CalendarPage      from './pages/CalendarPage';
 import KomunitasPage   from './pages/KomunitasPage';
+import CompetitionPage from './pages/CompetitionPage';
 
 function getPage() {
   const path = window.location.pathname;
@@ -37,6 +38,7 @@ function getPage() {
   if (path === '/calendar')                  return 'calendar';
   if (path === '/komunitas')                 return 'komunitas';
   if (path === '/discord-callback')       return 'discord-callback';
+  if (path === '/competition')            return 'competition';
 
   // Member area
   if (path === '/trading-plan')           return 'trading-plan';
@@ -45,7 +47,8 @@ function getPage() {
 
   // Admin
   if (path === '/admin/trading-plan')     return 'admin-trading-plan';
-  if (path === '/admin/panel')            return 'admin-panel';     // ← baru (URL baru)
+  if (path === '/admin/competition')      return 'admin-competition';
+  if (path === '/admin/panel')            return 'admin-panel';
   if (path.startsWith('/admin'))          return 'admin';
 
   return 'home';
@@ -67,8 +70,10 @@ function App() {
   if (page === 'partnership-confirm')   return <PartnershipPage step="confirm" />;
   if (page === 'calendar')              return <CalendarPage />;
   if (page === 'komunitas')             return <KomunitasPage />;
+  if (page === 'competition')           return <CompetitionPage />;
   if (page === 'trading-plan')        return <DashboardPage />;
   if (page === 'admin-trading-plan')  return <AdminPanel />;
+  if (page === 'admin-competition')   return <AdminPanel />;
   if (page === 'kurikulum')         return <CurriculumPage />;
   if (page === 'admin-panel')       return <AdminPanel />;          // /admin/panel → tampilan baru
 

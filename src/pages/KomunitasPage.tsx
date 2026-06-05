@@ -125,7 +125,7 @@ export default function KomunitasPage() {
       `}</style>
 
       {/* Navbar */}
-      <nav className='km-nav' style={{ borderBottom: `1px solid ${C.border}`, padding: '0 40px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: 56, background: '#060606', position: 'sticky' as const, top: 0, zIndex: 50 }}>
+      <nav className='km-nav' style={{ borderBottom: `1px solid ${C.border}`, padding: '0 40px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: 56, background: 'var(--mr-sidebar)', position: 'sticky' as const, top: 0, zIndex: 50 }}>
         <a href="/" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none' }}>
           <div style={{ width: 32, height: 32, background: C.gold, borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: 11, color: '#000' }}>MR</div>
           <div>

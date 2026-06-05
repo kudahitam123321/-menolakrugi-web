@@ -38,15 +38,19 @@ No routing library. `App.tsx` inspects `window.location.pathname` in a `getPage(
 /calendar              → CalendarPage
 /komunitas             → KomunitasPage
 /discord-callback      → DiscordCallbackPage
+/competition           → CompetitionPage (standalone, or embedded as a DashboardPage tab)
 /trading-plan          → DashboardPage (member, opens trading-plan tab)
 /member                → DashboardPage (requires session)
 /member/kurikulum      → CurriculumPage
 /admin/trading-plan    → AdminPanel
+/admin/competition     → AdminPanel (opens competition management tab)
 /admin/panel           → AdminPanel (new URL)
 /admin                 → AdminPanel (legacy URL, same component)
 ```
 
 There are legacy page files (`src/pages/DashboardPage.tsx`, `src/pages/MemberPage.tsx`, `src/pages/AdminPage.tsx`) that are no longer the primary entry points but are still imported by some components.
+
+The old landing-page section components in `src/components/` (`Navbar.tsx`, `Hero.tsx`, `Courses.tsx`, `Footer.tsx`, etc.) are imported in `App.tsx` but **unused** — `App.tsx` renders `<LandingPage />` directly for the home route. Do not add new logic to those files.
 
 ### Session Management
 
@@ -60,13 +64,17 @@ const session = raw ? JSON.parse(raw) : null;
 
 Logout is done by calling `localStorage.removeItem('mr_session')` then redirecting to `/login`.
 
+**Gotcha**: `LandingPage.tsx`'s navbar checks `localStorage.getItem('mr_member')` (not `mr_session`) for login status — this is an inconsistency from legacy code. `CompetitionPage.tsx` also uses `mr_member` (from either localStorage or sessionStorage) instead of `mr_session`. All other pages use `mr_session`.
+
 ### Data Layer
 
 All data comes from Supabase (PostgreSQL + RLS). The client is initialized in `src/lib/supabase.ts` with a hardcoded public anon key. There is also `src/lib/supabaseClient.ts` — a second client file; prefer `src/lib/supabase.ts` for all new code.
 
 Queries are raw `.from('table').select()...` chains — no ORM. Custom hooks in `src/hooks/index.ts` encapsulate all Supabase queries with fallback data where appropriate (e.g., `PRICING_FALLBACK` in `usePricing`).
 
-Key tables: `members`, `pricing_tiers`, `videos`, `journals`, `watch_history`, `testimonials`, `funded_brokers`, `partnerships`, `activity_log`, `trading_plan_config`, `advance_requests`, `partnership_claims`.
+Key tables: `members`, `pricing_tiers`, `videos`, `journals`, `watch_history`, `testimonials`, `funded_brokers`, `partnerships`, `activity_log`, `trading_plan_config`, `advance_requests`, `partnership_claims`, `landing_gallery`, `competitions`, `trading_journals`, `journal_settings`.
+
+Supabase Storage is also used: the `gallery` bucket stores landing-page images uploaded via the Admin `galeri` tab. Public URLs are fetched with `supabase.storage.from('gallery').getPublicUrl(fileName)` and metadata (url, caption, urutan, active) is stored in the `landing_gallery` table.
 
 Admin operations are logged via the module-level `logActivity(action, detail, adminName)` function in `AdminPanel.tsx`, which writes to `activity_log`.
 
@@ -80,7 +88,7 @@ No state management library. Components use `useState`/`useEffect` with direct S
 
 Design tokens are CSS custom properties in `src/index.css`, referenced via the `MR` object in `src/lib/theme.ts`. Use `var(--mr-*)` in React inline styles.
 
-**Inline style pattern**: Large page files (DashboardPage, AdminPanel, JurnalPage, etc.) define their own local `C` and `G` constants at the top of the file that alias CSS variables — they do **not** import `MR` from `theme.ts`. Match this pattern when editing those files.
+**Inline style pattern**: Large page files (DashboardPage, AdminPanel, JurnalPage, etc.) define their own local `C` and `G` constants at the top of the file that alias CSS variables — they do **not** import `MR` from `theme.ts`. Match this pattern when editing those files. Exception: `LandingPage.tsx` imports `MR` directly from `theme.ts` and defines all its sub-sections as local functions within the same file (e.g. `NavBar`, `PricingSection`) rather than separate component files.
 
 ```ts
 const C = { bg: 'var(--mr-bg)', panel: 'var(--mr-panel)', text: 'var(--mr-text)', ... };
@@ -109,7 +117,7 @@ Four primary membership tiers: **Trial**, **Bronze**, **Gold**, **Platinum**. A 
 
 `DashboardPage` (`src/pages/member/DashboardPage.tsx`) is a sidebar-driven SPA-within-a-SPA. The sidebar IDs determine which tab renders — there is no URL change:
 
-`dashboard` · `kelas` · `materi` · `news` (Chart) · `jurnal` · `trading-plan` · `komunitas` · `tools` (Broker) · `funded` · `peringkat` · `sertifikat` · `ulasan` · `referral` · `pengaturan` · `bantuan` · `logout`
+`dashboard` · `kelas` · `materi` · `news` (Chart) · `jurnal` · `trading-plan` · `komunitas` · `tools` (Broker) · `funded` · `peringkat` · `competition` · `sertifikat` · `ulasan` · `referral` · `pengaturan` · `bantuan` · `logout`
 
 `JurnalPage` and `LeaderboardPage` are rendered as tabs inside `DashboardPage`, not as standalone routes.
 
@@ -118,6 +126,7 @@ Four primary membership tiers: **Trial**, **Bronze**, **Gold**, **Platinum**. A 
 `AdminPanel` (`src/pages/admin/AdminPanel.tsx`) uses the same sidebar pattern. Sections and their tab IDs:
 
 - **User Management**: `member` · `progress` · `jurnal` · `approvals` · `admin`
+- **Competition**: Accessed at `/admin/competition`; renders `AdminCompetitionPage` embedded inside AdminPanel.
 - **Content & Education**: `video` · `rating` · `trading-plan`
 - **Partnership & Monetization**: `broker` · `referral` · `proprules`
 - **Communication**: `pengumuman` / `broadcast` (both map to `announce` tab)
@@ -126,6 +135,23 @@ Four primary membership tiers: **Trial**, **Bronze**, **Gold**, **Platinum**. A 
 The `ApprovalsTab` component (inside AdminPanel) handles three sub-tabs: `ulasan` (testimonials), `advance` (advance_requests), `klaim` (partnership_claims).
 
 **Sidebar → tab ID mapping gotcha**: the `admin` sidebar item maps to tab ID `admins` (not `admin`); `pengaturan` maps to `settings`; `pengumuman` and `broadcast` both map to `announce`. The `jurnal` sidebar item in AdminPanel renders `LeaderboardPage` (member rankings), not a journal view — the label "Peringkat Member" in the sidebar reflects this, but the sidebar ID `jurnal` can be misleading.
+
+### Competition Feature
+
+A trading competition system where members auto-enter the leaderboard by filling their trading journal — no manual registration.
+
+- `src/pages/CompetitionPage.tsx` — Member-facing competition view (standalone route or embedded tab). Reads session from `mr_member` (localStorage or sessionStorage), not `mr_session`.
+- `src/pages/admin/AdminCompetitionPage.tsx` — Admin UI to create/edit competitions.
+- `src/components/competition/CompetitionCountdown.tsx` — Countdown timer to competition end.
+- `src/components/competition/CompetitionPodium.tsx` — Top-3 podium display.
+- `src/components/competition/LeaderboardTable.tsx` — Ranked table; exports `LeaderboardEntry` interface.
+- `src/components/competition/MyStatsModal.tsx` — Per-member stats modal (uses `useMyCompetitionStats`).
+- `src/hooks/useMyCompetitionStats.ts` — Fetches `trading_journals` + `journal_settings` for a member over the competition date range.
+- `supabase-competition-migration.sql` — Schema for the `competitions` table with RLS.
+
+**Ranking logic**: leaderboard is computed from `trading_journals` (filtered by `starts_at`/`ends_at` date range). Rank = `sum(pnl) / equity_awal * 100` (equity gain %). `equity_awal` comes from `journal_settings`; defaults to 10,000 if unset. Wins counted when `hasil` is `'Take Profit'` or `'SL Profit'`. Leaderboard updates in real time via a Supabase `postgres_changes` subscription on `trading_journals`.
+
+Only one competition can be `is_active = true` at a time; `CompetitionPage` fetches the most-recently-created active one.
 
 ### Shared Components
 
@@ -158,8 +184,14 @@ Config is stored per `plan_type` (`'basic'` | `'advanced'`) in the `trading_plan
 | `src/types/tradingPlan.ts` | Trading Plan types |
 | `src/hooks/index.ts` | All custom hooks (Supabase queries) |
 | `src/hooks/useWatchHistory.ts` | Video progress tracking |
+| `src/components/LanjutkanBelajar.tsx` | "Continue Learning" widget shown on member dashboard — reads last-watched video and latest uploads |
+| `src/components/PartnershipClaimForm.tsx` | Standalone form for submitting a partnership claim (embedded in PartnershipPage) |
 | `src/pages/member/DashboardPage.tsx` | Member dashboard (sidebar + multi-tab) |
 | `src/pages/admin/AdminPanel.tsx` | Admin control panel (single file, multi-tab) |
 | `src/components/mr/index.tsx` | Shared atomic components (MRLogo, Ticker, CandleChart) |
 | `src/constants.ts` | WhatsApp number and URL constants |
 | `supabase-migration.sql` | Database schema with RLS policies |
+| `supabase-competition-migration.sql` | `competitions` table schema with RLS |
+| `src/pages/CompetitionPage.tsx` | Member-facing competition + live leaderboard |
+| `src/pages/admin/AdminCompetitionPage.tsx` | Admin competition create/edit UI |
+| `src/hooks/useMyCompetitionStats.ts` | Per-member competition stats hook |

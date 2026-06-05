@@ -2,6 +2,7 @@
 import { supabase } from '../../lib/supabase';
 import AdminPage from '../AdminPage';
 import AdminTradingPlan from './AdminTradingPlan';
+import AdminCompetitionPage from './AdminCompetitionPage';
 
 const G = { gold: 'var(--mr-gold)', gold2: 'var(--mr-gold2)', cyan: '#00d4ff', cyanDim: 'rgba(0,212,255,0.13)' };
 const C = { bg: 'var(--mr-bg)', sidebar: 'var(--mr-sidebar)', panel: 'var(--mr-panel)', border: 'var(--mr-border)', border2: 'var(--mr-border2)', dim: 'var(--mr-dim)', text: 'var(--mr-text)', muted: 'var(--mr-muted)', up: 'var(--mr-up)', down: 'var(--mr-down)', mono: '"Geist Mono",monospace', sans: '"Geist",system-ui,sans-serif' };
@@ -27,6 +28,7 @@ const SIDEBAR_SECTIONS = [
     { id: 'video',        label: 'Video & Materi', icon: '▶' },
     { id: 'rating',       label: 'Rating Video',   icon: '⭐' },
     { id: 'trading-plan', label: 'Trading Plan',   icon: '📋' },
+    { id: 'competition',  label: 'Kompetisi',      icon: '🏆' },
   ]},
   { h: 'PARTNERSHIP & MONETIZATION', items: [
     { id: 'broker',    label: 'Broker',         icon: '🏦' },
@@ -605,7 +607,12 @@ function LogActivityTab() {
 }
 
 export default function AdminPanel() {
-  const [active, setActive] = useState(() => window.location.pathname === '/admin/trading-plan' ? 'trading-plan' : 'dashboard');
+  const [active, setActive] = useState(() => {
+    const p = window.location.pathname;
+    if (p === '/admin/trading-plan') return 'trading-plan';
+    if (p === '/admin/competition')  return 'competition';
+    return 'dashboard';
+  });
   const [fundedModal, setFundedModal] = useState<{status:string;color:string;label:string;k:string}|null>(null);
   const [fundedMembers, setFundedMembers] = useState<any[]>([]);
   const [dash, setDash] = useState({
@@ -1020,6 +1027,8 @@ export default function AdminPanel() {
             <LogActivityTab />
           ) : active === 'trading-plan' ? (
             <AdminTradingPlan />
+          ) : active === 'competition' ? (
+            <AdminCompetitionPage adminName={adminData.username||'admin'} />
           ) : active !== 'dashboard' ? (
             <AdminPage key={getTabId(active)} embedded={true} initialTab={getTabId(active)} />
           ) : (

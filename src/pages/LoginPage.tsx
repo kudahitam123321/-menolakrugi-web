@@ -17,7 +17,7 @@ function Field({ label, type='text', value, onChange, placeholder, icon }: {
       <div style={{position:'relative'}}>
         {icon&&<span style={{position:'absolute',left:14,top:'50%',transform:'translateY(-50%)',color:'#555'}}>{icon}</span>}
         <input type={isPass&&show?'text':type} value={value} onChange={e=>onChange(e.target.value)} placeholder={placeholder}
-          style={{width:'100%',background:'var(--mr-border)',border:'1px solid #2a2a2a',color:'var(--mr-text)',padding:`13px 14px 13px ${icon?'40px':'14px'}`,fontSize:14,outline:'none',boxSizing:'border-box' as const,fontFamily:'inherit',borderRadius:8}}
+          style={{width:'100%',background:'var(--mr-dark)',border:'1px solid var(--mr-border2)',color:'var(--mr-text)',padding:`13px 14px 13px ${icon?'40px':'14px'}`,fontSize:14,outline:'none',boxSizing:'border-box' as const,fontFamily:'inherit',borderRadius:8}}
           onFocus={e=>e.target.style.borderColor='#eab308'} onBlur={e=>e.target.style.borderColor='var(--mr-border2)'}/>
         {isPass&&<button onClick={()=>setShow(s=>!s)} style={{position:'absolute',right:14,top:'50%',transform:'translateY(-50%)',background:'none',border:'none',color:'#555',cursor:'pointer',fontSize:16}}>{show?'🙈':'👁'}</button>}
       </div>
@@ -70,7 +70,7 @@ function MemberForm({ onForgot }: { onForgot:()=>void }) {
         icon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>}/>
       <div>
         <label style={{display:'block',fontSize:13,color:'var(--mr-muted)',marginBottom:8,fontWeight:500}}>Tier Kelas</label>
-        <select value={tier} onChange={e=>setTier(e.target.value)} style={{width:'100%',background:'var(--mr-border)',border:'1px solid #2a2a2a',color:tier?'var(--mr-text)':'#666',padding:'13px 14px',fontSize:14,outline:'none',fontFamily:'inherit',borderRadius:8,appearance:'none' as const,cursor:'pointer',boxSizing:'border-box' as const}}
+        <select value={tier} onChange={e=>setTier(e.target.value)} style={{width:'100%',background:'var(--mr-dark)',border:'1px solid var(--mr-border2)',color:tier?'var(--mr-text)':'var(--mr-dim)',padding:'13px 14px',fontSize:14,outline:'none',fontFamily:'inherit',borderRadius:8,appearance:'none' as const,cursor:'pointer',boxSizing:'border-box' as const}}
           onFocus={e=>e.target.style.borderColor='#eab308'} onBlur={e=>e.target.style.borderColor='var(--mr-border2)'}>
           <option value="">Pilih tier kelas kamu</option>
           {TIERS.map(t=><option key={t} value={t}>{t}</option>)}
@@ -82,7 +82,7 @@ function MemberForm({ onForgot }: { onForgot:()=>void }) {
         <div onClick={()=>setRemember(r=>!r)} style={{width:20,height:20,borderRadius:5,border:`2px solid ${remember?'#eab308':'var(--mr-border2)'}`,background:remember?'#eab308':'transparent',display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',flexShrink:0,transition:'all 0.15s'}}>
           {remember&&<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#000" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>}
         </div>
-        <span style={{fontSize:13,color:remember?'var(--mr-text)':'#666'}}>Ingat saya di perangkat ini</span>
+        <span style={{fontSize:13,color:remember?'var(--mr-text)':'var(--mr-dim)'}}>Ingat saya di perangkat ini</span>
       </label>
       {error&&<div style={{color:'#ef4444',fontSize:13,fontFamily:'"Geist Mono",monospace'}}>⚠ {error}</div>}
       <button onClick={handleLogin} disabled={loading} style={{background:'#eab308',color:'#000',fontWeight:700,padding:'16px',fontSize:14,border:'none',cursor:loading?'not-allowed':'pointer',opacity:loading?0.7:1,display:'flex',alignItems:'center',justifyContent:'center',gap:8,marginTop:4,borderRadius:10}}>
@@ -91,7 +91,7 @@ function MemberForm({ onForgot }: { onForgot:()=>void }) {
       </button>
       <div style={{display:'flex',justifyContent:'space-between',fontSize:13}}>
         <button onClick={onForgot} style={{color:'#eab308',background:'none',border:'none',cursor:'pointer',textDecoration:'underline',fontSize:13}}>Lupa Password?</button>
-        <a href="https://wa.me/6281242224939" target="_blank" rel="noreferrer" style={{color:'#666',textDecoration:'none',fontSize:13}}>Hubungi Admin</a>
+        <a href="https://wa.me/6281242224939" target="_blank" rel="noreferrer" style={{color:'var(--mr-dim)',textDecoration:'none',fontSize:13}}>Hubungi Admin</a>
       </div>
       <div style={{textAlign:'center',color:'#444',fontSize:12,fontFamily:'"Geist Mono",monospace',paddingTop:8,borderTop:'1px solid #1a1a1a'}}>
         🔒 Secure Login · Your data is protected
@@ -135,7 +135,7 @@ function AdminForm() {
         <div onClick={()=>setRemember(r=>!r)} style={{width:20,height:20,borderRadius:5,border:`2px solid ${remember?'#eab308':'var(--mr-border2)'}`,background:remember?'#eab308':'transparent',display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',flexShrink:0,transition:'all 0.15s'}}>
           {remember&&<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#000" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>}
         </div>
-        <span style={{fontSize:13,color:remember?'var(--mr-text)':'#666'}}>Ingat saya di perangkat ini</span>
+        <span style={{fontSize:13,color:remember?'var(--mr-text)':'var(--mr-dim)'}}>Ingat saya di perangkat ini</span>
       </label>
       {error&&<div style={{color:'#ef4444',fontSize:13,fontFamily:'"Geist Mono",monospace'}}>⚠ {error}</div>}
       <button onClick={handleLogin} disabled={loading} style={{background:'#ef4444',color:'#fff',fontWeight:700,padding:'16px',fontSize:14,border:'none',cursor:loading?'not-allowed':'pointer',opacity:loading?0.7:1,display:'flex',alignItems:'center',justifyContent:'center',gap:8,marginTop:4,borderRadius:10}}>
@@ -161,7 +161,7 @@ function ForgotForm({ onBack }: { onBack:()=>void }) {
     <div style={{textAlign:'center',padding:'20px 0'}}>
       <div style={{fontSize:40,marginBottom:16}}>✅</div>
       <div style={{fontWeight:700,fontSize:18,marginBottom:8}}>WhatsApp Terbuka!</div>
-      <div style={{color:'#666',fontSize:14,lineHeight:1.6,marginBottom:24}}>Kirim pesan ke admin untuk proses reset password.</div>
+      <div style={{color:'var(--mr-dim)',fontSize:14,lineHeight:1.6,marginBottom:24}}>Kirim pesan ke admin untuk proses reset password.</div>
       <button onClick={onBack} style={{color:'#eab308',background:'none',border:'none',cursor:'pointer',fontSize:14}}>← Kembali ke Login</button>
     </div>
   );
@@ -172,15 +172,15 @@ function ForgotForm({ onBack }: { onBack:()=>void }) {
         icon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>}/>
       <div>
         <label style={{display:'block',fontSize:13,color:'var(--mr-muted)',marginBottom:8,fontWeight:500}}>Tier Kelas</label>
-        <select value={tier} onChange={e=>setTier(e.target.value)} style={{width:'100%',background:'var(--mr-border)',border:'1px solid #2a2a2a',color:tier?'var(--mr-text)':'#666',padding:'13px 14px',fontSize:14,outline:'none',fontFamily:'inherit',borderRadius:8,appearance:'none' as const,boxSizing:'border-box' as const}}>
+        <select value={tier} onChange={e=>setTier(e.target.value)} style={{width:'100%',background:'var(--mr-border)',border:'1px solid #2a2a2a',color:tier?'var(--mr-text)':'var(--mr-dim)',padding:'13px 14px',fontSize:14,outline:'none',fontFamily:'inherit',borderRadius:8,appearance:'none' as const,boxSizing:'border-box' as const}}>
           <option value="">Pilih tier kelas kamu</option>
           {TIERS.map(t=><option key={t} value={t}>{t}</option>)}
         </select>
       </div>
-      <button onClick={handleReset} style={{background:'var(--mr-border)',color:'var(--mr-text)',fontWeight:700,padding:'16px',fontSize:14,border:'1px solid #333',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:8,marginTop:4,borderRadius:10}}>
+      <button onClick={handleReset} style={{background:'var(--mr-dark)',color:'var(--mr-text)',fontWeight:700,padding:'16px',fontSize:14,border:'1px solid var(--mr-border2)',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:8,marginTop:4,borderRadius:10}}>
         Reset Password via WhatsApp
       </button>
-      <button onClick={onBack} style={{color:'#666',background:'none',border:'none',cursor:'pointer',fontSize:13,textAlign:'center' as const}}>← Kembali ke Login</button>
+      <button onClick={onBack} style={{color:'var(--mr-dim)',background:'none',border:'none',cursor:'pointer',fontSize:13,textAlign:'center' as const}}>← Kembali ke Login</button>
     </div>
   );
 }
@@ -200,7 +200,7 @@ export default function LoginPage() {
       <style>{`
         .mr-lp-outer { display: grid; grid-template-columns: 1fr 520px; min-height: 100vh; }
         .mr-lp-left { display: flex; flex-direction: column; justify-content: space-between; overflow: hidden; position: relative; padding: 48px 56px; }
-        .mr-lp-right { display: flex; align-items: center; justify-content: center; padding: 48px 40px; background: #0d0d0d; border-left: 1px solid #1a1a1a; }
+        .mr-lp-right { display: flex; align-items: center; justify-content: center; padding: 48px 40px; background: var(--mr-sidebar); border-left: 1px solid var(--mr-border); }
         .mr-lp-form { width: 100%; max-width: 400px; }
         @media (max-width: 767px) {
           .mr-lp-outer { display: flex !important; flex-direction: column; min-height: 100vh; }
@@ -229,7 +229,7 @@ export default function LoginPage() {
           </div>
           <div style={{fontFamily:'"Geist Mono",monospace',color:'#eab308',fontSize:11,letterSpacing:2,marginBottom:20}}>//  ACCESS GATEWAY</div>
           <h1 style={{fontSize:56,fontWeight:700,letterSpacing:-2,lineHeight:1.05,margin:'0 0 20px'}}>Access<br/><span style={{color:'#eab308'}}>Trading Room</span></h1>
-          <p style={{color:'#666',fontSize:16,lineHeight:1.65,maxWidth:380,marginBottom:48}}>Masuk ke dashboard mentorship & trading environment eksklusif Menolak Rugi.</p>
+          <p style={{color:'var(--mr-dim)',fontSize:16,lineHeight:1.65,maxWidth:380,marginBottom:48}}>Masuk ke dashboard mentorship & trading environment eksklusif Menolak Rugi.</p>
           <div style={{width:48,height:2,background:'#eab308'}}/>
         </div>
         <div style={{position:'relative'}}>
@@ -238,7 +238,7 @@ export default function LoginPage() {
             <div style={{fontSize:16,fontStyle:'italic',color:'#ccc',lineHeight:1.6}}>Disiplin hari ini, freedom di masa depan.</div>
             <div style={{fontFamily:'"Geist Mono",monospace',color:'#eab308',fontSize:11,marginTop:14}}>— Menolak Rugi</div>
           </div>
-          <div style={{fontFamily:'"Geist Mono",monospace',color:'#333',fontSize:11,marginTop:32}}>© 2026 MENOLAK RUGI. All rights reserved.</div>
+          <div style={{fontFamily:'"Geist Mono",monospace',color:'var(--mr-dim)',fontSize:11,marginTop:32}}>© 2026 MENOLAK RUGI. All rights reserved.</div>
         </div>
       </div>
 
@@ -250,7 +250,7 @@ export default function LoginPage() {
               <div style={{textAlign:'center',marginBottom:36}}>
                 <div style={{width:64,height:64,background:'var(--mr-border)',borderRadius:'50%',display:'flex',alignItems:'center',justifyContent:'center',margin:'0 auto 20px',fontSize:28}}>🔑</div>
                 <h2 style={{fontSize:28,fontWeight:700,margin:'0 0 8px'}}>Recover Access</h2>
-                <p style={{color:'#666',fontSize:14,margin:0}}>Verifikasi data membership untuk reset password.</p>
+                <p style={{color:'var(--mr-dim)',fontSize:14,margin:0}}>Verifikasi data membership untuk reset password.</p>
               </div>
               <ForgotForm onBack={()=>setView('member')}/>
             </>
@@ -261,14 +261,14 @@ export default function LoginPage() {
                   {view==='admin'?'🛡':'🔒'}
                 </div>
                 <h2 style={{fontSize:26,fontWeight:700,margin:'0 0 6px'}}>Welcome Back</h2>
-                <p style={{color:'#666',fontSize:14,margin:0}}>{view==='admin'?'Login sebagai administrator.':'Gunakan akun membership kamu untuk masuk.'}</p>
+                <p style={{color:'var(--mr-dim)',fontSize:14,margin:0}}>{view==='admin'?'Login sebagai administrator.':'Gunakan akun membership kamu untuk masuk.'}</p>
               </div>
-              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:28,background:'#111',padding:4,borderRadius:8}}>
-                <button onClick={()=>setView('member')} style={{padding:'10px',fontWeight:600,fontSize:14,border:'none',borderRadius:6,background:view==='member'?'#eab308':'transparent',color:view==='member'?'#000':'#666',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:6}}>
+              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:28,background:'var(--mr-panel)',padding:4,borderRadius:8}}>
+                <button onClick={()=>setView('member')} style={{padding:'10px',fontWeight:600,fontSize:14,border:'none',borderRadius:6,background:view==='member'?'#eab308':'transparent',color:view==='member'?'#000':'var(--mr-dim)',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:6}}>
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
                   Member
                 </button>
-                <button onClick={()=>setView('admin')} style={{padding:'10px',fontWeight:600,fontSize:14,border:'none',borderRadius:6,background:view==='admin'?'#ef4444':'transparent',color:view==='admin'?'#fff':'#666',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:6}}>
+                <button onClick={()=>setView('admin')} style={{padding:'10px',fontWeight:600,fontSize:14,border:'none',borderRadius:6,background:view==='admin'?'#ef4444':'transparent',color:view==='admin'?'#fff':'var(--mr-dim)',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:6}}>
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
                   Admin
                 </button>

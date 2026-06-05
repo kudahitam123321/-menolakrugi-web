@@ -132,7 +132,7 @@ function NavBar() {
           return (
             <a key={item.l} href={item.href} onClick={() => setActive(item.l)}
               style={{ display: 'flex', flexDirection: 'column' as const, alignItems: 'center', gap: 3, padding: '8px 18px', borderRadius: 9, textDecoration: 'none',
-                color: isActive ? MR.gold : '#666',
+                color: isActive ? MR.gold : 'var(--mr-dim)',
                 background: isActive ? 'var(--mr-tint-gold)' : 'transparent',
                 border: isActive ? '1px solid var(--mr-tint-gold-b)' : '1px solid transparent',
                 transition: 'all .2s' }}>
@@ -162,7 +162,7 @@ function NavBar() {
           </button>
         )}
         <button onClick={() => window.location.href = '/signup'}
-          style={{ fontFamily: MR.mono, fontSize: 11, padding: '9px 16px', background: 'linear-gradient(135deg,#eab308,#ca9e00)', color: '#000', fontWeight: 700, border: 'none', cursor: 'pointer', borderRadius: 7 }}>
+          className="mr-btn-shimmer" style={{ fontFamily: MR.mono, fontSize: 11, padding: '9px 16px', background: 'linear-gradient(135deg,#eab308,#ca9e00)', color: '#000', fontWeight: 700, border: 'none', cursor: 'pointer', borderRadius: 7 }}>
           BUKA AKUN ›
         </button>
       </div>
@@ -181,15 +181,15 @@ function NavBar() {
           </button>
         )}
         <button onClick={() => window.location.href = '/signup'}
-          style={{ fontFamily: MR.mono, fontSize: 11, padding: '8px 12px', background: 'linear-gradient(135deg,#eab308,#ca9e00)', color: '#000', fontWeight: 700, border: 'none', cursor: 'pointer', borderRadius: 7, whiteSpace: 'nowrap' as const }}>
+          className="mr-btn-shimmer" style={{ fontFamily: MR.mono, fontSize: 11, padding: '8px 12px', background: 'linear-gradient(135deg,#eab308,#ca9e00)', color: '#000', fontWeight: 700, border: 'none', cursor: 'pointer', borderRadius: 7, whiteSpace: 'nowrap' as const }}>
           DAFTAR
         </button>
         {/* Hamburger */}
         <button onClick={() => setMenuOpen(o => !o)}
-          style={{ width: 38, height: 38, background: '#111', border: '1px solid #2a2a2a', borderRadius: 8, cursor: 'pointer', display: 'flex', flexDirection: 'column' as const, alignItems: 'center', justifyContent: 'center', gap: 5, flexShrink: 0 }}>
-          <span style={{ display: 'block', width: 16, height: 1.5, background: '#888', borderRadius: 2 }}/>
-          <span style={{ display: 'block', width: 16, height: 1.5, background: '#888', borderRadius: 2 }}/>
-          <span style={{ display: 'block', width: 12, height: 1.5, background: '#888', borderRadius: 2 }}/>
+          style={{ width: 38, height: 38, background: 'var(--mr-panel)', border: '1px solid var(--mr-border2)', borderRadius: 8, cursor: 'pointer', display: 'flex', flexDirection: 'column' as const, alignItems: 'center', justifyContent: 'center', gap: 5, flexShrink: 0 }}>
+          <span style={{ display: 'block', width: 16, height: 1.5, background: 'var(--mr-muted)', borderRadius: 2 }}/>
+          <span style={{ display: 'block', width: 16, height: 1.5, background: 'var(--mr-muted)', borderRadius: 2 }}/>
+          <span style={{ display: 'block', width: 12, height: 1.5, background: 'var(--mr-muted)', borderRadius: 2 }}/>
         </button>
       </div>
     </nav>
@@ -198,17 +198,17 @@ function NavBar() {
     {menuOpen && (
       <div style={{ position: 'fixed', inset: 0, zIndex: 100, display: 'flex', flexDirection: 'column' as const }}>
         <div style={{ flex: 1, background: 'rgba(0,0,0,0.7)' }} onClick={() => setMenuOpen(false)}/>
-        <div style={{ background: '#0a0a0a', borderTop: '1px solid #2a2a2a', padding: '20px 24px 32px' }}>
+        <div style={{ background: 'var(--mr-sidebar)', borderTop: '1px solid var(--mr-border2)', padding: '20px 24px 32px' }}>
           {/* Close bar */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
             <span style={{ fontFamily: MR.mono, color: '#eab308', fontSize: 11, letterSpacing: 1 }}>MENU</span>
-            <button onClick={() => setMenuOpen(false)} style={{ background: 'none', border: 'none', color: '#666', fontSize: 24, cursor: 'pointer', padding: '0 4px' }}>×</button>
+            <button onClick={() => setMenuOpen(false)} style={{ background: 'none', border: 'none', color: 'var(--mr-dim)', fontSize: 24, cursor: 'pointer', padding: '0 4px' }}>×</button>
           </div>
           {/* Nav links */}
           <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 4, marginBottom: 20 }}>
             {NAV_ITEMS.map(item => (
               <a key={item.l} href={item.href} onClick={() => setMenuOpen(false)}
-                style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 16px', background: '#111', borderRadius: 10, textDecoration: 'none', color: 'var(--mr-text)', fontSize: 15, fontWeight: 600, border: '1px solid #1a1a1a' }}>
+                style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 16px', background: 'var(--mr-panel)', borderRadius: 10, textDecoration: 'none', color: 'var(--mr-text)', fontSize: 15, fontWeight: 600, border: '1px solid var(--mr-border)' }}>
                 <span style={{ fontSize: 20 }}>{item.icon}</span>
                 {item.l}
               </a>
@@ -223,7 +223,7 @@ function NavBar() {
               </button>
             ) : (
               <button onClick={() => window.location.href = '/login'}
-                style={{ width: '100%', fontFamily: MR.mono, fontSize: 13, fontWeight: 700, color: 'var(--mr-text)', padding: '14px', background: '#111', border: '1px solid #2a2a2a', cursor: 'pointer', borderRadius: 10 }}>
+                style={{ width: '100%', fontFamily: MR.mono, fontSize: 13, fontWeight: 700, color: 'var(--mr-text)', padding: '14px', background: 'var(--mr-panel)', border: '1px solid var(--mr-border2)', cursor: 'pointer', borderRadius: 10 }}>
                 LOG IN
               </button>
             )}
@@ -271,15 +271,25 @@ function useCounter(target: number, duration = 1400) {
   return val;
 }
 
+function useFadeUp(delay = 0) {
+  const { ref, inView } = useInView(0.12);
+  const animStyle: React.CSSProperties = {
+    opacity: inView ? 1 : 0,
+    transform: inView ? 'translateY(0)' : 'translateY(28px)',
+    transition: `opacity 0.65s ease ${delay}ms, transform 0.65s ease ${delay}ms`,
+  };
+  return { ref, animStyle };
+}
+
 function Hero() {
   const [isMobile, setIsMobile] = React.useState(() => window.matchMedia('(max-width: 767px)').matches);
   React.useEffect(() => { const mq = window.matchMedia('(max-width: 767px)'); const h = (e: MediaQueryListEvent) => setIsMobile(e.matches); mq.addEventListener('change',h); return ()=>mq.removeEventListener('change',h); }, []);
 
   return (
-    <section id="kelas" style={{ position: 'relative', padding: isMobile ? '56px 20px 64px' : '88px 40px 96px' }}>
+    <section id="kelas" style={{ position: 'relative', padding: isMobile ? '56px 20px 16px' : '88px 40px 24px' }}>
       <div style={{ position: 'absolute', inset: 0, opacity: 0.4, ...CANDLE_GRID_STYLE }} />
       <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 120, background: 'linear-gradient(transparent, var(--mr-bg))', pointerEvents: 'none' }} />
-      <div style={{ position: 'relative', maxWidth: 900 }}>
+      <div style={{ position: 'relative', maxWidth: 900, margin: '0 auto', textAlign: isMobile ? 'left' : 'center' }}>
         <div className='mr-anim-badge' style={{ fontFamily: MR.mono, display: 'inline-flex', gap: 8, alignItems: 'center', padding: '6px 10px', border: `1px solid ${MR.border}`, color: MR.dim, fontSize: 11, letterSpacing: 0.6, marginBottom: 28 }}>
           <span className="mr-blink" style={{ color: MR.up }}>●</span>
           LIVE · SMART MONEY CONCEPT EDUCATION PLATFORM
@@ -290,11 +300,11 @@ function Hero() {
           <span className='mr-anim-h1-3' style={{ display:'block' }}>Mulai pahami</span>
           <span className='mr-anim-h1-4' style={{ display:'block', color: MR.up }}>market structure.</span>
         </h1>
-        <p className='mr-anim-desc' style={{ fontSize: isMobile ? 15 : 18, color: MR.dim, lineHeight: 1.65, maxWidth: 600, marginBottom: 40 }}>
+        <p className='mr-anim-desc' style={{ fontSize: isMobile ? 15 : 18, color: MR.dim, lineHeight: 1.65, maxWidth: 600, margin: '0 auto 40px' }}>
           Smart Money Concept yang kami gunakan langsung di funded account. Belajar membaca arah market lewat struktur yang jelas — dari trend, BOS, CHoCH, sampai validasi entry. Bukan sekadar entry karena feeling.
         </p>
-        <div className='mr-anim-cta' style={{ display: 'flex', gap: 12, flexWrap: 'wrap' as const }}>
-          <button onClick={() => window.location.href = '/signup'} style={{ fontFamily: MR.mono, background: MR.gold, color: '#fff', fontWeight: 700, padding: '16px 32px', letterSpacing: 0.4, fontSize: 13, border: 'none', cursor: 'pointer' }}>PILIH KELAS ▸</button>
+        <div className='mr-anim-cta' style={{ display: 'flex', gap: 12, flexWrap: 'wrap' as const, justifyContent: isMobile ? 'flex-start' : 'center' }}>
+          <button onClick={() => window.location.href = '/signup'} className="mr-btn-shimmer" style={{ fontFamily: MR.mono, background: MR.gold, color: '#fff', fontWeight: 700, padding: '16px 32px', letterSpacing: 0.4, fontSize: 13, border: 'none', cursor: 'pointer' }}>PILIH KELAS ▸</button>
           <button onClick={() => document.getElementById('kurikulum')?.scrollIntoView({ behavior: 'smooth' })} style={{ fontFamily: MR.mono, border: `1px solid ${MR.borderHot}`, padding: '16px 28px', letterSpacing: 0.4, fontSize: 13, background: 'transparent', color: MR.text, cursor: 'pointer' }}>LIHAT KURIKULUM</button>
         </div>
       </div>
@@ -318,7 +328,7 @@ function StatsBar({ memberCount, fundedCount, newThisMonth }: { memberCount: num
   ];
 
   return (
-    <section ref={ref} style={{ background: 'linear-gradient(180deg,#060606,#040404)', padding: isMobile ? '48px 20px' : '64px 40px', position: 'relative', overflow: 'hidden' }}>
+    <section ref={ref} style={{ background: 'linear-gradient(180deg,var(--mr-bg),var(--mr-dark))', padding: isMobile ? '24px 20px' : '28px 40px', position: 'relative', overflow: 'hidden' }}>
       <div style={{ position: 'absolute', top: '50%', left: '25%', transform: 'translate(-50%,-50%)', width: 400, height: 200, background: 'radial-gradient(ellipse,rgba(22,163,74,0.05) 0%,transparent 70%)', pointerEvents: 'none' }} />
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(4, 1fr)', gap: isMobile ? '32px 16px' : 0, maxWidth: 960, margin: '0 auto' }}>
         {STATS.map((s, i) => (
@@ -326,7 +336,7 @@ function StatsBar({ memberCount, fundedCount, newThisMonth }: { memberCount: num
             {!isMobile && i < 3 && <div style={{ position: 'absolute', right: 0, top: '15%', bottom: '15%', width: 1, background: `linear-gradient(180deg,transparent,${MR.border},transparent)` }} />}
             <div style={{ fontWeight: 800, fontSize: isMobile ? 40 : 56, letterSpacing: -3, lineHeight: 1, marginBottom: 10, background: `radial-gradient(ellipse at center, ${s.up ? '#22c55e' : '#d4af37'} 0%, ${MR.text} 60%)`, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>{s.v}</div>
             <div style={{ fontFamily: MR.mono, color: MR.dim, fontSize: 10, letterSpacing: 1.2, marginBottom: 4 }}>{s.k}</div>
-            <div style={{ fontFamily: MR.mono, fontSize: 10, color: s.up === true ? MR.up : '#666' }}>{s.up ? '▲ ' : ''}{s.d}</div>
+            <div style={{ fontFamily: MR.mono, fontSize: 10, color: s.up === true ? MR.up : 'var(--mr-dim)' }}>{s.up ? '▲ ' : ''}{s.d}</div>
           </div>
         ))}
       </div>
@@ -345,55 +355,72 @@ function LandingLeaderboard() {
   React.useEffect(() => {
     (async () => {
       try {
-        const [{ data: members }, { data: journals }, { data: settings }] = await Promise.all([
+        const [
+          { data: members, error: errM },
+          { data: journals, error: errJ },
+          { data: settings },
+        ] = await Promise.all([
           supabase.from('members').select('id,nama,tier'),
           supabase.from('trading_journals').select('member_id,hasil,pnl'),
           supabase.from('journal_settings').select('member_id,equity_awal'),
         ]);
-        if (!members || !journals) { setLoading(false); return; }
+
+        if (!journals || journals.length === 0) { setLoading(false); return; }
+
+        // Build dari jurnal dulu — tidak bergantung pada members match
+        const memberMap: Record<string, { nama: string; tier: string }> = {};
+        (members || []).forEach((m: any) => {
+          memberMap[m.id] = { nama: m.nama || 'Anon', tier: m.tier || 'trial' };
+        });
 
         const eqMap: Record<string, number> = {};
         (settings || []).forEach((s: any) => { eqMap[s.member_id] = s.equity_awal || 10000; });
 
-        const map: Record<string, { tp: number; sl: number; total: number; tier: string; nama: string; pnl: number }> = {};
-        members.forEach((m: any) => { map[m.id] = { tp: 0, sl: 0, total: 0, tier: m.tier || 'trial', nama: m.nama || 'Anon', pnl: 0 }; });
+        const agg: Record<string, { tp: number; sl: number; total: number; pnl: number }> = {};
         journals.forEach((j: any) => {
-          if (!map[j.member_id]) return;
-          map[j.member_id].total++;
-          map[j.member_id].pnl += (j.pnl || 0);
-          if (j.hasil === 'Take Profit') map[j.member_id].tp++;
-          if (j.hasil === 'Stop Loss')   map[j.member_id].sl++;
+          const mid = j.member_id;
+          if (!mid) return;
+          if (!agg[mid]) agg[mid] = { tp: 0, sl: 0, total: 0, pnl: 0 };
+          agg[mid].total++;
+          agg[mid].pnl += (j.pnl || 0);
+          if (j.hasil === 'Take Profit') agg[mid].tp++;
+          if (j.hasil === 'Stop Loss')   agg[mid].sl++;
         });
 
-        const sorted = Object.entries(map)
-          .filter(([, e]) => e.total > 0)
+        const sorted = Object.entries(agg)
           .map(([id, e]) => {
-            const ea = eqMap[id] || 10000;
-            const winRate = (e.tp + e.sl) > 0 ? (e.tp / (e.tp + e.sl)) * 100 : 0;
-            const gainPct = (e.pnl / ea) * 100;
-            return { ...e, winRate, gainPct };
+            const ea  = eqMap[id] || 10000;
+            const m   = memberMap[id] || { nama: 'Anon', tier: 'trial' };
+            const winRate  = (e.tp + e.sl) > 0 ? (e.tp / (e.tp + e.sl)) * 100 : 0;
+            const gainPct  = (e.pnl / ea) * 100;
+            return { ...e, ...m, winRate, gainPct };
           })
           .sort((a, b) => b.gainPct - a.gainPct)
           .slice(0, 10);
+
         setEntries(sorted);
-      } catch {}
+      } catch (e) {
+        console.error('[LandingLeaderboard] error:', e);
+      }
       setLoading(false);
     })();
   }, []);
+
+  const { ref: refLb, animStyle: lbStyle } = useFadeUp();
 
   if (loading || entries.length === 0) return null;
 
   const RANK_SRC  = (i: number) => i === 0 ? '/rank_1.png' : i === 1 ? '/rank_2.png' : i === 2 ? '/rank_3.png' : i < 10 ? '/rank_4-10.png' : '/rank_11-20.png';
   const TOP3_META = [
-    { border: '#eab308', bg: 'linear-gradient(135deg,#1a1200 0%,#0d0d0d 100%)', glow: 'rgba(234,179,8,0.12)', label: '🥇 #1' },
-    { border: '#94a3b8', bg: 'linear-gradient(135deg,#101418 0%,#0d0d0d 100%)', glow: 'rgba(148,163,184,0.10)', label: '🥈 #2' },
-    { border: '#cd7c3a', bg: 'linear-gradient(135deg,#130d00 0%,#0d0d0d 100%)', glow: 'rgba(205,124,58,0.10)',  label: '🥉 #3' },
+    { border: '#eab308', bg: 'linear-gradient(135deg,#1a1200 0%,var(--mr-sidebar) 100%)', glow: 'rgba(234,179,8,0.12)', label: '🥇 #1' },
+    { border: '#94a3b8', bg: 'linear-gradient(135deg,#101418 0%,var(--mr-sidebar) 100%)', glow: 'rgba(148,163,184,0.10)', label: '🥈 #2' },
+    { border: '#cd7c3a', bg: 'linear-gradient(135deg,#130d00 0%,var(--mr-sidebar) 100%)', glow: 'rgba(205,124,58,0.10)',  label: '🥉 #3' },
   ];
 
   return (
-    <section style={{ background: 'linear-gradient(180deg,#080808,#060606)', padding: isMobile ? '56px 20px' : '80px 40px', position: 'relative', overflow: 'hidden' }}>
+    <section style={{ background: 'linear-gradient(180deg,var(--mr-sidebar),var(--mr-bg))', padding: isMobile ? '36px 20px' : '56px 40px', position: 'relative', overflow: 'hidden' }}>
       <div style={{ position: 'absolute', top: 0, right: 0, width: 320, height: 320, background: 'radial-gradient(ellipse at top right,rgba(22,163,74,0.04) 0%,transparent 70%)', pointerEvents: 'none' }} />
-      <div style={{ maxWidth: 760, margin: '0 auto' }}>
+      <div ref={refLb} style={{ ...lbStyle, maxWidth: 760, margin: '0 auto' }}>
 
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 36, flexWrap: 'wrap' as const, gap: 12 }}>
@@ -496,10 +523,11 @@ function LandingLeaderboard() {
 function DiscordCTA() {
   const [isMobile, setIsMobile] = React.useState(() => window.matchMedia('(max-width: 767px)').matches);
   React.useEffect(() => { const mq = window.matchMedia('(max-width: 767px)'); const h = (e: MediaQueryListEvent) => setIsMobile(e.matches); mq.addEventListener('change',h); return ()=>mq.removeEventListener('change',h); }, []);
+  const { ref: refDc, animStyle: dcStyle } = useFadeUp();
   return (
-    <section style={{ borderBottom: `1px solid ${MR.border}`, background: 'linear-gradient(180deg,#060606 0%,#06100a 50%,#060606 100%)', padding: isMobile ? '56px 20px' : '96px 40px', textAlign: 'center' as const, position: 'relative', overflow: 'hidden' }}>
+    <section style={{ borderBottom: `1px solid ${MR.border}`, background: 'linear-gradient(180deg,var(--mr-bg) 0%,var(--mr-tint-green3) 50%,var(--mr-bg) 100%)', padding: isMobile ? '56px 20px' : '96px 40px', textAlign: 'center' as const, position: 'relative', overflow: 'hidden' }}>
       <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: 700, height: 400, background: 'radial-gradient(ellipse,rgba(22,163,74,0.06) 0%,transparent 70%)', pointerEvents: 'none' }} />
-      <div style={{ position: 'relative', maxWidth: 600, margin: '0 auto' }}>
+      <div ref={refDc} style={{ ...dcStyle, position: 'relative', maxWidth: 600, margin: '0 auto' }}>
         <div style={{ fontFamily: MR.mono, color: MR.gold, fontSize: 11, letterSpacing: 1.5, marginBottom: 20 }}>// KOMUNITAS</div>
         <h2 style={{ fontSize: isMobile ? 32 : 56, fontWeight: 700, letterSpacing: isMobile ? -1 : -2, lineHeight: 1.05, margin: '0 0 20px' }}>
           Belajar lebih cepat<br/>
@@ -533,8 +561,9 @@ function DiscordCTA() {
 function Manifesto() {
   const [isMobile, setIsMobile] = React.useState(() => window.matchMedia('(max-width: 767px)').matches);
   React.useEffect(() => { const mq = window.matchMedia('(max-width: 767px)'); const h = (e: MediaQueryListEvent) => setIsMobile(e.matches); mq.addEventListener('change',h); return ()=>mq.removeEventListener('change',h); }, []);
+  const { ref, animStyle } = useFadeUp();
   return (
-    <section className='mr-stats-row' style={{ padding: '32px 40px', borderBottom: `1px solid ${MR.border}`, display: 'flex', justifyContent: 'space-between', gap: 32, alignItems: 'center' }}>
+    <section ref={ref} className='mr-stats-row' style={{ ...animStyle, padding: '32px 40px', borderBottom: `1px solid ${MR.border}`, display: 'flex', justifyContent: 'space-between', gap: 32, alignItems: 'center' }}>
       <div style={{ fontFamily: MR.mono, color: MR.dim, fontSize: 11, letterSpacing: 0.8, flexShrink: 0 }}>// MANIFESTO</div>
       <div style={{ fontSize: isMobile ? 16 : 22, lineHeight: 1.5, letterSpacing: -0.25, maxWidth: 1080 }}>
         Pasar bukan bergerak secara random. Setiap pergerakan membentuk <span style={{ color: MR.up }}>struktur</span>, dan struktur selalu memberi petunjuk arah berikutnya. Kami ngajarin cara membaca <em style={{ fontStyle: 'normal', color: MR.gold }}>market structure</em> dengan benar — memahami kapan trend berlanjut, kapan melemah, dan kapan market mulai <span style={{ color: MR.down }}>berubah arah</span>.
@@ -548,6 +577,7 @@ function Curriculum() {
   React.useEffect(() => { const mq = window.matchMedia('(max-width: 767px)'); const h = (e: MediaQueryListEvent) => setIsMobile(e.matches); mq.addEventListener('change',h); return ()=>mq.removeEventListener('change',h); }, []);
   const [activeBasic, setActiveBasic] = React.useState<number|null>(null);
   const [activeAdv, setActiveAdv]     = React.useState<number|null>(null);
+  const { ref: refHdr, animStyle: hdrStyle } = useFadeUp();
 
   function ModCard({ mod, idx, isAdv }: { mod: any; idx: number; isAdv?: boolean }) {
     const isOpen = isAdv ? activeAdv === idx : activeBasic === idx;
@@ -557,8 +587,8 @@ function Curriculum() {
     return (
       <div style={{ borderBottom: `1px solid ${MR.border}`, overflow: 'hidden' }}>
         <button onClick={toggle}
-          style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 12, padding: '14px 20px', background: isOpen ? (isAdv ? '#0f0c00' : '#051210') : 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left' as const, transition: 'background .2s' }}>
-          <span style={{ fontFamily: MR.mono, fontSize: 10, fontWeight: 700, color: isBonusCard ? '#a855f7' : accent, background: isBonusCard ? '#120a1a' : (isAdv ? 'var(--mr-tint-gold)' : '#051a14'), border: `1px solid ${isBonusCard ? '#3a1a5a' : (isAdv ? 'var(--mr-tint-gold-b)' : '#0f3a2a')}`, padding: '2px 8px', flexShrink: 0, minWidth: 52, textAlign: 'center' as const }}>
+          style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 12, padding: '14px 20px', background: isOpen ? (isAdv ? 'var(--mr-tint-gold)' : 'var(--mr-tint-green3)') : 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left' as const, transition: 'background .2s' }}>
+          <span style={{ fontFamily: MR.mono, fontSize: 10, fontWeight: 700, color: isBonusCard ? '#a855f7' : accent, background: isBonusCard ? 'var(--mr-tint-purple)' : (isAdv ? 'var(--mr-tint-gold)' : 'var(--mr-tint-green3)'), border: `1px solid ${isBonusCard ? '#3a1a5a' : (isAdv ? 'var(--mr-tint-gold-b)' : 'var(--mr-tint-green-b)')}`, padding: '2px 8px', flexShrink: 0, minWidth: 52, textAlign: 'center' as const }}>
             {mod.mod}
           </span>
           <span style={{ flex: 1, fontSize: 14, fontWeight: 600, color: isOpen ? (isBonusCard ? '#c084fc' : accent) : MR.text }}>
@@ -567,7 +597,7 @@ function Curriculum() {
           <span style={{ fontFamily: MR.mono, fontSize: 12, color: MR.dim, transition: 'transform .2s', transform: isOpen ? 'rotate(180deg)' : 'none', flexShrink: 0 }}>▾</span>
         </button>
         {isOpen && (
-          <div style={{ padding: '4px 20px 14px 60px', background: isAdv ? '#0a0800' : '#040e0c' }}>
+          <div style={{ padding: '4px 20px 14px 60px', background: isAdv ? 'var(--mr-tint-gold)' : 'var(--mr-tint-green)' }}>
             {mod.items.map((item: string, i: number) => (
               <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 8, padding: '5px 0', fontSize: 13, color: MR.dim }}>
                 <span style={{ color: isBonusCard ? '#a855f7' : accent, flexShrink: 0, marginTop: 1 }}>▸</span>
@@ -583,7 +613,7 @@ function Curriculum() {
   return (
     <section id="kurikulum" style={{ borderBottom: `1px solid ${MR.border}` }}>
       {/* Header */}
-      <div style={{ padding: '48px 40px 32px', borderBottom: `1px solid ${MR.border}` }}>
+      <div ref={refHdr} style={{ ...hdrStyle, padding: '48px 40px 32px', borderBottom: `1px solid ${MR.border}` }}>
         <div style={{ fontFamily: MR.mono, color: MR.dim, fontSize: 11, letterSpacing: 0.8, marginBottom: 8 }}>// KURIKULUM</div>
         <h2 style={{ fontSize: isMobile ? 22 : 36, fontWeight: 700, margin: 0, letterSpacing: isMobile ? -0.5 : -1 }}>
           Apa yang kamu pelajari
@@ -645,6 +675,8 @@ function GallerySlider() {
     return () => mq.removeEventListener('change', h);
   }, []);
 
+  const { ref: refGalHdr, animStyle: galHdrStyle } = useFadeUp();
+
   React.useEffect(() => {
     supabase.from('landing_gallery').select('url,caption,urutan').eq('active', true).order('urutan').then(({ data }) => {
       if (data && data.length > 0) setImages(data);
@@ -653,7 +685,7 @@ function GallerySlider() {
 
   React.useEffect(() => {
     if (paused || images.length <= 1) return;
-    const t = setInterval(() => setCur(c => (c + 1) % images.length), 2000);
+    const t = setInterval(() => setCur(c => (c + 1) % images.length), 4000);
     return () => clearInterval(t);
   }, [paused, images.length]);
 
@@ -663,8 +695,8 @@ function GallerySlider() {
   const next = () => setCur(c => (c + 1) % images.length);
 
   return (
-    <section style={{ borderBottom: `1px solid ${MR.border}`, background: '#060606' }}>
-      <div style={{ padding: isMobile ? '32px 20px 20px' : '48px 40px 28px' }}>
+    <section style={{ borderBottom: `1px solid ${MR.border}`, background: 'var(--mr-bg)' }}>
+      <div ref={refGalHdr} style={{ ...galHdrStyle, padding: isMobile ? '32px 20px 20px' : '48px 40px 28px' }}>
         <div style={{ fontFamily: MR.mono, color: MR.dim, fontSize: 11, letterSpacing: 0.8, marginBottom: 8 }}>// GALERI</div>
         <h2 style={{ fontSize: isMobile ? 22 : 34, fontWeight: 700, margin: 0, letterSpacing: -0.5 }}>Hasil Nyata Member Kami</h2>
       </div>
@@ -687,7 +719,7 @@ function GallerySlider() {
                 <img
                   src={img.url}
                   alt={img.caption || `galeri-${i + 1}`}
-                  style={{ width: '100%', height: isMobile ? 280 : 520, objectFit: 'contain', display: 'block', background: '#060606' }}
+                  style={{ width: '100%', height: isMobile ? 280 : 520, objectFit: 'contain', display: 'block', background: 'var(--mr-bg)' }}
                 />
                 {img.caption && (
                   <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'linear-gradient(transparent,rgba(0,0,0,0.72))', padding: '32px 28px 18px', color: '#e7e5e4', fontSize: 14, lineHeight: 1.5 }}>
@@ -702,12 +734,12 @@ function GallerySlider() {
         {/* Arrows */}
         {images.length > 1 && <>
           <button onClick={prev}
-            style={{ position: 'absolute', left: isMobile ? 8 : 20, top: '50%', transform: 'translateY(-50%)', width: 44, height: 44, borderRadius: '50%', background: 'rgba(6,6,6,0.88)', border: '1px solid #3a3a3a', color: '#e7e5e4', fontSize: 22, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(8px)', zIndex: 2, transition: 'border-color 0.2s' }}
+            style={{ position: 'absolute', left: isMobile ? 8 : 20, top: '50%', transform: 'translateY(-50%)', width: 44, height: 44, borderRadius: '50%', background: 'rgba(6,6,6,0.88)', border: '1px solid var(--mr-border2)', color: 'var(--mr-text)', fontSize: 22, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(8px)', zIndex: 2, transition: 'border-color 0.2s' }}
             onMouseEnter={e => (e.currentTarget as HTMLElement).style.borderColor = MR.gold}
             onMouseLeave={e => (e.currentTarget as HTMLElement).style.borderColor = '#3a3a3a'}
           >‹</button>
           <button onClick={next}
-            style={{ position: 'absolute', right: isMobile ? 8 : 20, top: '50%', transform: 'translateY(-50%)', width: 44, height: 44, borderRadius: '50%', background: 'rgba(6,6,6,0.88)', border: '1px solid #3a3a3a', color: '#e7e5e4', fontSize: 22, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(8px)', zIndex: 2, transition: 'border-color 0.2s' }}
+            style={{ position: 'absolute', right: isMobile ? 8 : 20, top: '50%', transform: 'translateY(-50%)', width: 44, height: 44, borderRadius: '50%', background: 'rgba(6,6,6,0.88)', border: '1px solid var(--mr-border2)', color: 'var(--mr-text)', fontSize: 22, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(8px)', zIndex: 2, transition: 'border-color 0.2s' }}
             onMouseEnter={e => (e.currentTarget as HTMLElement).style.borderColor = MR.gold}
             onMouseLeave={e => (e.currentTarget as HTMLElement).style.borderColor = '#3a3a3a'}
           >›</button>
@@ -715,7 +747,7 @@ function GallerySlider() {
 
         {/* Counter badge */}
         {images.length > 1 && (
-          <div style={{ position: 'absolute', bottom: 16, right: 20, fontFamily: MR.mono, fontSize: 10, color: '#aaa', background: 'rgba(0,0,0,0.6)', padding: '3px 9px', borderRadius: 12, backdropFilter: 'blur(4px)' }}>
+          <div style={{ position: 'absolute', bottom: 16, right: 20, fontFamily: MR.mono, fontSize: 10, color: 'var(--mr-muted)', background: 'rgba(0,0,0,0.6)', padding: '3px 9px', borderRadius: 12, backdropFilter: 'blur(4px)' }}>
             {cur + 1} / {images.length}
           </div>
         )}
@@ -726,7 +758,7 @@ function GallerySlider() {
         <div style={{ display: 'flex', justifyContent: 'center', gap: 6, padding: '18px 0 28px' }}>
           {images.map((_, i) => (
             <button key={i} onClick={() => setCur(i)}
-              style={{ width: cur === i ? 28 : 7, height: 7, borderRadius: 4, background: cur === i ? MR.gold : '#2a2a2a', border: 'none', cursor: 'pointer', transition: 'all 0.35s cubic-bezier(0.34,1.56,0.64,1)', padding: 0 }}
+              style={{ width: cur === i ? 28 : 7, height: 7, borderRadius: 4, background: cur === i ? MR.gold : 'var(--mr-border2)', border: 'none', cursor: 'pointer', transition: 'all 0.35s cubic-bezier(0.34,1.56,0.64,1)', padding: 0 }}
             />
           ))}
         </div>
@@ -738,6 +770,7 @@ function GallerySlider() {
 function Testimonials({ testimonials }: { testimonials: Testimonial[] }) {
   const [isMobile, setIsMobile] = React.useState(() => window.matchMedia('(max-width: 767px)').matches);
   React.useEffect(() => { const mq = window.matchMedia('(max-width: 767px)'); const h = (e: MediaQueryListEvent) => setIsMobile(e.matches); mq.addEventListener('change',h); return ()=>mq.removeEventListener('change',h); }, []);
+  const { ref: refTmHdr, animStyle: tmHdrStyle } = useFadeUp();
   const [cur, setCur] = React.useState(0);
   const [paused, setPaused] = React.useState(false);
   const total = testimonials.length;
@@ -753,11 +786,11 @@ function Testimonials({ testimonials }: { testimonials: Testimonial[] }) {
   }, [paused, total, perView, maxIdx]);
 
   return (
-    <section style={{ padding: isMobile ? '48px 0' : '72px 0', background: 'linear-gradient(180deg,#060606 0%,#0a0900 50%,#060606 100%)', borderBottom: '1px solid var(--mr-border)', overflow: 'hidden', position: 'relative' }}>
+    <section style={{ padding: isMobile ? '48px 0' : '72px 0', background: 'linear-gradient(180deg,var(--mr-bg) 0%,var(--mr-dark) 50%,var(--mr-bg) 100%)', borderBottom: '1px solid var(--mr-border)', overflow: 'hidden', position: 'relative' }}>
       <div style={{ position:'absolute', top:'40%', left:'50%', transform:'translateX(-50%)', width:800, height:300, background:'radial-gradient(ellipse,rgba(234,179,8,0.03) 0%,transparent 70%)', pointerEvents:'none', zIndex:0 }}/>
 
       {/* Header */}
-      <div style={{ textAlign:'center' as const, marginBottom: isMobile ? 32 : 48, padding:'0 24px', position:'relative', zIndex:1 }}>
+      <div ref={refTmHdr} style={{ ...tmHdrStyle, textAlign:'center' as const, marginBottom: isMobile ? 32 : 48, padding:'0 24px', position:'relative', zIndex:1 }}>
         <div style={{ display:'inline-flex', alignItems:'center', gap:8, background:'rgba(234,179,8,0.08)', border:'1px solid rgba(234,179,8,0.2)', padding:'5px 16px', borderRadius:20, marginBottom:16 }}>
           <span style={{ color:MR.gold, fontSize:11 }}>★</span>
           <span style={{ fontFamily:MR.mono, color:MR.gold, fontSize:10, letterSpacing:1.5 }}>APA KATA MEMBER KAMI</span>
@@ -769,34 +802,34 @@ function Testimonials({ testimonials }: { testimonials: Testimonial[] }) {
         <div style={{ display:'flex', gap:8, justifyContent:'center', alignItems:'center' }}>
           <div style={{ display:'flex', gap:2 }}>{[1,2,3,4,5].map(s=><span key={s} style={{ color:MR.gold, fontSize:16 }}>★</span>)}</div>
           <span style={{ fontFamily:MR.mono, fontWeight:700, color:MR.gold, fontSize:15 }}>{avgRating}</span>
-          <span style={{ color:'#555', fontSize:13 }}>· {total} ulasan</span>
+          <span style={{ color:'var(--mr-dim)', fontSize:13 }}>· {total} ulasan</span>
         </div>
       </div>
 
       {/* Slider */}
       <div style={{ position:'relative', zIndex:1 }} onMouseEnter={()=>setPaused(true)} onMouseLeave={()=>setPaused(false)}>
         <div style={{ overflow:'hidden', padding: isMobile ? '12px 24px' : '12px 60px' }}>
-          <div style={{ display:'flex', gap:16, transition:'transform 0.6s cubic-bezier(0.25,0.46,0.45,0.94)', transform:`translateX(calc(-${cur} * (${isMobile?'100%':'calc(33.333% + 5.5px)'} + 0px)))`, willChange:'transform' }}>
+          <div style={{ display:'flex', gap:16, transition:'transform 0.6s cubic-bezier(0.25,0.46,0.45,0.94)', transform:`translateX(calc(-${cur} * ${isMobile?'calc(100% + 16px)':'calc(33.333% + 5.5px)'}))`, willChange:'transform' }}>
             {testimonials.map((t: any, i: number) => {
               const accent = ACCENT[i % ACCENT.length];
               const stars = t.bintang || t.rating || 5;
               const isActive = i >= cur && i < cur + perView;
               return (
-                <div key={t.id} style={{ flexShrink:0, width: isMobile ? '100%' : 'calc(33.333% - 11px)', background:'linear-gradient(150deg,#0f0f0f,#0a0a0a)', border:`1px solid ${isActive ? accent+'44' : '#141414'}`, borderRadius:20, padding:'28px 24px', display:'flex', flexDirection:'column' as const, gap:18, position:'relative', overflow:'hidden', transition:'border-color 0.5s,box-shadow 0.5s', boxShadow: isActive ? `0 8px 40px ${accent}0f` : 'none', minHeight:300 }}>
+                <div key={t.id} style={{ flexShrink:0, width: isMobile ? '100%' : 'calc(33.333% - 11px)', background:'linear-gradient(150deg,var(--mr-panel),var(--mr-sidebar))', border:`1px solid ${isActive ? accent+'44' : 'var(--mr-border)'}`, borderRadius:20, padding:'28px 24px', display:'flex', flexDirection:'column' as const, gap:18, position:'relative', overflow:'hidden', transition:'border-color 0.5s,box-shadow 0.5s', boxShadow: isActive ? `0 8px 40px ${accent}0f` : 'none', minHeight:300 }}>
                   <div style={{ position:'absolute', top:0, left:24, right:24, height:2, background:`linear-gradient(90deg,transparent,${accent},transparent)`, opacity:isActive?1:0.2, transition:'opacity 0.5s' }}/>
                   <div style={{ position:'absolute', bottom:-15, right:12, fontSize:140, color:accent, opacity:0.04, fontFamily:'Georgia,serif', lineHeight:1, pointerEvents:'none', userSelect:'none' as const }}>"</div>
                   <div style={{ display:'flex', gap:3 }}>
-                    {[1,2,3,4,5].map(s=><span key={s} style={{ fontSize:13, color:stars>=s?MR.gold:'#222' }}>★</span>)}
+                    {[1,2,3,4,5].map(s=><span key={s} style={{ fontSize:13, color:stars>=s?MR.gold:'var(--mr-border2)' }}>★</span>)}
                   </div>
-                  <p style={{ fontSize:13.5, lineHeight:1.8, color:'#aaa8a2', margin:0, flex:1, fontStyle:'italic', display:'-webkit-box', WebkitLineClamp:6, WebkitBoxOrient:'vertical' as const, overflow:'hidden' }}>
+                  <p style={{ fontSize:13.5, lineHeight:1.8, color:'var(--mr-dim)', margin:0, flex:1, fontStyle:'italic', display:'-webkit-box', WebkitLineClamp:6, WebkitBoxOrient:'vertical' as const, overflow:'hidden' }}>
                     "{t.ulasan || t.teks || t.content || ''}"
                   </p>
-                  <div style={{ display:'flex', alignItems:'center', gap:12, paddingTop:16, borderTop:'1px solid #161616' }}>
+                  <div style={{ display:'flex', alignItems:'center', gap:12, paddingTop:16, borderTop:'1px solid var(--mr-border)' }}>
                     <div style={{ width:38, height:38, borderRadius:10, background:`${accent}18`, border:`1px solid ${accent}55`, display:'flex', alignItems:'center', justifyContent:'center', fontWeight:800, fontSize:15, color:accent, flexShrink:0, fontFamily:MR.mono }}>
                       {(t.nama||t.nama_akun||'?')[0]?.toUpperCase()}
                     </div>
                     <div style={{ minWidth:0 }}>
-                      <div style={{ fontWeight:700, fontSize:13, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' as const, color:'#e7e5e4' }}>{t.nama||t.nama_akun}</div>
+                      <div style={{ fontWeight:700, fontSize:13, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' as const, color:'var(--mr-text)' }}>{t.nama||t.nama_akun}</div>
                       <div style={{ fontFamily:MR.mono, fontSize:9, color:accent, marginTop:3, letterSpacing:0.5 }}>
                         {(t.kelas||t.tier||'Member').replace('SMC ','').replace(' Mentorship','').toUpperCase()}
                       </div>
@@ -810,9 +843,9 @@ function Testimonials({ testimonials }: { testimonials: Testimonial[] }) {
 
         {total > perView && <>
           <button onClick={()=>setCur(c=>Math.max(0,c-1))} disabled={cur===0}
-            style={{ position:'absolute', left: isMobile?4:12, top:'50%', transform:'translateY(-50%)', width:44, height:44, borderRadius:'50%', background:'rgba(8,8,8,0.95)', border:`1px solid ${cur===0?'#1e1e1e':'#3a3a3a'}`, color:cur===0?'#333':'#e7e5e4', fontSize:22, cursor:cur===0?'default':'pointer', display:'flex', alignItems:'center', justifyContent:'center', backdropFilter:'blur(12px)', zIndex:2, transition:'all 0.2s', boxShadow:'0 4px 20px rgba(0,0,0,0.5)' }}>‹</button>
+            style={{ position:'absolute', left: isMobile?4:12, top:'50%', transform:'translateY(-50%)', width:44, height:44, borderRadius:'50%', background:'rgba(8,8,8,0.85)', border:`1px solid ${cur===0?'var(--mr-border)':'var(--mr-border2)'}`, color:cur===0?'var(--mr-border2)':'var(--mr-text)', fontSize:22, cursor:cur===0?'default':'pointer', display:'flex', alignItems:'center', justifyContent:'center', backdropFilter:'blur(12px)', zIndex:2, transition:'all 0.2s', boxShadow:'0 4px 20px rgba(0,0,0,0.5)' }}>‹</button>
           <button onClick={()=>setCur(c=>Math.min(maxIdx,c+1))} disabled={cur>=maxIdx}
-            style={{ position:'absolute', right: isMobile?4:12, top:'50%', transform:'translateY(-50%)', width:44, height:44, borderRadius:'50%', background:'rgba(8,8,8,0.95)', border:`1px solid ${cur>=maxIdx?'#1e1e1e':'#3a3a3a'}`, color:cur>=maxIdx?'#333':'#e7e5e4', fontSize:22, cursor:cur>=maxIdx?'default':'pointer', display:'flex', alignItems:'center', justifyContent:'center', backdropFilter:'blur(12px)', zIndex:2, transition:'all 0.2s', boxShadow:'0 4px 20px rgba(0,0,0,0.5)' }}>›</button>
+            style={{ position:'absolute', right: isMobile?4:12, top:'50%', transform:'translateY(-50%)', width:44, height:44, borderRadius:'50%', background:'rgba(8,8,8,0.85)', border:`1px solid ${cur>=maxIdx?'var(--mr-border)':'var(--mr-border2)'}`, color:cur>=maxIdx?'var(--mr-border2)':'var(--mr-text)', fontSize:22, cursor:cur>=maxIdx?'default':'pointer', display:'flex', alignItems:'center', justifyContent:'center', backdropFilter:'blur(12px)', zIndex:2, transition:'all 0.2s', boxShadow:'0 4px 20px rgba(0,0,0,0.5)' }}>›</button>
         </>}
       </div>
 
@@ -820,7 +853,7 @@ function Testimonials({ testimonials }: { testimonials: Testimonial[] }) {
         <div style={{ display:'flex', justifyContent:'center', gap:6, marginTop:28 }}>
           {Array.from({length:maxIdx+1}).map((_,i)=>(
             <button key={i} onClick={()=>setCur(i)}
-              style={{ width:cur===i?28:7, height:7, borderRadius:4, background:cur===i?MR.gold:'#2a2a2a', border:'none', cursor:'pointer', transition:'all 0.35s cubic-bezier(0.34,1.56,0.64,1)', padding:0 }}/>
+              style={{ width:cur===i?28:7, height:7, borderRadius:4, background:cur===i?MR.gold:'var(--mr-border2)', border:'none', cursor:'pointer', transition:'all 0.35s cubic-bezier(0.34,1.56,0.64,1)', padding:0 }}/>
           ))}
         </div>
       )}
@@ -830,10 +863,10 @@ function Testimonials({ testimonials }: { testimonials: Testimonial[] }) {
 
 
 const TIER_STYLE: Record<string, { bg: string; accent: string; border: string }> = {
-  neutral:  { bg: 'linear-gradient(160deg,#061310 0%,#080808 100%)', accent: '#22c55e', border: '#22c55e28' },
-  bronze:   { bg: 'linear-gradient(160deg,#120700 0%,#080808 100%)', accent: '#f97316', border: '#f9731628' },
-  gold:     { bg: 'linear-gradient(160deg,#140e00 0%,#080808 100%)', accent: '#eab308', border: '#eab30828' },
-  platinum: { bg: 'linear-gradient(160deg,#0e0820 0%,#080808 100%)', accent: '#a855f7', border: '#a855f728' },
+  neutral:  { bg: 'linear-gradient(160deg,#061310 0%,var(--mr-bg) 100%)', accent: '#22c55e', border: '#22c55e28' },
+  bronze:   { bg: 'linear-gradient(160deg,#120700 0%,var(--mr-bg) 100%)', accent: '#f97316', border: '#f9731628' },
+  gold:     { bg: 'linear-gradient(160deg,#140e00 0%,var(--mr-bg) 100%)', accent: '#eab308', border: '#eab30828' },
+  platinum: { bg: 'linear-gradient(160deg,#0e0820 0%,var(--mr-bg) 100%)', accent: '#a855f7', border: '#a855f728' },
 };
 
 function Pricing({ tiers }: { tiers: PricingTier[] }) {
@@ -843,10 +876,10 @@ function Pricing({ tiers }: { tiers: PricingTier[] }) {
   const fmt = (n: number) => new Intl.NumberFormat('id-ID').format(n);
 
   const totalCols = tiers.length + 1;
-  const PS = { bg: 'linear-gradient(160deg,#071a0f 0%,#080808 100%)', accent: '#10b981', border: '#10b98128' };
+  const PS = { bg: 'linear-gradient(160deg,#071a0f 0%,var(--mr-bg) 100%)', accent: '#10b981', border: '#10b98128' };
 
   return (
-    <section id="kelas" style={{ background: '#060606' }}>
+    <section id="kelas" style={{ background: 'var(--mr-bg)' }}>
       <div style={{ padding: isMobile ? '40px 20px 24px' : '56px 40px 28px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap' as const, gap: 16 }}>
         <div>
           <div style={{ fontFamily: MR.mono, color: MR.dim, fontSize: 11, letterSpacing: 0.8 }}>// ORDER TICKETS</div>
@@ -861,7 +894,7 @@ function Pricing({ tiers }: { tiers: PricingTier[] }) {
         {tiers.map((p) => {
           const s = TIER_STYLE[p.accent] ?? TIER_STYLE['neutral'];
           return (
-            <div key={p.id} style={{ background: s.bg, borderRight: `1px solid ${MR.border}`, borderTop: p.is_featured ? `2px solid ${s.accent}` : 'none', padding: '26px 22px', display: 'flex', flexDirection: 'column' as const, position: 'relative', boxShadow: p.is_featured ? `inset 0 0 40px ${s.accent}0a` : 'none' }}>
+            <div key={p.id} className="mr-pricing-card" style={{ background: s.bg, borderRight: `1px solid ${MR.border}`, borderTop: p.is_featured ? `2px solid ${s.accent}` : 'none', padding: '26px 22px', display: 'flex', flexDirection: 'column' as const, position: 'relative', boxShadow: p.is_featured ? `inset 0 0 40px ${s.accent}0a` : 'none', animation: p.is_featured ? 'mr-card-glow 3s ease-in-out infinite' : 'none' }}>
               {p.is_featured && <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 1, background: `linear-gradient(90deg,transparent,${s.accent},transparent)` }} />}
               {p.badge && (
                 <div style={{ fontFamily: MR.mono, position: 'absolute', top: 0, right: 0, background: s.accent, color: '#000', padding: '4px 9px', fontSize: 9, letterSpacing: 0.8, fontWeight: 700 }}>
@@ -900,7 +933,7 @@ function Pricing({ tiers }: { tiers: PricingTier[] }) {
         })}
 
         {/* Partnership card */}
-        <div style={{ background: PS.bg, padding: '26px 22px', display: 'flex', flexDirection: 'column' as const, position: 'relative' }}>
+        <div className="mr-pricing-card" style={{ background: PS.bg, padding: '26px 22px', display: 'flex', flexDirection: 'column' as const, position: 'relative' }}>
           <div style={{ fontFamily: MR.mono, color: PS.accent, fontSize: 10, letterSpacing: 1.2, marginBottom: 12 }}>// PARTNERSHIP</div>
           <div style={{ fontWeight: 700, fontSize: 20, letterSpacing: -0.5, marginBottom: 6 }}>Program Afiliasi</div>
           <div style={{ color: MR.dim, fontSize: 12, marginBottom: 20, lineHeight: 1.5 }}>Rekomendasikan platform kami dan dapatkan komisi dari setiap member baru yang bergabung.</div>
@@ -995,12 +1028,15 @@ function Mentor() {
     },
   ];
 
+  const { ref: refMentorL, animStyle: mentorLStyle } = useFadeUp(0);
+  const { ref: refMentorR, animStyle: mentorRStyle } = useFadeUp(150);
+
   return (
-    <section className='mr-section-pad' style={{ padding: isMobile ? '40px 16px' : '80px 40px', borderBottom: `1px solid ${MR.border}`, background: '#080808' }}>
+    <section className='mr-section-pad' style={{ padding: isMobile ? '40px 16px' : '80px 40px', borderBottom: `1px solid ${MR.border}`, background: 'var(--mr-sidebar)' }}>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.6fr', gap: 64, alignItems: 'center' }}>
 
         {/* Kiri */}
-        <div>
+        <div ref={refMentorL} style={mentorLStyle}>
           <div style={{ fontFamily: MR.mono, color: '#22ab94', fontSize: 11, letterSpacing: 1.5, marginBottom: 24 }}>
             // INSIDEMENOLAKRUGI
           </div>
@@ -1017,7 +1053,7 @@ function Mentor() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
             <button
               onClick={() => window.location.href = '/signup?tier=gold'}
-              style={{ fontFamily: MR.mono, background: '#22ab94', color: '#000', fontWeight: 700, padding: '16px 28px', fontSize: 13, letterSpacing: 0.6, border: 'none', cursor: 'pointer', textAlign: 'left' }}
+              className="mr-btn-shimmer" style={{ fontFamily: MR.mono, background: '#22ab94', color: '#000', fontWeight: 700, padding: '16px 28px', fontSize: 13, letterSpacing: 0.6, border: 'none', cursor: 'pointer', textAlign: 'left' }}
             >
               GABUNG SEKARANG ▸
             </button>
@@ -1035,9 +1071,9 @@ function Mentor() {
         </div>
 
         {/* Kanan — feature cards */}
-        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: 14 }}>
+        <div ref={refMentorR} style={{ ...mentorRStyle, display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: 14 }}>
           {FEATURES.map(f => (
-            <div key={f.title} style={{ background: '#111', border: `1px solid ${MR.border}`, padding: '24px 20px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <div key={f.title} style={{ background: 'var(--mr-panel)', border: `1px solid ${MR.border}`, padding: '24px 20px', display: 'flex', flexDirection: 'column', gap: 12 }}>
               <div>{f.icon}</div>
               <div style={{ fontWeight: 600, fontSize: 15, letterSpacing: -0.2 }}>{f.title}</div>
               <div style={{ color: MR.dim, fontSize: 13, lineHeight: 1.55 }}>{f.desc}</div>
@@ -1055,8 +1091,9 @@ function FaqSection() {
   const [isMobile, setIsMobile] = React.useState(() => window.matchMedia('(max-width: 767px)').matches);
   React.useEffect(() => { const mq = window.matchMedia('(max-width: 767px)'); const h = (e: MediaQueryListEvent) => setIsMobile(e.matches); mq.addEventListener('change',h); return ()=>mq.removeEventListener('change',h); }, []);
   const [open, setOpen] = useState(0);
+  const { ref: refFaq, animStyle: faqStyle } = useFadeUp();
   return (
-    <section style={{ padding: isMobile ? '36px 16px' : '64px 40px', borderBottom: `1px solid ${MR.border}`, display: isMobile ? 'block' : 'grid', gridTemplateColumns: '360px 1fr', gap: 40 }}>
+    <section ref={refFaq} style={{ ...faqStyle, padding: isMobile ? '36px 16px' : '64px 40px', borderBottom: `1px solid ${MR.border}`, display: isMobile ? 'block' : 'grid', gridTemplateColumns: '360px 1fr', gap: 40 }}>
       <div>
         <div style={{ fontFamily: MR.mono, color: MR.dim, fontSize: 11, letterSpacing: 0.8 }}>// HELP DESK</div>
         <h2 style={{ fontSize: isMobile ? 24 : 44, letterSpacing: isMobile ? -0.5 : -1.2, lineHeight: 1.1, margin: '16px 0 20px', fontWeight: 700 }}>Pertanyaan yang paling sering muncul.</h2>
@@ -1089,18 +1126,19 @@ function FaqSection() {
 function CTA() {
   const [isMobile, setIsMobile] = React.useState(() => window.matchMedia('(max-width: 767px)').matches);
   React.useEffect(() => { const mq = window.matchMedia('(max-width: 767px)'); const h = (e: MediaQueryListEvent) => setIsMobile(e.matches); mq.addEventListener('change',h); return ()=>mq.removeEventListener('change',h); }, []);
-  
+  const { ref: refCta, animStyle: ctaStyle } = useFadeUp();
+
   return (
     <section className='mr-section-pad' style={{ padding: '80px 40px', borderBottom: `1px solid ${MR.border}`, position: 'relative', overflow: 'hidden' }}>
       <div style={{ position: 'absolute', inset: 0, opacity: 0.4, ...CANDLE_GRID_STYLE }} />
-      <div style={{ position: 'relative', maxWidth: 980 }}>
+      <div ref={refCta} style={{ ...ctaStyle, position: 'relative', maxWidth: 980 }}>
         <div style={{ fontFamily: MR.mono, color: MR.gold, fontSize: 11, letterSpacing: 0.8 }}>// FINAL CALL</div>
         <h2 style={{ fontSize: isMobile ? 36 : 86, letterSpacing: isMobile ? -1 : -3, lineHeight: isMobile ? 1.1 : 0.95, margin: '20px 0 28px', fontWeight: 700 }}>
           Pasar buka senin pagi.<br />
           <span style={{ color: MR.dim }}>Kamu udah siap, atau </span><span style={{ color: MR.down }}>masih nebak?</span>
         </h2>
         <div style={{ display: 'flex', gap: 12 }}>
-          <button onClick={() => window.location.href = '/signup?tier=gold'} style={{ fontFamily: MR.mono, background: MR.gold, color: '#181000', padding: '18px 26px', fontSize: 13, fontWeight: 700, letterSpacing: 0.4, border: 'none', cursor: 'pointer' }}>MULAI DENGAN GOLD ▸</button>
+          <button onClick={() => window.location.href = '/signup?tier=gold'} className="mr-btn-shimmer" style={{ fontFamily: MR.mono, background: MR.gold, color: '#181000', padding: '18px 26px', fontSize: 13, fontWeight: 700, letterSpacing: 0.4, border: 'none', cursor: 'pointer' }}>MULAI DENGAN GOLD ▸</button>
           <button onClick={() => window.location.href = '/signup?tier=trial'} style={{ fontFamily: MR.mono, border: `1px solid ${MR.borderHot}`, padding: '18px 26px', fontSize: 13, letterSpacing: 0.4, background: 'transparent', color: MR.text, cursor: 'pointer' }}>COBA TRIAL · Rp 99K</button>
         </div>
       </div>
@@ -1225,6 +1263,11 @@ export default function LandingPage() {
         @keyframes mr-blink { 0%,49%{opacity:1}50%,100%{opacity:0} }
         .mr-blink { animation: mr-blink 1s steps(1) infinite; }
         @keyframes mr-ticker { 0%{transform:translateX(0)}100%{transform:translateX(-33.333%)} }
+        @keyframes mr-shimmer-sweep { 0%{left:-80%} 60%,100%{left:150%} }
+        .mr-btn-shimmer { position: relative !important; overflow: hidden !important; }
+        .mr-btn-shimmer::after { content:''; position:absolute; top:0; left:-80%; width:60%; height:100%; background:linear-gradient(90deg,transparent,rgba(255,255,255,0.18),transparent); animation:mr-shimmer-sweep 3s ease-in-out infinite; pointer-events:none; }
+        @keyframes mr-card-glow { 0%,100%{box-shadow:0 0 0 0 rgba(22,163,74,0.2)} 50%{box-shadow:0 0 32px 8px rgba(22,163,74,0.05)} }
+        @media (min-width:768px) { .mr-pricing-card{transition:transform 0.25s ease,box-shadow 0.25s ease !important} .mr-pricing-card:hover{transform:translateY(-8px) !important;box-shadow:0 20px 56px rgba(0,0,0,0.5) !important} }
       `}</style>
 
       {/* 1 — Ticker pair (chrome paling atas) */}
@@ -1250,11 +1293,9 @@ export default function LandingPage() {
       {/* 6 — Kurikulum */}
       <Curriculum />
 
-      {/* 7 — Leaderboard */}
-      <LandingLeaderboard />
-
-      {/* 8 — Galeri hasil nyata */}
+      {/* 7 — Galeri hasil nyata */}
       <GallerySlider />
+
 
       {/* 9 — Testimonial */}
       {testimonials.length > 0 && <Testimonials testimonials={testimonials} />}

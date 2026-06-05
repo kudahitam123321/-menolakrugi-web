@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useCallback } from 'react';
+﻿import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '../../lib/supabase';
 import * as XLSX from 'xlsx';
 
@@ -11,7 +11,20 @@ const C = {
 };
 const G = { gold: 'var(--mr-gold)', gold2: 'var(--mr-gold2)' };
 
-const PAIRS    = ['XAUUSD','XAGUSD','GBPUSD','EURUSD','USDJPY','USDCHF','AUDUSD','NZDUSD','USDCAD','GBPJPY','EURJPY','NAS100','US30','SP500'];
+const PAIR_GROUPS = [
+  { group: 'Forex Major',    pairs: ['EURUSD','GBPUSD','AUDUSD','NZDUSD','USDJPY','USDCHF','USDCAD'] },
+  { group: 'Forex Minor',    pairs: ['EURGBP','EURJPY','EURCHF','EURAUD','EURCAD','EURNZD','GBPJPY','GBPCHF','GBPAUD','GBPCAD','GBPNZD','AUDJPY','AUDCAD','AUDNZD','AUDCHF','CADJPY','CADCHF','NZDJPY','NZDCAD','NZDCHF','CHFJPY'] },
+  { group: 'Forex Exotic',   pairs: ['USDTRY','USDZAR','USDMXN','USDSGD','USDHKD','USDTHB','USDCNH','USDSEK','USDNOK','USDDKK','EURTRY','GBPTRY','EURZAR','GBPZAR'] },
+  { group: 'Precious Metals',pairs: ['XAUUSD','XAGUSD','XPTUSD','XPDUSD'] },
+  { group: 'Energy',         pairs: ['WTI','BRENT','NATGAS','HEATINGOIL','GASOLINE'] },
+  { group: 'US Indices',     pairs: ['US30','NAS100','SPX500','RUSSELL2000','VIX'] },
+  { group: 'Europe Indices', pairs: ['GER40','UK100','FRA40','EU50','SMI20','IBEX35'] },
+  { group: 'Asia Indices',   pairs: ['JP225','HK50','CHINA50','AUS200','SG30','KOSPI200'] },
+  { group: 'Crypto',         pairs: ['BTCUSD','ETHUSD','BNBUSD','SOLUSD','XRPUSD','ADAUSD','DOGEUSD','AVAXUSD','DOTUSD','LINKUSD','LTCUSD','BCHUSD','TRXUSD','ATOMUSD','MATICUSD','SUIUSD','APTUSD','HBARUSD','NEARUSD','FILUSD','ETCUSD','UNIUSD','AAVEUSD','ARBUSD','OPUSD'] },
+  { group: 'US Stocks',      pairs: ['AAPL','MSFT','NVDA','AMZN','TSLA','META','GOOGL','NFLX','AMD','INTC','PLTR','COIN','UBER','CRM','ORCL','ADBE'] },
+  { group: 'ETF',            pairs: ['SPY','QQQ','DIA','IWM','GLD','SLV','USO','TLT'] },
+  { group: 'US Bonds',       pairs: ['US02Y','US05Y','US10Y','US30Y'] },
+];
 const TFS      = ['M1','M5','M15','M30','H1','H4','D1','W1'];
 const SETUPS   = ['Follow Trend BIAS','Counter Trend BIAS'];
 const BIASES   = ['D1','H1','M15'];
@@ -79,6 +92,63 @@ const EMPTY_FORM = {
   emosi: 'Tenang', alasan: '', chart1_url: '', chart2_url: '',
   chart3_url: '', keterangan: '',
 };
+
+// ── PairSelector ─────────────────────────────────────────────────────────────
+function PairSelector({ value, onChange, style }: { value: string; onChange: (v: string) => void; style?: React.CSSProperties }) {
+  const [open, setOpen] = useState(false);
+  const [expanded, setExpanded] = useState<Record<string, boolean>>(() => {
+    const init: Record<string, boolean> = {};
+    PAIR_GROUPS.forEach(g => { if (g.pairs.includes(value)) init[g.group] = true; });
+    return init;
+  });
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  function pick(pair: string) { onChange(pair); setOpen(false); }
+  function toggle(group: string) { setExpanded(p => ({ ...p, [group]: !p[group] })); }
+
+  return (
+    <div ref={ref} style={{ position: 'relative', ...style }}>
+      <button type="button" onClick={() => setOpen(o => !o)}
+        style={{ ...inputStyle, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6, color: 'var(--mr-gold)', fontWeight: 700 }}>
+        <span>{value}</span>
+        <span style={{ fontSize: 9, color: 'var(--mr-dim)', flexShrink: 0 }}>{open ? '▲' : '▼'}</span>
+      </button>
+      {open && (
+        <div style={{ position: 'absolute', top: 'calc(100% + 4px)', left: 0, zIndex: 1000, background: 'var(--mr-sidebar,#111)', border: `1px solid ${C.border2}`, borderRadius: 8, minWidth: 200, maxHeight: 340, overflowY: 'auto', boxShadow: '0 8px 32px rgba(0,0,0,0.5)' }}>
+          {PAIR_GROUPS.map(g => (
+            <div key={g.group}>
+              <button type="button" onClick={() => toggle(g.group)}
+                style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', background: 'none', border: 'none', borderBottom: `1px solid ${C.border}`, cursor: 'pointer', color: C.dim, fontFamily: C.mono, fontSize: 10, letterSpacing: 0.8, textAlign: 'left' as const }}>
+                <span>{g.group.toUpperCase()}</span>
+                <span style={{ fontSize: 9 }}>{expanded[g.group] ? '▾' : '▸'} {g.pairs.length}</span>
+              </button>
+              {expanded[g.group] && (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 1, padding: '4px 6px 6px', background: 'rgba(255,255,255,0.02)' }}>
+                  {g.pairs.map(p => (
+                    <button key={p} type="button" onClick={() => pick(p)}
+                      style={{ fontFamily: C.mono, fontSize: 11, padding: '5px 4px', border: 'none', borderRadius: 4, cursor: 'pointer', textAlign: 'center' as const, fontWeight: p === value ? 700 : 400,
+                        background: p === value ? 'var(--mr-gold)' : 'transparent',
+                        color: p === value ? '#000' : C.muted }}>
+                      {p}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 // ── Helper ───────────────────────────────────────────────────────────────────
 function fmt(n: number | null | undefined, prefix = '', dec = 2) {
@@ -697,9 +767,7 @@ export default function JurnalPage({ memberId }: { memberId: string }) {
               <input type="date" value={form.tanggal} onChange={e => setForm(f => ({ ...f, tanggal: e.target.value }))} style={inputStyle} />
             </Field>
             <Field label="PAIR">
-              <select value={form.pair} onChange={e => setForm(f => ({ ...f, pair: e.target.value }))} style={selectStyle}>
-                {PAIRS.map(p => <option key={p} value={p}>{p}</option>)}
-              </select>
+              <PairSelector value={form.pair} onChange={v => setForm(f => ({ ...f, pair: v }))} />
             </Field>
             <Field label="TIMEFRAME">
               <select value={form.timeframe} onChange={e => setForm(f => ({ ...f, timeframe: e.target.value }))} style={selectStyle}>
@@ -804,7 +872,11 @@ export default function JurnalPage({ memberId }: { memberId: string }) {
             <select value={filterPair} onChange={e => setFilterPair(e.target.value)}
               style={{ ...selectStyle, width: 'auto', background: C.panel, border: `1px solid ${C.border2}` }}>
               <option value="">Semua Pair</option>
-              {PAIRS.map(p => <option key={p} value={p}>{p}</option>)}
+              {PAIR_GROUPS.map(g => (
+                <optgroup key={g.group} label={g.group}>
+                  {g.pairs.map(p => <option key={p} value={p}>{p}</option>)}
+                </optgroup>
+              ))}
             </select>
             <select value={filterHasil} onChange={e => setFilterHasil(e.target.value)}
               style={{ ...selectStyle, width: 'auto', background: C.panel, border: `1px solid ${C.border2}` }}>

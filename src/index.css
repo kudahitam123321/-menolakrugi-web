@@ -91,6 +91,19 @@
   --mr-tint-dark:    #f8fafc;
 }
 
+/* ── Broker banner animation ── */
+@keyframes mr-broker-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(234,179,8,0.0); border-color: var(--mr-tint-gold-b); }
+  50%       { box-shadow: 0 0 18px 4px rgba(234,179,8,0.18); border-color: rgba(234,179,8,0.55); }
+}
+@keyframes mr-bounce {
+  0%, 100% { transform: translateY(0); }
+  40%       { transform: translateY(-5px); }
+  60%       { transform: translateY(-2px); }
+}
+.mr-broker-banner { animation: mr-broker-pulse 2.5s ease-in-out infinite; }
+.mr-broker-icon   { animation: mr-bounce 2s ease-in-out infinite; display: inline-block; }
+
 /* Theme toggle button: show correct icon per theme */
 .mr-theme-icon-dark  { display: inline; }
 .mr-theme-icon-light { display: none; }

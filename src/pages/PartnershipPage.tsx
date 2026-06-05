@@ -3,7 +3,7 @@ import React, { useState, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 
 const G  = { gold: '#eab308', gold2: '#ca9e00', goldDim: 'var(--mr-tint-gold-b)', goldGlow: 'rgba(234,179,8,0.25)' };
-const C  = { bg: 'var(--mr-bg)', panel: '#0f0f0f', panel2: '#141414', border: '#1f1f1f', border2: 'var(--mr-border2)', dim: 'var(--mr-dim)', dimmer: '#444', text: 'var(--mr-text)', muted: '#aaa', up: '#22ab94', mono: '"Geist Mono", monospace', sans: '"Geist", system-ui, sans-serif' };
+const C  = { bg: 'var(--mr-bg)', panel: 'var(--mr-panel)', panel2: 'var(--mr-border)', border: 'var(--mr-border)', border2: 'var(--mr-border2)', dim: 'var(--mr-dim)', dimmer: 'var(--mr-dimmer)', text: 'var(--mr-text)', muted: 'var(--mr-muted)', up: '#22ab94', mono: '"Geist Mono", monospace', sans: '"Geist", system-ui, sans-serif' };
 
 const BROKERS = [
   { id: 'HFM', name: 'Broker HFM', url: 'https://www.hfm.com/?refid=30528271', code: '30528271', logo: 'HFM', logoColor: '#e63329', logoBg: '#1a0a09', perks: ['Teregulasi & Terpercaya', 'Spread Kompetitif', 'Eksekusi Cepat'] },
@@ -60,7 +60,7 @@ function StepIntro() {
   return (
     <Wrap>
       <div style={{ maxWidth: 480, margin: '0 auto', padding: '56px 24px' }}>
-        <div className='pp-card' style={{ background: 'linear-gradient(135deg,#0f0c00,#0a0a0a)', border: `1px solid ${G.goldDim}`, borderRadius: 20, padding: '40px 36px', boxShadow: `0 0 60px ${G.goldGlow}`, position: 'relative', overflow: 'hidden' }}>
+        <div className='pp-card' style={{ background: 'linear-gradient(135deg,var(--mr-tint-gold),var(--mr-bg))', border: `1px solid ${G.goldDim}`, borderRadius: 20, padding: '40px 36px', boxShadow: `0 0 60px ${G.goldGlow}`, position: 'relative', overflow: 'hidden' }}>
           <div style={{ position: 'absolute', right: -10, top: -10, opacity: 0.1 }}>
             <svg viewBox="0 0 180 200" width="180" height="200">
               {[20,50,80,110,140].map((x, i) => { const h=[70,110,60,130,90][i]; const up=i%2===0; return <g key={x}><line x1={x} x2={x} y1={200-h-15} y2={190} stroke={up?'#22ab94':'#ef4444'} strokeWidth="2.5"/><rect x={x-10} y={200-h} width="20" height={h*0.6} fill={up?'#22ab94':'#ef4444'}/></g>; })}
@@ -73,13 +73,13 @@ function StepIntro() {
           <p style={{ color: C.dim, fontSize: 15, lineHeight: 1.65, marginBottom: 28 }}>Dapatkan akses kelas <span style={{ color: G.gold, fontWeight: 600 }}>GRATIS</span> cukup dengan mendaftar melalui broker partner kami. Tidak ada biaya tersembunyi.</p>
           <div className='pp-stats3' style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 12, marginBottom: 28 }}>
             {[{ icon: '🏦', l: 'Daftar melalui broker partner kami' }, { icon: '📋', l: 'Isi form konfirmasi' }, { icon: '🔓', l: 'Akses langsung diaktifkan' }].map((s, i) => (
-              <div key={i} style={{ background: '#0d0d0d', border: `1px solid ${C.border}`, borderRadius: 10, padding: '14px 12px', textAlign: 'center' }}>
+              <div key={i} style={{ background: C.bg, border: `1px solid ${C.border}`, borderRadius: 10, padding: '14px 12px', textAlign: 'center' }}>
                 <div style={{ fontSize: 24, marginBottom: 8 }}>{s.icon}</div>
                 <div style={{ fontSize: 12, color: C.muted, lineHeight: 1.4 }}>{s.l}</div>
               </div>
             ))}
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: '#0d0d0d', border: `1px solid ${C.border}`, borderRadius: 8, padding: '12px 16px', marginBottom: 24 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: C.bg, border: `1px solid ${C.border}`, borderRadius: 8, padding: '12px 16px', marginBottom: 24 }}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={C.up} strokeWidth="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
             <div><div style={{ fontWeight: 700, color: C.up, fontSize: 14 }}>100% Gratis</div><div style={{ fontSize: 12, color: C.dim }}>Akses kelas premium tanpa biaya apa pun.</div></div>
           </div>
@@ -132,7 +132,7 @@ function StepBroker() {
           </div>
         </div>
         {clicked
-          ? <button onClick={() => window.location.href = '/partnership/confirm'} style={{ width: '100%', background: '#0d0d0d', color: C.text, fontWeight: 700, padding: '14px', fontSize: 15, border: `2px solid ${G.gold}`, cursor: 'pointer', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, boxShadow: `0 0 20px ${G.goldGlow}` }}>Saya Sudah Daftar, Lanjutkan →</button>
+          ? <button onClick={() => window.location.href = '/partnership/confirm'} style={{ width: '100%', background: C.bg, color: C.text, fontWeight: 700, padding: '14px', fontSize: 15, border: `2px solid ${G.gold}`, cursor: 'pointer', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, boxShadow: `0 0 20px ${G.goldGlow}` }}>Saya Sudah Daftar, Lanjutkan →</button>
           : <div style={{ textAlign: 'center', color: C.dimmer, fontSize: 13, fontFamily: C.mono }}>Klik salah satu broker di atas untuk mendaftar dulu</div>
         }
       </div>
@@ -251,7 +251,7 @@ function StepConfirm() {
             <input ref={fileRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={e => setFile(e.target.files?.[0] ?? null)} />
           </div>
           {error && <div style={{ color: '#ef4444', fontSize: 13, marginBottom: 14 }}>⚠ {error}</div>}
-          <button onClick={handleSubmit} disabled={loading} style={{ width: '100%', background: loading ? '#333' : `linear-gradient(135deg,${G.gold},${G.gold2})`, color: '#000', fontWeight: 700, padding: '16px', fontSize: 16, border: 'none', cursor: loading ? 'not-allowed' : 'pointer', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, boxShadow: loading ? 'none' : `0 0 24px ${G.goldGlow}` }}>
+          <button onClick={handleSubmit} disabled={loading} style={{ width: '100%', background: loading ? C.border2 : `linear-gradient(135deg,${G.gold},${G.gold2})`, color: '#000', fontWeight: 700, padding: '16px', fontSize: 16, border: 'none', cursor: loading ? 'not-allowed' : 'pointer', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, boxShadow: loading ? 'none' : `0 0 24px ${G.goldGlow}` }}>
             <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
             {loading ? 'Mengirim...' : 'Kirim & Klaim Akses Gratis'}
           </button>

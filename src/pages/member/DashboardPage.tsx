@@ -4,6 +4,7 @@ import LanjutkanBelajar from '../../components/LanjutkanBelajar';
 import JurnalPage from './JurnalPage';
 import LeaderboardPage from './LeaderboardPage';
 import MemberTradingPlan from './MemberTradingPlan';
+import CompetitionPage from '../CompetitionPage';
 import { trackVideoWatch } from '../../hooks/useWatchHistory';
 
 const G = { gold: 'var(--mr-gold)', gold2: 'var(--mr-gold2)' };
@@ -29,6 +30,7 @@ const SIDEBAR = [
   { id: 'sep1',       label: 'TOOLS & PROGRESS', icon: '', separator: true },
   { id: 'funded',     label: 'Status Trading', icon: '🚀' },
   { id: 'peringkat',  label: 'Peringkat',      icon: '🏆' },
+  { id: 'competition', label: 'Kompetisi',     icon: '🥇' },
   { id: 'sertifikat', label: 'Sertifikat',     icon: '🎖' },
   { id: 'ulasan',     label: 'Tulis Ulasan',   icon: '⭐' },
   { id: 'referral',   label: 'Referral',       icon: '🔗' },
@@ -208,14 +210,14 @@ function LotCalculator() {
           <div key={f.l}>
             <div style={{ fontFamily: C.mono, color: C.dim, fontSize: 10, marginBottom: 5 }}>{f.l}</div>
             <input value={f.v} onChange={e => f.s(e.target.value)} placeholder={f.ph}
-              style={{ width: '100%', background: '#0a0a0a', border: `1px solid ${C.border2}`, color: C.text, padding: '8px 12px', fontSize: 12, fontFamily: C.mono, outline: 'none', borderRadius: 5, boxSizing: 'border-box' as const }}
+              style={{ width: '100%', background: C.bg, border: `1px solid ${C.border2}`, color: C.text, padding: '8px 12px', fontSize: 12, fontFamily: C.mono, outline: 'none', borderRadius: 5, boxSizing: 'border-box' as const }}
               onFocus={e => e.target.style.borderColor = G.gold} onBlur={e => e.target.style.borderColor = C.border2}/>
           </div>
         ))}
         <div>
           <div style={{ fontFamily: C.mono, color: C.dim, fontSize: 10, marginBottom: 5 }}>PAIR</div>
           <select value={pair} onChange={e => setPair(e.target.value)}
-            style={{ width: '100%', background: '#0a0a0a', border: `1px solid ${C.border2}`, color: C.text, padding: '8px 12px', fontSize: 12, fontFamily: C.mono, outline: 'none', borderRadius: 5, cursor: 'pointer' }}>
+            style={{ width: '100%', background: C.bg, border: `1px solid ${C.border2}`, color: C.text, padding: '8px 12px', fontSize: 12, fontFamily: C.mono, outline: 'none', borderRadius: 5, cursor: 'pointer' }}>
             {Object.keys(PAIRS).map(p => <option key={p} value={p}>{p}</option>)}
           </select>
         </div>
@@ -341,6 +343,11 @@ export default function DashboardPage() {
   const [watchRefreshKey, setWatchRefreshKey] = useState(0);
   const [leaderboard, setLeaderboard]          = useState<any[]>([]);
   const [jurnalLeaderboard, setJurnalLeaderboard] = useState<any[]>([]);
+  const [myJurnalStats, setMyJurnalStats] = useState<{
+    totalTrades: number; wins: number; losses: number; winRate: number;
+    totalPnl: number; bestTrade: number; worstTrade: number;
+    mostTradedPair: string; equityAwal: number; totalGain: number;
+  } | null>(null);
   const [viewJurnalMember, setViewJurnalMember]   = useState<any|null>(null);
   const [viewJurnalEntries, setViewJurnalEntries] = useState<any[]>([]);
   const [viewJurnalLoading, setViewJurnalLoading] = useState(false);
@@ -450,6 +457,40 @@ export default function DashboardPage() {
           equityAwal:eqMap[m.id]||10000,
           gainPct:((pnlMap[m.id]||0)/(eqMap[m.id]||10000))*100,
         })).sort((a:any,b:any)=>b.gainPct-a.gainPct));
+      }
+    } catch(_e) {}
+    // My personal jurnal stats
+    try {
+      const [{ data: myJurnals }, { data: mySettings }] = await Promise.all([
+        supabase.from('trading_journals').select('pair,hasil,pnl').eq('member_id', m.id),
+        supabase.from('journal_settings').select('equity_awal').eq('member_id', m.id).single(),
+      ]);
+      if (myJurnals && myJurnals.length > 0) {
+        const equityAwal = mySettings?.equity_awal || 10000;
+        let totalPnl = 0; let wins = 0; let losses = 0;
+        let bestTrade = -Infinity; let worstTrade = Infinity;
+        const pairCount: Record<string, number> = {};
+        myJurnals.forEach((j: any) => {
+          const pnl = j.pnl ?? 0;
+          totalPnl += pnl;
+          if (pnl > bestTrade) bestTrade = pnl;
+          if (pnl < worstTrade) worstTrade = pnl;
+          if (j.hasil === 'Take Profit' || j.hasil === 'SL Profit') wins++;
+          else if (j.hasil === 'Stop Loss') losses++;
+          pairCount[j.pair || 'N/A'] = (pairCount[j.pair || 'N/A'] || 0) + 1;
+        });
+        const total = myJurnals.length;
+        const mostTradedPair = Object.entries(pairCount).sort((a, b) => b[1] - a[1])[0]?.[0] ?? 'N/A';
+        setMyJurnalStats({
+          totalTrades: total, wins, losses,
+          winRate: total > 0 ? (wins / total) * 100 : 0,
+          totalPnl, bestTrade: bestTrade === -Infinity ? 0 : bestTrade,
+          worstTrade: worstTrade === Infinity ? 0 : worstTrade,
+          mostTradedPair, equityAwal,
+          totalGain: equityAwal !== 0 ? (totalPnl / equityAwal) * 100 : 0,
+        });
+      } else {
+        setMyJurnalStats(null);
       }
     } catch(_e) {}
     // Video ratings
@@ -645,7 +686,7 @@ export default function DashboardPage() {
                          : videos.slice(0, 4);
 
   const inp: React.CSSProperties = {
-    background: '#0a0a0a', border: `1px solid ${C.border2}`, color: C.text,
+    background: C.bg, border: `1px solid ${C.border2}`, color: C.text,
     padding: '9px 14px', fontSize: 13, fontFamily: C.mono, outline: 'none',
     borderRadius: 6, width: '100%', boxSizing: 'border-box' as const,
   };
@@ -859,9 +900,9 @@ export default function DashboardPage() {
                 if ((item as any).separator) {
                   return (
                     <div key={item.id} style={{ padding: '14px 20px 5px', display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <div style={{ flex: 1, height: 1, background: '#1e1e1e' }}/>
-                      <span style={{ fontFamily: C.mono, fontSize: 8, color: '#333', letterSpacing: 2, whiteSpace: 'nowrap' as const }}>{item.label}</span>
-                      <div style={{ flex: 1, height: 1, background: '#1e1e1e' }}/>
+                      <div style={{ flex: 1, height: 1, background: C.border }}/>
+                      <span style={{ fontFamily: C.mono, fontSize: 8, color: C.dim, letterSpacing: 2, whiteSpace: 'nowrap' as const }}>{item.label}</span>
+                      <div style={{ flex: 1, height: 1, background: C.border }}/>
                     </div>
                   );
                 }
@@ -988,40 +1029,44 @@ export default function DashboardPage() {
                 </div>
               </div>
 
-              {/* ── Progress belajar — gauge cards ── */}
+              {/* ── Progress belajar — compact bars ── */}
               {(() => {
                 const progCats = [
-                  { key: 'basic',         label: 'Basic',        color: '#22c55e' },
-                  { key: 'advanced',      label: 'Advanced',     color: '#a855f7' },
-                  { key: 'tips-basic',    label: 'Tips Basic',   color: '#0ea5e9' },
-                  { key: 'tips-advanced', label: 'Tips Adv.',    color: '#ec4899' },
+                  { key: 'basic',         label: 'Basic',      color: '#22c55e' },
+                  { key: 'advanced',      label: 'Advanced',   color: '#a855f7' },
+                  { key: 'tips-basic',    label: 'Tips Basic', color: '#0ea5e9' },
+                  { key: 'tips-advanced', label: 'Tips Adv.',  color: '#ec4899' },
                 ];
+                const catBars = progCats.map(cat => {
+                  const vids = videos.filter((v: any) => v.kategori === cat.key);
+                  if (!vids.length) return null;
+                  const isLocked = (cat.key === 'advanced' || cat.key === 'tips-advanced') && !member.is_advance;
+                  const done = isLocked ? 0 : vids.filter((v: any) => progress[v.id] === 'selesai').length;
+                  const pct = isLocked ? 0 : Math.round(done / vids.length * 100);
+                  return { ...cat, vids, done, pct, isLocked };
+                }).filter(Boolean);
+                if (!catBars.length) return null;
                 return (
-                  <div style={{ background: C.panel, border: `1px solid ${C.border}`, borderRadius: 12, padding: '14px 16px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-                      <div style={{ fontFamily: C.mono, color: G.gold, fontSize: 9, letterSpacing: 1.5 }}>// PROGRESS BELAJAR</div>
-                      <div style={{ fontFamily: C.mono, fontSize: 9, color: C.dim }}>{progressPct}% total</div>
-                    </div>
-                    <div className="mr-prog-grid">
-                      {progCats.map(cat => {
-                        const vids = videos.filter((v: any) => v.kategori === cat.key);
-                        if (!vids.length) return null;
-                        const isLocked = (cat.key === 'advanced' || cat.key === 'tips-advanced') && !member.is_advance;
-                        const done = isLocked ? 0 : vids.filter((v: any) => progress[v.id] === 'selesai').length;
-                        const pct = isLocked ? 0 : Math.round(done / vids.length * 100);
-                        return (
-                          <div key={cat.key} style={{ background: C.bg, border: `1px solid ${isLocked ? C.border : cat.color + '22'}`, borderRadius: 10, padding: '14px 10px 10px', display: 'flex', flexDirection: 'column' as const, alignItems: 'center', gap: 4 }}>
-                            <div style={{ fontFamily: C.mono, fontSize: 8, fontWeight: 700, letterSpacing: 0.8, color: isLocked ? '#444' : cat.color, textAlign: 'center' as const }}>
-                              {cat.label.toUpperCase()}
-                            </div>
-                            <GaugeChart pct={pct} color={cat.color} locked={isLocked}/>
-                            <div style={{ fontFamily: C.mono, fontSize: 9, color: isLocked ? '#333' : C.dim, textAlign: 'center' as const, lineHeight: 1.4 }}>
-                              {isLocked ? '🔒 Butuh Advance' : `${done}/${vids.length} video`}
-                            </div>
+                  <div style={{ background: C.panel, border: `1px solid ${C.border}`, borderRadius: 10, padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' as const }}>
+                    <div style={{ fontFamily: C.mono, color: G.gold, fontSize: 9, letterSpacing: 1.5, flexShrink: 0 }}>// PROGRESS</div>
+                    <div style={{ flex: 1, display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(100px,1fr))', gap: '6px 12px', minWidth: 0 }}>
+                      {catBars.map(cat => cat && (
+                        <div key={cat.key}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 3 }}>
+                            <span style={{ fontFamily: C.mono, fontSize: 8, color: cat.isLocked ? '#444' : cat.color, fontWeight: 700 }}>
+                              {cat.isLocked ? '🔒 ' : ''}{cat.label.toUpperCase()}
+                            </span>
+                            <span style={{ fontFamily: C.mono, fontSize: 8, color: cat.isLocked ? '#333' : C.dim }}>
+                              {cat.isLocked ? 'Advance' : `${cat.done}/${cat.vids.length}`}
+                            </span>
                           </div>
-                        );
-                      })}
+                          <div style={{ height: 5, background: C.border2, borderRadius: 3, overflow: 'hidden' }}>
+                            <div style={{ height: '100%', width: `${cat.pct}%`, background: cat.isLocked ? '#222' : cat.color, borderRadius: 3, transition: 'width 0.8s ease' }}/>
+                          </div>
+                        </div>
+                      ))}
                     </div>
+                    <div style={{ fontFamily: C.mono, fontSize: 11, fontWeight: 700, color: G.gold, flexShrink: 0 }}>{progressPct}%</div>
                   </div>
                 );
               })()}
@@ -1077,11 +1122,84 @@ export default function DashboardPage() {
                 </div>
               )}
 
+              {/* ── Banner broker rekomendasi ── */}
+              {brokers.length > 0 && (
+                <div className="mr-broker-banner" style={{ background: 'linear-gradient(135deg,var(--mr-tint-gold),var(--mr-bg))', border: `1px solid var(--mr-tint-gold-b)`, borderRadius: 12, padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 14 }}>
+                  <span className="mr-broker-icon" style={{ fontSize: 24, flexShrink: 0 }}>🏦</span>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontWeight: 700, fontSize: 13, color: C.text }}>
+                      Cek broker rekomendasi kami
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setActive('tools')}
+                    className="mr-btn-shimmer"
+                    style={{ fontFamily: C.mono, fontSize: 11, fontWeight: 700, color: '#000', background: G.gold, border: 'none', padding: '7px 14px', borderRadius: 7, cursor: 'pointer', whiteSpace: 'nowrap' as const, flexShrink: 0 }}
+                  >
+                    Cek Broker ›
+                  </button>
+                </div>
+              )}
+
               <LanjutkanBelajar
                 key={watchRefreshKey}
                 memberId={member.id}
                 memberTier={member.tier}
               />
+
+              {/* ── My Trading Stats ── */}
+              {myJurnalStats ? (
+                <div style={{ background: C.panel, border: `1px solid ${C.border}`, borderRadius: 12, padding: '16px 18px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14, flexWrap: 'wrap' as const, gap: 8 }}>
+                    <div style={{ fontFamily: C.mono, color: G.gold, fontSize: 10, letterSpacing: 1 }}>// MY TRADING STATS</div>
+                    <button onClick={() => setActive('jurnal')} style={{ fontFamily: C.mono, fontSize: 9, color: C.dim, background: 'none', border: `1px solid ${C.border2}`, padding: '3px 8px', borderRadius: 4, cursor: 'pointer' }}>Lihat Jurnal ›</button>
+                  </div>
+                  {/* Equity gain banner */}
+                  <div style={{ marginBottom: 12, padding: '10px 14px', background: myJurnalStats.totalGain >= 0 ? 'var(--mr-tint-green)' : 'rgba(239,68,68,0.08)', border: `1px solid ${myJurnalStats.totalGain >= 0 ? 'rgba(34,197,94,0.25)' : 'rgba(239,68,68,0.25)'}`, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+                    <div>
+                      <div style={{ fontFamily: C.mono, fontSize: 9, color: C.dim, letterSpacing: 0.8, marginBottom: 2 }}>TOTAL EQUITY GAIN</div>
+                      <div style={{ fontSize: 26, fontWeight: 800, letterSpacing: -1, color: myJurnalStats.totalGain >= 0 ? C.up : C.down, fontFamily: C.mono }}>
+                        {myJurnalStats.totalGain >= 0 ? '+' : ''}{myJurnalStats.totalGain.toFixed(2)}%
+                      </div>
+                    </div>
+                    <div style={{ textAlign: 'right' as const }}>
+                      <div style={{ fontFamily: C.mono, fontSize: 9, color: C.dim, marginBottom: 2 }}>TOTAL PNL</div>
+                      <div style={{ fontFamily: C.mono, fontSize: 16, fontWeight: 700, color: myJurnalStats.totalPnl >= 0 ? C.up : C.down }}>
+                        {myJurnalStats.totalPnl >= 0 ? '+' : ''}${myJurnalStats.totalPnl.toFixed(0)}
+                      </div>
+                      <div style={{ fontFamily: C.mono, fontSize: 9, color: C.dim, marginTop: 2 }}>dari ${myJurnalStats.equityAwal.toLocaleString()}</div>
+                    </div>
+                  </div>
+                  {/* Stat grid */}
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(90px, 1fr))', gap: 8 }}>
+                    {[
+                      { label: 'TOTAL TRADE', value: myJurnalStats.totalTrades, color: C.text, mono: true },
+                      { label: 'WIN RATE', value: `${myJurnalStats.winRate.toFixed(0)}%`, color: myJurnalStats.winRate >= 50 ? C.up : C.down, mono: true },
+                      { label: 'WIN', value: myJurnalStats.wins, color: C.up, mono: true },
+                      { label: 'LOSS', value: myJurnalStats.losses, color: C.down, mono: true },
+                      { label: 'BEST TRADE', value: `$${myJurnalStats.bestTrade >= 0 ? '+' : ''}${myJurnalStats.bestTrade.toFixed(0)}`, color: C.up, mono: true },
+                      { label: 'WORST TRADE', value: `$${myJurnalStats.worstTrade.toFixed(0)}`, color: C.down, mono: true },
+                      { label: 'TOP PAIR', value: myJurnalStats.mostTradedPair, color: C.text, mono: false },
+                    ].map(s => (
+                      <div key={s.label} style={{ background: C.bg, border: `1px solid ${C.border}`, borderRadius: 8, padding: '10px 12px' }}>
+                        <div style={{ fontFamily: C.mono, fontSize: 8, color: '#555', letterSpacing: 0.8, marginBottom: 5 }}>{s.label}</div>
+                        <div style={{ fontFamily: s.mono ? C.mono : C.sans, fontSize: s.label === 'TOP PAIR' ? 12 : 15, fontWeight: 700, color: s.color, letterSpacing: -0.3 }}>{String(s.value)}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <div style={{ background: C.panel, border: `1px solid ${C.border}`, borderRadius: 10, padding: '14px 18px', display: 'flex', alignItems: 'center', gap: 14 }}>
+                  <span style={{ fontSize: 22, flexShrink: 0 }}>📓</span>
+                  <div>
+                    <div style={{ fontFamily: C.mono, color: G.gold, fontSize: 9, letterSpacing: 1, marginBottom: 3 }}>// MY TRADING STATS</div>
+                    <div style={{ fontSize: 12, color: C.dim }}>Belum ada data jurnal. Mulai isi jurnal trading untuk lihat statistikmu.</div>
+                  </div>
+                  <button onClick={() => setActive('jurnal')} style={{ marginLeft: 'auto', fontFamily: C.mono, fontSize: 10, fontWeight: 700, color: '#000', background: G.gold, border: 'none', padding: '7px 14px', borderRadius: 6, cursor: 'pointer', flexShrink: 0 }}>
+                    Buka Jurnal ›
+                  </button>
+                </div>
+              )}
 
               {/* ── Top 3 Jurnal Trading ── */}
               {jurnalLeaderboard.length > 0 && (
@@ -1125,9 +1243,8 @@ export default function DashboardPage() {
                 </div>
               )}
 
-              {/* Pengumuman + Market Overview */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.3fr', gap: 16 }}>
-                {/* Pengumuman */}
+              {/* Pengumuman */}
+              <div>
                 <div style={{ background: C.panel, border: `1px solid ${C.border}`, borderRadius: 12, padding: 18 }}>
                   <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 14 }}>Pengumuman Terbaru</div>
                   {/* Discord status - compact */}
@@ -1174,16 +1291,6 @@ export default function DashboardPage() {
                   ))}
                 </div>
 
-                {/* Market Overview - TradingView */}
-                <div style={{ background: C.panel, border: `1px solid ${C.border}`, borderRadius: 12, overflow: 'hidden' }}>
-                  <div style={{ padding: '14px 18px', borderBottom: `1px solid ${C.border}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <div style={{ fontWeight: 700, fontSize: 15 }}>Market Overview</div>
-                    <span style={{ fontFamily: C.mono, fontSize: 10, color: C.dim }}>REALTIME</span>
-                  </div>
-                  <div style={{ height: 420 }}>
-                    <MarketOverviewWidget/>
-                  </div>
-                </div>
               </div>
 
             </div>
@@ -1199,7 +1306,7 @@ export default function DashboardPage() {
               {/* Request Advanced Modal */}
               {showAdvModal && (
                 <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', zIndex: 999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
-                  <div className='mr-modal mr-modal-anim' style={{ background: '#0d0d0d', border: `1px solid ${C.border2}`, borderRadius: 14, padding: 28, width: '100%', maxWidth: 480 }}>
+                  <div className='mr-modal mr-modal-anim' style={{ background: C.sidebar, border: `1px solid ${C.border2}`, borderRadius: 14, padding: 28, width: '100%', maxWidth: 480 }}>
                     <div style={{ fontFamily: C.mono, color: G.gold, fontSize: 10, letterSpacing: 1, marginBottom: 6 }}>// REQUEST NAIK KELAS ADVANCED</div>
                     <h3 className='mr-modal-title' style={{ fontSize: 18, fontWeight: 700, margin: '0 0 8px' }}>Ajukan Naik Kelas</h3>
                     <p style={{ color: C.dim, fontSize: 13, margin: '0 0 20px', lineHeight: 1.6 }}>
@@ -1228,11 +1335,11 @@ export default function DashboardPage() {
                         </div>
                         {jurnalMode[f.idx] === 'link' ? (
                           <input value={f.v} onChange={e => f.s(e.target.value)} placeholder="https://..."
-                            style={{ width: '100%', background: '#111', border: `1px solid ${C.border2}`, color: C.text, padding: '9px 14px', fontSize: 13, fontFamily: C.mono, outline: 'none', borderRadius: 6, boxSizing: 'border-box' as const }}
+                            style={{ width: '100%', background: C.panel, border: `1px solid ${C.border2}`, color: C.text, padding: '9px 14px', fontSize: 13, fontFamily: C.mono, outline: 'none', borderRadius: 6, boxSizing: 'border-box' as const }}
                             onFocus={e => e.target.style.borderColor = G.gold} onBlur={e => e.target.style.borderColor = C.border2}/>
                         ) : (
                           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                            <label style={{ flex: 1, display: 'block', background: '#111', border: `1px dashed ${C.border2}`, borderRadius: 6, padding: '9px 14px', cursor: 'pointer', fontSize: 12, color: jurnalFiles[f.idx] ? C.up : C.dim, fontFamily: C.mono }}>
+                            <label style={{ flex: 1, display: 'block', background: C.panel, border: `1px dashed ${C.border2}`, borderRadius: 6, padding: '9px 14px', cursor: 'pointer', fontSize: 12, color: jurnalFiles[f.idx] ? C.up : C.dim, fontFamily: C.mono }}>
                               {jurnalFiles[f.idx] ? `✓ ${jurnalFiles[f.idx]!.name}` : 'Klik untuk pilih file (PDF/gambar)'}
                               <input type="file" accept=".pdf,.jpg,.jpeg,.png,.webp" style={{ display: 'none' }}
                                 onChange={e => { const nf = [...jurnalFiles]; nf[f.idx] = e.target.files?.[0]||null; setJurnalFiles(nf); }}/>
@@ -1271,7 +1378,7 @@ export default function DashboardPage() {
                   const colors: Record<string,string> = { intro:'#eab308', basic:'#22ab94', 'tips-basic':'#22ab94', advanced:'#a855f7', 'tips-advanced':'#a855f7' };
                   const color = locked ? '#444' : (colors[kat] || G.gold);
                   return (
-                    <div key={kat} style={{ background: C.panel, border: `1px solid ${locked ? '#2a2a2a' : C.border}`, borderRadius: 12, opacity: locked ? 0.85 : 1 }}>
+                    <div key={kat} style={{ background: C.panel, border: `1px solid ${locked ? C.border2 : C.border}`, borderRadius: 12, opacity: locked ? 0.85 : 1 }}>
                       <div style={{ padding: '14px 18px', borderBottom: `1px solid ${C.border}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                           {locked && <span style={{ fontSize: 14 }}>🔒</span>}
@@ -1320,10 +1427,10 @@ export default function DashboardPage() {
                             const isComingSoon = !v.youtube_url && !v.coming_soon_img;
                             return (
                               <div key={v.id} style={{ display: 'flex', gap: 12, padding: '12px 16px', borderBottom: `1px solid ${C.border}`, transition: 'background 0.15s' }}
-                                onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = '#0d0d0d'}
+                                onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = C.sidebar}
                                 onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = 'transparent'}>
                                 {/* Status icon */}
-                                <div style={{ width: 30, height: 30, background: s==='selesai'?'var(--mr-tint-green2)':s==='mulai'?'var(--mr-tint-gold)':'#0a0a0a', border: `1px solid ${s==='selesai'?C.up:s==='mulai'?G.gold:C.border}`, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, flexShrink: 0, marginTop: 2 }}>
+                                <div style={{ width: 30, height: 30, background: s==='selesai'?'var(--mr-tint-green2)':s==='mulai'?'var(--mr-tint-gold)':C.bg, border: `1px solid ${s==='selesai'?C.up:s==='mulai'?G.gold:C.border}`, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, flexShrink: 0, marginTop: 2 }}>
                                   {s==='selesai'?'✓':s==='mulai'?'▶':'○'}
                                 </div>
                                 {/* Content */}
@@ -1522,7 +1629,7 @@ export default function DashboardPage() {
               </div>
 
               {/* Lot Size Calculator — full width, compact */}
-              <div style={{ background: 'linear-gradient(135deg,#0d0c00,#0a0a0a)', border: `1px solid #2a2200`, borderRadius: 14, padding: '20px 24px', marginBottom: 20 }}>
+              <div style={{ background: 'linear-gradient(135deg,var(--mr-tint-gold),var(--mr-bg))', border: `1px solid var(--mr-tint-gold-b)`, borderRadius: 14, padding: '20px 24px', marginBottom: 20 }}>
                 <div style={{ fontFamily: C.mono, color: G.gold, fontSize: 10, letterSpacing: 1, marginBottom: 14 }}>// LOT SIZE CALCULATOR</div>
                 <LotCalculator/>
               </div>
@@ -1760,7 +1867,7 @@ export default function DashboardPage() {
 
               {/* Save button */}
               {statusMsg && (
-                <div style={{ fontFamily: C.mono, fontSize: 12, color: statusMsg.includes('Gagal') || statusMsg.includes('Tidak') ? C.down : C.up, marginBottom: 12, padding: '8px 14px', background: '#0a0a0a', borderRadius: 6 }}>
+                <div style={{ fontFamily: C.mono, fontSize: 12, color: statusMsg.includes('Gagal') || statusMsg.includes('Tidak') ? C.down : C.up, marginBottom: 12, padding: '8px 14px', background: C.bg, borderRadius: 6 }}>
                   {statusMsg}
                 </div>
               )}
@@ -1793,6 +1900,11 @@ export default function DashboardPage() {
         {active === 'trading-plan' && (
           <MemberTradingPlan />
         )}
+
+        {active === 'competition' && (
+          <CompetitionPage embedded onGoToJurnal={() => setActive('jurnal')} />
+        )}
+
 
         {active === 'sertifikat' && (() => {
             const isAdvanced = member.is_advance;
@@ -1835,7 +1947,7 @@ export default function DashboardPage() {
                   /* Certificate */
                   <div>
                     {/* Canvas certificate */}
-                    <div style={{ background: '#0a0a0a', border: `1px solid #2a2a2a`, borderRadius: 14, padding: 24, marginBottom: 20, overflow: 'auto' }}>
+                    <div style={{ background: C.bg, border: `1px solid ${C.border2}`, borderRadius: 14, padding: 24, marginBottom: 20, overflow: 'auto' }}>
                       <CertificateCanvas
                         nama={member.nama}
                         tier={member.tier}
@@ -1959,10 +2071,10 @@ export default function DashboardPage() {
               <div style={{ fontFamily:C.mono, color:C.up, fontSize:10, letterSpacing:1, marginBottom:6 }}>// REFERRAL</div>
               <h2 style={{ fontSize:22, fontWeight:700, margin:'0 0 6px' }}>Program Referral</h2>
               <p style={{ color:C.dim, fontSize:13, margin:'0 0 24px' }}>Ajak teman bergabung dan dapatkan reward.</p>
-              <div style={{ background:'linear-gradient(135deg,#0a1a14,#0a0a0a)', border:'1px solid #1a3a28', borderRadius:14, padding:24, marginBottom:20 }}>
+              <div style={{ background:'linear-gradient(135deg,var(--mr-tint-green2),var(--mr-bg))', border:`1px solid var(--mr-tint-green-b)`, borderRadius:14, padding:24, marginBottom:20 }}>
                 <div style={{ fontFamily:C.mono, color:C.up, fontSize:10, letterSpacing:1, marginBottom:12 }}>// LINK REFERRAL KAMU</div>
                 <div style={{ display:'flex', gap:10, alignItems:'center', marginBottom:12 }}>
-                  <div style={{ flex:1, background:'#0a0a0a', border:`1px solid ${C.border}`, borderRadius:8, padding:'12px 14px', fontFamily:C.mono, fontSize:12, color:C.up, overflowX:'auto' as const, whiteSpace:'nowrap' as const }}>
+                  <div style={{ flex:1, background:C.bg, border:`1px solid ${C.border}`, borderRadius:8, padding:'12px 14px', fontFamily:C.mono, fontSize:12, color:C.up, overflowX:'auto' as const, whiteSpace:'nowrap' as const }}>
                     menolakrugi.pages.dev/signup?ref={referralCode}
                   </div>
                   <button onClick={()=>{ navigator.clipboard.writeText(`https://menolakrugi.pages.dev/signup?ref=${referralCode}`); setReferralCopied(true); setTimeout(()=>setReferralCopied(false),2000); }}
@@ -2000,7 +2112,7 @@ export default function DashboardPage() {
                         <div style={{ fontWeight:600, fontSize:13 }}>{r.referred_name||'Member Baru'}</div>
                         <div style={{ fontFamily:C.mono, fontSize:10, color:C.dim, marginTop:2 }}>{new Date(r.created_at).toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'})}</div>
                       </div>
-                      <div style={{ fontFamily:C.mono, fontSize:11, fontWeight:700, color:r.status==='rewarded'?G.gold:r.status==='verified'?C.up:C.dim, background:r.status==='rewarded'?'var(--mr-tint-gold)':r.status==='verified'?'var(--mr-tint-green2)':'#111', border:`1px solid ${r.status==='rewarded'?'var(--mr-tint-gold-b)':r.status==='verified'?'#1a3a28':C.border}`, padding:'3px 10px', borderRadius:6 }}>
+                      <div style={{ fontFamily:C.mono, fontSize:11, fontWeight:700, color:r.status==='rewarded'?G.gold:r.status==='verified'?C.up:C.dim, background:r.status==='rewarded'?'var(--mr-tint-gold)':r.status==='verified'?'var(--mr-tint-green2)':C.panel, border:`1px solid ${r.status==='rewarded'?'var(--mr-tint-gold-b)':r.status==='verified'?'var(--mr-tint-green-b)':C.border}`, padding:'3px 10px', borderRadius:6 }}>
                         {r.status==='rewarded'?'💰 REWARDED':r.status==='verified'?'✓ VERIFIED':'⏳ PENDING'}
                       </div>
                     </div>
@@ -2062,11 +2174,11 @@ export default function DashboardPage() {
       {viewJurnalMember && (
         <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.75)', zIndex:1000, display:'flex', alignItems:'flex-start', justifyContent:'flex-end' }}
           onClick={(e)=>{ if(e.target===e.currentTarget) setViewJurnalMember(null); }}>
-          <div style={{ width:'min(520px,95vw)', height:'100vh', background:'#0d0d0d', borderLeft:'1px solid #1e1e1e', display:'flex', flexDirection:'column', overflowY:'auto' }}>
-            <div style={{ padding:'20px 20px 16px', borderBottom:'1px solid #1e1e1e', position:'sticky', top:0, background:'#0d0d0d', zIndex:1 }}>
+          <div style={{ width:'min(520px,95vw)', height:'100vh', background:C.sidebar, borderLeft:`1px solid ${C.border}`, display:'flex', flexDirection:'column', overflowY:'auto' }}>
+            <div style={{ padding:'20px 20px 16px', borderBottom:`1px solid ${C.border}`, position:'sticky', top:0, background:C.sidebar, zIndex:1 }}>
               <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:12 }}>
                 <div style={{ fontFamily:'monospace', color:'#3b82f6', fontSize:10, letterSpacing:1.5 }}>// JURNAL TRADING</div>
-                <button onClick={()=>setViewJurnalMember(null)} style={{ background:'transparent', border:'1px solid #2a2a2a', color:'#888', padding:'4px 10px', cursor:'pointer', borderRadius:5, fontFamily:'monospace', fontSize:11 }}>✕ TUTUP</button>
+                <button onClick={()=>setViewJurnalMember(null)} style={{ background:'transparent', border:`1px solid ${C.border2}`, color:C.muted, padding:'4px 10px', cursor:'pointer', borderRadius:5, fontFamily:'monospace', fontSize:11 }}>✕ TUTUP</button>
               </div>
               <div style={{ display:'flex', alignItems:'center', gap:12 }}>
                 <div style={{ width:42, height:42, borderRadius:10, background:'#1d4ed8', display:'flex', alignItems:'center', justifyContent:'center', fontWeight:700, fontSize:16, color:'#93c5fd', flexShrink:0 }}>
@@ -2094,7 +2206,7 @@ export default function DashboardPage() {
                   <div style={{ overflowX:'auto' }}>
                     <table style={{ width:'100%', borderCollapse:'collapse', fontFamily:'monospace', fontSize:11 }}>
                       <thead>
-                        <tr style={{ borderBottom:'1px solid #2a2a2a' }}>
+                        <tr style={{ borderBottom:`1px solid ${C.border2}` }}>
                           {['TGL','PAIR','TF','HASIL','RR','PNL'].map((h:string)=>(
                             <th key={h} style={{ padding:'6px 10px', textAlign:'left' as const, color:'#555', fontWeight:600 }}>{h}</th>
                           ))}
