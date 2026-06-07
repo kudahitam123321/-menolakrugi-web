@@ -32,6 +32,7 @@ const SIDEBAR = [
   { id: 'peringkat',  label: 'Peringkat',      icon: '🏆' },
   { id: 'competition', label: 'Kompetisi',     icon: '🥇' },
   { id: 'sertifikat', label: 'Sertifikat',     icon: '🎖' },
+  { id: '1on1',       label: '1-on-1 Mentoring', icon: '🎯' },
   { id: 'ulasan',     label: 'Tulis Ulasan',   icon: '⭐' },
   { id: 'referral',   label: 'Referral',       icon: '🔗' },
   { id: 'sep2',       label: 'ACCOUNT',        icon: '', separator: true },
@@ -351,6 +352,11 @@ export default function DashboardPage() {
   const [viewJurnalMember, setViewJurnalMember]   = useState<any|null>(null);
   const [viewJurnalEntries, setViewJurnalEntries] = useState<any[]>([]);
   const [viewJurnalLoading, setViewJurnalLoading] = useState(false);
+  const [oneOnOneRequests, setOneOnOneRequests]   = useState<any[]>([]);
+  const [oonDiscord, setOonDiscord]               = useState('');
+  const [oonTopic, setOonTopic]                   = useState('');
+  const [oonSubmitting, setOonSubmitting]         = useState(false);
+  const [oonMsg, setOonMsg]                       = useState('');
 
   // View another member's jurnal
   const viewMemberJurnal = async (memberData: any) => {
@@ -519,6 +525,9 @@ export default function DashboardPage() {
       progRes.data.forEach((p: any) => { map[p.video_id] = p.status; });
       setProgress(map);
     }
+    // 1-on-1 requests
+    const { data: oonData } = await supabase.from('oneonone_requests').select('*').eq('member_id', m.id).order('created_at', { ascending: false });
+    if (oonData) setOneOnOneRequests(oonData);
   }
 
   async function handleChangePassword() {
@@ -631,6 +640,26 @@ export default function DashboardPage() {
       loadData(member);
     }
     setAdvSubmitting(false);
+  }
+
+  async function submitOneOnOne() {
+    if (!member) return;
+    if (!oonDiscord.trim()) { setOonMsg('Nickname Discord wajib diisi.'); return; }
+    if (!oonTopic.trim())   { setOonMsg('Topik yang ingin dibahas wajib diisi.'); return; }
+    setOonSubmitting(true); setOonMsg('');
+    const { error } = await supabase.from('oneonone_requests').insert({
+      member_id: member.id,
+      member_name: member.nama,
+      member_tier: member.tier,
+      discord_nickname: oonDiscord.trim(),
+      topic: oonTopic.trim(),
+    });
+    if (error) { setOonMsg('Gagal mengirim: ' + error.message); setOonSubmitting(false); return; }
+    const { data } = await supabase.from('oneonone_requests').select('*').eq('member_id', member.id).order('created_at', { ascending: false });
+    if (data) setOneOnOneRequests(data);
+    setOonDiscord(''); setOonTopic('');
+    setOonMsg('Request berhasil dikirim! Admin akan menghubungi kamu segera melalui Discord.');
+    setOonSubmitting(false);
   }
 
   function logout() {
@@ -1961,6 +1990,162 @@ export default function DashboardPage() {
                     <p style={{ fontFamily: C.mono, fontSize: 11, color: C.dim, marginTop: 10 }}>
                       File PNG berkualitas tinggi, bisa dishare di sosial media.
                     </p>
+                  </div>
+                )}
+              </div>
+            );
+          })()}
+
+          {/* ══ 1-ON-1 MENTORING ══ */}
+          {active === '1on1' && (() => {
+            const ELIGIBLE_TIERS = ['gold', 'platinum', 'SMC Gold Mentorship', 'SMC Platinum 1-on-1', 'SMC Platinum 1 on 1'];
+            const isEligible = ELIGIBLE_TIERS.includes(member.tier);
+            const hasPending = oneOnOneRequests.some(r => r.status === 'pending');
+
+            const statusBadge = (s: string) => {
+              const map: Record<string, { c: string; t: string; icon: string }> = {
+                pending:  { c: G.gold,  t: 'MENUNGGU REVIEW',  icon: '⏳' },
+                approved: { c: C.up,    t: 'DISETUJUI',        icon: '✓' },
+                rejected: { c: C.down,  t: 'DITOLAK',          icon: '✕' },
+              };
+              const x = map[s] || { c: C.muted, t: s?.toUpperCase() || '—', icon: '?' };
+              return (
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontFamily: C.mono, fontSize: 9, fontWeight: 700, color: x.c, background: `${x.c}18`, border: `1px solid ${x.c}33`, padding: '3px 10px', borderRadius: 4 }}>
+                  {x.icon} {x.t}
+                </span>
+              );
+            };
+
+            if (!isEligible) {
+              return (
+                <div className='mr-content-pad' style={{ padding: 24 }}>
+                  <div style={{ fontFamily: C.mono, color: '#eab308', fontSize: 10, letterSpacing: 1, marginBottom: 6 }}>// 1-ON-1 MENTORING</div>
+                  <h2 style={{ fontSize: 22, fontWeight: 700, margin: '0 0 6px' }}>Sesi 1-on-1 dengan Mentor</h2>
+                  <div style={{ background: C.panel, border: `1px solid ${C.border}`, borderRadius: 14, padding: '48px 24px', textAlign: 'center' as const, marginTop: 20 }}>
+                    <div style={{ fontSize: 56, marginBottom: 16 }}>🔒</div>
+                    <div style={{ fontSize: 18, fontWeight: 700, marginBottom: 10 }}>Fitur Eksklusif Gold & Platinum</div>
+                    <div style={{ color: C.dim, fontSize: 14, marginBottom: 8, lineHeight: 1.7, maxWidth: 480, margin: '0 auto 24px' }}>
+                      Sesi 1-on-1 tersedia untuk member <strong style={{ color: '#eab308' }}>SMC Gold Mentorship</strong> ke atas.<br/>
+                      Kamu bisa berdiskusi langsung dengan mentor sesuai topik yang kamu tentukan.
+                    </div>
+                    <div style={{ fontFamily: C.mono, fontSize: 11, color: C.dim, background: C.bg, border: `1px solid ${C.border2}`, borderRadius: 8, padding: '10px 20px', display: 'inline-block', marginBottom: 24 }}>
+                      Tier kamu saat ini: <span style={{ color: G.gold, fontWeight: 700 }}>{member.tier}</span>
+                    </div>
+                    <br/>
+                    <a href="/checkout" style={{ display: 'inline-block', fontFamily: C.mono, fontSize: 12, fontWeight: 700, color: '#000', background: '#eab308', padding: '11px 28px', textDecoration: 'none', borderRadius: 8 }}>
+                      UPGRADE KE GOLD ▸
+                    </a>
+                  </div>
+                </div>
+              );
+            }
+
+            return (
+              <div className='mr-content-pad' style={{ padding: 24 }}>
+                <div style={{ fontFamily: C.mono, color: '#eab308', fontSize: 10, letterSpacing: 1, marginBottom: 6 }}>// 1-ON-1 MENTORING</div>
+                <h2 style={{ fontSize: 22, fontWeight: 700, margin: '0 0 6px' }}>Sesi 1-on-1 dengan Mentor</h2>
+                <p style={{ color: C.dim, fontSize: 13, margin: '0 0 24px', lineHeight: 1.6 }}>
+                  Ajukan request sesi 1-on-1 bersama mentor. Admin akan mereview dan menetapkan jadwal setelah disetujui.
+                </p>
+
+                {/* Form pengajuan */}
+                <div style={{ background: C.panel, border: `1px solid ${hasPending ? '#eab30844' : C.border}`, borderRadius: 14, padding: 24, marginBottom: 20 }}>
+                  <div style={{ fontFamily: C.mono, color: '#eab308', fontSize: 11, letterSpacing: 1, marginBottom: 16, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <span>// AJUKAN REQUEST BARU</span>
+                    {hasPending && <span style={{ fontSize: 10, color: G.gold, background: 'var(--mr-tint-gold)', padding: '3px 10px', borderRadius: 4, border: '1px solid var(--mr-tint-gold-b)' }}>⏳ Ada request pending</span>}
+                  </div>
+
+                  {hasPending ? (
+                    <div style={{ fontFamily: C.mono, fontSize: 12, color: C.dim, padding: '16px 0' }}>
+                      Kamu masih memiliki request yang sedang direview admin. Tunggu hasilnya sebelum mengajukan request baru.
+                    </div>
+                  ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 14 }}>
+                      {/* Syarat */}
+                      <div style={{ fontFamily: C.mono, fontSize: 10, color: C.dim, background: C.bg, border: `1px solid ${C.border2}`, borderRadius: 8, padding: '10px 14px', lineHeight: 1.7 }}>
+                        📋 <strong style={{ color: C.text }}>Syarat pengajuan:</strong> Minimal tier SMC Gold Mentorship · Isi nickname Discord dan topik yang ingin dibahas
+                      </div>
+
+                      <div>
+                        <div style={{ fontFamily: C.mono, color: C.dim, fontSize: 10, marginBottom: 6 }}>NICKNAME DISCORD *</div>
+                        <input
+                          value={oonDiscord}
+                          onChange={e => setOonDiscord(e.target.value)}
+                          placeholder="contoh: username#1234 atau username"
+                          style={{ width: '100%', background: C.bg, border: `1px solid ${C.border2}`, color: C.text, padding: '10px 12px', borderRadius: 7, fontFamily: C.mono, fontSize: 12, outline: 'none', boxSizing: 'border-box' as const }}
+                          onFocus={e => e.target.style.borderColor = '#eab308'}
+                          onBlur={e => e.target.style.borderColor = C.border2}
+                        />
+                      </div>
+
+                      <div>
+                        <div style={{ fontFamily: C.mono, color: C.dim, fontSize: 10, marginBottom: 6 }}>TOPIK YANG INGIN DIBAHAS *</div>
+                        <textarea
+                          value={oonTopic}
+                          onChange={e => setOonTopic(e.target.value)}
+                          placeholder="Jelaskan topik atau pertanyaan yang ingin kamu diskusikan dengan mentor..."
+                          rows={4}
+                          style={{ width: '100%', background: C.bg, border: `1px solid ${C.border2}`, color: C.text, padding: '10px 12px', borderRadius: 7, fontFamily: C.mono, fontSize: 12, resize: 'vertical' as const, outline: 'none', boxSizing: 'border-box' as const, lineHeight: 1.6 }}
+                          onFocus={e => e.target.style.borderColor = '#eab308'}
+                          onBlur={e => e.target.style.borderColor = C.border2}
+                        />
+                      </div>
+
+                      {oonMsg && (
+                        <div style={{ fontFamily: C.mono, fontSize: 11, color: oonMsg.startsWith('Gagal') ? C.down : C.up, background: oonMsg.startsWith('Gagal') ? '#1a0a0a' : 'var(--mr-tint-green)', border: `1px solid ${oonMsg.startsWith('Gagal') ? C.down + '44' : C.up + '44'}`, padding: '10px 14px', borderRadius: 7 }}>
+                          {oonMsg}
+                        </div>
+                      )}
+
+                      <button
+                        onClick={submitOneOnOne}
+                        disabled={oonSubmitting}
+                        style={{ background: oonSubmitting ? C.border2 : '#eab308', color: oonSubmitting ? C.dim : '#000', fontFamily: C.mono, fontSize: 12, fontWeight: 700, padding: '11px 24px', border: 'none', cursor: oonSubmitting ? 'not-allowed' : 'pointer', borderRadius: 8, alignSelf: 'flex-start' as const }}>
+                        {oonSubmitting ? 'MENGIRIM...' : '▸ KIRIM REQUEST'}
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                {/* Riwayat request */}
+                {oneOnOneRequests.length > 0 && (
+                  <div>
+                    <div style={{ fontFamily: C.mono, color: C.dim, fontSize: 10, letterSpacing: 1, marginBottom: 12 }}>// RIWAYAT REQUEST</div>
+                    <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 10 }}>
+                      {oneOnOneRequests.map(r => (
+                        <div key={r.id} style={{ background: C.panel, border: `1px solid ${r.status === 'pending' ? '#eab30844' : r.status === 'approved' ? C.up + '33' : C.border}`, borderRadius: 12, padding: 18 }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, marginBottom: 10 }}>
+                            <div>
+                              <div style={{ fontFamily: C.mono, fontSize: 10, color: C.dim, marginBottom: 4 }}>
+                                {new Date(r.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
+                              </div>
+                              <div style={{ fontSize: 13, fontWeight: 600, color: C.text, marginBottom: 4 }}>Discord: <span style={{ color: '#a855f7' }}>@{r.discord_nickname}</span></div>
+                              <div style={{ fontSize: 12, color: C.dim, lineHeight: 1.6 }}>{r.topic}</div>
+                            </div>
+                            {statusBadge(r.status)}
+                          </div>
+
+                          {r.status === 'approved' && r.scheduled_at && (
+                            <div style={{ fontFamily: C.mono, fontSize: 11, color: C.up, background: 'var(--mr-tint-green)', border: `1px solid ${C.up}33`, padding: '10px 14px', borderRadius: 7, marginTop: 8 }}>
+                              📅 Jadwal: <strong>{new Date(r.scheduled_at).toLocaleString('id-ID', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</strong>
+                              <div style={{ marginTop: 4, color: C.dim, fontSize: 10 }}>Siapkan pertanyaanmu. Admin akan menghubungi via Discord.</div>
+                            </div>
+                          )}
+
+                          {r.status === 'rejected' && r.rejection_reason && (
+                            <div style={{ fontFamily: C.mono, fontSize: 11, color: C.down, background: '#1a0a0a', border: `1px solid ${C.down}33`, padding: '10px 14px', borderRadius: 7, marginTop: 8 }}>
+                              ❌ Alasan: {r.rejection_reason}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {oneOnOneRequests.length === 0 && !hasPending && (
+                  <div style={{ fontFamily: C.mono, fontSize: 12, color: C.dim, padding: '16px 0', textAlign: 'center' as const }}>
+                    Belum ada request. Isi form di atas untuk mengajukan sesi 1-on-1 pertamamu.
                   </div>
                 )}
               </div>

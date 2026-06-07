@@ -52,6 +52,8 @@ There are legacy page files (`src/pages/DashboardPage.tsx`, `src/pages/MemberPag
 
 The old landing-page section components in `src/components/` (`Navbar.tsx`, `Hero.tsx`, `Courses.tsx`, `Footer.tsx`, etc.) are imported in `App.tsx` but **unused** — `App.tsx` renders `<LandingPage />` directly for the home route. Do not add new logic to those files.
 
+**Stale root-level files**: `App.tsx` and `theme.ts` exist at the project root **and** inside `src/`. The root-level copies are leftover artifacts — always edit `src/App.tsx` and `src/lib/theme.ts`. `INTEGRATION_GUIDE.tsx` at the project root is also a stale planning artifact; ignore it.
+
 ### Session Management
 
 No auth library. Session stored in `localStorage` under key `mr_session` as a plain object. Each component that needs the session reads it directly — there is no shared `getSession` utility; the pattern is copy-pasted inline:
@@ -71,6 +73,8 @@ Logout is done by calling `localStorage.removeItem('mr_session')` then redirecti
 All data comes from Supabase (PostgreSQL + RLS). The client is initialized in `src/lib/supabase.ts` with a hardcoded public anon key. There is also `src/lib/supabaseClient.ts` — a second client file; prefer `src/lib/supabase.ts` for all new code.
 
 Queries are raw `.from('table').select()...` chains — no ORM. Custom hooks in `src/hooks/index.ts` encapsulate all Supabase queries with fallback data where appropriate (e.g., `PRICING_FALLBACK` in `usePricing`).
+
+**Critical RLS gotcha**: This app uses custom localStorage-based auth, **not** Supabase Auth. `auth.uid()` is always `null` at the database level. All RLS policies must use `using (true)` / `with check (true)` — access control is enforced at the application layer, not the database layer. Using `auth.uid()` in a policy will silently block inserts/updates. See `supabase-competition-rls-fix.sql` for the fix pattern.
 
 Key tables: `members`, `pricing_tiers`, `videos`, `journals`, `watch_history`, `testimonials`, `funded_brokers`, `partnerships`, `activity_log`, `trading_plan_config`, `advance_requests`, `partnership_claims`, `landing_gallery`, `competitions`, `trading_journals`, `journal_settings`.
 
@@ -192,6 +196,9 @@ Config is stored per `plan_type` (`'basic'` | `'advanced'`) in the `trading_plan
 | `src/constants.ts` | WhatsApp number and URL constants |
 | `supabase-migration.sql` | Database schema with RLS policies |
 | `supabase-competition-migration.sql` | `competitions` table schema with RLS |
+| `supabase-competition-rls-fix.sql` | Fixes competition RLS to use `with check (true)` — run in Supabase SQL editor if competition saves are blocked |
+| `supabase-oneonone-migration.sql` | Schema for `oneonone_requests` table (1-on-1 mentoring feature) |
 | `src/pages/CompetitionPage.tsx` | Member-facing competition + live leaderboard |
 | `src/pages/admin/AdminCompetitionPage.tsx` | Admin competition create/edit UI |
 | `src/hooks/useMyCompetitionStats.ts` | Per-member competition stats hook |
+| `src/pages/member/JurnalPage.tsx` | Member trading journal UI (embedded as `jurnal` tab in DashboardPage) |

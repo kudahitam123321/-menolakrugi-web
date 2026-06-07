@@ -112,25 +112,30 @@ const TIER_COLORS: Record<string,string> = {
 
 // ── APPROVALS TAB (Ulasan + Advance Request + Klaim Partnership) ──────────────
 function ApprovalsTab({ adminName }: { adminName: string }) {
-  const [subtab, setSubtab] = useState<'ulasan'|'advance'|'klaim'>('ulasan');
-  const [ulasan,  setUlasan]  = useState<any[]>([]);
-  const [advance, setAdvance] = useState<any[]>([]);
-  const [klaim,   setKlaim]   = useState<any[]>([]);
+  const [subtab, setSubtab] = useState<'ulasan'|'advance'|'klaim'|'1on1'>('ulasan');
+  const [ulasan,    setUlasan]    = useState<any[]>([]);
+  const [advance,   setAdvance]   = useState<any[]>([]);
+  const [klaim,     setKlaim]     = useState<any[]>([]);
+  const [oneOnOne,  setOneOnOne]  = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [rejectingId, setRejectingId]     = useState<string | null>(null);
   const [rejectReason, setRejectReason]   = useState('');
+  const [schedulingId, setSchedulingId]   = useState<string | null>(null);
+  const [scheduleInput, setScheduleInput] = useState('');
 
   useEffect(() => {
     (async () => {
       setLoading(true);
-      const [{ data: u }, { data: av }, { data: kl }] = await Promise.all([
+      const [{ data: u }, { data: av }, { data: kl }, { data: oon }] = await Promise.all([
         supabase.from('testimonials').select('*').order('created_at', { ascending: false }),
         supabase.from('advance_requests').select('*').order('created_at', { ascending: false }),
         supabase.from('partnership_claims').select('*').order('created_at', { ascending: false }),
+        supabase.from('oneonone_requests').select('*').order('created_at', { ascending: false }),
       ]);
       setUlasan(u || []);
       setAdvance(av || []);
       setKlaim(kl || []);
+      setOneOnOne(oon || []);
       setLoading(false);
     })();
   }, []);
@@ -138,12 +143,13 @@ function ApprovalsTab({ adminName }: { adminName: string }) {
   const pendingU = ulasan.filter(x => x.status === 'pending').length;
   const pendingA = advance.filter(x => x.status === 'pending').length;
   const pendingK = klaim.filter(x => x.status === 'pending').length;
+  const pendingO = oneOnOne.filter(x => x.status === 'pending').length;
 
   const badge = (n: number) => n > 0 ? (
     <span style={{ marginLeft:6, background:C.down, color:'#fff', borderRadius:'50%', fontSize:9, fontWeight:800, fontFamily:C.mono, minWidth:16, height:16, display:'inline-flex', alignItems:'center', justifyContent:'center', padding:'0 4px' }}>{n}</span>
   ) : null;
 
-  const tabBtn = (id: 'ulasan'|'advance'|'klaim', label: string, pending: number) => (
+  const tabBtn = (id: 'ulasan'|'advance'|'klaim'|'1on1', label: string, pending: number) => (
     <button onClick={() => setSubtab(id)} style={{ fontFamily:C.mono, fontSize:11, padding:'7px 16px', borderRadius:6, border:`1px solid ${subtab===id?G.gold:'var(--mr-border)'}`, background:subtab===id?'var(--mr-tint-gold)':'transparent', color:subtab===id?G.gold:C.muted, cursor:'pointer', display:'flex', alignItems:'center' }}>
       {label}{badge(pending)}
     </button>
@@ -197,6 +203,21 @@ function ApprovalsTab({ adminName }: { adminName: string }) {
     await logActivity('reject_klaim', `Klaim partnership ditolak (id: ${id}): ${finalReason}`, adminName);
   }
 
+  async function approveOneOnOne(id: string, scheduled: string) {
+    if (!scheduled) { alert('Jadwal wajib diisi sebelum menyetujui.'); return; }
+    if (!await dbUpdate('oneonone_requests', id, { status: 'approved', scheduled_at: scheduled, updated_at: new Date().toISOString() })) return;
+    setOneOnOne(l => l.map(x => x.id === id ? { ...x, status: 'approved', scheduled_at: scheduled } : x));
+    setSchedulingId(null); setScheduleInput('');
+    await logActivity('approve_1on1', `Request 1-on-1 disetujui (id: ${id}), jadwal: ${scheduled}`, adminName);
+  }
+  async function rejectOneOnOne(id: string, reason: string) {
+    const finalReason = reason.trim() || 'Ditolak oleh admin';
+    if (!await dbUpdate('oneonone_requests', id, { status: 'rejected', rejection_reason: finalReason, updated_at: new Date().toISOString() })) return;
+    setOneOnOne(l => l.map(x => x.id === id ? { ...x, status: 'rejected', rejection_reason: finalReason } : x));
+    setRejectingId(null);
+    await logActivity('reject_1on1', `Request 1-on-1 ditolak (id: ${id}): ${finalReason}`, adminName);
+  }
+
   const statusBadge = (s: string) => {
     const map: Record<string,{c:string,t:string}> = {
       pending:{c:G.gold,t:'PENDING'}, approved:{c:C.up,t:'APPROVED'}, disetujui:{c:C.up,t:'DISETUJUI'},
@@ -212,10 +233,11 @@ function ApprovalsTab({ adminName }: { adminName: string }) {
     <div style={{ padding:24 }}>
       <div style={{ fontFamily:C.mono, color:G.gold, fontSize:10, letterSpacing:2, marginBottom:8 }}>// PERSETUJUAN</div>
       <h2 style={{ fontSize:20, fontWeight:700, marginBottom:20 }}>Persetujuan Terpadu</h2>
-      <div style={{ display:'flex', gap:8, marginBottom:20 }}>
+      <div style={{ display:'flex', gap:8, marginBottom:20, flexWrap:'wrap' as const }}>
         {tabBtn('ulasan','✍ Ulasan Member', pendingU)}
         {tabBtn('advance','⬆ Request Advance', pendingA)}
         {tabBtn('klaim','🤝 Klaim Partnership', pendingK)}
+        {tabBtn('1on1','🎯 1-on-1 Mentoring', pendingO)}
       </div>
 
       {/* ── ULASAN ── */}
@@ -343,6 +365,81 @@ function ApprovalsTab({ adminName }: { adminName: string }) {
             </div>
           ))}
           {klaim.length === 0 && <div style={{ fontFamily:C.mono, color:C.muted, fontSize:12, padding:'32px 0', textAlign:'center' as const }}>Belum ada klaim partnership.</div>}
+        </div>
+      )}
+
+      {/* ── 1-ON-1 MENTORING ── */}
+      {subtab === '1on1' && (
+        <div style={{ display:'flex', flexDirection:'column' as const, gap:10 }}>
+          <div style={{ fontFamily:C.mono, fontSize:10, color:C.muted, marginBottom:4 }}>Pending: {pendingO} · Total: {oneOnOne.length}</div>
+          {oneOnOne.map(r => (
+            <div key={r.id} style={{ background:'var(--mr-panel)', border:`1px solid ${r.status==='pending'?'#eab30844':r.status==='approved'?C.up+'33':'var(--mr-border)'}`, borderRadius:10, padding:16 }}>
+              <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', gap:12, marginBottom:10 }}>
+                <div style={{ flex:1, minWidth:0 }}>
+                  <div style={{ fontWeight:700, fontSize:13, marginBottom:2 }}>{r.member_name || '—'}</div>
+                  <div style={{ fontFamily:C.mono, fontSize:10, color:C.muted }}>
+                    {r.member_tier} · {new Date(r.created_at).toLocaleDateString('id-ID')}
+                  </div>
+                  <div style={{ fontFamily:C.mono, fontSize:11, color:'#a855f7', marginTop:4 }}>
+                    Discord: @{r.discord_nickname}
+                  </div>
+                </div>
+                {statusBadge(r.status)}
+              </div>
+
+              <div style={{ background:'var(--mr-bg)', border:'1px solid var(--mr-border2)', borderRadius:7, padding:'10px 14px', marginBottom:10 }}>
+                <div style={{ fontFamily:C.mono, fontSize:9, color:C.muted, marginBottom:4 }}>TOPIK:</div>
+                <div style={{ fontSize:12, color:C.text, lineHeight:1.6 }}>{r.topic}</div>
+              </div>
+
+              {r.status === 'approved' && r.scheduled_at && (
+                <div style={{ fontFamily:C.mono, fontSize:11, color:C.up, marginBottom:8 }}>
+                  📅 Jadwal: {new Date(r.scheduled_at).toLocaleString('id-ID', { day:'numeric', month:'long', year:'numeric', hour:'2-digit', minute:'2-digit' })}
+                </div>
+              )}
+              {r.status === 'rejected' && r.rejection_reason && (
+                <div style={{ fontFamily:C.mono, fontSize:11, color:C.down, marginBottom:8 }}>Alasan tolak: {r.rejection_reason}</div>
+              )}
+
+              {r.status === 'pending' && (
+                schedulingId === r.id ? (
+                  <div style={{ marginTop:8 }}>
+                    <div style={{ fontFamily:C.mono, fontSize:10, color:C.muted, marginBottom:6 }}>SET JADWAL 1-ON-1:</div>
+                    <input
+                      type="datetime-local"
+                      value={scheduleInput}
+                      onChange={e => setScheduleInput(e.target.value)}
+                      style={{ background:'var(--mr-bg)', border:`1px solid ${C.up}44`, color:C.text, padding:'8px 10px', borderRadius:6, fontFamily:C.mono, fontSize:12, outline:'none', marginBottom:8, width:'100%', boxSizing:'border-box' as const }}
+                    />
+                    <div style={{ display:'flex', gap:6 }}>
+                      <button onClick={() => approveOneOnOne(r.id, scheduleInput)} style={{ background:'var(--mr-tint-green)', border:`1px solid ${C.up}`, color:C.up, fontFamily:C.mono, fontSize:11, padding:'6px 16px', borderRadius:6, cursor:'pointer', fontWeight:700 }}>✓ Konfirmasi Setujui</button>
+                      <button onClick={() => { setSchedulingId(null); setScheduleInput(''); }} style={{ background:'transparent', border:`1px solid ${C.border}`, color:C.muted, fontFamily:C.mono, fontSize:11, padding:'6px 12px', borderRadius:6, cursor:'pointer' }}>Batal</button>
+                    </div>
+                  </div>
+                ) : rejectingId === r.id ? (
+                  <div style={{ marginTop:8 }}>
+                    <textarea
+                      value={rejectReason}
+                      onChange={e => setRejectReason(e.target.value)}
+                      placeholder="Tulis alasan penolakan untuk member... (opsional)"
+                      rows={2}
+                      style={{ width:'100%', background:'var(--mr-bg)', border:`1px solid ${C.down}44`, color:C.text, padding:'8px 10px', borderRadius:6, fontFamily:C.mono, fontSize:11, resize:'vertical' as const, outline:'none', boxSizing:'border-box' as const }}
+                    />
+                    <div style={{ display:'flex', gap:6, marginTop:6 }}>
+                      <button onClick={() => rejectOneOnOne(r.id, rejectReason)} style={{ background:'var(--mr-tint-red)', border:`1px solid ${C.down}`, color:C.down, fontFamily:C.mono, fontSize:11, padding:'6px 16px', borderRadius:6, cursor:'pointer', fontWeight:700 }}>✕ Konfirmasi Tolak</button>
+                      <button onClick={() => setRejectingId(null)} style={{ background:'transparent', border:`1px solid ${C.border}`, color:C.muted, fontFamily:C.mono, fontSize:11, padding:'6px 12px', borderRadius:6, cursor:'pointer' }}>Batal</button>
+                    </div>
+                  </div>
+                ) : (
+                  <div style={{ display:'flex', gap:8 }}>
+                    <button onClick={() => { setSchedulingId(r.id); setScheduleInput(''); setRejectingId(null); }} style={{ background:'var(--mr-tint-green)', border:`1px solid ${C.up}`, color:C.up, fontFamily:C.mono, fontSize:11, padding:'6px 16px', borderRadius:6, cursor:'pointer', fontWeight:700 }}>✓ Setujui & Set Jadwal</button>
+                    <button onClick={() => { setRejectingId(r.id); setRejectReason(''); setSchedulingId(null); }} style={{ background:'var(--mr-tint-red)', border:`1px solid ${C.down}`, color:C.down, fontFamily:C.mono, fontSize:11, padding:'6px 16px', borderRadius:6, cursor:'pointer' }}>✕ Tolak</button>
+                  </div>
+                )
+              )}
+            </div>
+          ))}
+          {oneOnOne.length === 0 && <div style={{ fontFamily:C.mono, color:C.muted, fontSize:12, padding:'32px 0', textAlign:'center' as const }}>Belum ada request 1-on-1.</div>}
         </div>
       )}
     </div>
