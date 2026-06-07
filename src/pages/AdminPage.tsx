@@ -1415,10 +1415,10 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
   // Broker CRUD
   async function uploadBrokerLogo(file: File): Promise<string|null> {
     const ext = file.name.split('.').pop();
-    const fileName = `broker-logos/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
-    const { error } = await supabase.storage.from('gallery').upload(fileName, file, { upsert: true, contentType: file.type });
+    const fileName = `brokerlogo_${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
+    const { error } = await supabase.storage.from('materi').upload(fileName, file, { upsert: true, cacheControl: '3600' });
     if (error) { notify('Gagal upload logo: ' + error.message, 'err'); return null; }
-    const { data } = supabase.storage.from('gallery').getPublicUrl(fileName);
+    const { data } = supabase.storage.from('materi').getPublicUrl(fileName);
     return data.publicUrl;
   }
   async function addBroker() {
