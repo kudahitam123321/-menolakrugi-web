@@ -728,16 +728,45 @@ export default function AdminPanel() {
   const [notifMsg, setNotifMsg]     = useState('');
   const [notifSending, setNotifSending] = useState(false);
   const [notifSent, setNotifSent]   = useState(false);
+  const [toasts, setToasts] = useState<{id:string;msg:string;type:string;name:string}[]>([]);
 
   const GROWTH_DATA = [12,18,14,22,19,28,24,35,30,42,38,50,45,55,48,62,58,72,65,80,74,90,85,100,95,110,105,120,115,130];
 
   const adminData = (() => { try { return JSON.parse(localStorage.getItem('mr_admin')||'{}'); } catch { return {}; } })();
+
+  function addToast(msg: string, type: string, name: string) {
+    const id = Date.now().toString() + Math.random();
+    setToasts(prev => [...prev, { id, msg, type, name }]);
+    setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 6000);
+  }
 
   useEffect(() => {
     const admin = localStorage.getItem('mr_admin');
     if (!admin) { window.location.href = '/login'; return; }
     loadDashboard();
     loadNotifications();
+
+    // Real-time subscriptions — notifikasi otomatis saat ada request baru
+    const channel = supabase.channel('admin-realtime-requests')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'testimonials' }, (payload: any) => {
+        addToast('Ulasan baru masuk', 'ulasan', payload.new?.nama || payload.new?.member_name || 'Member');
+        loadNotifications();
+      })
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'advance_requests' }, (payload: any) => {
+        addToast('Request naik kelas masuk', 'advance', payload.new?.member_nama || 'Member');
+        loadNotifications();
+      })
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'partnership_claims' }, (payload: any) => {
+        addToast('Klaim partnership baru masuk', 'klaim', payload.new?.nama_lengkap || payload.new?.nama || 'Member');
+        loadNotifications();
+      })
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'oneonone_requests' }, (payload: any) => {
+        addToast('Request 1-on-1 masuk', '1on1', payload.new?.member_name || 'Member');
+        loadNotifications();
+      })
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
   }, []);
 
   async function loadNotifications() {
@@ -745,10 +774,12 @@ export default function AdminPanel() {
       { data: klaimData },
       { data: advanceData },
       { data: ulasanData },
+      { data: oonData },
     ] = await Promise.all([
       supabase.from('partnership_claims').select('id,nama_lengkap,nama,broker,created_at').eq('status','pending').order('created_at',{ascending:false}).limit(10),
       supabase.from('advance_requests').select('id,member_nama,member_tier,created_at').eq('status','pending').order('created_at',{ascending:false}).limit(10),
       supabase.from('testimonials').select('id,nama,member_name,kelas,created_at').eq('status','pending').order('created_at',{ascending:false}).limit(10),
+      supabase.from('oneonone_requests').select('id,member_name,member_tier,created_at').eq('status','pending').order('created_at',{ascending:false}).limit(10),
     ]);
     const fmt = (iso: string) => {
       const diff = Date.now() - new Date(iso).getTime();
@@ -768,7 +799,11 @@ export default function AdminPanel() {
         id: 'u_'+x.id, type:'ulasan', label: x.nama||x.member_name||'—',
         sub: `Ulasan member · ${x.kelas||''}`, tab:'approvals', subtab:'ulasan', time: fmt(x.created_at),
       })),
-    ].sort((a,b) => a.time.localeCompare(b.time));
+      ...(oonData||[]).map((x:any) => ({
+        id: 'o_'+x.id, type:'1on1', label: x.member_name||'—',
+        sub: `Request 1-on-1 · ${x.member_tier||''}`, tab:'approvals', subtab:'1on1', time: fmt(x.created_at),
+      })),
+    ].sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime());
     setNotifications(notifs);
   }
 
@@ -1044,8 +1079,8 @@ export default function AdminPanel() {
                         ✅ Tidak ada notifikasi pending
                       </div>
                     ) : notifications.map(n => {
-                      const TYPE_COLOR: Record<string,string> = { klaim:'#3b82f6', advance:'#a855f7', ulasan:G.gold };
-                      const TYPE_ICON:  Record<string,string> = { klaim:'🤝', advance:'⬆', ulasan:'✍' };
+                      const TYPE_COLOR: Record<string,string> = { klaim:'#3b82f6', advance:'#a855f7', ulasan:G.gold, '1on1':'#eab308' };
+                      const TYPE_ICON:  Record<string,string> = { klaim:'🤝', advance:'⬆', ulasan:'✍', '1on1':'🎯' };
                       const col = TYPE_COLOR[n.type] || C.muted;
                       return (
                         <div key={n.id} onClick={() => { setActive(n.tab); setShowNotif(false); }}
@@ -1088,6 +1123,31 @@ export default function AdminPanel() {
         </div>
       </div>
 
+      {/* ── Real-time toast notifications ── */}
+      {toasts.length > 0 && (
+        <div style={{ position: 'fixed', bottom: 24, right: 24, zIndex: 200, display: 'flex', flexDirection: 'column' as const, gap: 8, pointerEvents: 'none' }}>
+          {toasts.map(t => {
+            const TOAST_COLOR: Record<string,string> = { klaim:'#3b82f6', advance:'#a855f7', ulasan:'#eab308', '1on1':'#eab308' };
+            const TOAST_ICON:  Record<string,string> = { klaim:'🤝', advance:'⬆', ulasan:'✍', '1on1':'🎯' };
+            const col = TOAST_COLOR[t.type] || G.gold;
+            return (
+              <div key={t.id} style={{ background: 'var(--mr-sidebar)', border: `1px solid ${col}44`, borderLeft: `3px solid ${col}`, borderRadius: 10, padding: '13px 18px', boxShadow: `0 8px 32px rgba(0,0,0,0.6), 0 0 0 1px ${col}11`, minWidth: 280, maxWidth: 340, animation: 'ap-glow-in 0.3s ease both', pointerEvents: 'all' as const }}>
+                <div style={{ fontFamily: C.mono, fontSize: 8, color: col, letterSpacing: 2, marginBottom: 5 }}>// REQUEST BARU MASUK</div>
+                <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+                  <span style={{ fontSize: 20, flexShrink: 0 }}>{TOAST_ICON[t.type] || '🔔'}</span>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontWeight: 700, fontSize: 13, color: C.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}>{t.name}</div>
+                    <div style={{ fontFamily: C.mono, fontSize: 10, color: col, marginTop: 2 }}>{t.msg}</div>
+                  </div>
+                  <button onClick={() => setToasts(prev => prev.filter(x => x.id !== t.id))}
+                    style={{ background: 'none', border: 'none', color: C.dim, cursor: 'pointer', fontSize: 16, padding: '0 4px', flexShrink: 0, pointerEvents: 'all' as const }}>×</button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
       <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
         {/* Sidebar */}
         <aside className='ap-sidebar' style={{ width: 220, background: 'var(--mr-sidebar)', borderRight: `1px solid ${C.border}`, flexShrink: 0, overflowY: 'auto' }}>
@@ -1100,7 +1160,12 @@ export default function AdminPanel() {
                   <button key={item.id} onClick={() => setActive(item.id)}
                     className={`ap-sidebar-item${isA ? ' ap-active' : ''}`} style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '9px 16px', border: 'none', borderLeft: isA ? `2px solid ${G.gold}` : '2px solid transparent', background: isA ? 'linear-gradient(90deg,#1a150022,transparent)' : 'transparent', color: isA ? G.gold : '#9999bb', cursor: 'pointer', fontSize: 12, fontFamily: isA ? C.mono : 'inherit', textAlign: 'left' as const, letterSpacing: isA ? 0.3 : 0 }}>
                     <span>{item.icon}</span>
-                    <span>{item.label}</span>
+                    <span style={{ flex: 1 }}>{item.label}</span>
+                    {item.id === 'approvals' && notifications.length > 0 && (
+                      <span style={{ fontFamily: C.mono, fontSize: 9, fontWeight: 800, background: C.down, color: '#fff', borderRadius: 10, minWidth: 18, height: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 4px' }}>
+                        {notifications.length > 9 ? '9+' : notifications.length}
+                      </span>
+                    )}
                   </button>
                 );
               })}
