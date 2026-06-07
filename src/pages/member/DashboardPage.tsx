@@ -388,12 +388,71 @@ export default function DashboardPage() {
   });
   const [mobileMenuOpen, setMobileMenuOpen]     = useState(false);
   const [isMobile, setIsMobile]                 = useState(() => window.innerWidth < 768);
+  const [memberToasts, setMemberToasts]         = useState<{id:string;msg:string;type:'success'|'error'|'info'}[]>([]);
 
   useEffect(() => {
     const onResize = () => setIsMobile(window.innerWidth < 768);
     window.addEventListener('resize', onResize);
     return () => window.removeEventListener('resize', onResize);
   }, []);
+
+  function addMemberToast(msg: string, type: 'success' | 'error' | 'info' = 'info') {
+    const id = Date.now().toString() + Math.random();
+    setMemberToasts(prev => [...prev, { id, msg, type }]);
+    setTimeout(() => setMemberToasts(prev => prev.filter(t => t.id !== id)), 7000);
+  }
+
+  useEffect(() => {
+    if (!member) return;
+    const channel = supabase.channel(`member-updates-${member.id}`)
+      .on('postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'advance_requests', filter: `member_id=eq.${member.id}` },
+        (payload: any) => {
+          if (payload.old?.status === 'pending' && payload.new?.status !== 'pending') {
+            if (payload.new.status === 'approved') {
+              addMemberToast('🎉 Request naik kelas kamu DISETUJUI! Refresh halaman untuk akses kelas Advanced.', 'success');
+            } else {
+              const reason = payload.new.alasan_tolak?.split('\n')[0];
+              addMemberToast(`❌ Request naik kelas ditolak${reason ? `: ${reason}` : '.'}`, 'error');
+            }
+            loadData(member);
+          }
+        }
+      )
+      .on('postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'oneonone_requests', filter: `member_id=eq.${member.id}` },
+        (payload: any) => {
+          if (payload.old?.status === 'pending' && payload.new?.status !== 'pending') {
+            if (payload.new.status === 'approved') {
+              const sched = payload.new.scheduled_at
+                ? new Date(payload.new.scheduled_at).toLocaleString('id-ID', { day:'numeric', month:'long', year:'numeric', hour:'2-digit', minute:'2-digit' })
+                : '';
+              addMemberToast(`🎯 Sesi 1-on-1 kamu DISETUJUI!${sched ? ` Jadwal: ${sched}` : ' Cek menu 1-on-1.'}`, 'success');
+            } else {
+              const reason = payload.new.rejection_reason;
+              addMemberToast(`❌ Request 1-on-1 ditolak${reason ? `: ${reason}` : '.'}`, 'error');
+            }
+            supabase.from('oneonone_requests').select('*').eq('member_id', member.id).order('created_at', { ascending: false })
+              .then(({ data }) => { if (data) setOneOnOneRequests(data); });
+          }
+        }
+      )
+      .on('postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'testimonials', filter: `member_id=eq.${member.id}` },
+        (payload: any) => {
+          const oldS = payload.old?.status; const newS = payload.new?.status;
+          if (oldS === 'pending' && newS !== 'pending') {
+            if (newS === 'disetujui') {
+              addMemberToast('✅ Ulasan kamu DISETUJUI dan sekarang tampil di landing page!', 'success');
+            } else {
+              addMemberToast('❌ Ulasan kamu ditolak oleh admin.', 'error');
+            }
+          }
+        }
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [member?.id]);
 
   function toggleSidebar() {
     setSidebarCollapsed(prev => {
@@ -2419,6 +2478,25 @@ export default function DashboardPage() {
       )}
 
       {/* ── Mobile Bottom Nav ── */}
+      {/* ── Real-time toast notifications for member ── */}
+      {memberToasts.length > 0 && (
+        <div style={{ position: 'fixed', bottom: 80, right: 16, zIndex: 200, display: 'flex', flexDirection: 'column' as const, gap: 8, pointerEvents: 'none', maxWidth: 'calc(100vw - 32px)' }}>
+          {memberToasts.map(t => {
+            const col = t.type === 'success' ? C.up : t.type === 'error' ? C.down : G.gold;
+            return (
+              <div key={t.id} style={{ background: C.sidebar, border: `1px solid ${col}44`, borderLeft: `3px solid ${col}`, borderRadius: 10, padding: '13px 18px', boxShadow: `0 8px 32px rgba(0,0,0,0.5)`, minWidth: 260, maxWidth: 340, pointerEvents: 'all' as const }}>
+                <div style={{ fontFamily: C.mono, fontSize: 8, color: col, letterSpacing: 2, marginBottom: 6 }}>// UPDATE STATUS PENGAJUAN</div>
+                <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+                  <div style={{ flex: 1, fontSize: 13, color: C.text, lineHeight: 1.5 }}>{t.msg}</div>
+                  <button onClick={() => setMemberToasts(prev => prev.filter(x => x.id !== t.id))}
+                    style={{ background: 'none', border: 'none', color: C.dim, cursor: 'pointer', fontSize: 18, padding: '0 2px', flexShrink: 0, lineHeight: 1, pointerEvents: 'all' as const }}>×</button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
       <nav className='mr-bottom-nav' style={{ background: C.sidebar, borderTop: `1px solid ${C.border}`, display: 'flex', alignItems: 'center', padding: '0 4px' }}>
         {[
           { id: 'dashboard', icon: '⊞', label: 'Home' },
