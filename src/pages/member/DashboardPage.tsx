@@ -450,6 +450,22 @@ export default function DashboardPage() {
           }
         }
       )
+      .on('postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'videos' },
+        (payload: any) => {
+          const judul = payload.new?.judul || 'Video baru';
+          addMemberToast(`📹 Video materi baru tersedia: "${judul}"`, 'info');
+          loadData(member);
+        }
+      )
+      .on('postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'files' },
+        (payload: any) => {
+          const judul = payload.new?.judul || 'File baru';
+          addMemberToast(`📄 File materi baru tersedia: "${judul}"`, 'info');
+          loadData(member);
+        }
+      )
       .subscribe();
     return () => { supabase.removeChannel(channel); };
   }, [member?.id]);
