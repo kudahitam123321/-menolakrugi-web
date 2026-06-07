@@ -1747,9 +1747,12 @@ export default function DashboardPage() {
                     onMouseEnter={e => (e.currentTarget as HTMLElement).style.borderColor = 'var(--mr-tint-gold-b)'}
                     onMouseLeave={e => (e.currentTarget as HTMLElement).style.borderColor = C.border}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                      <div style={{ width: 40, height: 40, background: 'var(--mr-tint-gold)', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: 13, color: G.gold, flexShrink: 0, border: "1px solid var(--mr-tint-gold-b)" }}>
-                        {b.nama?.[0]?.toUpperCase()}
-                      </div>
+                      {b.logo_url
+                        ? <img src={b.logo_url} alt={b.nama} style={{ width: 40, height: 40, objectFit: 'contain', borderRadius: 10, border: '1px solid var(--mr-tint-gold-b)', background: 'var(--mr-panel)', flexShrink: 0 }} />
+                        : <div style={{ width: 40, height: 40, background: 'var(--mr-tint-gold)', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: 13, color: G.gold, flexShrink: 0, border: "1px solid var(--mr-tint-gold-b)" }}>
+                            {b.nama?.[0]?.toUpperCase()}
+                          </div>
+                      }
                       <div>
                         <div style={{ fontWeight: 700, fontSize: 14 }}>{b.nama}</div>
                         {b.diskon && <div style={{ fontFamily: C.mono, color: C.up, fontSize: 10 }}>🎁 {b.diskon}</div>}

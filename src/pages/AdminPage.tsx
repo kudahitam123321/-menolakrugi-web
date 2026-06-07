@@ -1253,6 +1253,11 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
   const [editBDesc, setEditBDesc] = useState('');
   const [editBUrutan, setEditBUrutan] = useState('');
   const [editBJenis, setEditBJenis] = useState<'broker'|'propfirm'>('broker');
+  const [bLogoFile, setBLogoFile]   = useState<File|null>(null);
+  const [bLogoPreview, setBLogoPreview] = useState('');
+  const [editBLogoFile, setEditBLogoFile] = useState<File|null>(null);
+  const [editBLogoPreview, setEditBLogoPreview] = useState('');
+  const [editBLogoUrl, setEditBLogoUrl] = useState('');
   const [announceChannel, setAnnounceChannel] = useState('');
   const [announceMsg, setAnnounceMsg] = useState('');
   const [announceSending, setAnnounceSending] = useState(false);
@@ -1408,12 +1413,22 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
   }
 
   // Broker CRUD
+  async function uploadBrokerLogo(file: File): Promise<string|null> {
+    const ext = file.name.split('.').pop();
+    const fileName = `broker-logos/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
+    const { error } = await supabase.storage.from('gallery').upload(fileName, file, { upsert: true, contentType: file.type });
+    if (error) { notify('Gagal upload logo: ' + error.message, 'err'); return null; }
+    const { data } = supabase.storage.from('gallery').getPublicUrl(fileName);
+    return data.publicUrl;
+  }
   async function addBroker() {
     if (!bNama || !bLink) { notify('Nama dan link wajib diisi.', 'err'); return; }
     setLoading(true);
-    const { error } = await supabase.from('brokers').insert({ nama: bNama, link: bLink, diskon: bDiskon || null, deskripsi: bDesc || null, urutan: parseInt(bUrutan) || 0, jenis: bJenis });
+    let logoUrl: string|null = null;
+    if (bLogoFile) { logoUrl = await uploadBrokerLogo(bLogoFile); if (!logoUrl) { setLoading(false); return; } }
+    const { error } = await supabase.from('brokers').insert({ nama: bNama, link: bLink, diskon: bDiskon || null, deskripsi: bDesc || null, urutan: parseInt(bUrutan) || 0, jenis: bJenis, logo_url: logoUrl });
     if (error) notify('Error: ' + error.message, 'err');
-    else { notify('Berhasil ditambahkan!'); setBNama(''); setBLink(''); setBDiskon(''); setBDesc(''); setBUrutan(''); setBJenis('broker'); loadData(); }
+    else { notify('Berhasil ditambahkan!'); setBNama(''); setBLink(''); setBDiskon(''); setBDesc(''); setBUrutan(''); setBJenis('broker'); setBLogoFile(null); setBLogoPreview(''); loadData(); }
     setLoading(false);
   }
   async function deleteBroker(id: string) {
@@ -1425,13 +1440,16 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
     setEditBrokerId(b.id); setEditBNama(b.nama); setEditBLink(b.link);
     setEditBDiskon(b.diskon || ''); setEditBDesc(b.deskripsi || ''); setEditBUrutan(String(b.urutan || 0));
     setEditBJenis(b.jenis === 'propfirm' ? 'propfirm' : 'broker');
+    setEditBLogoUrl(b.logo_url || ''); setEditBLogoPreview(b.logo_url || ''); setEditBLogoFile(null);
   }
   async function saveEditBroker() {
     if (!editBrokerId || !editBNama || !editBLink) { notify('Nama dan link wajib diisi.', 'err'); return; }
     setLoading(true);
-    const { error } = await supabase.from('brokers').update({ nama: editBNama, link: editBLink, diskon: editBDiskon || null, deskripsi: editBDesc || null, urutan: parseInt(editBUrutan) || 0, jenis: editBJenis }).eq('id', editBrokerId);
+    let logoUrl = editBLogoUrl;
+    if (editBLogoFile) { const uploaded = await uploadBrokerLogo(editBLogoFile); if (!uploaded) { setLoading(false); return; } logoUrl = uploaded; }
+    const { error } = await supabase.from('brokers').update({ nama: editBNama, link: editBLink, diskon: editBDiskon || null, deskripsi: editBDesc || null, urutan: parseInt(editBUrutan) || 0, jenis: editBJenis, logo_url: logoUrl || null }).eq('id', editBrokerId);
     if (error) notify('Error: ' + error.message, 'err');
-    else { notify('Berhasil diupdate!'); setEditBrokerId(null); loadData(); }
+    else { notify('Berhasil diupdate!'); setEditBrokerId(null); setEditBLogoFile(null); setEditBLogoPreview(''); setEditBLogoUrl(''); loadData(); }
     setLoading(false);
   }
 
@@ -2071,6 +2089,21 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
               <textarea value={bDesc} onChange={e=>setBDesc(e.target.value)} placeholder="Deskripsi singkat" rows={2}
                 style={{width:'100%',background:'#111',border:'1px solid #2a2a2a',color:'#e7e5e4',padding:'10px 14px',fontSize:13,fontFamily:'monospace',outline:'none',resize:'vertical' as const,boxSizing:'border-box' as const,marginBottom:10}}
                 onFocus={e=>e.target.style.borderColor='#16a34a'} onBlur={e=>e.target.style.borderColor='#2a2a2a'}/>
+              {/* Logo upload */}
+              <div style={{marginBottom:10}}>
+                <div style={{fontFamily:'monospace',color:'#555',fontSize:10,marginBottom:6}}>// LOGO (opsional)</div>
+                <div style={{display:'flex',alignItems:'center',gap:12}}>
+                  {bLogoPreview && <img src={bLogoPreview} alt="logo preview" style={{width:44,height:44,objectFit:'contain',borderRadius:8,border:'1px solid #2a2a2a',background:'#111'}}/>}
+                  <label style={{display:'flex',alignItems:'center',gap:8,cursor:'pointer',background:'#111',border:'1px solid #2a2a2a',padding:'8px 14px',fontFamily:'monospace',fontSize:11,color:'#aaa'}}>
+                    {bLogoFile ? bLogoFile.name : '📁 Pilih file logo (PNG/JPG/SVG)'}
+                    <input type="file" accept="image/*" style={{display:'none'}} onChange={e=>{
+                      const f = e.target.files?.[0]; if(!f) return;
+                      setBLogoFile(f); setBLogoPreview(URL.createObjectURL(f));
+                    }}/>
+                  </label>
+                  {bLogoPreview && <button onClick={()=>{setBLogoFile(null);setBLogoPreview('');}} style={{background:'transparent',border:'none',color:'#ef4444',cursor:'pointer',fontSize:12}}>✕ hapus</button>}
+                </div>
+              </div>
               <button onClick={addBroker} disabled={loading}
                 style={{background:loading?'#1a1a1a':'#16a34a',color:loading?'#444':'#000',fontFamily:'monospace',fontSize:12,fontWeight:700,padding:'10px 20px',border:'none',cursor:loading?'not-allowed':'pointer',letterSpacing:0.5}}>
                 {loading?'MENYIMPAN...':`+ TAMBAH ${bJenis==='broker'?'BROKER':'PROP FIRM'}`}
@@ -2089,14 +2122,20 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
                 return (
                 <div key={b.id} style={{borderBottom:'1px solid #111'}}>
                   <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'14px 20px',gap:12}}>
-                    <div style={{flex:1,minWidth:0}}>
-                      <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:4}}>
-                        <span style={{fontFamily:'monospace',fontSize:9,fontWeight:700,color:accentColor,background:`${accentColor}11`,border:`1px solid ${accentColor}33`,padding:'2px 7px'}}>{isProp?'PROP FIRM':'BROKER'}</span>
-                        <span style={{fontWeight:700,fontSize:14}}>{b.nama}</span>
-                        {b.diskon&&<span style={{fontFamily:'monospace',fontSize:10,background:'#0a1a0a',border:'1px solid #22ab94',color:'#22ab94',padding:'1px 6px'}}>{b.diskon}</span>}
+                    <div style={{flex:1,minWidth:0,display:'flex',alignItems:'center',gap:12}}>
+                      {b.logo_url
+                        ? <img src={b.logo_url} alt={b.nama} style={{width:36,height:36,objectFit:'contain',borderRadius:6,border:'1px solid #2a2a2a',background:'#111',flexShrink:0}}/>
+                        : <div style={{width:36,height:36,borderRadius:6,background:'#1a1a1a',border:'1px solid #2a2a2a',display:'flex',alignItems:'center',justifyContent:'center',fontWeight:700,fontSize:14,color:accentColor,flexShrink:0}}>{b.nama?.[0]?.toUpperCase()}</div>
+                      }
+                      <div style={{flex:1,minWidth:0}}>
+                        <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:4}}>
+                          <span style={{fontFamily:'monospace',fontSize:9,fontWeight:700,color:accentColor,background:`${accentColor}11`,border:`1px solid ${accentColor}33`,padding:'2px 7px'}}>{isProp?'PROP FIRM':'BROKER'}</span>
+                          <span style={{fontWeight:700,fontSize:14}}>{b.nama}</span>
+                          {b.diskon&&<span style={{fontFamily:'monospace',fontSize:10,background:'#0a1a0a',border:'1px solid #22ab94',color:'#22ab94',padding:'1px 6px'}}>{b.diskon}</span>}
+                        </div>
+                        {b.deskripsi&&<div style={{color:'#666',fontSize:12,marginBottom:2}}>{b.deskripsi}</div>}
+                        <div style={{fontFamily:'monospace',color:'#22ab94',fontSize:11,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap' as const}}>{b.link}</div>
                       </div>
-                      {b.deskripsi&&<div style={{color:'#666',fontSize:12,marginBottom:2}}>{b.deskripsi}</div>}
-                      <div style={{fontFamily:'monospace',color:'#22ab94',fontSize:11,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap' as const}}>{b.link}</div>
                     </div>
                     <div style={{display:'flex',gap:6,flexShrink:0}}>
                       <button onClick={()=>editBrokerId===b.id?setEditBrokerId(null):startEditBroker(b)} style={{background:'transparent',border:'1px solid #2a2a2a',color:'#666',fontFamily:'monospace',fontSize:10,padding:'5px 12px',cursor:'pointer'}}>EDIT</button>
@@ -2128,6 +2167,21 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
                       </div>
                       <textarea value={editBDesc} onChange={e=>setEditBDesc(e.target.value)} placeholder="Deskripsi" rows={2}
                         style={{width:'100%',background:'#0d0d0d',border:'1px solid #2a2a2a',color:'#e7e5e4',padding:'8px 12px',fontSize:13,fontFamily:'monospace',outline:'none',resize:'vertical' as const,boxSizing:'border-box' as const,marginBottom:8}}/>
+                      {/* Logo upload edit */}
+                      <div style={{marginBottom:8}}>
+                        <div style={{fontFamily:'monospace',color:'#555',fontSize:10,marginBottom:6}}>// LOGO</div>
+                        <div style={{display:'flex',alignItems:'center',gap:10}}>
+                          {editBLogoPreview && <img src={editBLogoPreview} alt="logo" style={{width:40,height:40,objectFit:'contain',borderRadius:6,border:'1px solid #2a2a2a',background:'#0d0d0d'}}/>}
+                          <label style={{display:'flex',alignItems:'center',gap:8,cursor:'pointer',background:'#0d0d0d',border:'1px solid #2a2a2a',padding:'6px 12px',fontFamily:'monospace',fontSize:10,color:'#aaa'}}>
+                            {editBLogoFile ? editBLogoFile.name : (editBLogoUrl ? 'Ganti logo...' : '📁 Upload logo')}
+                            <input type="file" accept="image/*" style={{display:'none'}} onChange={e=>{
+                              const f = e.target.files?.[0]; if(!f) return;
+                              setEditBLogoFile(f); setEditBLogoPreview(URL.createObjectURL(f));
+                            }}/>
+                          </label>
+                          {editBLogoPreview && <button onClick={()=>{setEditBLogoFile(null);setEditBLogoPreview('');setEditBLogoUrl('');}} style={{background:'transparent',border:'none',color:'#ef4444',cursor:'pointer',fontSize:11}}>✕ hapus</button>}
+                        </div>
+                      </div>
                       <div style={{display:'flex',gap:8}}>
                         <button onClick={()=>saveEditBroker()} style={{background:'#16a34a',color:'#fff',fontFamily:'monospace',fontSize:11,fontWeight:700,padding:'7px 16px',border:'none',cursor:'pointer'}}>SIMPAN</button>
                         <button onClick={()=>setEditBrokerId(null)} style={{background:'transparent',color:'#666',fontFamily:'monospace',fontSize:11,padding:'7px 12px',border:'1px solid #2a2a2a',cursor:'pointer'}}>BATAL</button>
