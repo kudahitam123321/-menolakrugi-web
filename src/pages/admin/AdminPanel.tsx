@@ -32,6 +32,7 @@ const SIDEBAR_SECTIONS = [
   ]},
   { h: 'PARTNERSHIP & MONETIZATION', items: [
     { id: 'broker',    label: 'Broker',         icon: '🏦' },
+    { id: 'produk',    label: 'Produk',         icon: '🛍️' },
     { id: 'referral',  label: 'Referral',        icon: '🔗' },
     { id: 'proprules', label: 'Prop Firm Rules', icon: '📋' },
   ]},
@@ -49,7 +50,7 @@ const SIDEBAR_SECTIONS = [
 function getTabId(sidebarId: string): string {
   const map: Record<string,string> = {
     member:'member', progress:'progress', admin:'admins',
-    video:'video', broker:'broker', proprules:'proprules', rating:'rating', referral:'referral',
+    video:'video', broker:'broker', produk:'produk', proprules:'proprules', rating:'rating', referral:'referral',
     pengumuman:'announce', broadcast:'announce',
     jurnal:'jurnal',
     pengaturan:'settings',
