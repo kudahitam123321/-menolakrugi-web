@@ -329,6 +329,10 @@ export default function DashboardPage() {
   const [kodeDiskonData, setKodeDiskonData] = useState<any|null>(null);
   const [kodeErr, setKodeErr]           = useState('');
   const [kodeLoading, setKodeLoading]   = useState(false);
+  const [paymentConfig, setPaymentConfig] = useState<any|null>(null);
+  const [modalStep, setModalStep]       = useState<'konfirmasi'|'pembayaran'>('konfirmasi');
+  const [pendingOrder, setPendingOrder] = useState<any|null>(null);
+  const [rekCopied, setRekCopied]       = useState(false);
   const [oldPass, setOldPass]         = useState('');
   const [newPass, setNewPass]         = useState('');
   const [confPass, setConfPass]       = useState('');
@@ -434,26 +438,29 @@ export default function DashboardPage() {
 
   function closeOrderModal() {
     setOrderModal(null);
+    setModalStep('konfirmasi');
+    setPendingOrder(null);
+    setRekCopied(false);
     setKodeDiskon(''); setKodeDiskonData(null); setKodeErr('');
   }
 
   async function buatOrder(produk: any, planType: 'bulanan'|'tahunan'|'lifetime', appliedCode: any|null) {
     if (!member) return;
     setOrderLoading(true);
-    const hargaBase   = produk[`harga_${planType}`];
-    const diskonPct   = appliedCode ? appliedCode.diskon : (produk[`diskon_${planType}`] || 0);
-    const harga       = diskonPct ? Math.round(hargaBase * (1 - diskonPct / 100)) : hargaBase;
-    const labelPlan   = planType.charAt(0).toUpperCase() + planType.slice(1);
+    const hargaBase = produk[`harga_${planType}`];
+    const diskonPct = appliedCode ? appliedCode.diskon : (produk[`diskon_${planType}`] || 0);
+    const harga     = diskonPct ? Math.round(hargaBase * (1 - diskonPct / 100)) : hargaBase;
+    const labelPlan = planType.charAt(0).toUpperCase() + planType.slice(1);
     const { data, error } = await supabase.from('orders').insert({
-      product_id:      produk.id,
-      member_id:       member.id,
-      nama_member:     member.nama,
-      email_member:    (member as any).email || '',
-      tier_member:     member.tier,
-      status:          'pending',
-      plan_type:       planType,
-      kode_diskon:     appliedCode?.kode || null,
-      diskon_applied:  diskonPct || null,
+      product_id:     produk.id,
+      member_id:      member.id,
+      nama_member:    member.nama,
+      email_member:   (member as any).email || '',
+      tier_member:    member.tier,
+      status:         'pending',
+      plan_type:      planType,
+      kode_diskon:    appliedCode?.kode || null,
+      diskon_applied: diskonPct || null,
     }).select().single();
     setOrderLoading(false);
     if (error) { addMemberToast('Gagal membuat order: ' + error.message, 'error'); return; }
@@ -461,10 +468,18 @@ export default function DashboardPage() {
       await supabase.from('discount_codes').update({ terpakai: appliedCode.terpakai + 1 }).eq('id', appliedCode.id);
     }
     setMyOrders(prev => [{ ...data, products: produk }, ...prev]);
-    closeOrderModal();
-    const tipe = produk.status === 'preorder' ? 'pre-order' : 'membeli';
-    const kodeInfo = appliedCode ? ` | Kode: ${appliedCode.kode} (-${appliedCode.diskon}%)` : '';
-    const pesan = encodeURIComponent(`Halo, saya ${member.nama} ingin ${tipe} produk *${produk.nama}* (Paket: ${labelPlan}${kodeInfo}) seharga Rp${Number(harga).toLocaleString('id-ID')}.\nOrder ID: ${data.id}`);
+    setPendingOrder({ ...data, products: produk, _harga: harga, _labelPlan: labelPlan, _appliedCode: appliedCode });
+    setModalStep('pembayaran');
+  }
+
+  function konfirmasiKePembayaranWA() {
+    if (!member || !pendingOrder) return;
+    const prod = pendingOrder.products;
+    const tipe = prod?.status === 'preorder' ? 'pre-order' : 'membeli';
+    const kodeInfo = pendingOrder._appliedCode ? ` | Kode: ${pendingOrder._appliedCode.kode} (-${pendingOrder._appliedCode.diskon}%)` : '';
+    const pesan = encodeURIComponent(
+      `Halo Admin, saya ${member.nama} ingin konfirmasi ${tipe} produk *${prod?.nama}* (Paket: ${pendingOrder._labelPlan}${kodeInfo}) seharga Rp${Number(pendingOrder._harga).toLocaleString('id-ID')}.\n\nOrder ID: ${pendingOrder.id}\n\nMohon konfirmasi pembayaran. Terima kasih.`
+    );
     window.open(`https://wa.me/6281242224939?text=${pesan}`, '_blank');
   }
 
@@ -588,6 +603,10 @@ export default function DashboardPage() {
     if (rulesRes.data) setPropRules(rulesRes.data);
     if (prodRes.data)  setProducts(prodRes.data);
     if (ordersRes.data) setMyOrders(ordersRes.data);
+    try {
+      const { data: payConf } = await supabase.from('payment_config').select('*').eq('id', 'main').single();
+      if (payConf) setPaymentConfig(payConf);
+    } catch(_e) {}
 
     // Leaderboard
     const { data: progAll } = await supabase.from('member_progress').select('member_id,status');
@@ -2433,26 +2452,27 @@ export default function DashboardPage() {
               )}
 
               {/* ── Modal konfirmasi order ── */}
-              {orderModal && (()=>{
+              {/* ── Step 1: Konfirmasi Order ── */}
+              {orderModal && modalStep === 'konfirmasi' && (()=>{
                 const hargaBase  = orderModal._hargaBase;
                 const finalHarga = kodeDiskonData
                   ? Math.round(hargaBase * (1 - kodeDiskonData.diskon / 100))
                   : orderModal._selectedHarga;
-                const kodeAktif  = !!kodeDiskonData;
+                const kodeAktif = !!kodeDiskonData;
                 return (
                   <div style={{ position: 'fixed', inset: 0, background: '#000a', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}
                     onClick={e => { if (e.target === e.currentTarget) closeOrderModal(); }}>
                     <div style={{ background: C.panel, border: `1px solid ${C.border}`, borderRadius: 16, padding: 28, maxWidth: 420, width: '100%' }}>
-                      <div style={{ fontFamily: C.mono, color: G.gold, fontSize: 10, letterSpacing: 1, marginBottom: 12 }}>// KONFIRMASI ORDER</div>
+                      <div style={{ fontFamily: C.mono, color: G.gold, fontSize: 10, letterSpacing: 1, marginBottom: 12 }}>// KONFIRMASI ORDER · LANGKAH 1/2</div>
                       <div style={{ fontWeight: 700, fontSize: 18, marginBottom: 4 }}>{orderModal.nama}</div>
                       <div style={{ color: C.dim, fontSize: 13, marginBottom: 16 }}>{orderModal.deskripsi}</div>
                       {orderModal.status === 'preorder' && orderModal.tanggal_rilis && (
                         <div style={{ background: '#1a150022', border: '1px solid #eab30833', borderRadius: 8, padding: '10px 14px', marginBottom: 14, fontFamily: C.mono, fontSize: 12, color: '#eab308' }}>
-                          ⏳ Produk tersedia pada: {new Date(orderModal.tanggal_rilis).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
+                          ⏳ Pre-order · Tersedia: {new Date(orderModal.tanggal_rilis).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
                         </div>
                       )}
-                      <div style={{ background: C.bg, border: `1px solid ${kodeAktif ? G.gold : C.border}`, borderRadius: 10, padding: '12px 16px', marginBottom: 16, transition: 'border-color 0.2s' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 6 }}>
+                      <div style={{ background: C.bg, border: `1px solid ${kodeAktif ? G.gold : C.border}`, borderRadius: 10, padding: '12px 16px', marginBottom: 16 }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                           <div>
                             <div style={{ fontFamily: C.mono, fontSize: 10, color: C.muted }}>Paket</div>
                             <div style={{ fontFamily: C.mono, fontSize: 14, fontWeight: 700, color: C.text }}>{orderModal._selectedLabel}</div>
@@ -2464,7 +2484,6 @@ export default function DashboardPage() {
                           </div>
                         </div>
                       </div>
-                      {/* Kode diskon input */}
                       <div style={{ marginBottom: 20 }}>
                         <div style={{ fontFamily: C.mono, fontSize: 10, color: C.muted, marginBottom: 6 }}>Punya kode diskon? (opsional)</div>
                         <div style={{ display: 'flex', gap: 8 }}>
@@ -2473,7 +2492,7 @@ export default function DashboardPage() {
                             placeholder="MASUKKAN KODE"
                             style={{ flex: 1, background: C.bg, border: `1px solid ${kodeDiskonData ? '#16a34a' : kodeErr ? '#ef4444' : C.border}`, color: C.text, padding: '9px 14px', fontSize: 13, fontFamily: C.mono, outline: 'none', borderRadius: 8, letterSpacing: 1 }}/>
                           <button onClick={cekKodeDiskon} disabled={kodeLoading || !kodeDiskon.trim()}
-                            style={{ padding: '9px 16px', fontFamily: C.mono, fontSize: 12, fontWeight: 700, background: 'transparent', color: G.gold, border: `1px solid ${G.gold}`, borderRadius: 8, cursor: kodeLoading || !kodeDiskon.trim() ? 'not-allowed' : 'pointer', opacity: kodeLoading || !kodeDiskon.trim() ? 0.5 : 1, whiteSpace: 'nowrap' as const }}>
+                            style={{ padding: '9px 16px', fontFamily: C.mono, fontSize: 12, fontWeight: 700, background: 'transparent', color: G.gold, border: `1px solid ${G.gold}`, borderRadius: 8, cursor: kodeLoading || !kodeDiskon.trim() ? 'not-allowed' : 'pointer', opacity: !kodeDiskon.trim() ? 0.4 : 1, whiteSpace: 'nowrap' as const }}>
                             {kodeLoading ? '...' : 'Terapkan'}
                           </button>
                         </div>
@@ -2483,7 +2502,7 @@ export default function DashboardPage() {
                       <div style={{ display: 'flex', gap: 10 }}>
                         <button onClick={() => buatOrder(orderModal, orderModal._selectedPlan, kodeDiskonData)} disabled={orderLoading}
                           style={{ flex: 1, padding: '12px', fontFamily: C.mono, fontSize: 13, fontWeight: 700, background: G.gold, color: '#000', border: 'none', borderRadius: 10, cursor: orderLoading ? 'not-allowed' : 'pointer', opacity: orderLoading ? 0.6 : 1 }}>
-                          {orderLoading ? 'Memproses...' : orderModal.status === 'preorder' ? '⏳ Pre-order & Chat WA' : '✅ Order & Chat WA'}
+                          {orderLoading ? 'Memproses...' : 'Lanjutkan ke Pembayaran →'}
                         </button>
                         <button onClick={closeOrderModal}
                           style={{ padding: '12px 20px', fontFamily: C.mono, fontSize: 13, background: 'transparent', color: C.muted, border: `1px solid ${C.border}`, borderRadius: 10, cursor: 'pointer' }}>
@@ -2494,6 +2513,87 @@ export default function DashboardPage() {
                   </div>
                 );
               })()}
+
+              {/* ── Step 2: Detail Pembayaran ── */}
+              {pendingOrder && modalStep === 'pembayaran' && (
+                <div style={{ position: 'fixed', inset: 0, background: '#000a', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+                  <div style={{ background: C.panel, border: `1px solid ${C.border}`, borderRadius: 16, padding: 28, maxWidth: 440, width: '100%' }}>
+                    <div style={{ fontFamily: C.mono, color: G.gold, fontSize: 10, letterSpacing: 1, marginBottom: 12 }}>// DETAIL PEMBAYARAN · LANGKAH 2/2</div>
+                    <div style={{ fontWeight: 700, fontSize: 18, marginBottom: 16 }}>Transfer ke Rekening Berikut</div>
+
+                    {/* Ringkasan order */}
+                    <div style={{ background: C.bg, border: `1px solid ${C.border}`, borderRadius: 10, padding: '12px 16px', marginBottom: 16 }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                        <div>
+                          <div style={{ fontFamily: C.mono, fontSize: 11, color: C.muted }}>Produk</div>
+                          <div style={{ fontSize: 14, fontWeight: 700 }}>{pendingOrder.products?.nama}</div>
+                        </div>
+                        <div style={{ textAlign: 'right' as const }}>
+                          <div style={{ fontFamily: C.mono, fontSize: 11, color: C.muted }}>Paket {pendingOrder._labelPlan}</div>
+                          <div style={{ fontFamily: C.mono, fontSize: 20, fontWeight: 700, color: G.gold }}>Rp{Number(pendingOrder._harga).toLocaleString('id-ID')}</div>
+                        </div>
+                      </div>
+                      {pendingOrder._appliedCode && (
+                        <div style={{ fontFamily: C.mono, fontSize: 10, color: '#16a34a', borderTop: `1px solid ${C.border}`, paddingTop: 6, marginTop: 6 }}>
+                          🎟️ Kode {pendingOrder._appliedCode.kode} (-{pendingOrder._appliedCode.diskon}%) diterapkan
+                        </div>
+                      )}
+                      <div style={{ fontFamily: C.mono, fontSize: 9, color: C.muted, marginTop: 4 }}>Order ID: {pendingOrder.id}</div>
+                    </div>
+
+                    {/* Info rekening */}
+                    {paymentConfig ? (
+                      <div style={{ background: '#0a1a0e', border: '1px solid #16a34a33', borderRadius: 10, padding: '16px 18px', marginBottom: 16 }}>
+                        <div style={{ fontFamily: C.mono, fontSize: 10, color: '#16a34a', letterSpacing: 1, marginBottom: 12 }}>// REKENING TUJUAN</div>
+                        <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 10 }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                            <span style={{ fontFamily: C.mono, fontSize: 11, color: C.muted }}>Bank</span>
+                            <span style={{ fontFamily: C.mono, fontSize: 13, fontWeight: 700, color: C.text }}>{paymentConfig.nama_bank}</span>
+                          </div>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <span style={{ fontFamily: C.mono, fontSize: 11, color: C.muted }}>No. Rekening</span>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                              <span style={{ fontFamily: C.mono, fontSize: 16, fontWeight: 700, letterSpacing: 2, color: C.text }}>{paymentConfig.nomor_rekening}</span>
+                              <button onClick={() => { navigator.clipboard.writeText(paymentConfig.nomor_rekening); setRekCopied(true); setTimeout(() => setRekCopied(false), 2000); }}
+                                style={{ fontFamily: C.mono, fontSize: 10, padding: '3px 10px', background: rekCopied ? '#16a34a' : 'transparent', color: rekCopied ? '#000' : '#16a34a', border: '1px solid #16a34a', borderRadius: 4, cursor: 'pointer' }}>
+                                {rekCopied ? '✓ Disalin' : 'Salin'}
+                              </button>
+                            </div>
+                          </div>
+                          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                            <span style={{ fontFamily: C.mono, fontSize: 11, color: C.muted }}>Atas Nama</span>
+                            <span style={{ fontFamily: C.mono, fontSize: 13, fontWeight: 700, color: C.text }}>{paymentConfig.nama_rekening}</span>
+                          </div>
+                          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                            <span style={{ fontFamily: C.mono, fontSize: 11, color: C.muted }}>Nominal Transfer</span>
+                            <span style={{ fontFamily: C.mono, fontSize: 14, fontWeight: 700, color: G.gold }}>Rp{Number(pendingOrder._harga).toLocaleString('id-ID')}</span>
+                          </div>
+                        </div>
+                        {paymentConfig.catatan && (
+                          <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px solid #16a34a22', fontFamily: C.mono, fontSize: 11, color: C.dim, lineHeight: 1.6 }}>
+                            📋 {paymentConfig.catatan}
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <div style={{ background: C.bg, border: `1px solid ${C.border}`, borderRadius: 10, padding: '14px 16px', marginBottom: 16, fontFamily: C.mono, fontSize: 12, color: C.muted }}>
+                        Info rekening belum dikonfigurasi. Hubungi admin.
+                      </div>
+                    )}
+
+                    <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 10 }}>
+                      <button onClick={konfirmasiKePembayaranWA}
+                        style={{ width: '100%', padding: '13px', fontFamily: C.mono, fontSize: 13, fontWeight: 700, background: '#25D366', color: '#fff', border: 'none', borderRadius: 10, cursor: 'pointer' }}>
+                        ✅ Konfirmasi Pembayaran ke WA Admin
+                      </button>
+                      <button onClick={closeOrderModal}
+                        style={{ width: '100%', padding: '11px', fontFamily: C.mono, fontSize: 12, background: 'transparent', color: C.muted, border: `1px solid ${C.border}`, borderRadius: 10, cursor: 'pointer' }}>
+                        Tutup (pembayaran bisa dikonfirmasi nanti)
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 

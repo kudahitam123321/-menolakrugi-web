@@ -1224,6 +1224,12 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
   const [claims, setClaims] = useState<any[]>([]);
   const [claimActionLoading, setClaimActionLoading] = useState<string | null>(null);
   const [liveSchedules, setLiveSchedules]     = useState<any[]>([]);
+  const [paymentConfig, setPaymentConfig]     = useState<any|null>(null);
+  const [payNamaBank, setPayNamaBank]         = useState('');
+  const [payNomorRek, setPayNomorRek]         = useState('');
+  const [payNamaRek, setPayNamaRek]           = useState('');
+  const [payCatatan, setPayCatatan]           = useState('');
+  const [payMsg, setPayMsg]                   = useState('');
   const [videoRatingStats, setVideoRatingStats] = useState<any[]>([]);
   const [adminReferrals, setAdminReferrals]     = useState<any[]>([]);
   const [propRules, setPropRules]           = useState<any[]>([]);
@@ -1410,6 +1416,10 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
     const { data: prods } = await supabase.from('products').select('*').order('urutan', { ascending: true });
     const { data: ords }  = await supabase.from('orders').select('*, products(nama)').order('created_at', { ascending: false });
     const { data: dcodes } = await supabase.from('discount_codes').select('*').order('created_at', { ascending: false });
+    try {
+      const { data: payConf } = await supabase.from('payment_config').select('*').eq('id', 'main').single();
+      if (payConf) { setPaymentConfig(payConf); setPayNamaBank(payConf.nama_bank||''); setPayNomorRek(payConf.nomor_rekening||''); setPayNamaRek(payConf.nama_rekening||''); setPayCatatan(payConf.catatan||''); }
+    } catch(_e) {}
     const { data: js } = await supabase.from('live_schedules').select('*').order('urutan', { ascending: true });
     if (js) setLiveSchedules(js);
     // Video ratings
@@ -1635,6 +1645,16 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
   async function toggleDiscountCode(id: string, aktif: boolean) {
     await supabase.from('discount_codes').update({ aktif: !aktif }).eq('id', id);
     loadData();
+  }
+
+  async function savePaymentConfig() {
+    if (!payNamaBank || !payNomorRek || !payNamaRek) { setPayMsg('Nama bank, nomor rekening, dan atas nama wajib diisi.'); return; }
+    const { error } = await supabase.from('payment_config').upsert({
+      id: 'main', nama_bank: payNamaBank, nomor_rekening: payNomorRek, nama_rekening: payNamaRek, catatan: payCatatan || null,
+    });
+    setPayMsg(error ? 'Error: ' + error.message : '✅ Rekening pembayaran berhasil disimpan!');
+    setTimeout(() => setPayMsg(''), 3000);
+    if (!error) loadData();
   }
 
   async function handleClaimAction(id: string, action: 'approved' | 'rejected') {
@@ -3328,13 +3348,41 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
 
         {/* ── TAB PENGATURAN ── */}
         {tab === 'settings' && (
-          <SettingsTab
-            oldPass={oldPass} setOldPass={setOldPass}
-            newPass={newPass} setNewPass={setNewPass}
-            confirmPass={confirmPass} setConfirmPass={setConfirmPass}
-            passErr={passErr} passMsg={passMsg}
-            handleGantiPassword={handleGantiPassword}
-          />
+          <>
+            <SettingsTab
+              oldPass={oldPass} setOldPass={setOldPass}
+              newPass={newPass} setNewPass={setNewPass}
+              confirmPass={confirmPass} setConfirmPass={setConfirmPass}
+              passErr={passErr} passMsg={passMsg}
+              handleGantiPassword={handleGantiPassword}
+            />
+            <div style={{maxWidth:480,margin:'0 auto',padding:'0 16px 40px'}}>
+              <div style={{fontFamily:'"Geist Mono",monospace',color:'#16a34a',fontSize:10,letterSpacing:2,marginBottom:8}}>// REKENING PEMBAYARAN PRODUK</div>
+              <h2 style={{fontSize:18,fontWeight:700,color:'#e7e5e4',marginBottom:20}}>Info Transfer Member</h2>
+              <div style={{background:'#111',border:'1px solid #1e1e1e',borderRadius:12,padding:24,display:'flex',flexDirection:'column' as const,gap:14}}>
+                {([
+                  {label:'NAMA BANK', v:payNamaBank, s:setPayNamaBank, ph:'BCA / Mandiri / BRI ...'},
+                  {label:'NOMOR REKENING', v:payNomorRek, s:setPayNomorRek, ph:'Nomor rekening'},
+                  {label:'ATAS NAMA', v:payNamaRek, s:setPayNamaRek, ph:'Nama pemilik rekening'},
+                ] as {label:string;v:string;s:(x:string)=>void;ph:string}[]).map(f=>(
+                  <div key={f.label}>
+                    <label style={{fontFamily:'"Geist Mono",monospace',fontSize:10,color:'#888',display:'block',marginBottom:6}}>{f.label}</label>
+                    <input value={f.v} onChange={e=>f.s(e.target.value)} placeholder={f.ph}
+                      style={{width:'100%',background:'#0a0a0a',border:'1px solid #1e1e1e',color:'#e7e5e4',padding:'10px 14px',borderRadius:8,fontFamily:'"Geist Mono",monospace',fontSize:13,outline:'none',boxSizing:'border-box' as const}}/>
+                  </div>
+                ))}
+                <div>
+                  <label style={{fontFamily:'"Geist Mono",monospace',fontSize:10,color:'#888',display:'block',marginBottom:6}}>CATATAN (opsional)</label>
+                  <textarea value={payCatatan} onChange={e=>setPayCatatan(e.target.value)} rows={3} placeholder="Instruksi transfer, berita transfer, dll."
+                    style={{width:'100%',background:'#0a0a0a',border:'1px solid #1e1e1e',color:'#e7e5e4',padding:'10px 14px',borderRadius:8,fontFamily:'"Geist Mono",monospace',fontSize:12,outline:'none',resize:'vertical' as const,boxSizing:'border-box' as const}}/>
+                </div>
+                {payMsg && <div style={{fontFamily:'"Geist Mono",monospace',fontSize:12,color:payMsg.startsWith('✅')?'#22c55e':'#ef4444',background:payMsg.startsWith('✅')?'#081a0a':'#1a0808',border:`1px solid ${payMsg.startsWith('✅')?'#22c55e33':'#ef444433'}`,borderRadius:6,padding:'8px 12px'}}>{payMsg}</div>}
+                <button onClick={savePaymentConfig} style={{background:'#16a34a',color:'#fff',border:'none',borderRadius:8,padding:'11px 0',fontFamily:'"Geist Mono",monospace',fontSize:13,fontWeight:700,cursor:'pointer',marginTop:4}}>
+                  Simpan Rekening
+                </button>
+              </div>
+            </div>
+          </>
         )}
 
         {/* ── TAB JURNAL MEMBER ── */}
