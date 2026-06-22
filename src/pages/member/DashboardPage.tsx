@@ -416,10 +416,13 @@ export default function DashboardPage() {
     return 'trial';
   }
 
-  async function buatOrder(produk: any) {
+  async function buatOrder(produk: any, planType: 'bulanan'|'tahunan'|'lifetime') {
     if (!member) return;
     setOrderLoading(true);
-    const harga = produk.harga_diskon ?? produk.harga_asli;
+    const hargaBase = produk[`harga_${planType}`];
+    const diskon    = produk[`diskon_${planType}`];
+    const harga     = diskon ? Math.round(hargaBase * (1 - diskon / 100)) : hargaBase;
+    const labelPlan = planType.charAt(0).toUpperCase() + planType.slice(1);
     const { data, error } = await supabase.from('orders').insert({
       product_id:   produk.id,
       member_id:    member.id,
@@ -427,13 +430,14 @@ export default function DashboardPage() {
       email_member: (member as any).email || '',
       tier_member:  member.tier,
       status:       'pending',
+      plan_type:    planType,
     }).select().single();
     setOrderLoading(false);
     if (error) { addMemberToast('Gagal membuat order: ' + error.message, 'error'); return; }
     setMyOrders(prev => [{ ...data, products: produk }, ...prev]);
     setOrderModal(null);
     const tipe = produk.status === 'preorder' ? 'pre-order' : 'membeli';
-    const pesan = encodeURIComponent(`Halo, saya ${member.nama} ingin ${tipe} produk *${produk.nama}* seharga Rp${Number(harga).toLocaleString('id-ID')}.\nOrder ID: ${data.id}`);
+    const pesan = encodeURIComponent(`Halo, saya ${member.nama} ingin ${tipe} produk *${produk.nama}* (Paket: ${labelPlan}) seharga Rp${Number(harga).toLocaleString('id-ID')}.\nOrder ID: ${data.id}`);
     window.open(`https://wa.me/6281242224939?text=${pesan}`, '_blank');
   }
 
@@ -2311,8 +2315,12 @@ export default function DashboardPage() {
                     {products.map(p => {
                       const tierMember = normalizeTier(member?.tier || '');
                       const bisaOrder  = (p.tier_access || []).includes(tierMember);
-                      const harga      = p.harga_diskon ?? p.harga_asli;
                       const tglRilis   = p.tanggal_rilis ? new Date(p.tanggal_rilis).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) : null;
+                      const plans = ([
+                        { plan: 'bulanan'  as const, label: 'Bulanan',  h: p.harga_bulanan,  d: p.diskon_bulanan  },
+                        { plan: 'tahunan'  as const, label: 'Tahunan',  h: p.harga_tahunan,  d: p.diskon_tahunan  },
+                        { plan: 'lifetime' as const, label: 'Lifetime', h: p.harga_lifetime, d: p.diskon_lifetime },
+                      ]).filter(r => r.h);
                       return (
                         <div key={p.id} style={{ background: C.panel, border: `1px solid ${C.border}`, borderRadius: 14, overflow: 'hidden', display: 'flex', flexDirection: 'column' as const }}>
                           <div style={{ height: 160, background: C.sidebar, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
@@ -2334,26 +2342,29 @@ export default function DashboardPage() {
                             </div>
                             <div style={{ fontWeight: 700, fontSize: 16 }}>{p.nama}</div>
                             <div style={{ color: C.dim, fontSize: 13, display: '-webkit-box' as any, WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' as any, overflow: 'hidden' }}>{p.deskripsi}</div>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' as const }}>
-                              {p.diskon ? (
-                                <>
-                                  <span style={{ fontFamily: C.mono, fontSize: 12, color: C.muted, textDecoration: 'line-through' }}>Rp{Number(p.harga_asli).toLocaleString('id-ID')}</span>
-                                  <span style={{ fontFamily: C.mono, fontSize: 16, fontWeight: 700, color: C.down }}>Rp{Number(harga).toLocaleString('id-ID')}</span>
-                                  <span style={{ fontFamily: C.mono, fontSize: 10, color: C.down, border: `1px solid ${C.down}44`, padding: '2px 7px', borderRadius: 4 }}>-{p.diskon}%</span>
-                                </>
-                              ) : (
-                                <span style={{ fontFamily: C.mono, fontSize: 16, fontWeight: 700, color: C.text }}>Rp{Number(p.harga_asli).toLocaleString('id-ID')}</span>
-                              )}
-                            </div>
-                            <div style={{ marginTop: 'auto' }}>
-                              {!bisaOrder ? (
-                                <button disabled style={{ width: '100%', padding: '10px', fontFamily: C.mono, fontSize: 12, fontWeight: 700, background: C.sidebar, color: C.muted, border: `1px solid ${C.border}`, borderRadius: 8, cursor: 'not-allowed' }}>
+                            <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 6, marginTop: 4 }}>
+                              {plans.map(row => {
+                                const finalH = row.d ? Math.round(row.h * (1 - row.d / 100)) : row.h;
+                                return (
+                                  <div key={row.plan} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', background: C.bg, border: `1px solid ${C.border}`, borderRadius: 8 }}>
+                                    <span style={{ fontFamily: C.mono, fontSize: 11, color: C.dim }}>{row.label}</span>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                      {row.d && <span style={{ fontFamily: C.mono, fontSize: 10, color: C.muted, textDecoration: 'line-through' }}>Rp{Number(row.h).toLocaleString('id-ID')}</span>}
+                                      <span style={{ fontFamily: C.mono, fontSize: 12, fontWeight: 700, color: row.d ? C.down : C.text }}>Rp{Number(finalH).toLocaleString('id-ID')}</span>
+                                      {row.d && <span style={{ fontFamily: C.mono, fontSize: 9, color: C.down, border: `1px solid ${C.down}44`, padding: '1px 5px', borderRadius: 4 }}>-{row.d}%</span>}
+                                      {bisaOrder && (
+                                        <button onClick={() => setOrderModal({ ...p, _selectedPlan: row.plan, _selectedLabel: row.label, _selectedHarga: finalH })}
+                                          style={{ fontFamily: C.mono, fontSize: 10, fontWeight: 700, padding: '4px 10px', background: G.gold, color: '#000', border: 'none', borderRadius: 6, cursor: 'pointer', marginLeft: 4 }}>
+                                          Pilih
+                                        </button>
+                                      )}
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                              {!bisaOrder && (
+                                <button disabled style={{ width: '100%', padding: '10px', fontFamily: C.mono, fontSize: 12, fontWeight: 700, background: C.sidebar, color: C.muted, border: `1px solid ${C.border}`, borderRadius: 8, cursor: 'not-allowed', marginTop: 4 }}>
                                   🔒 Upgrade Tier untuk Order
-                                </button>
-                              ) : (
-                                <button onClick={() => setOrderModal(p)}
-                                  style={{ width: '100%', padding: '10px', fontFamily: C.mono, fontSize: 12, fontWeight: 700, background: p.status === 'preorder' ? 'transparent' : G.gold, color: p.status === 'preorder' ? G.gold : '#000', border: `1px solid ${G.gold}`, borderRadius: 8, cursor: 'pointer' }}>
-                                  {p.status === 'preorder' ? '⏳ Pre-order Sekarang' : '🛒 Beli Sekarang'}
                                 </button>
                               )}
                             </div>
@@ -2377,6 +2388,7 @@ export default function DashboardPage() {
                           <div key={o.id} style={{ borderBottom: `1px solid ${C.border}`, padding: '16px 20px', display: 'flex', gap: 16, alignItems: 'center', flexWrap: 'wrap' as const }}>
                             <div style={{ flex: 1, minWidth: 160 }}>
                               <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 4 }}>{(o as any).products?.nama || '—'}</div>
+                              {o.plan_type && <span style={{ display: 'inline-block', fontFamily: C.mono, fontSize: 10, color: G.gold, border: `1px solid ${G.gold}44`, padding: '2px 8px', borderRadius: 4, marginBottom: 4 }}>{o.plan_type.toUpperCase()}</span>}
                               <div style={{ fontFamily: C.mono, fontSize: 11, color: C.muted }}>
                                 {new Date(o.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
                               </div>
@@ -2398,18 +2410,22 @@ export default function DashboardPage() {
                   onClick={e => { if (e.target === e.currentTarget) setOrderModal(null); }}>
                   <div style={{ background: C.panel, border: `1px solid ${C.border}`, borderRadius: 16, padding: 28, maxWidth: 400, width: '100%' }}>
                     <div style={{ fontFamily: C.mono, color: G.gold, fontSize: 10, letterSpacing: 1, marginBottom: 12 }}>// KONFIRMASI ORDER</div>
-                    <div style={{ fontWeight: 700, fontSize: 18, marginBottom: 8 }}>{orderModal.nama}</div>
+                    <div style={{ fontWeight: 700, fontSize: 18, marginBottom: 4 }}>{orderModal.nama}</div>
                     <div style={{ color: C.dim, fontSize: 13, marginBottom: 16 }}>{orderModal.deskripsi}</div>
                     {orderModal.status === 'preorder' && orderModal.tanggal_rilis && (
-                      <div style={{ background: '#1a150022', border: '1px solid #eab30833', borderRadius: 8, padding: '10px 14px', marginBottom: 16, fontFamily: C.mono, fontSize: 12, color: '#eab308' }}>
+                      <div style={{ background: '#1a150022', border: '1px solid #eab30833', borderRadius: 8, padding: '10px 14px', marginBottom: 14, fontFamily: C.mono, fontSize: 12, color: '#eab308' }}>
                         ⏳ Produk tersedia pada: {new Date(orderModal.tanggal_rilis).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
                       </div>
                     )}
-                    <div style={{ fontFamily: C.mono, fontSize: 20, fontWeight: 700, color: G.gold, marginBottom: 20 }}>
-                      Rp{Number(orderModal.harga_diskon ?? orderModal.harga_asli).toLocaleString('id-ID')}
+                    <div style={{ background: C.bg, border: `1px solid ${G.gold}44`, borderRadius: 10, padding: '12px 16px', marginBottom: 20 }}>
+                      <div style={{ fontFamily: C.mono, fontSize: 11, color: C.muted, marginBottom: 4 }}>Paket yang dipilih</div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span style={{ fontFamily: C.mono, fontSize: 14, fontWeight: 700, color: C.text }}>{orderModal._selectedLabel}</span>
+                        <span style={{ fontFamily: C.mono, fontSize: 20, fontWeight: 700, color: G.gold }}>Rp{Number(orderModal._selectedHarga).toLocaleString('id-ID')}</span>
+                      </div>
                     </div>
                     <div style={{ display: 'flex', gap: 10 }}>
-                      <button onClick={() => buatOrder(orderModal)} disabled={orderLoading}
+                      <button onClick={() => buatOrder(orderModal, orderModal._selectedPlan)} disabled={orderLoading}
                         style={{ flex: 1, padding: '12px', fontFamily: C.mono, fontSize: 13, fontWeight: 700, background: G.gold, color: '#000', border: 'none', borderRadius: 10, cursor: orderLoading ? 'not-allowed' : 'pointer', opacity: orderLoading ? 0.6 : 1 }}>
                         {orderLoading ? 'Memproses...' : orderModal.status === 'preorder' ? '⏳ Pre-order & Chat WA' : '✅ Order & Chat WA'}
                       </button>

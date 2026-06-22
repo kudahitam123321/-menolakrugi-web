@@ -1263,9 +1263,12 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
   const [prodSubTab, setProdSubTab]           = useState<'katalog'|'pesanan'>('katalog');
   const [pNama, setPNama]                     = useState('');
   const [pDesc, setPDesc]                     = useState('');
-  const [pHargaAsli, setPHargaAsli]           = useState('');
-  const [pDiskon, setPDiskon]                 = useState('');
-  const [pHargaDiskon, setPHargaDiskon]       = useState('');
+  const [pHargaBulanan, setPHargaBulanan]     = useState('');
+  const [pDiskonBulanan, setPDiskonBulanan]   = useState('');
+  const [pHargaTahunan, setPHargaTahunan]     = useState('');
+  const [pDiskonTahunan, setPDiskonTahunan]   = useState('');
+  const [pHargaLifetime, setPHargaLifetime]   = useState('');
+  const [pDiskonLifetime, setPDiskonLifetime] = useState('');
   const [pStatus, setPStatus]                 = useState<'tersedia'|'preorder'>('tersedia');
   const [pTanggalRilis, setPTanggalRilis]     = useState('');
   const [pTierAccess, setPTierAccess]         = useState<string[]>(['trial','bronze','gold','platinum']);
@@ -1276,9 +1279,12 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
   const [editProdukId, setEditProdukId]       = useState<string|null>(null);
   const [editPNama, setEditPNama]             = useState('');
   const [editPDesc, setEditPDesc]             = useState('');
-  const [editPHargaAsli, setEditPHargaAsli]   = useState('');
-  const [editPDiskon, setEditPDiskon]         = useState('');
-  const [editPHargaDiskon, setEditPHargaDiskon] = useState('');
+  const [editPHargaBulanan, setEditPHargaBulanan]     = useState('');
+  const [editPDiskonBulanan, setEditPDiskonBulanan]   = useState('');
+  const [editPHargaTahunan, setEditPHargaTahunan]     = useState('');
+  const [editPDiskonTahunan, setEditPDiskonTahunan]   = useState('');
+  const [editPHargaLifetime, setEditPHargaLifetime]   = useState('');
+  const [editPDiskonLifetime, setEditPDiskonLifetime] = useState('');
   const [editPStatus, setEditPStatus]         = useState<'tersedia'|'preorder'>('tersedia');
   const [editPTanggalRilis, setEditPTanggalRilis] = useState('');
   const [editPTierAccess, setEditPTierAccess] = useState<string[]>(['trial','bronze','gold','platinum']);
@@ -1502,16 +1508,20 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
   }
 
   async function addProduk() {
-    if (!pNama || !pDesc || !pHargaAsli) { notify('Nama, deskripsi, dan harga asli wajib diisi.', 'err'); return; }
+    if (!pNama || !pDesc) { notify('Nama dan deskripsi wajib diisi.', 'err'); return; }
+    if (!pHargaBulanan && !pHargaTahunan && !pHargaLifetime) { notify('Minimal satu harga (Bulanan/Tahunan/Lifetime) harus diisi.', 'err'); return; }
     if (pStatus === 'preorder' && !pTanggalRilis) { notify('Tanggal rilis wajib diisi untuk pre-order.', 'err'); return; }
     setLoading(true);
     let gambarUrl: string|null = null;
     if (pGambarFile) { gambarUrl = await uploadProdukGambar(pGambarFile); if (!gambarUrl) { setLoading(false); return; } }
     const { error } = await supabase.from('products').insert({
       nama: pNama, deskripsi: pDesc,
-      harga_asli: parseInt(pHargaAsli) || 0,
-      diskon: pDiskon ? parseInt(pDiskon) : null,
-      harga_diskon: pHargaDiskon ? parseInt(pHargaDiskon) : null,
+      harga_bulanan:   pHargaBulanan  ? parseInt(pHargaBulanan)  : null,
+      diskon_bulanan:  pDiskonBulanan ? parseInt(pDiskonBulanan) : null,
+      harga_tahunan:   pHargaTahunan  ? parseInt(pHargaTahunan)  : null,
+      diskon_tahunan:  pDiskonTahunan ? parseInt(pDiskonTahunan) : null,
+      harga_lifetime:  pHargaLifetime ? parseInt(pHargaLifetime) : null,
+      diskon_lifetime: pDiskonLifetime? parseInt(pDiskonLifetime): null,
       gambar_url: gambarUrl,
       status: pStatus,
       tanggal_rilis: pStatus === 'preorder' ? pTanggalRilis : null,
@@ -1522,7 +1532,10 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
     if (error) notify('Error: ' + error.message, 'err');
     else {
       notify('Produk berhasil ditambahkan!');
-      setPNama(''); setPDesc(''); setPHargaAsli(''); setPDiskon(''); setPHargaDiskon('');
+      setPNama(''); setPDesc('');
+      setPHargaBulanan(''); setPDiskonBulanan('');
+      setPHargaTahunan(''); setPDiskonTahunan('');
+      setPHargaLifetime(''); setPDiskonLifetime('');
       setPStatus('tersedia'); setPTanggalRilis(''); setPTierAccess(['trial','bronze','gold','platinum']);
       setPUrutan(''); setPAktif(true); setPGambarFile(null); setPGambarPreview('');
       loadData();
@@ -1538,8 +1551,12 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
 
   function startEditProduk(p: any) {
     setEditProdukId(p.id); setEditPNama(p.nama); setEditPDesc(p.deskripsi || '');
-    setEditPHargaAsli(String(p.harga_asli)); setEditPDiskon(p.diskon ? String(p.diskon) : '');
-    setEditPHargaDiskon(p.harga_diskon ? String(p.harga_diskon) : '');
+    setEditPHargaBulanan(p.harga_bulanan ? String(p.harga_bulanan) : '');
+    setEditPDiskonBulanan(p.diskon_bulanan ? String(p.diskon_bulanan) : '');
+    setEditPHargaTahunan(p.harga_tahunan ? String(p.harga_tahunan) : '');
+    setEditPDiskonTahunan(p.diskon_tahunan ? String(p.diskon_tahunan) : '');
+    setEditPHargaLifetime(p.harga_lifetime ? String(p.harga_lifetime) : '');
+    setEditPDiskonLifetime(p.diskon_lifetime ? String(p.diskon_lifetime) : '');
     setEditPStatus(p.status || 'tersedia'); setEditPTanggalRilis(p.tanggal_rilis || '');
     setEditPTierAccess(p.tier_access || ['trial','bronze','gold','platinum']);
     setEditPUrutan(String(p.urutan || 0)); setEditPAktif(p.aktif !== false);
@@ -1547,7 +1564,8 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
   }
 
   async function saveEditProduk() {
-    if (!editProdukId || !editPNama || !editPDesc || !editPHargaAsli) { notify('Nama, deskripsi, dan harga asli wajib diisi.', 'err'); return; }
+    if (!editProdukId || !editPNama || !editPDesc) { notify('Nama dan deskripsi wajib diisi.', 'err'); return; }
+    if (!editPHargaBulanan && !editPHargaTahunan && !editPHargaLifetime) { notify('Minimal satu harga harus diisi.', 'err'); return; }
     if (editPStatus === 'preorder' && !editPTanggalRilis) { notify('Tanggal rilis wajib diisi untuk pre-order.', 'err'); return; }
     setLoading(true);
     let gambarUrl = editPGambarUrl;
@@ -1558,9 +1576,12 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
     }
     const { error } = await supabase.from('products').update({
       nama: editPNama, deskripsi: editPDesc,
-      harga_asli: parseInt(editPHargaAsli) || 0,
-      diskon: editPDiskon ? parseInt(editPDiskon) : null,
-      harga_diskon: editPHargaDiskon ? parseInt(editPHargaDiskon) : null,
+      harga_bulanan:   editPHargaBulanan  ? parseInt(editPHargaBulanan)  : null,
+      diskon_bulanan:  editPDiskonBulanan ? parseInt(editPDiskonBulanan) : null,
+      harga_tahunan:   editPHargaTahunan  ? parseInt(editPHargaTahunan)  : null,
+      diskon_tahunan:  editPDiskonTahunan ? parseInt(editPDiskonTahunan) : null,
+      harga_lifetime:  editPHargaLifetime ? parseInt(editPHargaLifetime) : null,
+      diskon_lifetime: editPDiskonLifetime? parseInt(editPDiskonLifetime): null,
       gambar_url: gambarUrl || null,
       status: editPStatus,
       tanggal_rilis: editPStatus === 'preorder' ? editPTanggalRilis : null,
@@ -2641,22 +2662,10 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
                     <input value={pNama} onChange={e=>setPNama(e.target.value)} placeholder="Nama Produk"
                       style={{background:'#111',border:'1px solid #2a2a2a',color:'#e7e5e4',padding:'10px 14px',fontSize:13,fontFamily:'monospace',outline:'none'}}
                       onFocus={e=>e.target.style.borderColor='#16a34a'} onBlur={e=>e.target.style.borderColor='#2a2a2a'}/>
-                    <input type="number" value={pHargaAsli} onChange={e=>setPHargaAsli(e.target.value)} placeholder="Harga Asli (IDR)"
-                      style={{background:'#111',border:'1px solid #2a2a2a',color:'#e7e5e4',padding:'10px 14px',fontSize:13,fontFamily:'monospace',outline:'none'}}
-                      onFocus={e=>e.target.style.borderColor='#16a34a'} onBlur={e=>e.target.style.borderColor='#2a2a2a'}/>
-                    <input type="number" value={pDiskon} onChange={e=>{
-                      setPDiskon(e.target.value);
-                      if (pHargaAsli && e.target.value) setPHargaDiskon(String(Math.round(parseInt(pHargaAsli)*(1-parseInt(e.target.value)/100))));
-                    }} placeholder="Diskon % (opsional)"
-                      style={{background:'#111',border:'1px solid #2a2a2a',color:'#e7e5e4',padding:'10px 14px',fontSize:13,fontFamily:'monospace',outline:'none'}}
-                      onFocus={e=>e.target.style.borderColor='#16a34a'} onBlur={e=>e.target.style.borderColor='#2a2a2a'}/>
-                    <input type="number" value={pHargaDiskon} onChange={e=>setPHargaDiskon(e.target.value)} placeholder="Harga Diskon (auto-hitung)"
-                      style={{background:'#111',border:'1px solid #2a2a2a',color:'#e7e5e4',padding:'10px 14px',fontSize:13,fontFamily:'monospace',outline:'none'}}
-                      onFocus={e=>e.target.style.borderColor='#16a34a'} onBlur={e=>e.target.style.borderColor='#2a2a2a'}/>
                     <input type="number" value={pUrutan} onChange={e=>setPUrutan(e.target.value)} placeholder="Urutan tampil"
                       style={{background:'#111',border:'1px solid #2a2a2a',color:'#e7e5e4',padding:'10px 14px',fontSize:13,fontFamily:'monospace',outline:'none'}}
                       onFocus={e=>e.target.style.borderColor='#16a34a'} onBlur={e=>e.target.style.borderColor='#2a2a2a'}/>
-                    <div style={{display:'flex',gap:8}}>
+                    <div style={{display:'flex',gap:8,gridColumn:'1/-1'}}>
                       <select value={pStatus} onChange={e=>{setPStatus(e.target.value as any);if(e.target.value==='tersedia')setPTanggalRilis('');}}
                         style={{flex:1,background:'#111',border:'1px solid #2a2a2a',color:'#e7e5e4',padding:'10px 14px',fontSize:13,fontFamily:'monospace',outline:'none',cursor:'pointer'}}>
                         <option value="tersedia">✅ Tersedia</option>
@@ -2668,6 +2677,30 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
                           onFocus={e=>e.target.style.borderColor='#16a34a'} onBlur={e=>e.target.style.borderColor='#2a2a2a'}/>
                       )}
                     </div>
+                  </div>
+                  <div style={{marginBottom:10,background:'#0a0a0a',border:'1px solid #1a1a1a',padding:'14px 16px'}}>
+                    <div style={{fontFamily:'monospace',color:'#555',fontSize:10,marginBottom:10}}>// HARGA PAKET LANGGANAN <span style={{color:'#333'}}>(isi minimal satu)</span></div>
+                    {([
+                      {label:'BULANAN', h:pHargaBulanan,  setH:setPHargaBulanan,  d:pDiskonBulanan,  setD:setPDiskonBulanan},
+                      {label:'TAHUNAN', h:pHargaTahunan,  setH:setPHargaTahunan,  d:pDiskonTahunan,  setD:setPDiskonTahunan},
+                      {label:'LIFETIME',h:pHargaLifetime, setH:setPHargaLifetime, d:pDiskonLifetime, setD:setPDiskonLifetime},
+                    ] as {label:string;h:string;setH:(v:string)=>void;d:string;setD:(v:string)=>void}[]).map(row=>{
+                      const finalH = row.h && row.d ? Math.round(parseInt(row.h)*(1-parseInt(row.d)/100)) : (row.h ? parseInt(row.h) : null);
+                      return (
+                        <div key={row.label} style={{display:'grid',gridTemplateColumns:'72px 1fr 1fr 120px',gap:8,alignItems:'center',marginBottom:8}}>
+                          <span style={{fontFamily:'monospace',fontSize:10,fontWeight:700,color:'#16a34a',letterSpacing:0.5}}>{row.label}</span>
+                          <input type="number" value={row.h} onChange={e=>row.setH(e.target.value)} placeholder="Harga (IDR)"
+                            style={{background:'#111',border:'1px solid #2a2a2a',color:'#e7e5e4',padding:'9px 12px',fontSize:12,fontFamily:'monospace',outline:'none'}}
+                            onFocus={e=>e.target.style.borderColor='#16a34a'} onBlur={e=>e.target.style.borderColor='#2a2a2a'}/>
+                          <input type="number" value={row.d} onChange={e=>row.setD(e.target.value)} placeholder="Diskon %"
+                            style={{background:'#111',border:'1px solid #2a2a2a',color:'#e7e5e4',padding:'9px 12px',fontSize:12,fontFamily:'monospace',outline:'none'}}
+                            onFocus={e=>e.target.style.borderColor='#16a34a'} onBlur={e=>e.target.style.borderColor='#2a2a2a'}/>
+                          <span style={{fontFamily:'monospace',fontSize:11,color:row.d&&row.h?'#ef4444':'#333',textAlign:'right' as const}}>
+                            {finalH ? `→ Rp${finalH.toLocaleString('id-ID')}` : '—'}
+                          </span>
+                        </div>
+                      );
+                    })}
                   </div>
                   <textarea value={pDesc} onChange={e=>setPDesc(e.target.value)} placeholder="Deskripsi produk" rows={3}
                     style={{width:'100%',background:'#111',border:'1px solid #2a2a2a',color:'#e7e5e4',padding:'10px 14px',fontSize:13,fontFamily:'monospace',outline:'none',resize:'vertical' as const,boxSizing:'border-box' as const,marginBottom:10}}
@@ -2731,16 +2764,22 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
                               {!p.aktif && <span style={{fontFamily:'monospace',fontSize:9,color:'#555',border:'1px solid #2a2a2a',padding:'2px 6px'}}>NON-AKTIF</span>}
                             </div>
                             <div style={{color:'#666',fontSize:12,marginBottom:4,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap' as const}}>{p.deskripsi}</div>
-                            <div style={{display:'flex',gap:12,alignItems:'center',flexWrap:'wrap' as const}}>
-                              {p.diskon ? (
-                                <>
-                                  <span style={{fontFamily:'monospace',fontSize:11,color:'#555',textDecoration:'line-through'}}>Rp{Number(p.harga_asli).toLocaleString('id-ID')}</span>
-                                  <span style={{fontFamily:'monospace',fontSize:12,fontWeight:700,color:'#ef4444'}}>Rp{Number(p.harga_diskon??p.harga_asli).toLocaleString('id-ID')}</span>
-                                  <span style={{fontFamily:'monospace',fontSize:9,color:'#ef4444',border:'1px solid #ef444433',padding:'1px 6px'}}>-{p.diskon}%</span>
-                                </>
-                              ) : (
-                                <span style={{fontFamily:'monospace',fontSize:12,fontWeight:700,color:'#e7e5e4'}}>Rp{Number(p.harga_asli).toLocaleString('id-ID')}</span>
-                              )}
+                            <div style={{display:'flex',gap:10,alignItems:'center',flexWrap:'wrap' as const}}>
+                              {([
+                                {key:'bulanan', h:p.harga_bulanan, d:p.diskon_bulanan},
+                                {key:'tahunan', h:p.harga_tahunan, d:p.diskon_tahunan},
+                                {key:'lifetime',h:p.harga_lifetime,d:p.diskon_lifetime},
+                              ]).filter(r=>r.h).map(r=>{
+                                const fh = r.d ? Math.round(r.h*(1-r.d/100)) : r.h;
+                                return (
+                                  <span key={r.key} style={{fontFamily:'monospace',fontSize:10,display:'flex',gap:4,alignItems:'center'}}>
+                                    <span style={{color:'#555',fontSize:9}}>{r.key.toUpperCase()}</span>
+                                    {r.d && <span style={{color:'#444',textDecoration:'line-through',fontSize:9}}>Rp{Number(r.h).toLocaleString('id-ID')}</span>}
+                                    <span style={{fontWeight:700,color:r.d?'#ef4444':'#e7e5e4'}}>Rp{Number(fh).toLocaleString('id-ID')}</span>
+                                    {r.d && <span style={{color:'#ef4444',fontSize:8,border:'1px solid #ef444433',padding:'0 4px'}}>-{r.d}%</span>}
+                                  </span>
+                                );
+                              })}
                               <span style={{fontFamily:'monospace',fontSize:10,color:'#444'}}>Tier: {(p.tier_access||[]).join(', ')}</span>
                             </div>
                           </div>
@@ -2758,16 +2797,13 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
                           <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:8}}>
                             {[
                               {v:editPNama,s:setEditPNama,ph:'Nama Produk'},
-                              {v:editPHargaAsli,s:setEditPHargaAsli,ph:'Harga Asli (IDR)',type:'number'},
-                              {v:editPDiskon,s:(v:string)=>{setEditPDiskon(v);if(editPHargaAsli&&v)setEditPHargaDiskon(String(Math.round(parseInt(editPHargaAsli)*(1-parseInt(v)/100))));},ph:'Diskon %',type:'number'},
-                              {v:editPHargaDiskon,s:setEditPHargaDiskon,ph:'Harga Diskon',type:'number'},
                               {v:editPUrutan,s:setEditPUrutan,ph:'Urutan',type:'number'},
                             ].map((f,i)=>(
                               <input key={i} type={f.type||'text'} value={f.v} onChange={e=>(f.s as any)(e.target.value)} placeholder={f.ph}
                                 style={{background:'#0d0d0d',border:'1px solid #2a2a2a',color:'#e7e5e4',padding:'9px 12px',fontSize:12,fontFamily:'monospace',outline:'none'}}
                                 onFocus={e=>e.target.style.borderColor='#16a34a'} onBlur={e=>e.target.style.borderColor='#2a2a2a'}/>
                             ))}
-                            <div style={{display:'flex',gap:6}}>
+                            <div style={{display:'flex',gap:6,gridColumn:'1/-1'}}>
                               <select value={editPStatus} onChange={e=>{setEditPStatus(e.target.value as any);if(e.target.value==='tersedia')setEditPTanggalRilis('');}}
                                 style={{flex:1,background:'#0d0d0d',border:'1px solid #2a2a2a',color:'#e7e5e4',padding:'9px 12px',fontSize:12,fontFamily:'monospace',outline:'none',cursor:'pointer'}}>
                                 <option value="tersedia">✅ Tersedia</option>
@@ -2783,6 +2819,30 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
                           <textarea value={editPDesc} onChange={e=>setEditPDesc(e.target.value)} placeholder="Deskripsi" rows={2}
                             style={{width:'100%',background:'#0d0d0d',border:'1px solid #2a2a2a',color:'#e7e5e4',padding:'9px 12px',fontSize:12,fontFamily:'monospace',outline:'none',resize:'vertical' as const,boxSizing:'border-box' as const,marginBottom:8}}
                             onFocus={e=>e.target.style.borderColor='#16a34a'} onBlur={e=>e.target.style.borderColor='#2a2a2a'}/>
+                          <div style={{marginBottom:8,background:'#0a0a0a',border:'1px solid #1a1a1a',padding:'10px 12px'}}>
+                            <div style={{fontFamily:'monospace',color:'#444',fontSize:10,marginBottom:8}}>// HARGA PAKET LANGGANAN</div>
+                            {([
+                              {label:'BULANAN', h:editPHargaBulanan,  setH:setEditPHargaBulanan,  d:editPDiskonBulanan,  setD:setEditPDiskonBulanan},
+                              {label:'TAHUNAN', h:editPHargaTahunan,  setH:setEditPHargaTahunan,  d:editPDiskonTahunan,  setD:setEditPDiskonTahunan},
+                              {label:'LIFETIME',h:editPHargaLifetime, setH:setEditPHargaLifetime, d:editPDiskonLifetime, setD:setEditPDiskonLifetime},
+                            ] as {label:string;h:string;setH:(v:string)=>void;d:string;setD:(v:string)=>void}[]).map(row=>{
+                              const finalH = row.h && row.d ? Math.round(parseInt(row.h)*(1-parseInt(row.d)/100)) : (row.h ? parseInt(row.h) : null);
+                              return (
+                                <div key={row.label} style={{display:'grid',gridTemplateColumns:'68px 1fr 1fr 100px',gap:6,alignItems:'center',marginBottom:6}}>
+                                  <span style={{fontFamily:'monospace',fontSize:9,fontWeight:700,color:'#16a34a'}}>{row.label}</span>
+                                  <input type="number" value={row.h} onChange={e=>row.setH(e.target.value)} placeholder="Harga (IDR)"
+                                    style={{background:'#111',border:'1px solid #2a2a2a',color:'#e7e5e4',padding:'7px 10px',fontSize:11,fontFamily:'monospace',outline:'none'}}
+                                    onFocus={e=>e.target.style.borderColor='#16a34a'} onBlur={e=>e.target.style.borderColor='#2a2a2a'}/>
+                                  <input type="number" value={row.d} onChange={e=>row.setD(e.target.value)} placeholder="Diskon %"
+                                    style={{background:'#111',border:'1px solid #2a2a2a',color:'#e7e5e4',padding:'7px 10px',fontSize:11,fontFamily:'monospace',outline:'none'}}
+                                    onFocus={e=>e.target.style.borderColor='#16a34a'} onBlur={e=>e.target.style.borderColor='#2a2a2a'}/>
+                                  <span style={{fontFamily:'monospace',fontSize:10,color:row.d&&row.h?'#ef4444':'#333',textAlign:'right' as const}}>
+                                    {finalH ? `→ Rp${finalH.toLocaleString('id-ID')}` : '—'}
+                                  </span>
+                                </div>
+                              );
+                            })}
+                          </div>
                           <div style={{marginBottom:8}}>
                             <div style={{fontFamily:'monospace',color:'#444',fontSize:10,marginBottom:4}}>// TIER YANG BISA ORDER</div>
                             <div style={{display:'flex',gap:10,flexWrap:'wrap' as const}}>
@@ -2861,7 +2921,7 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
                             <span style={{fontWeight:700,fontSize:13}}>{o.nama_member}</span>
                             <span style={{fontFamily:'monospace',fontSize:10,color:'#555'}}>· {o.tier_member}</span>
                           </div>
-                          <div style={{fontFamily:'monospace',fontSize:11,color:'#888',marginBottom:2}}>📦 {(o as any).products?.nama||'—'}</div>
+                          <div style={{fontFamily:'monospace',fontSize:11,color:'#888',marginBottom:2}}>📦 {(o as any).products?.nama||'—'}{o.plan_type ? <span style={{marginLeft:6,color:'#16a34a',fontSize:9,border:'1px solid #16a34a33',padding:'1px 6px'}}>{o.plan_type.toUpperCase()}</span> : ''}</div>
                           <div style={{fontFamily:'monospace',fontSize:10,color:'#444'}}>{new Date(o.created_at).toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'})}</div>
                           {o.catatan&&<div style={{fontFamily:'monospace',fontSize:10,color:'#666',marginTop:4,fontStyle:'italic'}}>Catatan: {o.catatan}</div>}
                         </div>
