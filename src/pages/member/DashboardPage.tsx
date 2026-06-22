@@ -27,6 +27,7 @@ const SIDEBAR = [
   { id: 'trading-plan', label: 'Trading Plan',  icon: '📋' },
   { id: 'komunitas',  label: 'Komunitas',      icon: '💬' },
   { id: 'tools',      label: 'Broker',         icon: '🏦' },
+  { id: 'produk',     label: 'Produk',         icon: '🛍️' },
   { id: 'sep1',       label: 'TOOLS & PROGRESS', icon: '', separator: true },
   { id: 'funded',     label: 'Status Trading', icon: '🚀' },
   { id: 'peringkat',  label: 'Peringkat',      icon: '🏆' },
@@ -319,6 +320,11 @@ export default function DashboardPage() {
   const [announcements, setAnnouncements] = useState<any[]>([]);
   const [brokers, setBrokers]         = useState<any[]>([]);
   const [propRules, setPropRules]       = useState<any[]>([]);
+  const [products, setProducts]         = useState<any[]>([]);
+  const [myOrders, setMyOrders]         = useState<any[]>([]);
+  const [prodView, setProdView]         = useState<'katalog'|'pesanan'>('katalog');
+  const [orderModal, setOrderModal]     = useState<any|null>(null);
+  const [orderLoading, setOrderLoading] = useState(false);
   const [oldPass, setOldPass]         = useState('');
   const [newPass, setNewPass]         = useState('');
   const [confPass, setConfPass]       = useState('');
@@ -402,6 +408,35 @@ export default function DashboardPage() {
     setTimeout(() => setMemberToasts(prev => prev.filter(t => t.id !== id)), 7000);
   }
 
+  function normalizeTier(tier: string): string {
+    const t = (tier || '').toLowerCase();
+    if (t.includes('platinum')) return 'platinum';
+    if (t.includes('gold'))     return 'gold';
+    if (t.includes('bronze'))   return 'bronze';
+    return 'trial';
+  }
+
+  async function buatOrder(produk: any) {
+    if (!member) return;
+    setOrderLoading(true);
+    const harga = produk.harga_diskon ?? produk.harga_asli;
+    const { data, error } = await supabase.from('orders').insert({
+      product_id:   produk.id,
+      member_id:    member.id,
+      nama_member:  member.nama,
+      email_member: (member as any).email || '',
+      tier_member:  member.tier,
+      status:       'pending',
+    }).select().single();
+    setOrderLoading(false);
+    if (error) { addMemberToast('Gagal membuat order: ' + error.message, 'error'); return; }
+    setMyOrders(prev => [{ ...data, products: produk }, ...prev]);
+    setOrderModal(null);
+    const tipe = produk.status === 'preorder' ? 'pre-order' : 'membeli';
+    const pesan = encodeURIComponent(`Halo, saya ${member.nama} ingin ${tipe} produk *${produk.nama}* seharga Rp${Number(harga).toLocaleString('id-ID')}.\nOrder ID: ${data.id}`);
+    window.open(`https://wa.me/6281242224939?text=${pesan}`, '_blank');
+  }
+
   useEffect(() => {
     if (!member) return;
     const channel = supabase.channel(`member-updates-${member.id}`)
@@ -466,6 +501,16 @@ export default function DashboardPage() {
           loadData(member);
         }
       )
+      .on('postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'orders', filter: `member_id=eq.${member.id}` },
+        (payload: any) => {
+          const newStatus = payload.new?.status;
+          if (newStatus === 'dibayar') addMemberToast('💰 Pembayaran produk kamu DIKONFIRMASI oleh admin!', 'success');
+          else if (newStatus === 'aktif') addMemberToast('✅ Produk kamu sekarang AKTIF! Cek tab Produk → Pesanan Saya.', 'success');
+          supabase.from('orders').select('*, products(nama,harga_asli,harga_diskon)').eq('member_id', member.id).order('created_at', { ascending: false })
+            .then(({ data }) => { if (data) setMyOrders(data); });
+        }
+      )
       .subscribe();
     return () => { supabase.removeChannel(channel); };
   }, [member?.id]);
@@ -492,7 +537,7 @@ export default function DashboardPage() {
   }, []);
 
   async function loadData(m: Member) {
-    const [vidRes, fileRes, annRes, progRes, brokerRes, schedRes, notifRes, advRes, rulesRes] = await Promise.all([
+    const [vidRes, fileRes, annRes, progRes, brokerRes, schedRes, notifRes, advRes, rulesRes, prodRes, ordersRes] = await Promise.all([
       supabase.from('videos').select('*').order('urutan', { ascending: true }),
       supabase.from('files').select('*').order('urutan', { ascending: true }),
       supabase.from('announcements').select('*').order('created_at', { ascending: false }).limit(5),
@@ -502,12 +547,16 @@ export default function DashboardPage() {
       supabase.from('live_schedules').select('*').order('urutan', { ascending: true }),
       supabase.from('member_notifications').select('*').eq('member_id', m.id).order('created_at', { ascending: false }).limit(10),
       supabase.from('advance_requests').select('*').eq('member_id', m.id).order('created_at', { ascending: false }).limit(1),
+      supabase.from('products').select('*').eq('aktif', true).order('urutan', { ascending: true }),
+      supabase.from('orders').select('*, products(nama,harga_asli,harga_diskon)').eq('member_id', m.id).order('created_at', { ascending: false }),
     ]);
     if (vidRes.data)   setVideos(vidRes.data);
     if (fileRes.data)  setFiles(fileRes.data);
     if (annRes.data)   setAnnouncements(annRes.data);
     if (brokerRes.data) setBrokers(brokerRes.data);
     if (rulesRes.data) setPropRules(rulesRes.data);
+    if (prodRes.data)  setProducts(prodRes.data);
+    if (ordersRes.data) setMyOrders(ordersRes.data);
 
     // Leaderboard
     const { data: progAll } = await supabase.from('member_progress').select('member_id,status');
@@ -2229,6 +2278,151 @@ export default function DashboardPage() {
               </div>
             );
           })()}
+
+          {/* ══ PRODUK ══ */}
+          {active === 'produk' && (
+            <div className="mr-content-pad" style={{ padding: 24 }}>
+              {/* Header + toggle */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24, flexWrap: 'wrap' as const, gap: 12 }}>
+                <div>
+                  <div style={{ fontFamily: C.mono, color: G.gold, fontSize: 10, letterSpacing: 1, marginBottom: 6 }}>// TOKO PRODUK</div>
+                  <h2 style={{ fontSize: 22, fontWeight: 700, margin: '0 0 4px' }}>Produk Indikator</h2>
+                  <p style={{ color: C.dim, fontSize: 13, margin: 0 }}>Indikator TradingView eksklusif dari Menolak Rugi.</p>
+                </div>
+                <div style={{ display: 'flex', gap: 6 }}>
+                  {(['katalog','pesanan'] as const).map(v => (
+                    <button key={v} onClick={() => setProdView(v)}
+                      style={{ fontFamily: C.mono, fontSize: 11, fontWeight: 700, padding: '7px 18px', border: `1px solid ${prodView === v ? G.gold : C.border}`, background: prodView === v ? 'var(--mr-tint-gold)' : 'transparent', color: prodView === v ? G.gold : C.muted, cursor: 'pointer', borderRadius: 8 }}>
+                      {v === 'katalog' ? '📦 Katalog' : '🧾 Pesanan Saya'}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* ── Katalog ── */}
+              {prodView === 'katalog' && (
+                <>
+                  {!products.length && (
+                    <div style={{ textAlign: 'center' as const, padding: '60px 20px', color: C.muted, fontFamily: C.mono, fontSize: 13 }}>
+                      Belum ada produk tersedia saat ini.
+                    </div>
+                  )}
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 20 }}>
+                    {products.map(p => {
+                      const tierMember = normalizeTier(member?.tier || '');
+                      const bisaOrder  = (p.tier_access || []).includes(tierMember);
+                      const harga      = p.harga_diskon ?? p.harga_asli;
+                      const tglRilis   = p.tanggal_rilis ? new Date(p.tanggal_rilis).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) : null;
+                      return (
+                        <div key={p.id} style={{ background: C.panel, border: `1px solid ${C.border}`, borderRadius: 14, overflow: 'hidden', display: 'flex', flexDirection: 'column' as const }}>
+                          <div style={{ height: 160, background: C.sidebar, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+                            {p.gambar_url
+                              ? <img src={p.gambar_url} alt={p.nama} style={{ width: '100%', height: '100%', objectFit: 'cover' as const }}/>
+                              : <span style={{ fontSize: 48 }}>📊</span>
+                            }
+                          </div>
+                          <div style={{ padding: '16px 18px', display: 'flex', flexDirection: 'column' as const, flex: 1, gap: 10 }}>
+                            <div>
+                              {p.status === 'preorder'
+                                ? <span style={{ fontFamily: C.mono, fontSize: 10, fontWeight: 700, color: '#eab308', background: '#1a150022', border: '1px solid #eab30844', padding: '3px 10px', borderRadius: 6 }}>
+                                    ⏳ PRE-ORDER{tglRilis ? ` · Rilis ${tglRilis}` : ''}
+                                  </span>
+                                : <span style={{ fontFamily: C.mono, fontSize: 10, fontWeight: 700, color: C.up, background: 'var(--mr-tint-up,#0a1a0e)', border: `1px solid ${C.up}33`, padding: '3px 10px', borderRadius: 6 }}>
+                                    ✅ TERSEDIA
+                                  </span>
+                              }
+                            </div>
+                            <div style={{ fontWeight: 700, fontSize: 16 }}>{p.nama}</div>
+                            <div style={{ color: C.dim, fontSize: 13, display: '-webkit-box' as any, WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' as any, overflow: 'hidden' }}>{p.deskripsi}</div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' as const }}>
+                              {p.diskon ? (
+                                <>
+                                  <span style={{ fontFamily: C.mono, fontSize: 12, color: C.muted, textDecoration: 'line-through' }}>Rp{Number(p.harga_asli).toLocaleString('id-ID')}</span>
+                                  <span style={{ fontFamily: C.mono, fontSize: 16, fontWeight: 700, color: C.down }}>Rp{Number(harga).toLocaleString('id-ID')}</span>
+                                  <span style={{ fontFamily: C.mono, fontSize: 10, color: C.down, border: `1px solid ${C.down}44`, padding: '2px 7px', borderRadius: 4 }}>-{p.diskon}%</span>
+                                </>
+                              ) : (
+                                <span style={{ fontFamily: C.mono, fontSize: 16, fontWeight: 700, color: C.text }}>Rp{Number(p.harga_asli).toLocaleString('id-ID')}</span>
+                              )}
+                            </div>
+                            <div style={{ marginTop: 'auto' }}>
+                              {!bisaOrder ? (
+                                <button disabled style={{ width: '100%', padding: '10px', fontFamily: C.mono, fontSize: 12, fontWeight: 700, background: C.sidebar, color: C.muted, border: `1px solid ${C.border}`, borderRadius: 8, cursor: 'not-allowed' }}>
+                                  🔒 Upgrade Tier untuk Order
+                                </button>
+                              ) : (
+                                <button onClick={() => setOrderModal(p)}
+                                  style={{ width: '100%', padding: '10px', fontFamily: C.mono, fontSize: 12, fontWeight: 700, background: p.status === 'preorder' ? 'transparent' : G.gold, color: p.status === 'preorder' ? G.gold : '#000', border: `1px solid ${G.gold}`, borderRadius: 8, cursor: 'pointer' }}>
+                                  {p.status === 'preorder' ? '⏳ Pre-order Sekarang' : '🛒 Beli Sekarang'}
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </>
+              )}
+
+              {/* ── Pesanan Saya ── */}
+              {prodView === 'pesanan' && (
+                <div style={{ background: C.panel, border: `1px solid ${C.border}`, borderRadius: 14, overflow: 'hidden' }}>
+                  {!myOrders.length
+                    ? <div style={{ textAlign: 'center' as const, padding: '60px 20px', color: C.muted, fontFamily: C.mono, fontSize: 13 }}>Belum ada pesanan.</div>
+                    : myOrders.map(o => {
+                        const sc = o.status === 'aktif' ? C.up : o.status === 'dibayar' ? '#3b82f6' : '#eab308';
+                        const label = o.status === 'aktif' ? 'Aktif' : o.status === 'dibayar' ? 'Dibayar' : 'Pending';
+                        return (
+                          <div key={o.id} style={{ borderBottom: `1px solid ${C.border}`, padding: '16px 20px', display: 'flex', gap: 16, alignItems: 'center', flexWrap: 'wrap' as const }}>
+                            <div style={{ flex: 1, minWidth: 160 }}>
+                              <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 4 }}>{(o as any).products?.nama || '—'}</div>
+                              <div style={{ fontFamily: C.mono, fontSize: 11, color: C.muted }}>
+                                {new Date(o.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
+                              </div>
+                              {o.catatan && <div style={{ fontFamily: C.mono, fontSize: 11, color: C.dim, marginTop: 4 }}>💬 {o.catatan}</div>}
+                            </div>
+                            <span style={{ fontFamily: C.mono, fontSize: 11, fontWeight: 700, color: sc, border: `1px solid ${sc}44`, padding: '4px 12px', borderRadius: 20, flexShrink: 0 }}>
+                              {label}
+                            </span>
+                          </div>
+                        );
+                      })
+                  }
+                </div>
+              )}
+
+              {/* ── Modal konfirmasi order ── */}
+              {orderModal && (
+                <div style={{ position: 'fixed', inset: 0, background: '#000a', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}
+                  onClick={e => { if (e.target === e.currentTarget) setOrderModal(null); }}>
+                  <div style={{ background: C.panel, border: `1px solid ${C.border}`, borderRadius: 16, padding: 28, maxWidth: 400, width: '100%' }}>
+                    <div style={{ fontFamily: C.mono, color: G.gold, fontSize: 10, letterSpacing: 1, marginBottom: 12 }}>// KONFIRMASI ORDER</div>
+                    <div style={{ fontWeight: 700, fontSize: 18, marginBottom: 8 }}>{orderModal.nama}</div>
+                    <div style={{ color: C.dim, fontSize: 13, marginBottom: 16 }}>{orderModal.deskripsi}</div>
+                    {orderModal.status === 'preorder' && orderModal.tanggal_rilis && (
+                      <div style={{ background: '#1a150022', border: '1px solid #eab30833', borderRadius: 8, padding: '10px 14px', marginBottom: 16, fontFamily: C.mono, fontSize: 12, color: '#eab308' }}>
+                        ⏳ Produk tersedia pada: {new Date(orderModal.tanggal_rilis).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
+                      </div>
+                    )}
+                    <div style={{ fontFamily: C.mono, fontSize: 20, fontWeight: 700, color: G.gold, marginBottom: 20 }}>
+                      Rp{Number(orderModal.harga_diskon ?? orderModal.harga_asli).toLocaleString('id-ID')}
+                    </div>
+                    <div style={{ display: 'flex', gap: 10 }}>
+                      <button onClick={() => buatOrder(orderModal)} disabled={orderLoading}
+                        style={{ flex: 1, padding: '12px', fontFamily: C.mono, fontSize: 13, fontWeight: 700, background: G.gold, color: '#000', border: 'none', borderRadius: 10, cursor: orderLoading ? 'not-allowed' : 'pointer', opacity: orderLoading ? 0.6 : 1 }}>
+                        {orderLoading ? 'Memproses...' : orderModal.status === 'preorder' ? '⏳ Pre-order & Chat WA' : '✅ Order & Chat WA'}
+                      </button>
+                      <button onClick={() => setOrderModal(null)}
+                        style={{ padding: '12px 20px', fontFamily: C.mono, fontSize: 13, background: 'transparent', color: C.muted, border: `1px solid ${C.border}`, borderRadius: 10, cursor: 'pointer' }}>
+                        Batal
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* ══ KOMUNITAS ══ */}
           {active === 'komunitas' && (
