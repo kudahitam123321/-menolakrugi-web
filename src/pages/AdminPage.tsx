@@ -1260,7 +1260,13 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
   const [editBLogoUrl, setEditBLogoUrl] = useState('');
   // Produk states
   const [products, setProducts]               = useState<any[]>([]);
-  const [prodSubTab, setProdSubTab]           = useState<'katalog'|'pesanan'>('katalog');
+  const [prodSubTab, setProdSubTab]           = useState<'katalog'|'kode-diskon'|'pesanan'>('katalog');
+  const [discountCodes, setDiscountCodes]     = useState<any[]>([]);
+  const [dcKode, setDcKode]                   = useState('');
+  const [dcDiskon, setDcDiskon]               = useState('');
+  const [dcAktif, setDcAktif]                 = useState(true);
+  const [dcMaxPenggunaan, setDcMaxPenggunaan] = useState('');
+  const [dcBerlakuHingga, setDcBerlakuHingga] = useState('');
   const [pNama, setPNama]                     = useState('');
   const [pDesc, setPDesc]                     = useState('');
   const [pHargaBulanan, setPHargaBulanan]     = useState('');
@@ -1403,6 +1409,7 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
     const { data: br } = await supabase.from('brokers').select('*').order('urutan', { ascending: true });
     const { data: prods } = await supabase.from('products').select('*').order('urutan', { ascending: true });
     const { data: ords }  = await supabase.from('orders').select('*, products(nama)').order('created_at', { ascending: false });
+    const { data: dcodes } = await supabase.from('discount_codes').select('*').order('created_at', { ascending: false });
     const { data: js } = await supabase.from('live_schedules').select('*').order('urutan', { ascending: true });
     if (js) setLiveSchedules(js);
     // Video ratings
@@ -1436,8 +1443,9 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
     if (a) setAdmins(a);
     if (fi) setFileItems(fi);
     if (br) setBrokers(br);
-    if (prods) setProducts(prods);
-    if (ords)  setProdOrders(ords);
+    if (prods)  setProducts(prods);
+    if (ords)   setProdOrders(ords);
+    if (dcodes) setDiscountCodes(dcodes);
     if (ul) setUlasanList(ul);
     if (cl) setClaims(cl);
     // Progress per member (persentase)
@@ -1601,6 +1609,32 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
     }).eq('id', orderId);
     if (error) notify('Error: ' + error.message, 'err');
     else { notify('Status pesanan diperbarui!'); loadData(); }
+  }
+
+  async function addDiscountCode() {
+    if (!dcKode.trim() || !dcDiskon) { notify('Kode dan besaran diskon wajib diisi.', 'err'); return; }
+    const d = parseInt(dcDiskon);
+    if (d < 1 || d > 100) { notify('Diskon harus antara 1–100%.', 'err'); return; }
+    const { error } = await supabase.from('discount_codes').insert({
+      kode: dcKode.toUpperCase().trim(),
+      diskon: d,
+      aktif: dcAktif,
+      max_penggunaan: dcMaxPenggunaan ? parseInt(dcMaxPenggunaan) : null,
+      berlaku_hingga: dcBerlakuHingga || null,
+    });
+    if (error) notify(error.message.includes('unique') ? 'Kode sudah terdaftar.' : 'Error: ' + error.message, 'err');
+    else { notify('Kode diskon berhasil ditambahkan!'); setDcKode(''); setDcDiskon(''); setDcAktif(true); setDcMaxPenggunaan(''); setDcBerlakuHingga(''); loadData(); }
+  }
+
+  async function deleteDiscountCode(id: string) {
+    if (!confirm('Hapus kode diskon ini?')) return;
+    await supabase.from('discount_codes').delete().eq('id', id);
+    loadData();
+  }
+
+  async function toggleDiscountCode(id: string, aktif: boolean) {
+    await supabase.from('discount_codes').update({ aktif: !aktif }).eq('id', id);
+    loadData();
   }
 
   async function handleClaimAction(id: string, action: 'approved' | 'rejected') {
@@ -2645,10 +2679,14 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
           <div style={{display:'flex',flexDirection:'column',gap:16}}>
             {/* Sub-tab toggle */}
             <div style={{display:'flex',gap:2,borderBottom:'1px solid #1f1f1f',paddingBottom:0,marginBottom:4}}>
-              {(['katalog','pesanan'] as const).map(st=>(
-                <button key={st} onClick={()=>setProdSubTab(st)}
-                  style={{fontFamily:'monospace',fontSize:11,fontWeight:700,letterSpacing:0.8,padding:'8px 20px',border:'none',cursor:'pointer',borderBottom:prodSubTab===st?'2px solid #16a34a':'2px solid transparent',background:'transparent',color:prodSubTab===st?'#16a34a':'#555'}}>
-                  {st==='katalog'?'📦 KATALOG PRODUK':'🧾 PESANAN MASUK'}
+              {([
+                {id:'katalog',      label:'📦 KATALOG PRODUK'},
+                {id:'kode-diskon',  label:'🎟️ KODE DISKON'},
+                {id:'pesanan',      label:'🧾 PESANAN MASUK'},
+              ] as {id:'katalog'|'kode-diskon'|'pesanan';label:string}[]).map(st=>(
+                <button key={st.id} onClick={()=>setProdSubTab(st.id)}
+                  style={{fontFamily:'monospace',fontSize:11,fontWeight:700,letterSpacing:0.8,padding:'8px 20px',border:'none',cursor:'pointer',borderBottom:prodSubTab===st.id?'2px solid #16a34a':'2px solid transparent',background:'transparent',color:prodSubTab===st.id?'#16a34a':'#555'}}>
+                  {st.label}
                 </button>
               ))}
             </div>
@@ -2889,6 +2927,80 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
               </>
             )}
 
+            {/* ── Sub-tab kode diskon ── */}
+            {prodSubTab==='kode-diskon' && (
+              <div style={{display:'flex',flexDirection:'column',gap:16}}>
+                <div style={{background:'#0d0d0d',border:'1px solid #1f1f1f',padding:'20px 24px'}}>
+                  <div style={{fontFamily:'monospace',color:'#16a34a',fontSize:11,letterSpacing:1,marginBottom:16}}>// BUAT KODE DISKON</div>
+                  <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginBottom:10}}>
+                    <input value={dcKode} onChange={e=>setDcKode(e.target.value.toUpperCase())} placeholder="KODE (huruf kapital)"
+                      style={{background:'#111',border:'1px solid #2a2a2a',color:'#e7e5e4',padding:'10px 14px',fontSize:13,fontFamily:'monospace',outline:'none',letterSpacing:1}}
+                      onFocus={e=>e.target.style.borderColor='#16a34a'} onBlur={e=>e.target.style.borderColor='#2a2a2a'}/>
+                    <input type="number" value={dcDiskon} onChange={e=>setDcDiskon(e.target.value)} placeholder="Diskon % (1–100)"
+                      style={{background:'#111',border:'1px solid #2a2a2a',color:'#e7e5e4',padding:'10px 14px',fontSize:13,fontFamily:'monospace',outline:'none'}}
+                      onFocus={e=>e.target.style.borderColor='#16a34a'} onBlur={e=>e.target.style.borderColor='#2a2a2a'}/>
+                    <input type="number" value={dcMaxPenggunaan} onChange={e=>setDcMaxPenggunaan(e.target.value)} placeholder="Maks. penggunaan (opsional)"
+                      style={{background:'#111',border:'1px solid #2a2a2a',color:'#e7e5e4',padding:'10px 14px',fontSize:13,fontFamily:'monospace',outline:'none'}}
+                      onFocus={e=>e.target.style.borderColor='#16a34a'} onBlur={e=>e.target.style.borderColor='#2a2a2a'}/>
+                    <div>
+                      <div style={{fontFamily:'monospace',color:'#444',fontSize:10,marginBottom:5}}>BERLAKU HINGGA (opsional)</div>
+                      <input type="date" value={dcBerlakuHingga} onChange={e=>setDcBerlakuHingga(e.target.value)}
+                        style={{width:'100%',background:'#111',border:'1px solid #2a2a2a',color:'#e7e5e4',padding:'10px 14px',fontSize:13,fontFamily:'monospace',outline:'none',boxSizing:'border-box' as const}}
+                        onFocus={e=>e.target.style.borderColor='#16a34a'} onBlur={e=>e.target.style.borderColor='#2a2a2a'}/>
+                    </div>
+                  </div>
+                  <div style={{display:'flex',alignItems:'center',gap:12,marginBottom:14}}>
+                    <button onClick={()=>setDcAktif(v=>!v)}
+                      style={{fontFamily:'monospace',fontSize:10,fontWeight:700,padding:'5px 16px',border:`1px solid ${dcAktif?'#16a34a':'#2a2a2a'}`,background:dcAktif?'#0a1a0e':'transparent',color:dcAktif?'#16a34a':'#555',cursor:'pointer'}}>
+                      {dcAktif?'✅ AKTIF':'⛔ NON-AKTIF'}
+                    </button>
+                    <span style={{fontFamily:'monospace',fontSize:10,color:'#333'}}>Status kode saat dibuat</span>
+                  </div>
+                  <button onClick={addDiscountCode} disabled={loading}
+                    style={{background:loading?'#1a1a1a':'#16a34a',color:loading?'#444':'#000',fontFamily:'monospace',fontSize:12,fontWeight:700,padding:'10px 20px',border:'none',cursor:loading?'not-allowed':'pointer'}}>
+                    + BUAT KODE DISKON
+                  </button>
+                </div>
+
+                <div style={{background:'#0d0d0d',border:'1px solid #1f1f1f'}}>
+                  <div style={{padding:'12px 20px',borderBottom:'1px solid #1a1a1a'}}>
+                    <span style={{fontFamily:'monospace',color:'#555',fontSize:11,letterSpacing:1}}>// DAFTAR KODE DISKON ({discountCodes.length})</span>
+                  </div>
+                  {!discountCodes.length && <div style={{padding:'32px',textAlign:'center' as const,fontFamily:'monospace',color:'#333',fontSize:13}}>— BELUM ADA KODE DISKON —</div>}
+                  {discountCodes.map(dc=>{
+                    const expired = dc.berlaku_hingga && new Date(dc.berlaku_hingga) < new Date();
+                    const habis   = dc.max_penggunaan && dc.terpakai >= dc.max_penggunaan;
+                    const sc = (!dc.aktif||expired||habis) ? '#555' : '#16a34a';
+                    return (
+                      <div key={dc.id} style={{borderBottom:'1px solid #111',padding:'14px 20px',display:'flex',gap:12,alignItems:'center',flexWrap:'wrap' as const}}>
+                        <div style={{flex:1,minWidth:0}}>
+                          <div style={{display:'flex',gap:8,alignItems:'center',marginBottom:4,flexWrap:'wrap' as const}}>
+                            <span style={{fontFamily:'monospace',fontSize:15,fontWeight:700,letterSpacing:1,color:'#e7e5e4'}}>{dc.kode}</span>
+                            <span style={{fontFamily:'monospace',fontSize:11,fontWeight:700,color:'#ef4444',border:'1px solid #ef444433',padding:'2px 8px'}}>-{dc.diskon}%</span>
+                            <span style={{fontFamily:'monospace',fontSize:9,color:sc,border:`1px solid ${sc}44`,padding:'2px 7px'}}>
+                              {!dc.aktif?'NON-AKTIF':expired?'KADALUARSA':habis?'HABIS':'AKTIF'}
+                            </span>
+                          </div>
+                          <div style={{display:'flex',gap:14,flexWrap:'wrap' as const}}>
+                            <span style={{fontFamily:'monospace',fontSize:10,color:'#666'}}>Terpakai: <span style={{color:'#aaa'}}>{dc.terpakai}{dc.max_penggunaan?`/${dc.max_penggunaan}`:''}</span></span>
+                            {dc.berlaku_hingga && <span style={{fontFamily:'monospace',fontSize:10,color:'#666'}}>Berlaku hingga: <span style={{color:expired?'#ef4444':'#aaa'}}>{new Date(dc.berlaku_hingga).toLocaleDateString('id-ID',{day:'numeric',month:'short',year:'numeric'})}</span></span>}
+                          </div>
+                        </div>
+                        <div style={{display:'flex',gap:6,flexShrink:0}}>
+                          <button onClick={()=>toggleDiscountCode(dc.id, dc.aktif)}
+                            style={{background:'transparent',border:`1px solid ${dc.aktif?'#2a2a2a':'#16a34a'}`,color:dc.aktif?'#666':'#16a34a',fontFamily:'monospace',fontSize:10,padding:'5px 12px',cursor:'pointer'}}>
+                            {dc.aktif?'NONAKTIFKAN':'AKTIFKAN'}
+                          </button>
+                          <button onClick={()=>deleteDiscountCode(dc.id)}
+                            style={{background:'#1a0f0f',border:'1px solid #ef4444',color:'#ef4444',fontFamily:'monospace',fontSize:10,padding:'5px 12px',cursor:'pointer'}}>HAPUS</button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
             {/* ── Sub-tab pesanan ── */}
             {prodSubTab==='pesanan' && (
               <div style={{background:'#0d0d0d',border:'1px solid #1f1f1f'}}>
@@ -2921,7 +3033,7 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
                             <span style={{fontWeight:700,fontSize:13}}>{o.nama_member}</span>
                             <span style={{fontFamily:'monospace',fontSize:10,color:'#555'}}>· {o.tier_member}</span>
                           </div>
-                          <div style={{fontFamily:'monospace',fontSize:11,color:'#888',marginBottom:2}}>📦 {(o as any).products?.nama||'—'}{o.plan_type ? <span style={{marginLeft:6,color:'#16a34a',fontSize:9,border:'1px solid #16a34a33',padding:'1px 6px'}}>{o.plan_type.toUpperCase()}</span> : ''}</div>
+                          <div style={{fontFamily:'monospace',fontSize:11,color:'#888',marginBottom:2}}>📦 {(o as any).products?.nama||'—'}{o.plan_type ? <span style={{marginLeft:6,color:'#16a34a',fontSize:9,border:'1px solid #16a34a33',padding:'1px 6px'}}>{o.plan_type.toUpperCase()}</span> : ''}{o.kode_diskon ? <span style={{marginLeft:6,color:'#eab308',fontSize:9,border:'1px solid #eab30833',padding:'1px 6px'}}>🎟️ {o.kode_diskon} -{o.diskon_applied}%</span> : ''}</div>
                           <div style={{fontFamily:'monospace',fontSize:10,color:'#444'}}>{new Date(o.created_at).toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'})}</div>
                           {o.catatan&&<div style={{fontFamily:'monospace',fontSize:10,color:'#666',marginTop:4,fontStyle:'italic'}}>Catatan: {o.catatan}</div>}
                         </div>

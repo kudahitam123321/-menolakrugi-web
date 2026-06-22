@@ -325,6 +325,10 @@ export default function DashboardPage() {
   const [prodView, setProdView]         = useState<'katalog'|'pesanan'>('katalog');
   const [orderModal, setOrderModal]     = useState<any|null>(null);
   const [orderLoading, setOrderLoading] = useState(false);
+  const [kodeDiskon, setKodeDiskon]     = useState('');
+  const [kodeDiskonData, setKodeDiskonData] = useState<any|null>(null);
+  const [kodeErr, setKodeErr]           = useState('');
+  const [kodeLoading, setKodeLoading]   = useState(false);
   const [oldPass, setOldPass]         = useState('');
   const [newPass, setNewPass]         = useState('');
   const [confPass, setConfPass]       = useState('');
@@ -416,28 +420,51 @@ export default function DashboardPage() {
     return 'trial';
   }
 
-  async function buatOrder(produk: any, planType: 'bulanan'|'tahunan'|'lifetime') {
+  async function cekKodeDiskon() {
+    if (!kodeDiskon.trim()) return;
+    setKodeLoading(true); setKodeErr(''); setKodeDiskonData(null);
+    const { data, error } = await supabase.from('discount_codes')
+      .select('*').eq('kode', kodeDiskon.toUpperCase().trim()).eq('aktif', true).single();
+    setKodeLoading(false);
+    if (error || !data) { setKodeErr('Kode tidak valid atau sudah tidak aktif.'); return; }
+    if (data.berlaku_hingga && new Date(data.berlaku_hingga) < new Date()) { setKodeErr('Kode sudah kadaluarsa.'); return; }
+    if (data.max_penggunaan && data.terpakai >= data.max_penggunaan) { setKodeErr('Kode sudah mencapai batas penggunaan.'); return; }
+    setKodeDiskonData(data);
+  }
+
+  function closeOrderModal() {
+    setOrderModal(null);
+    setKodeDiskon(''); setKodeDiskonData(null); setKodeErr('');
+  }
+
+  async function buatOrder(produk: any, planType: 'bulanan'|'tahunan'|'lifetime', appliedCode: any|null) {
     if (!member) return;
     setOrderLoading(true);
-    const hargaBase = produk[`harga_${planType}`];
-    const diskon    = produk[`diskon_${planType}`];
-    const harga     = diskon ? Math.round(hargaBase * (1 - diskon / 100)) : hargaBase;
-    const labelPlan = planType.charAt(0).toUpperCase() + planType.slice(1);
+    const hargaBase   = produk[`harga_${planType}`];
+    const diskonPct   = appliedCode ? appliedCode.diskon : (produk[`diskon_${planType}`] || 0);
+    const harga       = diskonPct ? Math.round(hargaBase * (1 - diskonPct / 100)) : hargaBase;
+    const labelPlan   = planType.charAt(0).toUpperCase() + planType.slice(1);
     const { data, error } = await supabase.from('orders').insert({
-      product_id:   produk.id,
-      member_id:    member.id,
-      nama_member:  member.nama,
-      email_member: (member as any).email || '',
-      tier_member:  member.tier,
-      status:       'pending',
-      plan_type:    planType,
+      product_id:      produk.id,
+      member_id:       member.id,
+      nama_member:     member.nama,
+      email_member:    (member as any).email || '',
+      tier_member:     member.tier,
+      status:          'pending',
+      plan_type:       planType,
+      kode_diskon:     appliedCode?.kode || null,
+      diskon_applied:  diskonPct || null,
     }).select().single();
     setOrderLoading(false);
     if (error) { addMemberToast('Gagal membuat order: ' + error.message, 'error'); return; }
+    if (appliedCode) {
+      await supabase.from('discount_codes').update({ terpakai: appliedCode.terpakai + 1 }).eq('id', appliedCode.id);
+    }
     setMyOrders(prev => [{ ...data, products: produk }, ...prev]);
-    setOrderModal(null);
+    closeOrderModal();
     const tipe = produk.status === 'preorder' ? 'pre-order' : 'membeli';
-    const pesan = encodeURIComponent(`Halo, saya ${member.nama} ingin ${tipe} produk *${produk.nama}* (Paket: ${labelPlan}) seharga Rp${Number(harga).toLocaleString('id-ID')}.\nOrder ID: ${data.id}`);
+    const kodeInfo = appliedCode ? ` | Kode: ${appliedCode.kode} (-${appliedCode.diskon}%)` : '';
+    const pesan = encodeURIComponent(`Halo, saya ${member.nama} ingin ${tipe} produk *${produk.nama}* (Paket: ${labelPlan}${kodeInfo}) seharga Rp${Number(harga).toLocaleString('id-ID')}.\nOrder ID: ${data.id}`);
     window.open(`https://wa.me/6281242224939?text=${pesan}`, '_blank');
   }
 
@@ -2353,7 +2380,7 @@ export default function DashboardPage() {
                                       <span style={{ fontFamily: C.mono, fontSize: 12, fontWeight: 700, color: row.d ? C.down : C.text }}>Rp{Number(finalH).toLocaleString('id-ID')}</span>
                                       {row.d && <span style={{ fontFamily: C.mono, fontSize: 9, color: C.down, border: `1px solid ${C.down}44`, padding: '1px 5px', borderRadius: 4 }}>-{row.d}%</span>}
                                       {bisaOrder && (
-                                        <button onClick={() => setOrderModal({ ...p, _selectedPlan: row.plan, _selectedLabel: row.label, _selectedHarga: finalH })}
+                                        <button onClick={() => { setKodeDiskon(''); setKodeDiskonData(null); setKodeErr(''); setOrderModal({ ...p, _selectedPlan: row.plan, _selectedLabel: row.label, _selectedHarga: finalH, _hargaBase: row.h }); }}
                                           style={{ fontFamily: C.mono, fontSize: 10, fontWeight: 700, padding: '4px 10px', background: G.gold, color: '#000', border: 'none', borderRadius: 6, cursor: 'pointer', marginLeft: 4 }}>
                                           Pilih
                                         </button>
@@ -2392,6 +2419,7 @@ export default function DashboardPage() {
                               <div style={{ fontFamily: C.mono, fontSize: 11, color: C.muted }}>
                                 {new Date(o.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
                               </div>
+                              {o.kode_diskon && <div style={{ fontFamily: C.mono, fontSize: 10, color: '#16a34a', marginTop: 2 }}>🎟️ {o.kode_diskon} (-{o.diskon_applied}%)</div>}
                               {o.catatan && <div style={{ fontFamily: C.mono, fontSize: 11, color: C.dim, marginTop: 4 }}>💬 {o.catatan}</div>}
                             </div>
                             <span style={{ fontFamily: C.mono, fontSize: 11, fontWeight: 700, color: sc, border: `1px solid ${sc}44`, padding: '4px 12px', borderRadius: 20, flexShrink: 0 }}>
@@ -2405,38 +2433,67 @@ export default function DashboardPage() {
               )}
 
               {/* ── Modal konfirmasi order ── */}
-              {orderModal && (
-                <div style={{ position: 'fixed', inset: 0, background: '#000a', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}
-                  onClick={e => { if (e.target === e.currentTarget) setOrderModal(null); }}>
-                  <div style={{ background: C.panel, border: `1px solid ${C.border}`, borderRadius: 16, padding: 28, maxWidth: 400, width: '100%' }}>
-                    <div style={{ fontFamily: C.mono, color: G.gold, fontSize: 10, letterSpacing: 1, marginBottom: 12 }}>// KONFIRMASI ORDER</div>
-                    <div style={{ fontWeight: 700, fontSize: 18, marginBottom: 4 }}>{orderModal.nama}</div>
-                    <div style={{ color: C.dim, fontSize: 13, marginBottom: 16 }}>{orderModal.deskripsi}</div>
-                    {orderModal.status === 'preorder' && orderModal.tanggal_rilis && (
-                      <div style={{ background: '#1a150022', border: '1px solid #eab30833', borderRadius: 8, padding: '10px 14px', marginBottom: 14, fontFamily: C.mono, fontSize: 12, color: '#eab308' }}>
-                        ⏳ Produk tersedia pada: {new Date(orderModal.tanggal_rilis).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
+              {orderModal && (()=>{
+                const hargaBase  = orderModal._hargaBase;
+                const finalHarga = kodeDiskonData
+                  ? Math.round(hargaBase * (1 - kodeDiskonData.diskon / 100))
+                  : orderModal._selectedHarga;
+                const kodeAktif  = !!kodeDiskonData;
+                return (
+                  <div style={{ position: 'fixed', inset: 0, background: '#000a', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}
+                    onClick={e => { if (e.target === e.currentTarget) closeOrderModal(); }}>
+                    <div style={{ background: C.panel, border: `1px solid ${C.border}`, borderRadius: 16, padding: 28, maxWidth: 420, width: '100%' }}>
+                      <div style={{ fontFamily: C.mono, color: G.gold, fontSize: 10, letterSpacing: 1, marginBottom: 12 }}>// KONFIRMASI ORDER</div>
+                      <div style={{ fontWeight: 700, fontSize: 18, marginBottom: 4 }}>{orderModal.nama}</div>
+                      <div style={{ color: C.dim, fontSize: 13, marginBottom: 16 }}>{orderModal.deskripsi}</div>
+                      {orderModal.status === 'preorder' && orderModal.tanggal_rilis && (
+                        <div style={{ background: '#1a150022', border: '1px solid #eab30833', borderRadius: 8, padding: '10px 14px', marginBottom: 14, fontFamily: C.mono, fontSize: 12, color: '#eab308' }}>
+                          ⏳ Produk tersedia pada: {new Date(orderModal.tanggal_rilis).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
+                        </div>
+                      )}
+                      <div style={{ background: C.bg, border: `1px solid ${kodeAktif ? G.gold : C.border}`, borderRadius: 10, padding: '12px 16px', marginBottom: 16, transition: 'border-color 0.2s' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 6 }}>
+                          <div>
+                            <div style={{ fontFamily: C.mono, fontSize: 10, color: C.muted }}>Paket</div>
+                            <div style={{ fontFamily: C.mono, fontSize: 14, fontWeight: 700, color: C.text }}>{orderModal._selectedLabel}</div>
+                          </div>
+                          <div style={{ textAlign: 'right' as const }}>
+                            {kodeAktif && <div style={{ fontFamily: C.mono, fontSize: 10, color: C.muted, textDecoration: 'line-through' }}>Rp{Number(orderModal._selectedHarga).toLocaleString('id-ID')}</div>}
+                            <div style={{ fontFamily: C.mono, fontSize: 22, fontWeight: 700, color: G.gold }}>Rp{Number(finalHarga).toLocaleString('id-ID')}</div>
+                            {kodeAktif && <div style={{ fontFamily: C.mono, fontSize: 10, color: '#16a34a' }}>Hemat {kodeDiskonData.diskon}% dengan kode</div>}
+                          </div>
+                        </div>
                       </div>
-                    )}
-                    <div style={{ background: C.bg, border: `1px solid ${G.gold}44`, borderRadius: 10, padding: '12px 16px', marginBottom: 20 }}>
-                      <div style={{ fontFamily: C.mono, fontSize: 11, color: C.muted, marginBottom: 4 }}>Paket yang dipilih</div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <span style={{ fontFamily: C.mono, fontSize: 14, fontWeight: 700, color: C.text }}>{orderModal._selectedLabel}</span>
-                        <span style={{ fontFamily: C.mono, fontSize: 20, fontWeight: 700, color: G.gold }}>Rp{Number(orderModal._selectedHarga).toLocaleString('id-ID')}</span>
+                      {/* Kode diskon input */}
+                      <div style={{ marginBottom: 20 }}>
+                        <div style={{ fontFamily: C.mono, fontSize: 10, color: C.muted, marginBottom: 6 }}>Punya kode diskon? (opsional)</div>
+                        <div style={{ display: 'flex', gap: 8 }}>
+                          <input value={kodeDiskon} onChange={e=>{ setKodeDiskon(e.target.value.toUpperCase()); setKodeDiskonData(null); setKodeErr(''); }}
+                            onKeyDown={e=>{ if(e.key==='Enter') cekKodeDiskon(); }}
+                            placeholder="MASUKKAN KODE"
+                            style={{ flex: 1, background: C.bg, border: `1px solid ${kodeDiskonData ? '#16a34a' : kodeErr ? '#ef4444' : C.border}`, color: C.text, padding: '9px 14px', fontSize: 13, fontFamily: C.mono, outline: 'none', borderRadius: 8, letterSpacing: 1 }}/>
+                          <button onClick={cekKodeDiskon} disabled={kodeLoading || !kodeDiskon.trim()}
+                            style={{ padding: '9px 16px', fontFamily: C.mono, fontSize: 12, fontWeight: 700, background: 'transparent', color: G.gold, border: `1px solid ${G.gold}`, borderRadius: 8, cursor: kodeLoading || !kodeDiskon.trim() ? 'not-allowed' : 'pointer', opacity: kodeLoading || !kodeDiskon.trim() ? 0.5 : 1, whiteSpace: 'nowrap' as const }}>
+                            {kodeLoading ? '...' : 'Terapkan'}
+                          </button>
+                        </div>
+                        {kodeDiskonData && <div style={{ fontFamily: C.mono, fontSize: 11, color: '#16a34a', marginTop: 6 }}>✅ Kode valid — diskon {kodeDiskonData.diskon}% diterapkan</div>}
+                        {kodeErr && <div style={{ fontFamily: C.mono, fontSize: 11, color: '#ef4444', marginTop: 6 }}>❌ {kodeErr}</div>}
                       </div>
-                    </div>
-                    <div style={{ display: 'flex', gap: 10 }}>
-                      <button onClick={() => buatOrder(orderModal, orderModal._selectedPlan)} disabled={orderLoading}
-                        style={{ flex: 1, padding: '12px', fontFamily: C.mono, fontSize: 13, fontWeight: 700, background: G.gold, color: '#000', border: 'none', borderRadius: 10, cursor: orderLoading ? 'not-allowed' : 'pointer', opacity: orderLoading ? 0.6 : 1 }}>
-                        {orderLoading ? 'Memproses...' : orderModal.status === 'preorder' ? '⏳ Pre-order & Chat WA' : '✅ Order & Chat WA'}
-                      </button>
-                      <button onClick={() => setOrderModal(null)}
-                        style={{ padding: '12px 20px', fontFamily: C.mono, fontSize: 13, background: 'transparent', color: C.muted, border: `1px solid ${C.border}`, borderRadius: 10, cursor: 'pointer' }}>
-                        Batal
-                      </button>
+                      <div style={{ display: 'flex', gap: 10 }}>
+                        <button onClick={() => buatOrder(orderModal, orderModal._selectedPlan, kodeDiskonData)} disabled={orderLoading}
+                          style={{ flex: 1, padding: '12px', fontFamily: C.mono, fontSize: 13, fontWeight: 700, background: G.gold, color: '#000', border: 'none', borderRadius: 10, cursor: orderLoading ? 'not-allowed' : 'pointer', opacity: orderLoading ? 0.6 : 1 }}>
+                          {orderLoading ? 'Memproses...' : orderModal.status === 'preorder' ? '⏳ Pre-order & Chat WA' : '✅ Order & Chat WA'}
+                        </button>
+                        <button onClick={closeOrderModal}
+                          style={{ padding: '12px 20px', fontFamily: C.mono, fontSize: 13, background: 'transparent', color: C.muted, border: `1px solid ${C.border}`, borderRadius: 10, cursor: 'pointer' }}>
+                          Batal
+                        </button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              )}
+                );
+              })()}
             </div>
           )}
 
