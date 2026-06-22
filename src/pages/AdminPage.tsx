@@ -1224,12 +1224,21 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
   const [claims, setClaims] = useState<any[]>([]);
   const [claimActionLoading, setClaimActionLoading] = useState<string | null>(null);
   const [liveSchedules, setLiveSchedules]     = useState<any[]>([]);
-  const [paymentConfig, setPaymentConfig]     = useState<any|null>(null);
-  const [payNamaBank, setPayNamaBank]         = useState('');
-  const [payNomorRek, setPayNomorRek]         = useState('');
-  const [payNamaRek, setPayNamaRek]           = useState('');
-  const [payCatatan, setPayCatatan]           = useState('');
-  const [payMsg, setPayMsg]                   = useState('');
+  const [paymentMethods, setPaymentMethods]   = useState<any[]>([]);
+  const [pmNamaBank, setPmNamaBank]           = useState('');
+  const [pmNomorRek, setPmNomorRek]           = useState('');
+  const [pmNamaRek, setPmNamaRek]             = useState('');
+  const [pmCatatan, setPmCatatan]             = useState('');
+  const [pmUrutan, setPmUrutan]               = useState('');
+  const [pmAktif, setPmAktif]                 = useState(true);
+  const [pmMsg, setPmMsg]                     = useState('');
+  const [editPmId, setEditPmId]               = useState<string|null>(null);
+  const [editPmNamaBank, setEditPmNamaBank]   = useState('');
+  const [editPmNomorRek, setEditPmNomorRek]   = useState('');
+  const [editPmNamaRek, setEditPmNamaRek]     = useState('');
+  const [editPmCatatan, setEditPmCatatan]     = useState('');
+  const [editPmUrutan, setEditPmUrutan]       = useState('');
+  const [editPmAktif, setEditPmAktif]         = useState(true);
   const [videoRatingStats, setVideoRatingStats] = useState<any[]>([]);
   const [adminReferrals, setAdminReferrals]     = useState<any[]>([]);
   const [propRules, setPropRules]           = useState<any[]>([]);
@@ -1417,8 +1426,8 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
     const { data: ords }  = await supabase.from('orders').select('*, products(nama)').order('created_at', { ascending: false });
     const { data: dcodes } = await supabase.from('discount_codes').select('*').order('created_at', { ascending: false });
     try {
-      const { data: payConf } = await supabase.from('payment_config').select('*').eq('id', 'main').single();
-      if (payConf) { setPaymentConfig(payConf); setPayNamaBank(payConf.nama_bank||''); setPayNomorRek(payConf.nomor_rekening||''); setPayNamaRek(payConf.nama_rekening||''); setPayCatatan(payConf.catatan||''); }
+      const { data: pm } = await supabase.from('payment_methods').select('*').order('urutan', { ascending: true });
+      if (pm) setPaymentMethods(pm);
     } catch(_e) {}
     const { data: js } = await supabase.from('live_schedules').select('*').order('urutan', { ascending: true });
     if (js) setLiveSchedules(js);
@@ -1647,14 +1656,45 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
     loadData();
   }
 
-  async function savePaymentConfig() {
-    if (!payNamaBank || !payNomorRek || !payNamaRek) { setPayMsg('Nama bank, nomor rekening, dan atas nama wajib diisi.'); return; }
-    const { error } = await supabase.from('payment_config').upsert({
-      id: 'main', nama_bank: payNamaBank, nomor_rekening: payNomorRek, nama_rekening: payNamaRek, catatan: payCatatan || null,
+  async function addPaymentMethod() {
+    if (!pmNamaBank || !pmNomorRek || !pmNamaRek) { setPmMsg('Nama bank, nomor rekening, dan atas nama wajib diisi.'); return; }
+    const { error } = await supabase.from('payment_methods').insert({
+      nama_bank: pmNamaBank, nomor_rekening: pmNomorRek, nama_rekening: pmNamaRek,
+      catatan: pmCatatan || null, urutan: parseInt(pmUrutan) || 0, aktif: pmAktif,
     });
-    setPayMsg(error ? 'Error: ' + error.message : '✅ Rekening pembayaran berhasil disimpan!');
-    setTimeout(() => setPayMsg(''), 3000);
-    if (!error) loadData();
+    if (error) { setPmMsg('Error: ' + error.message); return; }
+    setPmMsg('✅ Metode pembayaran ditambahkan!');
+    setTimeout(() => setPmMsg(''), 3000);
+    setPmNamaBank(''); setPmNomorRek(''); setPmNamaRek(''); setPmCatatan(''); setPmUrutan(''); setPmAktif(true);
+    loadData();
+  }
+
+  async function deletePaymentMethod(id: string) {
+    if (!confirm('Hapus metode pembayaran ini?')) return;
+    await supabase.from('payment_methods').delete().eq('id', id);
+    loadData();
+  }
+
+  async function togglePaymentMethod(id: string, aktif: boolean) {
+    await supabase.from('payment_methods').update({ aktif: !aktif }).eq('id', id);
+    loadData();
+  }
+
+  function startEditPm(pm: any) {
+    setEditPmId(pm.id); setEditPmNamaBank(pm.nama_bank); setEditPmNomorRek(pm.nomor_rekening);
+    setEditPmNamaRek(pm.nama_rekening); setEditPmCatatan(pm.catatan||'');
+    setEditPmUrutan(String(pm.urutan||0)); setEditPmAktif(pm.aktif !== false);
+  }
+
+  async function saveEditPm() {
+    if (!editPmId || !editPmNamaBank || !editPmNomorRek || !editPmNamaRek) { setPmMsg('Semua field wajib diisi.'); return; }
+    const { error } = await supabase.from('payment_methods').update({
+      nama_bank: editPmNamaBank, nomor_rekening: editPmNomorRek, nama_rekening: editPmNamaRek,
+      catatan: editPmCatatan || null, urutan: parseInt(editPmUrutan) || 0, aktif: editPmAktif,
+    }).eq('id', editPmId);
+    if (error) { setPmMsg('Error: ' + error.message); return; }
+    setPmMsg('✅ Berhasil diupdate!'); setTimeout(() => setPmMsg(''), 3000);
+    setEditPmId(null); loadData();
   }
 
   async function handleClaimAction(id: string, action: 'approved' | 'rejected') {
@@ -3356,30 +3396,106 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
               passErr={passErr} passMsg={passMsg}
               handleGantiPassword={handleGantiPassword}
             />
-            <div style={{maxWidth:480,margin:'0 auto',padding:'0 16px 40px'}}>
-              <div style={{fontFamily:'"Geist Mono",monospace',color:'#16a34a',fontSize:10,letterSpacing:2,marginBottom:8}}>// REKENING PEMBAYARAN PRODUK</div>
-              <h2 style={{fontSize:18,fontWeight:700,color:'#e7e5e4',marginBottom:20}}>Info Transfer Member</h2>
-              <div style={{background:'#111',border:'1px solid #1e1e1e',borderRadius:12,padding:24,display:'flex',flexDirection:'column' as const,gap:14}}>
-                {([
-                  {label:'NAMA BANK', v:payNamaBank, s:setPayNamaBank, ph:'BCA / Mandiri / BRI ...'},
-                  {label:'NOMOR REKENING', v:payNomorRek, s:setPayNomorRek, ph:'Nomor rekening'},
-                  {label:'ATAS NAMA', v:payNamaRek, s:setPayNamaRek, ph:'Nama pemilik rekening'},
-                ] as {label:string;v:string;s:(x:string)=>void;ph:string}[]).map(f=>(
-                  <div key={f.label}>
-                    <label style={{fontFamily:'"Geist Mono",monospace',fontSize:10,color:'#888',display:'block',marginBottom:6}}>{f.label}</label>
-                    <input value={f.v} onChange={e=>f.s(e.target.value)} placeholder={f.ph}
-                      style={{width:'100%',background:'#0a0a0a',border:'1px solid #1e1e1e',color:'#e7e5e4',padding:'10px 14px',borderRadius:8,fontFamily:'"Geist Mono",monospace',fontSize:13,outline:'none',boxSizing:'border-box' as const}}/>
+            <div style={{maxWidth:600,margin:'0 auto',padding:'0 16px 40px'}}>
+              <div style={{fontFamily:'"Geist Mono",monospace',color:'#16a34a',fontSize:10,letterSpacing:2,marginBottom:8}}>// METODE PEMBAYARAN PRODUK</div>
+              <h2 style={{fontSize:18,fontWeight:700,color:'#e7e5e4',marginBottom:20}}>Rekening Transfer Member</h2>
+
+              {/* Form tambah */}
+              <div style={{background:'#111',border:'1px solid #1e1e1e',borderRadius:12,padding:20,marginBottom:20}}>
+                <div style={{fontFamily:'"Geist Mono",monospace',color:'#555',fontSize:10,letterSpacing:1,marginBottom:14}}>+ TAMBAH METODE PEMBAYARAN</div>
+                <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginBottom:10}}>
+                  {([
+                    {label:'NAMA BANK',v:pmNamaBank,s:setPmNamaBank,ph:'BCA / Mandiri / BRI / QRIS ...'},
+                    {label:'NOMOR REKENING / ID',v:pmNomorRek,s:setPmNomorRek,ph:'Nomor rekening atau nomor QRIS'},
+                    {label:'ATAS NAMA',v:pmNamaRek,s:setPmNamaRek,ph:'Nama pemilik rekening'},
+                    {label:'URUTAN TAMPIL',v:pmUrutan,s:setPmUrutan,ph:'0',type:'number'},
+                  ] as {label:string;v:string;s:(x:string)=>void;ph:string;type?:string}[]).map(f=>(
+                    <div key={f.label}>
+                      <div style={{fontFamily:'"Geist Mono",monospace',fontSize:9,color:'#555',marginBottom:5}}>{f.label}</div>
+                      <input type={f.type||'text'} value={f.v} onChange={e=>f.s(e.target.value)} placeholder={f.ph}
+                        style={{width:'100%',background:'#0a0a0a',border:'1px solid #1e1e1e',color:'#e7e5e4',padding:'9px 12px',fontFamily:'"Geist Mono",monospace',fontSize:12,outline:'none',boxSizing:'border-box' as const}}
+                        onFocus={e=>e.target.style.borderColor='#16a34a'} onBlur={e=>e.target.style.borderColor='#1e1e1e'}/>
+                    </div>
+                  ))}
+                </div>
+                <textarea value={pmCatatan} onChange={e=>setPmCatatan(e.target.value)} rows={2} placeholder="Catatan / instruksi transfer (opsional)"
+                  style={{width:'100%',background:'#0a0a0a',border:'1px solid #1e1e1e',color:'#e7e5e4',padding:'9px 12px',fontFamily:'"Geist Mono",monospace',fontSize:12,outline:'none',resize:'vertical' as const,boxSizing:'border-box' as const,marginBottom:10}}
+                  onFocus={e=>e.target.style.borderColor='#16a34a'} onBlur={e=>e.target.style.borderColor='#1e1e1e'}/>
+                <div style={{display:'flex',gap:12,alignItems:'center',marginBottom:12}}>
+                  <button onClick={()=>setPmAktif(v=>!v)}
+                    style={{fontFamily:'"Geist Mono",monospace',fontSize:10,fontWeight:700,padding:'5px 14px',border:`1px solid ${pmAktif?'#16a34a':'#1e1e1e'}`,background:pmAktif?'#0a1a0e':'transparent',color:pmAktif?'#16a34a':'#555',cursor:'pointer',borderRadius:6}}>
+                    {pmAktif?'✅ AKTIF':'⛔ NON-AKTIF'}
+                  </button>
+                </div>
+                {pmMsg && <div style={{fontFamily:'"Geist Mono",monospace',fontSize:11,color:pmMsg.startsWith('✅')?'#22c55e':'#ef4444',marginBottom:10}}>{pmMsg}</div>}
+                <button onClick={addPaymentMethod}
+                  style={{background:'#16a34a',color:'#000',border:'none',padding:'10px 20px',fontFamily:'"Geist Mono",monospace',fontSize:12,fontWeight:700,cursor:'pointer',borderRadius:6}}>
+                  + TAMBAH REKENING
+                </button>
+              </div>
+
+              {/* Daftar metode */}
+              <div style={{background:'#111',border:'1px solid #1e1e1e',borderRadius:12,overflow:'hidden'}}>
+                <div style={{padding:'12px 18px',borderBottom:'1px solid #1e1e1e'}}>
+                  <span style={{fontFamily:'"Geist Mono",monospace',color:'#555',fontSize:11,letterSpacing:1}}>// DAFTAR METODE PEMBAYARAN ({paymentMethods.length})</span>
+                </div>
+                {!paymentMethods.length && <div style={{padding:'28px',textAlign:'center' as const,fontFamily:'"Geist Mono",monospace',color:'#333',fontSize:12}}>— BELUM ADA METODE PEMBAYARAN —</div>}
+                {paymentMethods.map(pm=>(
+                  <div key={pm.id} style={{borderBottom:'1px solid #0d0d0d'}}>
+                    <div style={{padding:'14px 18px',display:'flex',gap:12,alignItems:'flex-start'}}>
+                      <div style={{flex:1,minWidth:0}}>
+                        <div style={{display:'flex',gap:8,alignItems:'center',marginBottom:4,flexWrap:'wrap' as const}}>
+                          <span style={{fontWeight:700,fontSize:14,color:'#e7e5e4'}}>{pm.nama_bank}</span>
+                          <span style={{fontFamily:'"Geist Mono",monospace',fontSize:13,letterSpacing:1,color:'#e7e5e4'}}>{pm.nomor_rekening}</span>
+                          {!pm.aktif && <span style={{fontFamily:'"Geist Mono",monospace',fontSize:9,color:'#555',border:'1px solid #2a2a2a',padding:'1px 6px'}}>NON-AKTIF</span>}
+                        </div>
+                        <div style={{fontFamily:'"Geist Mono",monospace',fontSize:11,color:'#777',marginBottom:2}}>a.n. {pm.nama_rekening}</div>
+                        {pm.catatan && <div style={{fontFamily:'"Geist Mono",monospace',fontSize:10,color:'#555',fontStyle:'italic'}}>{pm.catatan}</div>}
+                      </div>
+                      <div style={{display:'flex',gap:6,flexShrink:0}}>
+                        <button onClick={()=>editPmId===pm.id?setEditPmId(null):startEditPm(pm)}
+                          style={{background:'transparent',border:'1px solid #2a2a2a',color:'#666',fontFamily:'"Geist Mono",monospace',fontSize:10,padding:'4px 10px',cursor:'pointer',borderRadius:4}}>EDIT</button>
+                        <button onClick={()=>togglePaymentMethod(pm.id,pm.aktif)}
+                          style={{background:'transparent',border:`1px solid ${pm.aktif?'#2a2a2a':'#16a34a'}`,color:pm.aktif?'#555':'#16a34a',fontFamily:'"Geist Mono",monospace',fontSize:10,padding:'4px 10px',cursor:'pointer',borderRadius:4}}>
+                          {pm.aktif?'NONAKTIF':'AKTIFKAN'}
+                        </button>
+                        <button onClick={()=>deletePaymentMethod(pm.id)}
+                          style={{background:'#1a0f0f',border:'1px solid #ef4444',color:'#ef4444',fontFamily:'"Geist Mono",monospace',fontSize:10,padding:'4px 10px',cursor:'pointer',borderRadius:4}}>HAPUS</button>
+                      </div>
+                    </div>
+                    {editPmId===pm.id && (
+                      <div style={{padding:'14px 18px',background:'#0d0d0d',borderTop:'1px solid #1a1a1a'}}>
+                        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:8}}>
+                          {([
+                            {label:'NAMA BANK',v:editPmNamaBank,s:setEditPmNamaBank,ph:'Nama bank'},
+                            {label:'NOMOR REKENING',v:editPmNomorRek,s:setEditPmNomorRek,ph:'Nomor rekening'},
+                            {label:'ATAS NAMA',v:editPmNamaRek,s:setEditPmNamaRek,ph:'Nama pemilik'},
+                            {label:'URUTAN',v:editPmUrutan,s:setEditPmUrutan,ph:'0',type:'number'},
+                          ] as {label:string;v:string;s:(x:string)=>void;ph:string;type?:string}[]).map(f=>(
+                            <div key={f.label}>
+                              <div style={{fontFamily:'"Geist Mono",monospace',fontSize:9,color:'#444',marginBottom:4}}>{f.label}</div>
+                              <input type={f.type||'text'} value={f.v} onChange={e=>f.s(e.target.value)} placeholder={f.ph}
+                                style={{width:'100%',background:'#111',border:'1px solid #2a2a2a',color:'#e7e5e4',padding:'8px 10px',fontFamily:'"Geist Mono",monospace',fontSize:11,outline:'none',boxSizing:'border-box' as const}}
+                                onFocus={e=>e.target.style.borderColor='#16a34a'} onBlur={e=>e.target.style.borderColor='#2a2a2a'}/>
+                            </div>
+                          ))}
+                        </div>
+                        <textarea value={editPmCatatan} onChange={e=>setEditPmCatatan(e.target.value)} rows={2} placeholder="Catatan (opsional)"
+                          style={{width:'100%',background:'#111',border:'1px solid #2a2a2a',color:'#e7e5e4',padding:'8px 10px',fontFamily:'"Geist Mono",monospace',fontSize:11,outline:'none',resize:'vertical' as const,boxSizing:'border-box' as const,marginBottom:8}}/>
+                        <div style={{display:'flex',gap:10,alignItems:'center',marginBottom:10}}>
+                          <button onClick={()=>setEditPmAktif(v=>!v)}
+                            style={{fontFamily:'"Geist Mono",monospace',fontSize:10,fontWeight:700,padding:'4px 12px',border:`1px solid ${editPmAktif?'#16a34a':'#2a2a2a'}`,background:editPmAktif?'#0a1a0e':'transparent',color:editPmAktif?'#16a34a':'#555',cursor:'pointer',borderRadius:4}}>
+                            {editPmAktif?'✅ AKTIF':'⛔ NON-AKTIF'}
+                          </button>
+                        </div>
+                        <div style={{display:'flex',gap:8}}>
+                          <button onClick={saveEditPm} style={{background:'#16a34a',color:'#000',border:'none',padding:'8px 16px',fontFamily:'"Geist Mono",monospace',fontSize:11,fontWeight:700,cursor:'pointer',borderRadius:4}}>SIMPAN</button>
+                          <button onClick={()=>setEditPmId(null)} style={{background:'transparent',border:'1px solid #2a2a2a',color:'#555',padding:'8px 14px',fontFamily:'"Geist Mono",monospace',fontSize:11,cursor:'pointer',borderRadius:4}}>BATAL</button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 ))}
-                <div>
-                  <label style={{fontFamily:'"Geist Mono",monospace',fontSize:10,color:'#888',display:'block',marginBottom:6}}>CATATAN (opsional)</label>
-                  <textarea value={payCatatan} onChange={e=>setPayCatatan(e.target.value)} rows={3} placeholder="Instruksi transfer, berita transfer, dll."
-                    style={{width:'100%',background:'#0a0a0a',border:'1px solid #1e1e1e',color:'#e7e5e4',padding:'10px 14px',borderRadius:8,fontFamily:'"Geist Mono",monospace',fontSize:12,outline:'none',resize:'vertical' as const,boxSizing:'border-box' as const}}/>
-                </div>
-                {payMsg && <div style={{fontFamily:'"Geist Mono",monospace',fontSize:12,color:payMsg.startsWith('✅')?'#22c55e':'#ef4444',background:payMsg.startsWith('✅')?'#081a0a':'#1a0808',border:`1px solid ${payMsg.startsWith('✅')?'#22c55e33':'#ef444433'}`,borderRadius:6,padding:'8px 12px'}}>{payMsg}</div>}
-                <button onClick={savePaymentConfig} style={{background:'#16a34a',color:'#fff',border:'none',borderRadius:8,padding:'11px 0',fontFamily:'"Geist Mono",monospace',fontSize:13,fontWeight:700,cursor:'pointer',marginTop:4}}>
-                  Simpan Rekening
-                </button>
               </div>
             </div>
           </>

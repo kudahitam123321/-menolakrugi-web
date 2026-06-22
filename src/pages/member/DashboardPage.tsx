@@ -329,10 +329,10 @@ export default function DashboardPage() {
   const [kodeDiskonData, setKodeDiskonData] = useState<any|null>(null);
   const [kodeErr, setKodeErr]           = useState('');
   const [kodeLoading, setKodeLoading]   = useState(false);
-  const [paymentConfig, setPaymentConfig] = useState<any|null>(null);
+  const [paymentMethods, setPaymentMethods] = useState<any[]>([]);
   const [modalStep, setModalStep]       = useState<'konfirmasi'|'pembayaran'>('konfirmasi');
   const [pendingOrder, setPendingOrder] = useState<any|null>(null);
-  const [rekCopied, setRekCopied]       = useState(false);
+  const [rekCopied, setRekCopied]       = useState('');
   const [oldPass, setOldPass]         = useState('');
   const [newPass, setNewPass]         = useState('');
   const [confPass, setConfPass]       = useState('');
@@ -440,7 +440,7 @@ export default function DashboardPage() {
     setOrderModal(null);
     setModalStep('konfirmasi');
     setPendingOrder(null);
-    setRekCopied(false);
+    setRekCopied('');
     setKodeDiskon(''); setKodeDiskonData(null); setKodeErr('');
   }
 
@@ -604,8 +604,8 @@ export default function DashboardPage() {
     if (prodRes.data)  setProducts(prodRes.data);
     if (ordersRes.data) setMyOrders(ordersRes.data);
     try {
-      const { data: payConf } = await supabase.from('payment_config').select('*').eq('id', 'main').single();
-      if (payConf) setPaymentConfig(payConf);
+      const { data: pm } = await supabase.from('payment_methods').select('*').eq('aktif', true).order('urutan', { ascending: true });
+      if (pm) setPaymentMethods(pm);
     } catch(_e) {}
 
     // Leaderboard
@@ -2541,45 +2541,42 @@ export default function DashboardPage() {
                       <div style={{ fontFamily: C.mono, fontSize: 9, color: C.muted, marginTop: 4 }}>Order ID: {pendingOrder.id}</div>
                     </div>
 
-                    {/* Info rekening */}
-                    {paymentConfig ? (
-                      <div style={{ background: '#0a1a0e', border: '1px solid #16a34a33', borderRadius: 10, padding: '16px 18px', marginBottom: 16 }}>
-                        <div style={{ fontFamily: C.mono, fontSize: 10, color: '#16a34a', letterSpacing: 1, marginBottom: 12 }}>// REKENING TUJUAN</div>
+                    {/* Metode pembayaran */}
+                    <div style={{ marginBottom: 16 }}>
+                      <div style={{ fontFamily: C.mono, fontSize: 10, color: C.muted, marginBottom: 10 }}>// PILIH METODE PEMBAYARAN</div>
+                      {!paymentMethods.length ? (
+                        <div style={{ background: C.bg, border: `1px solid ${C.border}`, borderRadius: 10, padding: '14px 16px', fontFamily: C.mono, fontSize: 12, color: C.muted }}>
+                          Info rekening belum dikonfigurasi. Hubungi admin.
+                        </div>
+                      ) : (
                         <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 10 }}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                            <span style={{ fontFamily: C.mono, fontSize: 11, color: C.muted }}>Bank</span>
-                            <span style={{ fontFamily: C.mono, fontSize: 13, fontWeight: 700, color: C.text }}>{paymentConfig.nama_bank}</span>
-                          </div>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <span style={{ fontFamily: C.mono, fontSize: 11, color: C.muted }}>No. Rekening</span>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                              <span style={{ fontFamily: C.mono, fontSize: 16, fontWeight: 700, letterSpacing: 2, color: C.text }}>{paymentConfig.nomor_rekening}</span>
-                              <button onClick={() => { navigator.clipboard.writeText(paymentConfig.nomor_rekening); setRekCopied(true); setTimeout(() => setRekCopied(false), 2000); }}
-                                style={{ fontFamily: C.mono, fontSize: 10, padding: '3px 10px', background: rekCopied ? '#16a34a' : 'transparent', color: rekCopied ? '#000' : '#16a34a', border: '1px solid #16a34a', borderRadius: 4, cursor: 'pointer' }}>
-                                {rekCopied ? '✓ Disalin' : 'Salin'}
-                              </button>
+                          {paymentMethods.map(pm => (
+                            <div key={pm.id} style={{ background: '#0a1a0e', border: '1px solid #16a34a33', borderRadius: 10, padding: '14px 16px' }}>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                                <span style={{ fontFamily: C.mono, fontSize: 13, fontWeight: 700, color: C.text }}>{pm.nama_bank}</span>
+                                <span style={{ fontFamily: C.mono, fontSize: 12, color: C.muted }}>a.n. {pm.nama_rekening}</span>
+                              </div>
+                              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                <span style={{ fontFamily: C.mono, fontSize: 17, fontWeight: 700, letterSpacing: 2, color: C.text }}>{pm.nomor_rekening}</span>
+                                <button onClick={() => { navigator.clipboard.writeText(pm.nomor_rekening); setRekCopied(pm.id); setTimeout(() => setRekCopied(''), 2000); }}
+                                  style={{ fontFamily: C.mono, fontSize: 11, padding: '4px 12px', background: rekCopied === pm.id ? '#16a34a' : 'transparent', color: rekCopied === pm.id ? '#000' : '#16a34a', border: '1px solid #16a34a', borderRadius: 6, cursor: 'pointer', transition: 'all 0.15s' }}>
+                                  {rekCopied === pm.id ? '✓ Disalin' : 'Salin'}
+                                </button>
+                              </div>
+                              {pm.catatan && (
+                                <div style={{ marginTop: 8, paddingTop: 8, borderTop: '1px solid #16a34a22', fontFamily: C.mono, fontSize: 10, color: C.dim, lineHeight: 1.6 }}>
+                                  📋 {pm.catatan}
+                                </div>
+                              )}
                             </div>
-                          </div>
-                          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                            <span style={{ fontFamily: C.mono, fontSize: 11, color: C.muted }}>Atas Nama</span>
-                            <span style={{ fontFamily: C.mono, fontSize: 13, fontWeight: 700, color: C.text }}>{paymentConfig.nama_rekening}</span>
-                          </div>
-                          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                            <span style={{ fontFamily: C.mono, fontSize: 11, color: C.muted }}>Nominal Transfer</span>
-                            <span style={{ fontFamily: C.mono, fontSize: 14, fontWeight: 700, color: G.gold }}>Rp{Number(pendingOrder._harga).toLocaleString('id-ID')}</span>
+                          ))}
+                          <div style={{ background: C.bg, border: `1px solid ${C.border}`, borderRadius: 8, padding: '10px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <span style={{ fontFamily: C.mono, fontSize: 11, color: C.muted }}>Nominal yang ditransfer</span>
+                            <span style={{ fontFamily: C.mono, fontSize: 16, fontWeight: 700, color: G.gold }}>Rp{Number(pendingOrder._harga).toLocaleString('id-ID')}</span>
                           </div>
                         </div>
-                        {paymentConfig.catatan && (
-                          <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px solid #16a34a22', fontFamily: C.mono, fontSize: 11, color: C.dim, lineHeight: 1.6 }}>
-                            📋 {paymentConfig.catatan}
-                          </div>
-                        )}
-                      </div>
-                    ) : (
-                      <div style={{ background: C.bg, border: `1px solid ${C.border}`, borderRadius: 10, padding: '14px 16px', marginBottom: 16, fontFamily: C.mono, fontSize: 12, color: C.muted }}>
-                        Info rekening belum dikonfigurasi. Hubungi admin.
-                      </div>
-                    )}
+                      )}
+                    </div>
 
                     <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 10 }}>
                       <button onClick={konfirmasiKePembayaranWA}
