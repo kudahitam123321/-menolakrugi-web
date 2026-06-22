@@ -48,7 +48,9 @@ No routing library. `App.tsx` inspects `window.location.pathname` in a `getPage(
 /admin                 → AdminPanel (legacy URL, same component)
 ```
 
-There are legacy page files (`src/pages/DashboardPage.tsx`, `src/pages/MemberPage.tsx`, `src/pages/AdminPage.tsx`) that are no longer the primary entry points but are still imported by some components.
+There are legacy page files (`src/pages/DashboardPage.tsx`, `src/pages/MemberPage.tsx`) that are no longer the primary entry points.
+
+**Important**: `src/pages/AdminPage.tsx` is **not** legacy — `AdminPanel.tsx` imports it and renders `<AdminPage embedded={true} initialTab={...} />` as the main content area for most admin tabs. Broker management (CRUD + logo upload), video management, member management, and most admin tab UIs live inside `AdminPage.tsx`, not `AdminPanel.tsx`. `AdminPanel.tsx` is the shell (sidebar + notifications) that delegates content rendering to `AdminPage`.
 
 The old landing-page section components in `src/components/` (`Navbar.tsx`, `Hero.tsx`, `Courses.tsx`, `Footer.tsx`, etc.) are imported in `App.tsx` but **unused** — `App.tsx` renders `<LandingPage />` directly for the home route. Do not add new logic to those files.
 
@@ -76,9 +78,13 @@ Queries are raw `.from('table').select()...` chains — no ORM. Custom hooks in 
 
 **Critical RLS gotcha**: This app uses custom localStorage-based auth, **not** Supabase Auth. `auth.uid()` is always `null` at the database level. All RLS policies must use `using (true)` / `with check (true)` — access control is enforced at the application layer, not the database layer. Using `auth.uid()` in a policy will silently block inserts/updates. See `supabase-competition-rls-fix.sql` for the fix pattern.
 
-Key tables: `members`, `pricing_tiers`, `videos`, `journals`, `watch_history`, `testimonials`, `funded_brokers`, `partnerships`, `activity_log`, `trading_plan_config`, `advance_requests`, `partnership_claims`, `landing_gallery`, `competitions`, `trading_journals`, `journal_settings`.
+Key tables: `members`, `pricing_tiers`, `videos`, `journals`, `watch_history`, `testimonials`, `brokers`, `partnerships`, `activity_log`, `trading_plan_config`, `advance_requests`, `partnership_claims`, `landing_gallery`, `competitions`, `trading_journals`, `journal_settings`, `oneonone_requests`, `products`, `orders`.
 
-Supabase Storage is also used: the `gallery` bucket stores landing-page images uploaded via the Admin `galeri` tab. Public URLs are fetched with `supabase.storage.from('gallery').getPublicUrl(fileName)` and metadata (url, caption, urutan, active) is stored in the `landing_gallery` table.
+**Table name gotcha**: The broker/prop firm table is `brokers` (not `funded_brokers`). It has columns `jenis` (`'broker'` | `'propfirm'`), `logo_url` (optional image), `nama`, `link`, `diskon`, `deskripsi`, `urutan`.
+
+Supabase Storage buckets:
+- `gallery` — landing-page images (Admin `galeri` tab). Metadata in `landing_gallery`.
+- `materi` — video files, downloadable course files, **and broker/prop firm logos** (`brokerlogo_*.ext` prefix). All non-gallery uploads go here.
 
 Admin operations are logged via the module-level `logActivity(action, detail, adminName)` function in `AdminPanel.tsx`, which writes to `activity_log`.
 
@@ -121,7 +127,9 @@ Four primary membership tiers: **Trial**, **Bronze**, **Gold**, **Platinum**. A 
 
 `DashboardPage` (`src/pages/member/DashboardPage.tsx`) is a sidebar-driven SPA-within-a-SPA. The sidebar IDs determine which tab renders — there is no URL change:
 
-`dashboard` · `kelas` · `materi` · `news` (Chart) · `jurnal` · `trading-plan` · `komunitas` · `tools` (Broker) · `funded` · `peringkat` · `competition` · `sertifikat` · `ulasan` · `referral` · `pengaturan` · `bantuan` · `logout`
+`dashboard` · `kelas` · `materi` · `news` (Chart) · `jurnal` · `trading-plan` · `komunitas` · `tools` (Broker) · `produk` (Produk Indikator) · `funded` · `1on1` (1-on-1 Mentoring) · `peringkat` · `competition` · `sertifikat` · `ulasan` · `referral` · `pengaturan` · `bantuan` · `logout`
+
+The `1on1` tab lets Gold/Platinum members request a 1-on-1 mentoring session (form: Discord nickname + topic). Trial/Bronze see a locked upgrade prompt. Backed by the `oneonone_requests` table. Admin approves with a scheduled datetime or rejects with a reason in the `ApprovalsTab`.
 
 `JurnalPage` and `LeaderboardPage` are rendered as tabs inside `DashboardPage`, not as standalone routes.
 
@@ -136,9 +144,23 @@ Four primary membership tiers: **Trial**, **Bronze**, **Gold**, **Platinum**. A 
 - **Communication**: `pengumuman` / `broadcast` (both map to `announce` tab)
 - **System**: `galeri` · `log` · `pengaturan`
 
-The `ApprovalsTab` component (inside AdminPanel) handles three sub-tabs: `ulasan` (testimonials), `advance` (advance_requests), `klaim` (partnership_claims).
+The `ApprovalsTab` component (inside AdminPanel) handles four sub-tabs: `ulasan` (testimonials), `advance` (advance_requests), `klaim` (partnership_claims), `1on1` (oneonone_requests — admin sets schedule datetime or rejection reason).
 
 **Sidebar → tab ID mapping gotcha**: the `admin` sidebar item maps to tab ID `admins` (not `admin`); `pengaturan` maps to `settings`; `pengumuman` and `broadcast` both map to `announce`. The `jurnal` sidebar item in AdminPanel renders `LeaderboardPage` (member rankings), not a journal view — the label "Peringkat Member" in the sidebar reflects this, but the sidebar ID `jurnal` can be misleading.
+
+### Real-Time Notifications
+
+Both the member dashboard and admin panel use Supabase `postgres_changes` subscriptions for live toast notifications. These are wired up in a single `useEffect` that returns a cleanup removing the channel.
+
+**Member side** (`DashboardPage`): One channel (`member-updates-{id}`) subscribes to:
+- `advance_requests` (filter: `member_id=eq.{id}`) — toast on tier upgrade approval/rejection
+- `oneonone_requests` (filter: `member_id=eq.{id}`) — toast on 1-on-1 approved (shows schedule) or rejected
+- `testimonials` (filter: `member_id=eq.{id}`) — toast on review approved/rejected
+- `videos` (INSERT) — toast when admin uploads a new video/file; also refreshes `kelas` tab data
+
+**Admin side** (`AdminPanel`): Subscribes to all four tables (no member filter) — shows toast pop-ups in the bottom-right corner, updates the pending-count badge on the Persetujuan sidebar item, and keeps the notification bell dropdown sorted by newest first.
+
+Toast auto-dismisses after 7 seconds and can be closed manually.
 
 ### Competition Feature
 
@@ -198,6 +220,9 @@ Config is stored per `plan_type` (`'basic'` | `'advanced'`) in the `trading_plan
 | `supabase-competition-migration.sql` | `competitions` table schema with RLS |
 | `supabase-competition-rls-fix.sql` | Fixes competition RLS to use `with check (true)` — run in Supabase SQL editor if competition saves are blocked |
 | `supabase-oneonone-migration.sql` | Schema for `oneonone_requests` table (1-on-1 mentoring feature) |
+| `supabase-activitylog-migration.sql` | Schema for `activity_log` table |
+| `supabase-broker-logo-migration.sql` | Adds `logo_url` column to `brokers` table — run once in Supabase SQL editor |
+| `supabase-products-migration.sql` | Schema tabel `products` dan `orders` untuk fitur produk indikator |
 | `src/pages/CompetitionPage.tsx` | Member-facing competition + live leaderboard |
 | `src/pages/admin/AdminCompetitionPage.tsx` | Admin competition create/edit UI |
 | `src/hooks/useMyCompetitionStats.ts` | Per-member competition stats hook |
