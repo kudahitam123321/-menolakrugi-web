@@ -2362,7 +2362,7 @@ export default function DashboardPage() {
                       Belum ada produk tersedia saat ini.
                     </div>
                   )}
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 20 }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 20 }}>
                     {products.map(p => {
                       const tierMember = normalizeTier(member?.tier || '');
                       const bisaOrder  = (p.tier_access || []).includes(tierMember);
@@ -2405,19 +2405,21 @@ export default function DashboardPage() {
                               {plans.map(row => {
                                 const finalH = row.d ? Math.round(row.h * (1 - row.d / 100)) : row.h;
                                 return (
-                                  <div key={row.plan} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', background: C.bg, border: `1px solid ${C.border}`, borderRadius: 8 }}>
-                                    <span style={{ fontFamily: C.mono, fontSize: 11, color: C.dim }}>{row.label}</span>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                                      {row.d && <span style={{ fontFamily: C.mono, fontSize: 10, color: C.muted, textDecoration: 'line-through' }}>Rp{Number(row.h).toLocaleString('id-ID')}</span>}
-                                      <span style={{ fontFamily: C.mono, fontSize: 12, fontWeight: 700, color: row.d ? C.down : C.text }}>Rp{Number(finalH).toLocaleString('id-ID')}</span>
-                                      {row.d && <span style={{ fontFamily: C.mono, fontSize: 9, color: C.down, border: `1px solid ${C.down}44`, padding: '1px 5px', borderRadius: 4 }}>-{row.d}%</span>}
-                                      {bisaOrder && (
-                                        <button onClick={() => { setKodeDiskon(''); setKodeDiskonData(null); setKodeErr(''); setOrderModal({ ...p, _selectedPlan: row.plan, _selectedLabel: row.label, _selectedHarga: finalH, _hargaBase: row.h }); }}
-                                          style={{ fontFamily: C.mono, fontSize: 10, fontWeight: 700, padding: '4px 10px', background: G.gold, color: '#000', border: 'none', borderRadius: 6, cursor: 'pointer', marginLeft: 4 }}>
-                                          Pilih
-                                        </button>
-                                      )}
+                                  <div key={row.plan} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', background: C.bg, border: `1px solid ${C.border}`, borderRadius: 8, gap: 8 }}>
+                                    <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 2 }}>
+                                      <span style={{ fontFamily: C.mono, fontSize: 10, color: C.dim }}>{row.label}</span>
+                                      <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                                        {row.d && <span style={{ fontFamily: C.mono, fontSize: 10, color: C.muted, textDecoration: 'line-through' }}>Rp{Number(row.h).toLocaleString('id-ID')}</span>}
+                                        <span style={{ fontFamily: C.mono, fontSize: 12, fontWeight: 700, color: row.d ? C.down : C.text }}>Rp{Number(finalH).toLocaleString('id-ID')}</span>
+                                        {row.d && <span style={{ fontFamily: C.mono, fontSize: 9, color: C.down, border: `1px solid ${C.down}44`, padding: '1px 5px', borderRadius: 4 }}>-{row.d}%</span>}
+                                      </div>
                                     </div>
+                                    {bisaOrder && (
+                                      <button onClick={() => { setKodeDiskon(''); setKodeDiskonData(null); setKodeErr(''); setOrderModal({ ...p, _selectedPlan: row.plan, _selectedLabel: row.label, _selectedHarga: finalH, _hargaBase: row.h }); }}
+                                        style={{ fontFamily: C.mono, fontSize: 10, fontWeight: 700, padding: '6px 14px', background: G.gold, color: '#000', border: 'none', borderRadius: 6, cursor: 'pointer', flexShrink: 0, whiteSpace: 'nowrap' as const }}>
+                                        Pilih
+                                      </button>
+                                    )}
                                   </div>
                                 );
                               })}
