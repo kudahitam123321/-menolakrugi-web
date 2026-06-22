@@ -17,6 +17,11 @@ const C = {
 const DISCORD  = 'https://discord.gg/d2Tpf6sGMr';
 const TELEGRAM = 'https://t.me/+_azyX2h9oFhmNjNl';
 const WA_ADMIN = 'https://wa.me/6281242224939';
+function extractYtId(url: string): string | null {
+  if (!url) return null;
+  const m = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([A-Za-z0-9_-]{11})/);
+  return m ? m[1] : null;
+}
 
 const SIDEBAR = [
   { id: 'dashboard',  label: 'Dashboard',      icon: '⊞' },
@@ -2369,11 +2374,19 @@ export default function DashboardPage() {
                       ]).filter(r => r.h);
                       return (
                         <div key={p.id} style={{ background: C.panel, border: `1px solid ${C.border}`, borderRadius: 14, overflow: 'hidden', display: 'flex', flexDirection: 'column' as const }}>
-                          <div style={{ height: 160, background: C.sidebar, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+                          <div style={{ height: 160, background: C.sidebar, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', position: 'relative' as const }}>
                             {p.gambar_url
                               ? <img src={p.gambar_url} alt={p.nama} style={{ width: '100%', height: '100%', objectFit: 'cover' as const }}/>
-                              : <span style={{ fontSize: 48 }}>📊</span>
+                              : extractYtId(p.video_url)
+                                ? <img src={`https://img.youtube.com/vi/${extractYtId(p.video_url)}/mqdefault.jpg`} alt={p.nama} style={{ width: '100%', height: '100%', objectFit: 'cover' as const }}/>
+                                : <span style={{ fontSize: 48 }}>📊</span>
                             }
+                            {p.video_url && extractYtId(p.video_url) && (
+                              <a href={p.video_url} target="_blank" rel="noopener noreferrer"
+                                style={{ position: 'absolute' as const, inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.35)', textDecoration: 'none' }}>
+                                <div style={{ width: 44, height: 44, borderRadius: '50%', background: 'rgba(255,255,255,0.9)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20 }}>▶</div>
+                              </a>
+                            )}
                           </div>
                           <div style={{ padding: '16px 18px', display: 'flex', flexDirection: 'column' as const, flex: 1, gap: 10 }}>
                             <div>

@@ -1181,6 +1181,12 @@ function JurnalAdminTab({ members }: { members: any[] }) {
   );
 }
 
+function extractYtId(url: string): string | null {
+  if (!url) return null;
+  const m = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([A-Za-z0-9_-]{11})/);
+  return m ? m[1] : null;
+}
+
 function SettingsTab({ oldPass, setOldPass, newPass, setNewPass, confirmPass, setConfirmPass, passErr, passMsg, handleGantiPassword }: {
   oldPass: string; setOldPass: (v: string) => void;
   newPass: string; setNewPass: (v: string) => void;
@@ -1297,6 +1303,7 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
   const [pAktif, setPAktif]                   = useState(true);
   const [pGambarFile, setPGambarFile]         = useState<File|null>(null);
   const [pGambarPreview, setPGambarPreview]   = useState('');
+  const [pVideoUrl, setPVideoUrl]             = useState('');
   const [editProdukId, setEditProdukId]       = useState<string|null>(null);
   const [editPNama, setEditPNama]             = useState('');
   const [editPDesc, setEditPDesc]             = useState('');
@@ -1314,6 +1321,7 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
   const [editPGambarFile, setEditPGambarFile] = useState<File|null>(null);
   const [editPGambarPreview, setEditPGambarPreview] = useState('');
   const [editPGambarUrl, setEditPGambarUrl]   = useState('');
+  const [editPVideoUrl, setEditPVideoUrl]     = useState('');
   // Orders states
   const [prodOrders, setProdOrders]           = useState<any[]>([]);
   const [orderFilter, setOrderFilter]         = useState<'all'|'pending'|'dibayar'|'aktif'>('all');
@@ -1550,6 +1558,7 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
       harga_lifetime:  pHargaLifetime ? parseInt(pHargaLifetime) : null,
       diskon_lifetime: pDiskonLifetime? parseInt(pDiskonLifetime): null,
       gambar_url: gambarUrl,
+      video_url: pVideoUrl.trim() || null,
       status: pStatus,
       tanggal_rilis: pStatus === 'preorder' ? pTanggalRilis : null,
       tier_access: pTierAccess,
@@ -1564,7 +1573,7 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
       setPHargaTahunan(''); setPDiskonTahunan('');
       setPHargaLifetime(''); setPDiskonLifetime('');
       setPStatus('tersedia'); setPTanggalRilis(''); setPTierAccess(['trial','bronze','gold','platinum']);
-      setPUrutan(''); setPAktif(true); setPGambarFile(null); setPGambarPreview('');
+      setPUrutan(''); setPAktif(true); setPGambarFile(null); setPGambarPreview(''); setPVideoUrl('');
       loadData();
     }
     setLoading(false);
@@ -1588,6 +1597,7 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
     setEditPTierAccess(p.tier_access || ['trial','bronze','gold','platinum']);
     setEditPUrutan(String(p.urutan || 0)); setEditPAktif(p.aktif !== false);
     setEditPGambarUrl(p.gambar_url || ''); setEditPGambarPreview(p.gambar_url || ''); setEditPGambarFile(null);
+    setEditPVideoUrl(p.video_url || '');
   }
 
   async function saveEditProduk() {
@@ -1610,6 +1620,7 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
       harga_lifetime:  editPHargaLifetime ? parseInt(editPHargaLifetime) : null,
       diskon_lifetime: editPDiskonLifetime? parseInt(editPDiskonLifetime): null,
       gambar_url: gambarUrl || null,
+      video_url: editPVideoUrl.trim() || null,
       status: editPStatus,
       tanggal_rilis: editPStatus === 'preorder' ? editPTanggalRilis : null,
       tier_access: editPTierAccess,
@@ -2827,6 +2838,18 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
                       {pGambarPreview && <button onClick={()=>{setPGambarFile(null);setPGambarPreview('');}} style={{background:'transparent',border:'none',color:'#ef4444',cursor:'pointer',fontSize:12}}>✕ hapus</button>}
                     </div>
                   </div>
+                  <div style={{marginBottom:10}}>
+                    <div style={{fontFamily:'monospace',color:'#555',fontSize:10,marginBottom:6}}>// LINK VIDEO YOUTUBE (opsional)</div>
+                    <div style={{display:'flex',alignItems:'center',gap:12}}>
+                      <input value={pVideoUrl} onChange={e=>setPVideoUrl(e.target.value)} placeholder="https://youtu.be/... atau https://youtube.com/watch?v=..."
+                        style={{flex:1,background:'#111',border:'1px solid #2a2a2a',color:'#e7e5e4',padding:'8px 14px',fontSize:12,fontFamily:'monospace',outline:'none'}}
+                        onFocus={e=>e.target.style.borderColor='#16a34a'} onBlur={e=>e.target.style.borderColor='#2a2a2a'}/>
+                      {extractYtId(pVideoUrl) && (
+                        <img src={`https://img.youtube.com/vi/${extractYtId(pVideoUrl)}/mqdefault.jpg`} alt="yt preview"
+                          style={{width:80,height:45,objectFit:'cover',borderRadius:4,border:'1px solid #2a2a2a',flexShrink:0}}/>
+                      )}
+                    </div>
+                  </div>
                   <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:14}}>
                     <span style={{fontFamily:'monospace',fontSize:10,color:'#555'}}>STATUS:</span>
                     <button onClick={()=>setPAktif(p=>!p)}
@@ -2851,7 +2874,9 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
                         <div style={{flex:1,minWidth:0,display:'flex',alignItems:'center',gap:12}}>
                           {p.gambar_url
                             ? <img src={p.gambar_url} alt={p.nama} style={{width:44,height:44,objectFit:'cover',borderRadius:6,border:'1px solid #2a2a2a',flexShrink:0}}/>
-                            : <div style={{width:44,height:44,borderRadius:6,background:'#1a1a1a',border:'1px solid #2a2a2a',display:'flex',alignItems:'center',justifyContent:'center',fontSize:20,flexShrink:0}}>📊</div>
+                            : p.video_url && extractYtId(p.video_url)
+                              ? <img src={`https://img.youtube.com/vi/${extractYtId(p.video_url)}/mqdefault.jpg`} alt={p.nama} style={{width:44,height:44,objectFit:'cover',borderRadius:6,border:'1px solid #2a2a2a',flexShrink:0}}/>
+                              : <div style={{width:44,height:44,borderRadius:6,background:'#1a1a1a',border:'1px solid #2a2a2a',display:'flex',alignItems:'center',justifyContent:'center',fontSize:20,flexShrink:0}}>📊</div>
                           }
                           <div style={{flex:1,minWidth:0}}>
                             <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:4,flexWrap:'wrap' as const}}>
@@ -2859,6 +2884,7 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
                                 {p.status==='preorder'?`⏳ PRE-ORDER${p.tanggal_rilis?' · '+new Date(p.tanggal_rilis).toLocaleDateString('id-ID',{day:'numeric',month:'short',year:'numeric'}):''}` : '✅ TERSEDIA'}
                               </span>
                               <span style={{fontWeight:700,fontSize:14}}>{p.nama}</span>
+                              {p.video_url && <span style={{fontFamily:'monospace',fontSize:9,color:'#f59e0b',border:'1px solid #f59e0b33',background:'#1a130033',padding:'2px 6px'}}>▶ VIDEO</span>}
                               {!p.aktif && <span style={{fontFamily:'monospace',fontSize:9,color:'#555',border:'1px solid #2a2a2a',padding:'2px 6px'}}>NON-AKTIF</span>}
                             </div>
                             <div style={{color:'#666',fontSize:12,marginBottom:4,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap' as const}}>{p.deskripsi}</div>
@@ -2963,6 +2989,19 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
                                 <input type="file" accept="image/*" style={{display:'none'}} onChange={e=>{const f=e.target.files?.[0];if(!f)return;setEditPGambarFile(f);setEditPGambarPreview(URL.createObjectURL(f));}}/>
                               </label>
                               {editPGambarPreview && <button onClick={()=>{setEditPGambarFile(null);setEditPGambarPreview('');setEditPGambarUrl('');}} style={{background:'transparent',border:'none',color:'#ef4444',cursor:'pointer',fontSize:11}}>✕ hapus</button>}
+                            </div>
+                          </div>
+                          <div style={{marginBottom:8}}>
+                            <div style={{fontFamily:'monospace',color:'#444',fontSize:10,marginBottom:4}}>// LINK VIDEO YOUTUBE (opsional)</div>
+                            <div style={{display:'flex',alignItems:'center',gap:8}}>
+                              <input value={editPVideoUrl} onChange={e=>setEditPVideoUrl(e.target.value)} placeholder="https://youtu.be/..."
+                                style={{flex:1,background:'#0d0d0d',border:'1px solid #2a2a2a',color:'#e7e5e4',padding:'7px 12px',fontSize:11,fontFamily:'monospace',outline:'none'}}
+                                onFocus={e=>e.target.style.borderColor='#16a34a'} onBlur={e=>e.target.style.borderColor='#2a2a2a'}/>
+                              {extractYtId(editPVideoUrl) && (
+                                <img src={`https://img.youtube.com/vi/${extractYtId(editPVideoUrl)}/mqdefault.jpg`} alt="yt preview"
+                                  style={{width:64,height:36,objectFit:'cover',borderRadius:4,border:'1px solid #2a2a2a',flexShrink:0}}/>
+                              )}
+                              {editPVideoUrl && <button onClick={()=>setEditPVideoUrl('')} style={{background:'transparent',border:'none',color:'#ef4444',cursor:'pointer',fontSize:11}}>✕</button>}
                             </div>
                           </div>
                           <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:10}}>
