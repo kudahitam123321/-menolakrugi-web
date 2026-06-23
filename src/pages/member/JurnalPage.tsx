@@ -800,7 +800,7 @@ export default function JurnalPage({ memberId }: { memberId: string }) {
               </select>
             </Field>
             <Field label="RR RATIO">
-              <input type="number" step="0.1" min="0" placeholder="1.5" value={form.rr} onChange={e => setForm(f => ({ ...f, rr: e.target.value }))} style={inputStyle} />
+              <input type="number" step="0.1" placeholder="1.5 atau -1" value={form.rr} onChange={e => setForm(f => ({ ...f, rr: e.target.value }))} style={inputStyle} />
             </Field>
             <Field label="PNL ($)">
               <input type="number" step="0.01" placeholder="+100 atau -50" value={form.pnl} onChange={e => setForm(f => ({ ...f, pnl: e.target.value }))} style={inputStyle} />
