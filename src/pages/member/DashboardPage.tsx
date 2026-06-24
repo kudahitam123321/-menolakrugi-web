@@ -584,7 +584,22 @@ export default function DashboardPage() {
       setMember(m);
       setSelectedStatus(m.funded_status || null);
       loadData(m);
+      // Update last_seen saat masuk dashboard
+      if (m.id) supabase.from('members').update({ last_seen: new Date().toISOString() }).eq('id', m.id);
     } catch { window.location.href = '/login'; }
+  }, []);
+
+  // Ping last_seen setiap 2 menit agar status "online" akurat
+  useEffect(() => {
+    const stored = localStorage.getItem('mr_member') || sessionStorage.getItem('mr_member');
+    if (!stored) return;
+    let m: any;
+    try { m = JSON.parse(stored); } catch { return; }
+    if (!m?.id) return;
+    const interval = setInterval(() => {
+      supabase.from('members').update({ last_seen: new Date().toISOString() }).eq('id', m.id);
+    }, 2 * 60 * 1000);
+    return () => clearInterval(interval);
   }, []);
 
   async function loadData(m: Member) {

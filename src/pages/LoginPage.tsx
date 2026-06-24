@@ -50,6 +50,11 @@ function MemberForm({ onForgot }: { onForgot:()=>void }) {
         if (statusRow?.is_active === false) throw new Error('Akun Anda telah dinonaktifkan. Hubungi admin untuk informasi lebih lanjut.');
       }
 
+      // Catat waktu login terakhir
+      if (data.id) {
+        await supabase.from('members').update({ last_seen: new Date().toISOString() }).eq('id', data.id);
+      }
+
       // Simpan session - localStorage jika ingat, sessionStorage jika tidak
       if (remember) {
         localStorage.setItem('mr_member', JSON.stringify(data));
