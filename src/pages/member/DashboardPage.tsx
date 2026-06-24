@@ -760,23 +760,30 @@ export default function DashboardPage() {
     if (!member) return;
     setStatusSaving(true); setStatusMsg('');
     try {
-      const res = await fetch('https://menolakrugi-bot-production.up.railway.app/discord/update-trading-status', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ member_id: member.id, funded_status: newStatus }),
-      });
-      const data = await res.json();
-      if (data.success) {
-        setSelectedStatus(newStatus);
-        setMember({ ...member, funded_status: newStatus });
-        const stored = localStorage.getItem('mr_member') || sessionStorage.getItem('mr_member') || '{}';
-        const updated = JSON.stringify({ ...JSON.parse(stored), funded_status: newStatus });
-        if (localStorage.getItem('mr_member')) localStorage.setItem('mr_member', updated);
-        else sessionStorage.setItem('mr_member', updated);
-        setStatusMsg(data.message || 'Status berhasil disimpan!');
-      } else {
-        setStatusMsg('Gagal: ' + (data.error || 'Unknown error'));
-      }
-    } catch { setStatusMsg('Tidak bisa terhubung ke server.'); }
+      // Simpan ke Supabase langsung (selalu jalan)
+      const { error: dbErr } = await supabase.from('members').update({ funded_status: newStatus }).eq('id', member.id);
+      if (dbErr) { setStatusMsg('Gagal menyimpan: ' + dbErr.message); setStatusSaving(false); return; }
+
+      // Update state & session lokal
+      setSelectedStatus(newStatus);
+      setMember({ ...member, funded_status: newStatus });
+      const stored = localStorage.getItem('mr_member') || sessionStorage.getItem('mr_member') || '{}';
+      const updated = JSON.stringify({ ...JSON.parse(stored), funded_status: newStatus });
+      if (localStorage.getItem('mr_member')) localStorage.setItem('mr_member', updated);
+      else sessionStorage.setItem('mr_member', updated);
+      setStatusMsg('Status berhasil disimpan!');
+
+      // Coba update Discord nickname via bot (opsional, tidak gagalkan proses)
+      try {
+        const res = await fetch('https://menolakrugi-bot-production.up.railway.app/discord/update-trading-status', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ member_id: member.id, funded_status: newStatus }),
+          signal: AbortSignal.timeout(8000),
+        });
+        const data = await res.json();
+        if (data.success && data.message) setStatusMsg(data.message);
+      } catch { /* bot offline — status DB sudah tersimpan */ }
+    } catch { setStatusMsg('Tidak bisa menyimpan status.'); }
     setStatusSaving(false);
   }
 
