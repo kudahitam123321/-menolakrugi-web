@@ -78,7 +78,11 @@ Queries are raw `.from('table').select()...` chains — no ORM. Custom hooks in 
 
 **Critical RLS gotcha**: This app uses custom localStorage-based auth, **not** Supabase Auth. `auth.uid()` is always `null` at the database level. All RLS policies must use `using (true)` / `with check (true)` — access control is enforced at the application layer, not the database layer. Using `auth.uid()` in a policy will silently block inserts/updates. See `supabase-competition-rls-fix.sql` for the fix pattern.
 
-Key tables: `members`, `pricing_tiers`, `videos`, `journals`, `watch_history`, `testimonials`, `brokers`, `partnerships`, `activity_log`, `trading_plan_config`, `advance_requests`, `partnership_claims`, `landing_gallery`, `competitions`, `trading_journals`, `journal_settings`, `oneonone_requests`, `products`, `orders`.
+Key tables: `members`, `pricing_tiers`, `videos`, `journals`, `watch_history`, `testimonials`, `brokers`, `partnerships`, `activity_log`, `trading_plan_config`, `advance_requests`, `partnership_claims`, `landing_gallery`, `competitions`, `trading_journals`, `journal_settings`, `oneonone_requests`, `products`, `orders`, `payment_methods`, `discount_codes`.
+
+`members` has columns `last_seen` (ISO timestamp, updated on login and every 2 min while dashboard is open — used for "Online Sekarang" / "Terakhir Login" in admin) and `funded_status` (prop firm status string: `'DA'` | `'P1'` | `'P2'` | `'Master'` | `'MPAID'`; always written to DB first, Discord bot update is optional/async with 8 s timeout).
+
+`orders` has extra columns `plan_type`, `kode_diskon`, `diskon_applied` (added in `supabase-orders-rls-fix.sql`).
 
 **Table name gotcha**: The broker/prop firm table is `brokers` (not `funded_brokers`). It has columns `jenis` (`'broker'` | `'propfirm'`), `logo_url` (optional image), `nama`, `link`, `diskon`, `deskripsi`, `urutan`.
 
@@ -140,7 +144,7 @@ The `1on1` tab lets Gold/Platinum members request a 1-on-1 mentoring session (fo
 - **User Management**: `member` · `progress` · `jurnal` · `approvals` · `admin`
 - **Competition**: Accessed at `/admin/competition`; renders `AdminCompetitionPage` embedded inside AdminPanel.
 - **Content & Education**: `video` · `rating` · `trading-plan`
-- **Partnership & Monetization**: `broker` · `referral` · `proprules`
+- **Partnership & Monetization**: `broker` · `referral` · `proprules` · `produk` (indicator products catalog, orders, payment methods CRUD, discount codes)
 - **Communication**: `pengumuman` / `broadcast` (both map to `announce` tab)
 - **System**: `galeri` · `log` · `pengaturan`
 
@@ -223,6 +227,8 @@ Config is stored per `plan_type` (`'basic'` | `'advanced'`) in the `trading_plan
 | `supabase-activitylog-migration.sql` | Schema for `activity_log` table |
 | `supabase-broker-logo-migration.sql` | Adds `logo_url` column to `brokers` table — run once in Supabase SQL editor |
 | `supabase-products-migration.sql` | Schema tabel `products` dan `orders` untuk fitur produk indikator |
+| `supabase-orders-rls-fix.sql` | Fixes `orders` RLS to include USING clause for UPDATE; also adds `plan_type`, `kode_diskon`, `diskon_applied` columns |
+| `supabase-products-rls-fix.sql` | Fixes `products` RLS — same pattern: splits `for all with check (true)` into per-operation policies so UPDATE actually works |
 | `src/pages/CompetitionPage.tsx` | Member-facing competition + live leaderboard |
 | `src/pages/admin/AdminCompetitionPage.tsx` | Admin competition create/edit UI |
 | `src/hooks/useMyCompetitionStats.ts` | Per-member competition stats hook |

@@ -2396,19 +2396,19 @@ export default function DashboardPage() {
                       ]).filter(r => r.h);
                       return (
                         <div key={p.id} style={{ background: C.panel, border: `1px solid ${C.border}`, borderRadius: 14, overflow: 'hidden', display: 'flex', flexDirection: 'column' as const }}>
-                          <div style={{ height: 160, background: C.sidebar, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', position: 'relative' as const }}>
-                            {p.gambar_url
-                              ? <img src={p.gambar_url} alt={p.nama} style={{ width: '100%', height: '100%', objectFit: 'cover' as const }}/>
-                              : extractYtId(p.video_url)
-                                ? <img src={`https://img.youtube.com/vi/${extractYtId(p.video_url)}/mqdefault.jpg`} alt={p.nama} style={{ width: '100%', height: '100%', objectFit: 'cover' as const }}/>
+                          <div style={{ height: 200, background: C.sidebar, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', position: 'relative' as const }}>
+                            {!p.gambar_url && extractYtId(p.video_url)
+                              ? <iframe
+                                  src={`https://www.youtube.com/embed/${extractYtId(p.video_url)}?autoplay=1&mute=1&rel=0&modestbranding=1&controls=1`}
+                                  style={{ width: '100%', height: '100%', border: 'none', display: 'block' }}
+                                  allow="autoplay; encrypted-media; picture-in-picture"
+                                  allowFullScreen
+                                  title={p.nama}
+                                />
+                              : p.gambar_url
+                                ? <img src={p.gambar_url} alt={p.nama} style={{ width: '100%', height: '100%', objectFit: 'cover' as const }}/>
                                 : <span style={{ fontSize: 48 }}>📊</span>
                             }
-                            {p.video_url && extractYtId(p.video_url) && (
-                              <a href={p.video_url} target="_blank" rel="noopener noreferrer"
-                                style={{ position: 'absolute' as const, inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.35)', textDecoration: 'none' }}>
-                                <div style={{ width: 44, height: 44, borderRadius: '50%', background: 'rgba(255,255,255,0.9)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20 }}>▶</div>
-                              </a>
-                            )}
                           </div>
                           <div style={{ padding: '16px 18px', display: 'flex', flexDirection: 'column' as const, flex: 1, gap: 10 }}>
                             <div>
