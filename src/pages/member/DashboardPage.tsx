@@ -2384,7 +2384,7 @@ export default function DashboardPage() {
                       Belum ada produk tersedia saat ini.
                     </div>
                   )}
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 20 }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(420px, 1fr))', gap: 24 }}>
                     {products.map(p => {
                       const tierMember = normalizeTier(member?.tier || '');
                       const bisaOrder  = (p.tier_access || []).includes(tierMember);
@@ -2396,7 +2396,7 @@ export default function DashboardPage() {
                       ]).filter(r => r.h);
                       return (
                         <div key={p.id} style={{ background: C.panel, border: `1px solid ${C.border}`, borderRadius: 14, overflow: 'hidden', display: 'flex', flexDirection: 'column' as const }}>
-                          <div style={{ height: 200, background: C.sidebar, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', position: 'relative' as const }}>
+                          <div style={{ aspectRatio: '16/9', background: C.sidebar, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', position: 'relative' as const }}>
                             {!p.gambar_url && extractYtId(p.video_url)
                               ? <iframe
                                   src={`https://www.youtube.com/embed/${extractYtId(p.video_url)}?autoplay=1&mute=1&rel=0&modestbranding=1&controls=1`}
@@ -2410,19 +2410,19 @@ export default function DashboardPage() {
                                 : <span style={{ fontSize: 48 }}>📊</span>
                             }
                           </div>
-                          <div style={{ padding: '16px 18px', display: 'flex', flexDirection: 'column' as const, flex: 1, gap: 10 }}>
+                          <div style={{ padding: '20px 22px', display: 'flex', flexDirection: 'column' as const, flex: 1, gap: 12 }}>
                             <div>
                               {p.status === 'preorder'
-                                ? <span style={{ fontFamily: C.mono, fontSize: 10, fontWeight: 700, color: '#eab308', background: '#1a150022', border: '1px solid #eab30844', padding: '3px 10px', borderRadius: 6 }}>
+                                ? <span style={{ fontFamily: C.mono, fontSize: 11, fontWeight: 700, color: '#eab308', background: '#1a150022', border: '1px solid #eab30844', padding: '4px 12px', borderRadius: 6 }}>
                                     ⏳ PRE-ORDER{tglRilis ? ` · Rilis ${tglRilis}` : ''}
                                   </span>
-                                : <span style={{ fontFamily: C.mono, fontSize: 10, fontWeight: 700, color: C.up, background: 'var(--mr-tint-up,#0a1a0e)', border: `1px solid ${C.up}33`, padding: '3px 10px', borderRadius: 6 }}>
+                                : <span style={{ fontFamily: C.mono, fontSize: 11, fontWeight: 700, color: C.up, background: 'var(--mr-tint-up,#0a1a0e)', border: `1px solid ${C.up}33`, padding: '4px 12px', borderRadius: 6 }}>
                                     ✅ TERSEDIA
                                   </span>
                               }
                             </div>
-                            <div style={{ fontWeight: 700, fontSize: 16 }}>{p.nama}</div>
-                            <div style={{ color: C.dim, fontSize: 13, display: '-webkit-box' as any, WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' as any, overflow: 'hidden' }}>{p.deskripsi}</div>
+                            <div style={{ fontWeight: 700, fontSize: 19 }}>{p.nama}</div>
+                            <div style={{ color: C.dim, fontSize: 14, lineHeight: 1.55, display: '-webkit-box' as any, WebkitLineClamp: 3, WebkitBoxOrient: 'vertical' as any, overflow: 'hidden' }}>{p.deskripsi}</div>
                             <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 6, marginTop: 4 }}>
                               {plans.map(row => {
                                 const finalH = row.d ? Math.round(row.h * (1 - row.d / 100)) : row.h;
