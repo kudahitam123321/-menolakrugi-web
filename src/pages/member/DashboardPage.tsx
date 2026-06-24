@@ -1729,40 +1729,63 @@ export default function DashboardPage() {
           )}
 
           {/* ══ MATERI (File) ══ */}
-          {active === 'materi' && (
+          {active === 'materi' && (() => {
+            async function downloadFile(url: string, name: string) {
+              try {
+                const res = await fetch(url);
+                const blob = await res.blob();
+                const blobUrl = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = blobUrl;
+                a.download = name;
+                a.click();
+                setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
+              } catch { window.open(url, '_blank'); }
+            }
+            const CATS = [
+              { id: 'file-panduan', label: '// PANDUAN',  color: '#f59e0b' },
+              { id: 'file-basic',   label: '// FILE BASIC',    color: C.up },
+              { id: 'file-advanced',label: '// FILE ADVANCED', color: '#a855f7' },
+            ];
+            return (
             <div style={{ padding: 24 }}>
               <div style={{ marginBottom: 20 }}>
                 <div style={{ fontFamily: C.mono, color: G.gold, fontSize: 10, letterSpacing: 1, marginBottom: 6 }}>// MATERI</div>
                 <h2 style={{ fontSize: 22, fontWeight: 700, margin: 0 }}>File Materi</h2>
-                <p style={{ color: C.dim, fontSize: 13, margin: '6px 0 0' }}>Download atau baca materi pendukung pembelajaran.</p>
+                <p style={{ color: C.dim, fontSize: 13, margin: '6px 0 0' }}>Download materi dan panduan pendukung pembelajaran.</p>
               </div>
-              {['file-basic','file-advanced'].map(kat => {
-                const items = files.filter((f: any) => f.kategori === kat);
+              {CATS.map(cat => {
+                const items = files.filter((f: any) => f.kategori === cat.id).sort((a:any,b:any) => a.urutan - b.urutan);
                 if (!items.length) return null;
+                const isPanduan = cat.id === 'file-panduan';
                 return (
-                  <div key={kat} style={{ background: C.panel, border: `1px solid ${C.border}`, borderRadius: 12, marginBottom: 14 }}>
-                    <div style={{ padding: '12px 20px', borderBottom: `1px solid ${C.border}` }}>
-                      <span style={{ fontFamily: C.mono, color: kat==='file-basic'?C.up:'#a855f7', fontSize: 11, fontWeight: 700, letterSpacing: 1 }}>
-                        {kat === 'file-basic' ? '// FILE BASIC' : '// FILE ADVANCED'}
-                      </span>
+                  <div key={cat.id} style={{ background: C.panel, border: `1px solid ${isPanduan ? '#f59e0b44' : C.border}`, borderRadius: 12, marginBottom: 14 }}>
+                    <div style={{ padding: '12px 20px', borderBottom: `1px solid ${C.border}`, display: 'flex', alignItems: 'center', gap: 10 }}>
+                      {isPanduan && <span style={{ fontSize: 16 }}>📘</span>}
+                      <span style={{ fontFamily: C.mono, color: cat.color, fontSize: 11, fontWeight: 700, letterSpacing: 1 }}>{cat.label}</span>
+                      {isPanduan && <span style={{ fontFamily: C.mono, fontSize: 10, color: '#f59e0b99' }}>— bisa di-download</span>}
                     </div>
-                    {items.sort((a:any,b:any) => a.urutan-b.urutan).map((f: any) => (
-                      <div key={f.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 20px', borderBottom: `1px solid ${C.border}` }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                          <span style={{ fontSize: 22 }}>📄</span>
-                          <div>
-                            <div style={{ fontWeight: 600, fontSize: 14 }}>{f.judul}</div>
-                            <div style={{ fontFamily: C.mono, color: C.dim, fontSize: 11, marginTop: 2 }}>{f.file_type || 'PDF'}</div>
+                    {items.map((f: any) => {
+                      const ext = (f.file_name || f.file_type || '').split('.').pop()?.toUpperCase() || 'FILE';
+                      const icon = ext === 'PDF' ? '📕' : ext === 'DOCX' || ext === 'DOC' ? '📝' : ext === 'PPTX' || ext === 'PPT' ? '📊' : ext === 'XLSX' || ext === 'XLS' ? '📗' : '📄';
+                      return (
+                        <div key={f.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 20px', borderBottom: `1px solid ${C.border}` }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                            <span style={{ fontSize: 22 }}>{icon}</span>
+                            <div>
+                              <div style={{ fontWeight: 600, fontSize: 14 }}>{f.judul}</div>
+                              <div style={{ fontFamily: C.mono, color: C.dim, fontSize: 11, marginTop: 2 }}>{f.file_name || ext}</div>
+                            </div>
                           </div>
+                          {f.file_url && (
+                            <button onClick={() => downloadFile(f.file_url, f.file_name || f.judul)}
+                              style={{ fontFamily: C.mono, fontSize: 11, fontWeight: 700, color: cat.color, background: 'transparent', border: `1px solid ${cat.color}`, padding: '7px 16px', borderRadius: 6, cursor: 'pointer', whiteSpace: 'nowrap' as const }}>
+                              ↓ Download
+                            </button>
+                          )}
                         </div>
-                        {f.file_url && (
-                          <a href={f.file_url} target="_blank" rel="noopener noreferrer"
-                            style={{ fontFamily: C.mono, fontSize: 11, color: kat==='file-basic'?C.up:'#a855f7', border: `1px solid`, borderColor: kat==='file-basic'?C.up:'#a855f7', padding: '6px 14px', textDecoration: 'none' }}>
-                            ↗ BUKA
-                          </a>
-                        )}
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 );
               })}
@@ -1772,7 +1795,8 @@ export default function DashboardPage() {
                 </div>
               )}
             </div>
-          )}
+            );
+          })()}
 
           {/* ══ LIVE TRADING ══ */}
           {active === 'live' && (

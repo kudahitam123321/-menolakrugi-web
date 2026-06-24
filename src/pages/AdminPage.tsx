@@ -159,7 +159,7 @@ function VideoMateriTab({ videos, loadData, addVideo, uploadFile, deleteVideo, d
           ) : (
             <div style={{display:'flex', flexDirection:'column', gap:8}}>
               <div style={{display:'flex', gap:6}}>
-                {[{id:'file-basic',l:'File Basic'},{id:'file-advanced',l:'File Advanced'}].map(k=>(
+                {[{id:'file-basic',l:'File Basic'},{id:'file-advanced',l:'File Advanced'},{id:'file-panduan',l:'Panduan'}].map(k=>(
                   <button key={k.id} onClick={()=>setFKategori(k.id)} style={btn(fKategori===k.id,'#3b82f6')}>{k.l}</button>
                 ))}
               </div>
@@ -168,7 +168,7 @@ function VideoMateriTab({ videos, loadData, addVideo, uploadFile, deleteVideo, d
                   onFocus={e=>e.target.style.borderColor='#3b82f6'} onBlur={e=>e.target.style.borderColor='#2a2a2a'}/>
                 <input value={fUrutan} onChange={e=>setFUrutan(e.target.value)} placeholder="Urutan" type="number" style={inp}/>
               </div>
-              <input ref={fileUploadRef} type="file" onChange={e=>setFFile(e.target.files?.[0]||null)} style={{fontSize:12,color:'#666',fontFamily:'monospace'}}/>
+              <input ref={fileUploadRef} type="file" accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx" onChange={e=>setFFile(e.target.files?.[0]||null)} style={{fontSize:12,color:'#666',fontFamily:'monospace'}}/>
               {fFile && <div style={{fontFamily:'monospace',color:'#3b82f6',fontSize:11}}>▸ {fFile.name}</div>}
               <button onClick={uploadFile} disabled={loading} style={{...btn(true,'#3b82f6'), alignSelf:'flex-start' as const}}>{loading?'MENGUPLOAD...':'↑ UPLOAD FILE'}</button>
             </div>
