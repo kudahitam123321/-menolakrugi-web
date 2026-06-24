@@ -159,7 +159,7 @@ function VideoMateriTab({ videos, loadData, addVideo, uploadFile, deleteVideo, d
           ) : (
             <div style={{display:'flex', flexDirection:'column', gap:8}}>
               <div style={{display:'flex', gap:6}}>
-                {[{id:'file-basic',l:'File Basic'},{id:'file-advanced',l:'File Advanced'},{id:'file-panduan',l:'Panduan'}].map(k=>(
+                {[{id:'file-basic',l:'File Basic'},{id:'file-advanced',l:'File Advanced'}].map(k=>(
                   <button key={k.id} onClick={()=>setFKategori(k.id)} style={btn(fKategori===k.id,'#3b82f6')}>{k.l}</button>
                 ))}
               </div>
@@ -1304,6 +1304,8 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
   const [pGambarFile, setPGambarFile]         = useState<File|null>(null);
   const [pGambarPreview, setPGambarPreview]   = useState('');
   const [pVideoUrl, setPVideoUrl]             = useState('');
+  const [pPanduanFile, setPPanduanFile]       = useState<File|null>(null);
+  const pPanduanRef = useRef<HTMLInputElement>(null);
   const [editProdukId, setEditProdukId]       = useState<string|null>(null);
   const [editPNama, setEditPNama]             = useState('');
   const [editPDesc, setEditPDesc]             = useState('');
@@ -1322,6 +1324,9 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
   const [editPGambarPreview, setEditPGambarPreview] = useState('');
   const [editPGambarUrl, setEditPGambarUrl]   = useState('');
   const [editPVideoUrl, setEditPVideoUrl]     = useState('');
+  const [editPPanduanFile, setEditPPanduanFile] = useState<File|null>(null);
+  const [editPPanduanUrl, setEditPPanduanUrl]   = useState('');
+  const editPPanduanRef = useRef<HTMLInputElement>(null);
   // Orders states
   const [prodOrders, setProdOrders]           = useState<any[]>([]);
   const [orderFilter, setOrderFilter]         = useState<'all'|'pending'|'dibayar'|'aktif'>('all');
@@ -1542,6 +1547,15 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
     return data.publicUrl;
   }
 
+  async function uploadProdukPanduan(file: File): Promise<string|null> {
+    const ext = file.name.split('.').pop();
+    const fileName = `panduan_produk_${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
+    const { error } = await supabase.storage.from('materi').upload(fileName, file, { upsert: true, cacheControl: '3600' });
+    if (error) { notify('Gagal upload panduan: ' + error.message, 'err'); return null; }
+    const { data } = supabase.storage.from('materi').getPublicUrl(fileName);
+    return data.publicUrl;
+  }
+
   async function addProduk() {
     if (!pNama || !pDesc) { notify('Nama dan deskripsi wajib diisi.', 'err'); return; }
     if (!pHargaBulanan && !pHargaTahunan && !pHargaLifetime) { notify('Minimal satu harga (Bulanan/Tahunan/Lifetime) harus diisi.', 'err'); return; }
@@ -1549,6 +1563,8 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
     setLoading(true);
     let gambarUrl: string|null = null;
     if (pGambarFile) { gambarUrl = await uploadProdukGambar(pGambarFile); if (!gambarUrl) { setLoading(false); return; } }
+    let panduanUrl: string|null = null;
+    if (pPanduanFile) { panduanUrl = await uploadProdukPanduan(pPanduanFile); if (!panduanUrl) { setLoading(false); return; } }
     const { error } = await supabase.from('products').insert({
       nama: pNama, deskripsi: pDesc,
       harga_bulanan:   pHargaBulanan  ? parseInt(pHargaBulanan)  : null,
@@ -1559,6 +1575,8 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
       diskon_lifetime: pDiskonLifetime? parseInt(pDiskonLifetime): null,
       gambar_url: gambarUrl,
       video_url: pVideoUrl.trim() || null,
+      panduan_url: panduanUrl,
+      panduan_name: pPanduanFile?.name || null,
       status: pStatus,
       tanggal_rilis: pStatus === 'preorder' ? pTanggalRilis : null,
       tier_access: pTierAccess,
@@ -1574,6 +1592,7 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
       setPHargaLifetime(''); setPDiskonLifetime('');
       setPStatus('tersedia'); setPTanggalRilis(''); setPTierAccess(['trial','bronze','gold','platinum']);
       setPUrutan(''); setPAktif(true); setPGambarFile(null); setPGambarPreview(''); setPVideoUrl('');
+      setPPanduanFile(null); if (pPanduanRef.current) pPanduanRef.current.value = '';
       loadData();
     }
     setLoading(false);
@@ -1598,6 +1617,8 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
     setEditPUrutan(String(p.urutan || 0)); setEditPAktif(p.aktif !== false);
     setEditPGambarUrl(p.gambar_url || ''); setEditPGambarPreview(p.gambar_url || ''); setEditPGambarFile(null);
     setEditPVideoUrl(p.video_url || '');
+    setEditPPanduanUrl(p.panduan_url || ''); setEditPPanduanFile(null);
+    if (editPPanduanRef.current) editPPanduanRef.current.value = '';
   }
 
   async function saveEditProduk() {
@@ -1611,6 +1632,16 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
       if (!uploaded) { setLoading(false); return; }
       gambarUrl = uploaded;
     }
+    let panduanUrl = editPPanduanUrl;
+    let panduanName: string|null = null;
+    if (editPPanduanFile) {
+      const uploaded = await uploadProdukPanduan(editPPanduanFile);
+      if (!uploaded) { setLoading(false); return; }
+      panduanUrl = uploaded; panduanName = editPPanduanFile.name;
+    } else if (editPPanduanUrl) {
+      // preserve existing name from products (fetched separately not tracked here — just keep url)
+      panduanName = null;
+    }
     const { error } = await supabase.from('products').update({
       nama: editPNama, deskripsi: editPDesc,
       harga_bulanan:   editPHargaBulanan  ? parseInt(editPHargaBulanan)  : null,
@@ -1621,6 +1652,8 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
       diskon_lifetime: editPDiskonLifetime? parseInt(editPDiskonLifetime): null,
       gambar_url: gambarUrl || null,
       video_url: editPVideoUrl.trim() || null,
+      panduan_url: panduanUrl || null,
+      panduan_name: editPPanduanFile ? panduanName : undefined,
       status: editPStatus,
       tanggal_rilis: editPStatus === 'preorder' ? editPTanggalRilis : null,
       tier_access: editPTierAccess,
@@ -2850,6 +2883,16 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
                       )}
                     </div>
                   </div>
+                  <div style={{marginBottom:10}}>
+                    <div style={{fontFamily:'monospace',color:'#555',fontSize:10,marginBottom:6}}>// FILE PANDUAN (opsional — PDF/DOCX yang bisa didownload member)</div>
+                    <div style={{display:'flex',alignItems:'center',gap:8}}>
+                      <label style={{display:'flex',alignItems:'center',gap:6,cursor:'pointer',background:'#0d0d0d',border:'1px solid #2a2a2a',padding:'7px 12px',fontFamily:'monospace',fontSize:11,color:'#aaa',flex:1}}>
+                        {pPanduanFile ? `📎 ${pPanduanFile.name}` : '📎 Upload panduan (.pdf, .docx, .pptx)'}
+                        <input ref={pPanduanRef} type="file" accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx" style={{display:'none'}} onChange={e=>setPPanduanFile(e.target.files?.[0]||null)}/>
+                      </label>
+                      {pPanduanFile && <button onClick={()=>{setPPanduanFile(null);if(pPanduanRef.current)pPanduanRef.current.value='';}} style={{background:'transparent',border:'none',color:'#ef4444',cursor:'pointer',fontSize:11}}>✕</button>}
+                    </div>
+                  </div>
                   <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:14}}>
                     <span style={{fontFamily:'monospace',fontSize:10,color:'#555'}}>STATUS:</span>
                     <button onClick={()=>setPAktif(p=>!p)}
@@ -3002,6 +3045,18 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
                                   style={{width:64,height:36,objectFit:'cover',borderRadius:4,border:'1px solid #2a2a2a',flexShrink:0}}/>
                               )}
                               {editPVideoUrl && <button onClick={()=>setEditPVideoUrl('')} style={{background:'transparent',border:'none',color:'#ef4444',cursor:'pointer',fontSize:11}}>✕</button>}
+                            </div>
+                          </div>
+                          <div style={{marginBottom:8}}>
+                            <div style={{fontFamily:'monospace',color:'#444',fontSize:10,marginBottom:4}}>// FILE PANDUAN (opsional)</div>
+                            <div style={{display:'flex',alignItems:'center',gap:8}}>
+                              <label style={{display:'flex',alignItems:'center',gap:6,cursor:'pointer',background:'#0d0d0d',border:'1px solid #2a2a2a',padding:'6px 12px',fontFamily:'monospace',fontSize:10,color:'#aaa',flex:1}}>
+                                {editPPanduanFile ? `📎 ${editPPanduanFile.name}` : editPPanduanUrl ? '📎 Panduan tersimpan (ganti jika perlu)' : '📎 Upload panduan (.pdf, .docx, .pptx)'}
+                                <input ref={editPPanduanRef} type="file" accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx" style={{display:'none'}} onChange={e=>setEditPPanduanFile(e.target.files?.[0]||null)}/>
+                              </label>
+                              {(editPPanduanFile || editPPanduanUrl) && (
+                                <button onClick={()=>{setEditPPanduanFile(null);setEditPPanduanUrl('');if(editPPanduanRef.current)editPPanduanRef.current.value='';}} style={{background:'transparent',border:'none',color:'#ef4444',cursor:'pointer',fontSize:11}}>✕ hapus</button>
+                              )}
                             </div>
                           </div>
                           <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:10}}>

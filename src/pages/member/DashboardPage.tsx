@@ -1743,7 +1743,6 @@ export default function DashboardPage() {
               } catch { window.open(url, '_blank'); }
             }
             const CATS = [
-              { id: 'file-panduan', label: '// PANDUAN',  color: '#f59e0b' },
               { id: 'file-basic',   label: '// FILE BASIC',    color: C.up },
               { id: 'file-advanced',label: '// FILE ADVANCED', color: '#a855f7' },
             ];
@@ -2475,6 +2474,21 @@ export default function DashboardPage() {
                                 </button>
                               )}
                             </div>
+                            {p.panduan_url && (
+                              <button onClick={async () => {
+                                try {
+                                  const res = await fetch(p.panduan_url);
+                                  const blob = await res.blob();
+                                  const url = URL.createObjectURL(blob);
+                                  const a = document.createElement('a');
+                                  a.href = url; a.download = p.panduan_name || 'panduan.pdf'; a.click();
+                                  setTimeout(() => URL.revokeObjectURL(url), 10000);
+                                } catch { window.open(p.panduan_url, '_blank'); }
+                              }}
+                                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, width: '100%', marginTop: 8, padding: '10px', fontFamily: C.mono, fontSize: 12, fontWeight: 700, background: 'transparent', color: '#f59e0b', border: '1px solid #f59e0b55', borderRadius: 8, cursor: 'pointer' }}>
+                                📘 ↓ Download Panduan
+                              </button>
+                            )}
                           </div>
                         </div>
                       );
