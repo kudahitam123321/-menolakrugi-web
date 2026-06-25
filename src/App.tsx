@@ -25,6 +25,7 @@ import PartnershipPage   from './pages/PartnershipPage';
 import CalendarPage      from './pages/CalendarPage';
 import KomunitasPage   from './pages/KomunitasPage';
 import CompetitionPage from './pages/CompetitionPage';
+import BayarPage from './pages/BayarPage';
 
 function getPage() {
   const path = window.location.pathname;
@@ -39,6 +40,7 @@ function getPage() {
   if (path === '/komunitas')                 return 'komunitas';
   if (path === '/discord-callback')       return 'discord-callback';
   if (path === '/competition')            return 'competition';
+  if (path === '/bayar')                  return 'bayar';
 
   // Member area
   if (path === '/trading-plan')           return 'trading-plan';
@@ -65,6 +67,7 @@ function App() {
 
   // ── Halaman baru ────────────────────────────────────────────────────────
   if (page === 'signup')            return <SignupPage />;
+  if (page === 'bayar')             return <BayarPage />;
   if (page === 'partnership')         return <PartnershipPage step="intro" />;
   if (page === 'partnership-broker')    return <PartnershipPage step="broker" />;
   if (page === 'partnership-confirm')   return <PartnershipPage step="confirm" />;
