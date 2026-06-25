@@ -6,7 +6,8 @@ import React, { useState } from 'react';
 
 import { MR, TIER_ACCENT } from '../lib/theme';
 import { MRLogo, Ticker, StatusBar, TVTickerTape, CandleChart, CANDLE_GRID_STYLE } from '../components/mr';
-import { useLandingStats, useApprovedTestimonials, usePricing } from '../hooks';
+import { useLandingStats, useApprovedTestimonials, usePricing, useLandingPreview } from '../hooks';
+import type { LandingPreviewConfig } from '../hooks';
 import type { PricingTier, Testimonial } from '../types/mr.types';
 import { supabase } from '../lib/supabase';
 
@@ -862,6 +863,111 @@ function Testimonials({ testimonials }: { testimonials: Testimonial[] }) {
 }
 
 
+function ProductPreview({ config }: { config: LandingPreviewConfig }) {
+  const [isMobile, setIsMobile] = React.useState(() => window.matchMedia('(max-width: 767px)').matches);
+  React.useEffect(() => {
+    const mq = window.matchMedia('(max-width: 767px)');
+    const h = (e: MediaQueryListEvent) => setIsMobile(e.matches);
+    mq.addEventListener('change', h);
+    return () => mq.removeEventListener('change', h);
+  }, []);
+
+  const fmt = (n: number) => new Intl.NumberFormat('id-ID').format(n);
+
+  const videoId = config.yt_url
+    ? (config.yt_url.match(/(?:youtu\.be\/|[?&]v=)([^&?/\s]+)/)?.[1] ?? null)
+    : null;
+
+  const plans = [
+    { nama: config.plan1_nama, harga_asli: config.plan1_harga_asli, diskon: config.plan1_diskon, key: 'bulanan', featured: false },
+    { nama: config.plan2_nama, harga_asli: config.plan2_harga_asli, diskon: config.plan2_diskon, key: 'tahunan', featured: true },
+    { nama: config.plan3_nama, harga_asli: config.plan3_harga_asli, diskon: config.plan3_diskon, key: 'lifetime', featured: false },
+  ];
+
+  return (
+    <section style={{ background: 'var(--mr-bg)', borderTop: `1px solid ${MR.border}` }}>
+      <div style={{ padding: isMobile ? '40px 20px 24px' : '56px 40px 28px' }}>
+        <div style={{ fontFamily: MR.mono, color: MR.dim, fontSize: 11, letterSpacing: 0.8 }}>// PREVIEW PLATFORM</div>
+        <h2 style={{ fontSize: isMobile ? 28 : 48, letterSpacing: isMobile ? -0.5 : -1.5, lineHeight: 1.1, margin: '16px 0 0', fontWeight: 700 }}>
+          Lihat cara kerjanya.
+        </h2>
+      </div>
+
+      {videoId && (
+        <div style={{ padding: isMobile ? '0 20px 32px' : '0 40px 40px' }}>
+          <div style={{ position: 'relative', paddingBottom: '56.25%', width: '100%', maxWidth: 860, margin: '0 auto' }}>
+            <iframe
+              src={`https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&loop=1&playlist=${videoId}&controls=0&modestbranding=1`}
+              allow="autoplay; encrypted-media"
+              allowFullScreen
+              style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 'none', borderRadius: 8 }}
+            />
+          </div>
+        </div>
+      )}
+
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', borderTop: `1px solid ${MR.border}` }}>
+        {plans.map((plan) => {
+          const hargaDiskon = plan.diskon > 0 ? Math.round(plan.harga_asli * (1 - plan.diskon / 100)) : plan.harga_asli;
+          const hemat = plan.harga_asli - hargaDiskon;
+          return (
+            <div key={plan.key} style={{
+              padding: '26px 22px',
+              borderRight: `1px solid ${MR.border}`,
+              borderTop: plan.featured ? `2px solid ${MR.gold}` : 'none',
+              position: 'relative',
+              display: 'flex',
+              flexDirection: 'column' as const,
+            }}>
+              {plan.featured && (
+                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, textAlign: 'center' as const }}>
+                  <span style={{ fontFamily: MR.mono, fontSize: 9, background: MR.gold, color: '#fff', padding: '3px 10px', letterSpacing: 0.8, fontWeight: 700 }}>
+                    PALING POPULER
+                  </span>
+                </div>
+              )}
+              <div style={{ fontFamily: MR.mono, color: plan.featured ? MR.gold : MR.dim, fontSize: 10, letterSpacing: 1.2, marginBottom: 12 }}>
+                // {plan.nama.toUpperCase()}
+              </div>
+              <div style={{ fontWeight: 700, fontSize: 20, marginBottom: 20 }}>{plan.nama}</div>
+              <div>
+                {plan.diskon > 0 && (
+                  <div style={{ fontFamily: MR.mono, fontSize: 11, color: MR.dimmer, marginBottom: 2 }}>
+                    <s>Rp {fmt(plan.harga_asli)}</s>
+                  </div>
+                )}
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: 4 }}>
+                  <span style={{ fontFamily: MR.mono, color: MR.gold, fontSize: 13 }}>Rp</span>
+                  <span style={{ fontSize: 34, fontWeight: 700, letterSpacing: -1.5, lineHeight: 1 }}>{fmt(hargaDiskon)}</span>
+                </div>
+                {plan.diskon > 0 && (
+                  <div style={{ fontFamily: MR.mono, color: MR.dim, fontSize: 10, marginTop: 4 }}>
+                    Hemat Rp {fmt(hemat)} ({plan.diskon}%)
+                  </div>
+                )}
+              </div>
+              <div style={{ flex: 1 }} />
+              <button
+                onClick={() => { window.location.href = `/bayar?plan=${plan.key}`; }}
+                onMouseEnter={e => { if (!plan.featured) (e.currentTarget as HTMLElement).style.background = MR.gold + '18'; }}
+                onMouseLeave={e => { if (!plan.featured) (e.currentTarget as HTMLElement).style.background = 'transparent'; }}
+                style={{
+                  marginTop: 24, fontFamily: MR.mono, padding: '13px 0', letterSpacing: 0.5,
+                  fontSize: 11, fontWeight: 700, width: '100%', cursor: 'pointer',
+                  background: plan.featured ? MR.gold : 'transparent',
+                  color: plan.featured ? '#fff' : MR.gold,
+                  border: `1px solid ${plan.featured ? MR.gold : MR.border}`,
+                }}>
+                PILIH {plan.nama.toUpperCase()} ▸
+              </button>
+            </div>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
 const TIER_STYLE: Record<string, { bg: string; accent: string; border: string }> = {
   neutral:  { bg: 'linear-gradient(160deg,#061310 0%,var(--mr-bg) 100%)', accent: '#22c55e', border: '#22c55e28' },
   bronze:   { bg: 'linear-gradient(160deg,#120700 0%,var(--mr-bg) 100%)', accent: '#f97316', border: '#f9731628' },
@@ -1226,6 +1332,7 @@ export default function LandingPage() {
   const { stats }        = useLandingStats();
   const { testimonials } = useApprovedTestimonials(12);
   const { tiers }        = usePricing();
+  const { preview }      = useLandingPreview();
 
   return (
     <div style={{ fontFamily: MR.sans, color: MR.text, background: MR.bg, minHeight: '100vh', WebkitFontSmoothing: 'antialiased', overflowX: 'hidden' }}>
@@ -1286,6 +1393,9 @@ export default function LandingPage() {
         fundedCount={stats?.fundedCount ?? 0}
         newThisMonth={stats?.newMembersThisMonth ?? 0}
       />
+
+      {/* 4.5 — Preview Platform */}
+      {preview && <ProductPreview config={preview} />}
 
       {/* 5 — Tier / Pricing */}
       {tiers.length > 0 && <Pricing tiers={tiers} />}
