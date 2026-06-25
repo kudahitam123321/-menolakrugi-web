@@ -1,9 +1,8 @@
-import type { Member, Journal, Testimonial, PricingTier } from '../types/mr.types';
-// hooks/useLandingStats.ts — Fetch stats untuk landing page dari Supabase
+// hooks/index.ts — Semua custom hooks (Supabase queries)
 
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
-import type { LandingStats, PricingTier, Testimonial } from '../types/mr.types';
+import type { Member, Journal, Testimonial, PricingTier, LandingStats } from '../types/mr.types';
 
 // ─── Landing Stats (member count, funded count, rating) ──────────────────────
 
@@ -65,7 +64,7 @@ export function useApprovedTestimonials(limit = 6) {
       .order('created_at', { ascending: false })
       .limit(limit)
       .then(({ data, error }) => {
-        if (!error && data) setTestimonials(data);
+        if (!error && data) setTestimonials(data as unknown as Testimonial[]);
         setLoading(false);
       });
   }, [limit]);
@@ -189,4 +188,34 @@ export function useAdminMembers() {
   const neverLoggedIn  = members.filter(m => !m.last_seen);
 
   return { members, onlineCount, everLoggedIn, neverLoggedIn, loading };
+}
+
+// ─── Landing Preview Config ───────────────────────────────────────────────────
+
+export interface LandingPreviewConfig {
+  yt_url: string | null;
+  plan1_nama: string;
+  plan1_harga_asli: number;
+  plan1_diskon: number;
+  plan2_nama: string;
+  plan2_harga_asli: number;
+  plan2_diskon: number;
+  plan3_nama: string;
+  plan3_harga_asli: number;
+  plan3_diskon: number;
+}
+
+export function useLandingPreview() {
+  const [preview, setPreview] = useState<LandingPreviewConfig | null>(null);
+
+  useEffect(() => {
+    supabase
+      .from('landing_preview_config')
+      .select('*')
+      .eq('id', 1)
+      .single()
+      .then(({ data }) => { if (data) setPreview(data as LandingPreviewConfig); });
+  }, []);
+
+  return { preview };
 }
