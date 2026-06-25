@@ -1971,7 +1971,7 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
 
     // Auto sync Discord role
     try {
-      await fetch('http://93.115.101.152:12772/discord/sync', {
+      await fetch('/api/discord/sync', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ member_id: req.member_id }),
       });
@@ -1980,7 +1980,7 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
     // Kirim ucapan selamat ke Discord
     if (member?.discord_id && congratsChannelId) {
       try {
-        const res = await fetch('http://93.115.101.152:12772/discord/congrats-advanced', {
+        const res = await fetch('/api/discord/congrats-advanced', {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ discord_id: member.discord_id, discord_username: member.discord_username, nama: req.member_nama, channel_id: congratsChannelId }),
         });
@@ -2004,7 +2004,7 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
     if (!confirm('Kirim ucapan selamat ke SEMUA member advanced yang sudah hubungkan Discord?')) return;
     setSendingBulk(true);
     try {
-      const res = await fetch('http://93.115.101.152:12772/discord/congrats-all-advanced', {
+      const res = await fetch('/api/discord/congrats-all-advanced', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ channel_id: congratsChannelId }),
       });
@@ -2057,7 +2057,7 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
     if (!announceChannel || !announceMsg.trim()) { notify('Channel dan pesan wajib diisi.', 'err'); return; }
     setAnnounceSending(true);
     try {
-      const res = await fetch('http://93.115.101.152:12772/discord/announce', {
+      const res = await fetch('/api/discord/announce', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ channel_id: announceChannel, message: announceMsg }),
