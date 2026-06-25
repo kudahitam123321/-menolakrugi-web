@@ -1281,7 +1281,19 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
   const [editBLogoUrl, setEditBLogoUrl] = useState('');
   // Produk states
   const [products, setProducts]               = useState<any[]>([]);
-  const [prodSubTab, setProdSubTab]           = useState<'katalog'|'kode-diskon'|'pesanan'>('katalog');
+  const [prodSubTab, setProdSubTab]           = useState<'katalog'|'kode-diskon'|'pesanan'|'preview'>('katalog');
+  // ── Landing Preview Config state ─────────────────────────────────────────
+  const [lpYtUrl,   setLpYtUrl]   = useState('');
+  const [lp1Nama,   setLp1Nama]   = useState('Bulanan');
+  const [lp1Harga,  setLp1Harga]  = useState('');
+  const [lp1Diskon, setLp1Diskon] = useState('0');
+  const [lp2Nama,   setLp2Nama]   = useState('Tahunan');
+  const [lp2Harga,  setLp2Harga]  = useState('');
+  const [lp2Diskon, setLp2Diskon] = useState('0');
+  const [lp3Nama,   setLp3Nama]   = useState('Lifetime');
+  const [lp3Harga,  setLp3Harga]  = useState('');
+  const [lp3Diskon, setLp3Diskon] = useState('0');
+  const [lpSaving,  setLpSaving]  = useState(false);
   const [discountCodes, setDiscountCodes]     = useState<any[]>([]);
   const [dcKode, setDcKode]                   = useState('');
   const [dcDiskon, setDcDiskon]               = useState('');
@@ -1420,6 +1432,27 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
     setTimeout(() => setMsg(''), 4000);
   }
 
+  async function saveLandingPreview() {
+    setLpSaving(true);
+    const { error } = await supabase.from('landing_preview_config').upsert({
+      id: 1,
+      yt_url:           lpYtUrl.trim() || null,
+      plan1_nama:       lp1Nama,
+      plan1_harga_asli: parseInt(lp1Harga) || 0,
+      plan1_diskon:     Math.min(100, Math.max(0, parseInt(lp1Diskon) || 0)),
+      plan2_nama:       lp2Nama,
+      plan2_harga_asli: parseInt(lp2Harga) || 0,
+      plan2_diskon:     Math.min(100, Math.max(0, parseInt(lp2Diskon) || 0)),
+      plan3_nama:       lp3Nama,
+      plan3_harga_asli: parseInt(lp3Harga) || 0,
+      plan3_diskon:     Math.min(100, Math.max(0, parseInt(lp3Diskon) || 0)),
+      updated_at:       new Date().toISOString(),
+    });
+    setLpSaving(false);
+    if (error) { notify('Gagal simpan: ' + error.message, 'err'); return; }
+    notify('Preview landing tersimpan!');
+  }
+
   useEffect(() => {
     const raw = localStorage.getItem('mr_admin');
     if (!raw) { window.location.href = '/login'; return; }
@@ -1480,6 +1513,25 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
     if (dcodes) setDiscountCodes(dcodes);
     if (ul) setUlasanList(ul);
     if (cl) setClaims(cl);
+    try {
+      const { data: lpData } = await supabase
+        .from('landing_preview_config')
+        .select('*')
+        .eq('id', 1)
+        .single();
+      if (lpData) {
+        setLpYtUrl(lpData.yt_url || '');
+        setLp1Nama(lpData.plan1_nama || 'Bulanan');
+        setLp1Harga(String(lpData.plan1_harga_asli || ''));
+        setLp1Diskon(String(lpData.plan1_diskon ?? 0));
+        setLp2Nama(lpData.plan2_nama || 'Tahunan');
+        setLp2Harga(String(lpData.plan2_harga_asli || ''));
+        setLp2Diskon(String(lpData.plan2_diskon ?? 0));
+        setLp3Nama(lpData.plan3_nama || 'Lifetime');
+        setLp3Harga(String(lpData.plan3_harga_asli || ''));
+        setLp3Diskon(String(lpData.plan3_diskon ?? 0));
+      }
+    } catch (_e) {}
     // Progress per member (persentase)
     try {
       const [{ data: progData }, { count: vidCount }] = await Promise.all([
@@ -2787,7 +2839,8 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
                 {id:'katalog',      label:'📦 KATALOG PRODUK'},
                 {id:'kode-diskon',  label:'🎟️ KODE DISKON'},
                 {id:'pesanan',      label:'🧾 PESANAN MASUK'},
-              ] as {id:'katalog'|'kode-diskon'|'pesanan';label:string}[]).map(st=>(
+                {id:'preview',      label:'🎬 PREVIEW LANDING'},
+              ] as {id:'katalog'|'kode-diskon'|'pesanan'|'preview';label:string}[]).map(st=>(
                 <button key={st.id} onClick={()=>setProdSubTab(st.id)}
                   style={{fontFamily:'monospace',fontSize:11,fontWeight:700,letterSpacing:0.8,padding:'8px 20px',border:'none',cursor:'pointer',borderBottom:prodSubTab===st.id?'2px solid #16a34a':'2px solid transparent',background:'transparent',color:prodSubTab===st.id?'#16a34a':'#555'}}>
                   {st.label}
@@ -3205,6 +3258,64 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
                     );
                   });
                 })()}
+              </div>
+            )}
+
+            {prodSubTab === 'preview' && (
+              <div style={{background:'#0d0d0d',border:'1px solid #1f1f1f',padding:'20px 24px'}}>
+                <div style={{fontFamily:'monospace',color:'#16a34a',fontSize:11,letterSpacing:1,marginBottom:20}}>// KONFIGURASI PREVIEW LANDING PAGE</div>
+
+                <div style={{marginBottom:20}}>
+                  <div style={{fontFamily:'monospace',color:'#555',fontSize:10,marginBottom:6}}>LINK YOUTUBE PREVIEW</div>
+                  <input
+                    value={lpYtUrl}
+                    onChange={e => setLpYtUrl(e.target.value)}
+                    placeholder="https://youtu.be/xxxxxx"
+                    style={{width:'100%',boxSizing:'border-box' as const,background:'#111',border:'1px solid #2a2a2a',color:'#e7e5e4',padding:'10px 14px',fontSize:13,fontFamily:'monospace',outline:'none'}}
+                    onFocus={e=>e.target.style.borderColor='#16a34a'}
+                    onBlur={e=>e.target.style.borderColor='#2a2a2a'}
+                  />
+                </div>
+
+                <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:12,marginBottom:20}}>
+                  {([
+                    {label:'PLAN 1', nama:lp1Nama, setNama:setLp1Nama, harga:lp1Harga, setHarga:setLp1Harga, diskon:lp1Diskon, setDiskon:setLp1Diskon},
+                    {label:'PLAN 2', nama:lp2Nama, setNama:setLp2Nama, harga:lp2Harga, setHarga:setLp2Harga, diskon:lp2Diskon, setDiskon:setLp2Diskon},
+                    {label:'PLAN 3', nama:lp3Nama, setNama:setLp3Nama, harga:lp3Harga, setHarga:setLp3Harga, diskon:lp3Diskon, setDiskon:setLp3Diskon},
+                  ] as {label:string;nama:string;setNama:(v:string)=>void;harga:string;setHarga:(v:string)=>void;diskon:string;setDiskon:(v:string)=>void}[]).map((col,i) => {
+                    const h = parseInt(col.harga) || 0;
+                    const d = parseInt(col.diskon) || 0;
+                    const finalH = h && d ? Math.round(h * (1 - d / 100)) : h;
+                    return (
+                      <div key={i} style={{background:'#0a0a0a',border:'1px solid #1a1a1a',padding:'14px'}}>
+                        <div style={{fontFamily:'monospace',color:'#16a34a',fontSize:9,letterSpacing:0.8,marginBottom:10}}>{col.label}</div>
+                        <div style={{fontFamily:'monospace',color:'#555',fontSize:10,marginBottom:4}}>Nama Plan</div>
+                        <input value={col.nama} onChange={e=>col.setNama(e.target.value)}
+                          style={{width:'100%',boxSizing:'border-box' as const,background:'#111',border:'1px solid #2a2a2a',color:'#e7e5e4',padding:'8px 10px',fontSize:12,fontFamily:'monospace',outline:'none',marginBottom:8}}
+                          onFocus={e=>e.target.style.borderColor='#16a34a'} onBlur={e=>e.target.style.borderColor='#2a2a2a'}/>
+                        <div style={{fontFamily:'monospace',color:'#555',fontSize:10,marginBottom:4}}>Harga Asli (Rp)</div>
+                        <input type="number" value={col.harga} onChange={e=>col.setHarga(e.target.value)}
+                          style={{width:'100%',boxSizing:'border-box' as const,background:'#111',border:'1px solid #2a2a2a',color:'#e7e5e4',padding:'8px 10px',fontSize:12,fontFamily:'monospace',outline:'none',marginBottom:8}}
+                          onFocus={e=>e.target.style.borderColor='#16a34a'} onBlur={e=>e.target.style.borderColor='#2a2a2a'}/>
+                        <div style={{fontFamily:'monospace',color:'#555',fontSize:10,marginBottom:4}}>Diskon (%)</div>
+                        <input type="number" min="0" max="100" value={col.diskon} onChange={e=>col.setDiskon(e.target.value)}
+                          style={{width:'100%',boxSizing:'border-box' as const,background:'#111',border:'1px solid #2a2a2a',color:'#e7e5e4',padding:'8px 10px',fontSize:12,fontFamily:'monospace',outline:'none',marginBottom:10}}
+                          onFocus={e=>e.target.style.borderColor='#16a34a'} onBlur={e=>e.target.style.borderColor='#2a2a2a'}/>
+                        {h > 0 && (
+                          <div style={{fontFamily:'monospace',fontSize:10,color:'#22c55e'}}>
+                            → Rp {new Intl.NumberFormat('id-ID').format(finalH)}
+                            {d > 0 && <span style={{color:'#555'}}> (hemat {d}%)</span>}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+
+                <button onClick={saveLandingPreview} disabled={lpSaving}
+                  style={{fontFamily:'monospace',fontSize:12,fontWeight:700,padding:'11px 28px',background:'#16a34a',color:'#fff',border:'none',cursor:'pointer',letterSpacing:0.5,opacity:lpSaving?0.6:1}}>
+                  {lpSaving ? 'Menyimpan...' : 'Simpan Perubahan'}
+                </button>
               </div>
             )}
           </div>
