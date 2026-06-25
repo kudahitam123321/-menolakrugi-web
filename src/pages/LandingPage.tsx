@@ -886,83 +886,110 @@ function ProductPreview({ config }: { config: LandingPreviewConfig }) {
 
   return (
     <section style={{ background: 'var(--mr-bg)', borderTop: `1px solid ${MR.border}` }}>
-      <div style={{ padding: isMobile ? '40px 20px 24px' : '56px 40px 28px' }}>
+      <div style={{ padding: isMobile ? '40px 20px 24px' : '56px 40px 28px', textAlign: 'center' as const, display: 'flex', flexDirection: 'column' as const, alignItems: 'center' }}>
         <div style={{ fontFamily: MR.mono, color: MR.dim, fontSize: 11, letterSpacing: 0.8 }}>// PREVIEW PLATFORM</div>
-        <h2 style={{ fontSize: isMobile ? 28 : 48, letterSpacing: isMobile ? -0.5 : -1.5, lineHeight: 1.1, margin: '16px 0 0', fontWeight: 700 }}>
-          Lihat cara kerjanya.
+        <h2 style={{ fontSize: isMobile ? 26 : 44, letterSpacing: isMobile ? -0.5 : -1.5, lineHeight: 1.15, margin: '16px 0 12px', fontWeight: 700 }}>
+          Belum Paham SMC? Tidak Masalah.
         </h2>
+        <p style={{ color: MR.dim, fontSize: isMobile ? 14 : 16, lineHeight: 1.6, margin: 0, maxWidth: 600 }}>
+          Indikator ini membantu Anda membaca struktur market dengan lebih mudah.{' '}
+          <span style={{ color: MR.gold, fontWeight: 600 }}>Beli indikatornya dan dapatkan diskon 50% untuk harga kelas private.</span>
+        </p>
       </div>
 
       {videoId && (
-        <div style={{ padding: isMobile ? '0 20px 32px' : '0 40px 40px' }}>
-          <div style={{ position: 'relative', paddingBottom: '56.25%', width: '100%', maxWidth: 860, margin: '0 auto' }}>
-            <iframe
-              src={`https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&loop=1&playlist=${videoId}&controls=0&modestbranding=1`}
-              allow="autoplay; encrypted-media"
-              allowFullScreen
-              style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 'none', borderRadius: 8 }}
-            />
+        <div style={{ padding: isMobile ? '0 20px 40px' : '0 40px 48px' }}>
+          {/* Outer glow wrapper */}
+          <div style={{ maxWidth: 860, margin: '0 auto', borderRadius: 12, padding: 2, background: `linear-gradient(135deg, ${MR.gold}, #10b98144, ${MR.gold}22)`, boxShadow: `0 0 40px ${MR.gold}22, 0 0 80px ${MR.gold}0a` }}>
+            {/* Inner dark frame */}
+            <div style={{ borderRadius: 10, overflow: 'hidden', background: '#000', position: 'relative', paddingBottom: '56.25%' }}>
+              <iframe
+                src={`https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&loop=1&playlist=${videoId}&controls=0&modestbranding=1`}
+                allow="autoplay; encrypted-media"
+                allowFullScreen
+                style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 'none', display: 'block' }}
+              />
+            </div>
           </div>
         </div>
       )}
 
-      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', borderTop: `1px solid ${MR.border}` }}>
+      <div style={{ padding: isMobile ? '0 20px 48px' : '0 40px 64px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: isMobile ? 16 : 20, maxWidth: 900, margin: '0 auto' }}>
         {plans.map((plan) => {
           const hargaDiskon = plan.diskon > 0 ? Math.round(plan.harga_asli * (1 - plan.diskon / 100)) : plan.harga_asli;
           const hemat = plan.harga_asli - hargaDiskon;
           return (
             <div key={plan.key} style={{
-              padding: '26px 22px',
-              borderRight: `1px solid ${MR.border}`,
-              borderTop: plan.featured ? `2px solid ${MR.gold}` : 'none',
-              position: 'relative',
-              display: 'flex',
-              flexDirection: 'column' as const,
+              padding: 2,
+              borderRadius: 14,
+              background: plan.featured
+                ? `linear-gradient(135deg, ${MR.gold}, #10b981, ${MR.gold}88)`
+                : `linear-gradient(135deg, #2a2a2a44, #1a1a1a22)`,
+              boxShadow: plan.featured
+                ? `0 0 32px ${MR.gold}33, 0 8px 32px rgba(0,0,0,0.4)`
+                : '0 4px 20px rgba(0,0,0,0.3)',
             }}>
+              <div style={{
+                borderRadius: 12,
+                padding: '28px 24px',
+                background: plan.featured ? 'linear-gradient(160deg,#061a0d 0%,#090909 100%)' : 'linear-gradient(160deg,#0f0f0f 0%,#090909 100%)',
+                position: 'relative',
+                display: 'flex',
+                flexDirection: 'column' as const,
+                height: '100%',
+                boxSizing: 'border-box' as const,
+              }}>
               {plan.featured && (
-                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, textAlign: 'center' as const }}>
-                  <span style={{ fontFamily: MR.mono, fontSize: 9, background: MR.gold, color: '#fff', padding: '3px 10px', letterSpacing: 0.8, fontWeight: 700 }}>
-                    PALING POPULER
+                <div style={{ position: 'absolute', top: -1, left: 0, right: 0, textAlign: 'center' as const }}>
+                  <span style={{ fontFamily: MR.mono, fontSize: 9, background: MR.gold, color: '#fff', padding: '4px 14px', letterSpacing: 1, fontWeight: 700, borderRadius: '0 0 8px 8px', display: 'inline-block' }}>
+                    ✦ PALING POPULER
                   </span>
                 </div>
               )}
-              <div style={{ fontFamily: MR.mono, color: plan.featured ? MR.gold : MR.dim, fontSize: 10, letterSpacing: 1.2, marginBottom: 12 }}>
+              <div style={{ fontFamily: MR.mono, color: plan.featured ? MR.gold : MR.dim, fontSize: 10, letterSpacing: 1.2, marginBottom: 10, marginTop: plan.featured ? 16 : 0 }}>
                 // {plan.nama.toUpperCase()}
               </div>
-              <div style={{ fontWeight: 700, fontSize: 20, marginBottom: 20 }}>{plan.nama}</div>
+              <div style={{ fontWeight: 700, fontSize: 22, marginBottom: 20, letterSpacing: -0.5 }}>{plan.nama}</div>
               <div>
                 {plan.diskon > 0 && (
-                  <div style={{ fontFamily: MR.mono, fontSize: 11, color: MR.dimmer, marginBottom: 2 }}>
+                  <div style={{ fontFamily: MR.mono, fontSize: 11, color: MR.dimmer, marginBottom: 4 }}>
                     <s>Rp {fmt(plan.harga_asli)}</s>
                   </div>
                 )}
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: 4 }}>
-                  <span style={{ fontFamily: MR.mono, color: MR.gold, fontSize: 13 }}>Rp</span>
-                  <span style={{ fontSize: 34, fontWeight: 700, letterSpacing: -1.5, lineHeight: 1 }}>{fmt(hargaDiskon)}</span>
+                  <span style={{ fontFamily: MR.mono, color: MR.gold, fontSize: 14 }}>Rp</span>
+                  <span style={{ fontSize: 36, fontWeight: 700, letterSpacing: -1.5, lineHeight: 1 }}>{fmt(hargaDiskon)}</span>
                 </div>
                 {plan.diskon > 0 && (
-                  <div style={{ fontFamily: MR.mono, color: MR.dim, fontSize: 10, marginTop: 4 }}>
-                    Hemat Rp {fmt(hemat)} ({plan.diskon}%)
+                  <div style={{ fontFamily: MR.mono, color: '#22c55e', fontSize: 10, marginTop: 6, background: '#22c55e12', display: 'inline-block', padding: '2px 8px', borderRadius: 4 }}>
+                    Hemat {plan.diskon}% · Rp {fmt(hemat)}
                   </div>
                 )}
               </div>
               <div style={{ flex: 1 }} />
               <button
                 onClick={() => { window.location.href = `/bayar?plan=${plan.key}`; }}
-                onMouseEnter={e => { if (!plan.featured) (e.currentTarget as HTMLElement).style.background = MR.gold + '18'; }}
-                onMouseLeave={e => { if (!plan.featured) (e.currentTarget as HTMLElement).style.background = 'transparent'; }}
+                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.opacity = '0.85'; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.opacity = '1'; }}
                 style={{
-                  marginTop: 24, fontFamily: MR.mono, padding: '13px 0', letterSpacing: 0.5,
+                  marginTop: 28, fontFamily: MR.mono, padding: '14px 0', letterSpacing: 0.8,
                   fontSize: 11, fontWeight: 700, width: '100%', cursor: 'pointer',
-                  background: plan.featured ? MR.gold : 'transparent',
+                  borderRadius: 8,
+                  background: plan.featured
+                    ? `linear-gradient(135deg, ${MR.gold}, #10b981)`
+                    : 'transparent',
                   color: plan.featured ? '#fff' : MR.gold,
-                  border: `1px solid ${plan.featured ? MR.gold : MR.border}`,
+                  border: plan.featured ? 'none' : `1px solid ${MR.gold}44`,
+                  transition: 'opacity 0.15s',
                 }}>
                 PILIH {plan.nama.toUpperCase()} ▸
               </button>
+              </div>
             </div>
           );
         })}
+        </div>
       </div>
     </section>
   );

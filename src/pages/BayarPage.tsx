@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
+import { WA_NUMBER } from '../constants';
 
 const C = {
   bg:      'var(--mr-bg)',
@@ -40,9 +41,7 @@ export default function BayarPage() {
   const [email,      setEmail]      = useState('');
   const [noHp,       setNoHp]       = useState('');
   const [metodePm,   setMetodePm]   = useState<string>('');
-  const [submitting, setSubmitting] = useState(false);
-  const [done,       setDone]       = useState(false);
-  const [errMsg,     setErrMsg]     = useState('');
+  const [errMsg, setErrMsg] = useState('');
 
   const [isMobile, setIsMobile] = useState(() => window.matchMedia('(max-width: 767px)').matches);
   useEffect(() => {
@@ -56,7 +55,7 @@ export default function BayarPage() {
     async function load() {
       const [{ data: cfg }, { data: pm }] = await Promise.all([
         supabase.from('landing_preview_config').select('*').eq('id', 1).single(),
-        supabase.from('payment_methods').select('*').eq('aktif', true).order('urutan', { ascending: true }),
+        supabase.from('payment_methods').select('*').neq('aktif', false).order('urutan', { ascending: true }),
       ]);
       if (cfg) setConfig(cfg);
       if (pm)  setPaymentMethods(pm);
@@ -77,77 +76,87 @@ export default function BayarPage() {
     e.preventDefault();
     setErrMsg('');
     if (!nama.trim() || !email.trim() || !noHp.trim()) { setErrMsg('Semua field wajib diisi.'); return; }
-    if (!metodePm) { setErrMsg('Pilih metode pembayaran.'); return; }
+    if (!metodePm) { setErrMsg('Pilih metode pembayaran terlebih dahulu.'); return; }
     if (!plan) { setErrMsg('Plan tidak valid.'); return; }
 
-    setSubmitting(true);
+    const pm = paymentMethods.find(p => p.id === metodePm);
+
+    // Simpan ke DB dulu supaya masuk di dashboard admin
     const { error } = await supabase.from('orders').insert({
       member_id:      'guest',
       tier_member:    'visitor',
       nama_member:    nama.trim(),
       email_member:   email.trim(),
-      catatan:        `WA: ${noHp.trim()} | Metode: ${metodePm}`,
+      catatan:        `WA: ${noHp.trim()} | Bank: ${pm?.nama_bank || metodePm} | Rek: ${pm?.nomor_rekening || ''}`,
       plan_type:      plan.key,
       diskon_applied: plan.diskon || null,
       status:         'pending',
     });
-    setSubmitting(false);
-    if (error) { setErrMsg('Gagal membuat order: ' + error.message); return; }
-    setDone(true);
+    if (error) { setErrMsg('Gagal menyimpan pesanan: ' + error.message); return; }
+
+    // Lalu buka WA admin
+    const msg = [
+      `Halo Admin, saya ingin membeli Indikator SMC.`,
+      ``,
+      `*Nama:* ${nama.trim()}`,
+      `*Email:* ${email.trim()}`,
+      `*No. WA:* ${noHp.trim()}`,
+      `*Plan:* ${plan.nama} — Rp ${fmt(hargaDiskon)}`,
+      pm ? `*Transfer ke:* ${pm.nama_bank} — ${pm.nomor_rekening} a.n. ${pm.nama_rekening}` : '',
+      ``,
+      `Mohon konfirmasi pesanan saya. Terima kasih!`,
+    ].filter(Boolean).join('\n');
+
+    const waUrl = `https://wa.me/62${WA_NUMBER.replace(/^0/, '')}?text=${encodeURIComponent(msg)}`;
+    window.open(waUrl, '_blank');
   }
 
   if (loading) return (
-    <div style={{ minHeight: '100vh', background: C.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', color: C.dim, fontFamily: 'monospace' }}>
+    <div style={{ minHeight: '100vh', background: C.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', color: C.dim, fontFamily: '"Geist Mono",monospace', fontSize: 13 }}>
       Memuat...
     </div>
   );
 
-  if (done) return (
-    <div style={{ minHeight: '100vh', background: C.bg, color: C.text, fontFamily: '"Geist",system-ui,sans-serif', WebkitFontSmoothing: 'antialiased', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
-      <div style={{ maxWidth: 480, textAlign: 'center' as const }}>
-        <div style={{ fontSize: 40, marginBottom: 16 }}>✅</div>
-        <h2 style={{ fontSize: 24, fontWeight: 700, marginBottom: 12 }}>Pesanan Diterima!</h2>
-        <p style={{ color: C.dim, lineHeight: 1.6, marginBottom: 24 }}>
-          Admin akan menghubungi kamu dalam 1×24 jam untuk konfirmasi pembayaran. Cek WhatsApp kamu ya.
-        </p>
-        <button onClick={() => window.location.href = '/'}
-          style={{ fontFamily: 'monospace', padding: '12px 28px', background: G.gold, color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 12, letterSpacing: 0.5 }}>
-          KEMBALI KE BERANDA
-        </button>
-      </div>
-    </div>
-  );
+  const selectedPm = paymentMethods.find(pm => pm.id === metodePm);
 
   return (
     <div style={{ minHeight: '100vh', background: C.bg, color: C.text, fontFamily: '"Geist",system-ui,sans-serif', WebkitFontSmoothing: 'antialiased' }}>
-      <div style={{ borderBottom: `1px solid ${C.border}`, padding: '16px 24px', display: 'flex', alignItems: 'center', gap: 16 }}>
-        <button onClick={() => window.history.back()}
-          style={{ background: 'none', border: `1px solid ${C.border2}`, color: C.dim, padding: '7px 14px', cursor: 'pointer', fontFamily: 'monospace', fontSize: 11 }}>
+
+      {/* Topbar */}
+      <div style={{ borderBottom: `1px solid ${C.border}`, padding: '14px 24px', display: 'flex', alignItems: 'center', gap: 16 }}>
+        <button
+          onClick={() => window.history.length > 1 ? window.history.back() : (window.location.href = '/')}
+          style={{ background: 'none', border: `1px solid ${C.border2}`, color: C.dim, padding: '7px 16px', cursor: 'pointer', fontFamily: '"Geist Mono",monospace', fontSize: 11, borderRadius: 4, letterSpacing: 0.4 }}>
           ← Kembali
         </button>
-        <span style={{ fontFamily: 'monospace', color: C.dimmer, fontSize: 11, letterSpacing: 0.6 }}>// CHECKOUT</span>
+        <span style={{ fontFamily: '"Geist Mono",monospace', color: C.dimmer, fontSize: 11, letterSpacing: 0.8 }}>// PEMBAYARAN INDIKATOR</span>
       </div>
 
-      <div style={{ maxWidth: 720, margin: '0 auto', padding: isMobile ? '32px 20px' : '48px 24px', display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 32 }}>
+      <div style={{ maxWidth: 880, margin: '0 auto', padding: isMobile ? '28px 16px 48px' : '48px 24px 64px', display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: isMobile ? 24 : 40, alignItems: 'start' }}>
 
+        {/* ── Kolom kiri: ringkasan + metode ── */}
         <div>
-          <div style={{ fontFamily: 'monospace', color: C.dimmer, fontSize: 10, letterSpacing: 0.8, marginBottom: 12 }}>// RINGKASAN PESANAN</div>
-          <div style={{ background: C.panel, border: `1px solid ${C.border}`, padding: '20px 22px', marginBottom: 20 }}>
+
+          {/* Ringkasan order */}
+          <div style={{ fontFamily: '"Geist Mono",monospace', color: C.dimmer, fontSize: 10, letterSpacing: 1.2, marginBottom: 14 }}>// RINGKASAN PESANAN</div>
+          <div style={{ background: C.panel, border: `1px solid ${C.border}`, borderRadius: 10, padding: '22px 24px', marginBottom: 28 }}>
             {plan ? (
               <>
-                <div style={{ fontWeight: 700, fontSize: 18, marginBottom: 16 }}>Plan {plan.nama}</div>
+                <div style={{ fontFamily: '"Geist Mono",monospace', color: G.gold, fontSize: 10, letterSpacing: 1, marginBottom: 8 }}>INDIKATOR SMC · {plan.nama.toUpperCase()}</div>
+                <div style={{ fontWeight: 700, fontSize: 20, marginBottom: 16, letterSpacing: -0.5 }}>Plan {plan.nama}</div>
                 {plan.diskon > 0 && (
-                  <div style={{ fontFamily: 'monospace', fontSize: 12, color: C.dimmer, marginBottom: 4 }}>
+                  <div style={{ fontFamily: '"Geist Mono",monospace', fontSize: 12, color: C.dimmer, marginBottom: 6 }}>
                     <s>Rp {fmt(plan.harga_asli)}</s>
+                    <span style={{ marginLeft: 8, color: G.up, background: G.up + '15', padding: '1px 7px', borderRadius: 4, fontSize: 10, fontWeight: 700 }}>-{plan.diskon}%</span>
                   </div>
                 )}
-                <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, marginBottom: 4 }}>
-                  <span style={{ fontFamily: 'monospace', color: G.gold, fontSize: 12 }}>Rp</span>
-                  <span style={{ fontSize: 28, fontWeight: 700, letterSpacing: -1 }}>{fmt(hargaDiskon)}</span>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: plan.diskon > 0 ? 8 : 0 }}>
+                  <span style={{ fontFamily: '"Geist Mono",monospace', color: G.gold, fontSize: 15 }}>Rp</span>
+                  <span style={{ fontSize: 38, fontWeight: 700, letterSpacing: -2, lineHeight: 1, color: C.text }}>{fmt(hargaDiskon)}</span>
                 </div>
                 {plan.diskon > 0 && (
-                  <div style={{ fontFamily: 'monospace', color: G.up, fontSize: 11 }}>
-                    Hemat Rp {fmt(hemat)} ({plan.diskon}%)
+                  <div style={{ fontFamily: '"Geist Mono",monospace', color: G.up, fontSize: 11 }}>
+                    Hemat Rp {fmt(hemat)}
                   </div>
                 )}
               </>
@@ -156,70 +165,122 @@ export default function BayarPage() {
             )}
           </div>
 
-          <div style={{ fontFamily: 'monospace', color: C.dimmer, fontSize: 10, letterSpacing: 0.8, marginBottom: 12 }}>// METODE PEMBAYARAN</div>
-          <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 8 }}>
+          {/* Metode pembayaran */}
+          <div style={{ fontFamily: '"Geist Mono",monospace', color: C.dimmer, fontSize: 10, letterSpacing: 1.2, marginBottom: 14 }}>// PILIH METODE PEMBAYARAN</div>
+          <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 10 }}>
             {paymentMethods.length === 0 && (
-              <div style={{ color: C.dim, fontSize: 12 }}>Belum ada metode pembayaran aktif.</div>
+              <div style={{ color: C.dim, fontSize: 13, padding: '16px 0' }}>Belum ada metode pembayaran aktif.</div>
             )}
-            {paymentMethods.map(pm => (
-              <button key={pm.id} onClick={() => setMetodePm(pm.id)}
-                style={{
-                  background: metodePm === pm.id ? G.gold + '18' : C.panel,
-                  border: `1px solid ${metodePm === pm.id ? G.gold : C.border}`,
-                  color: C.text,
-                  padding: '12px 16px',
-                  cursor: 'pointer',
-                  textAlign: 'left' as const,
-                  display: 'flex',
-                  flexDirection: 'column' as const,
-                  gap: 2,
-                }}>
-                <span style={{ fontWeight: 700, fontSize: 13 }}>{pm.nama_bank}</span>
-                <span style={{ fontFamily: 'monospace', fontSize: 11, color: C.dim }}>{pm.nomor_rek} · a.n. {pm.nama_rek}</span>
-                {pm.catatan && <span style={{ fontSize: 11, color: C.dimmer }}>{pm.catatan}</span>}
-              </button>
-            ))}
+            {paymentMethods.map(pm => {
+              const selected = metodePm === pm.id;
+              return (
+                <button key={pm.id} onClick={() => setMetodePm(pm.id)}
+                  style={{
+                    background:  selected ? G.gold + '12' : C.panel,
+                    border:      `1.5px solid ${selected ? G.gold : C.border}`,
+                    borderRadius: 10,
+                    color:       C.text,
+                    padding:     '16px 20px',
+                    cursor:      'pointer',
+                    textAlign:   'left' as const,
+                    display:     'flex',
+                    alignItems:  'center',
+                    gap:         16,
+                    transition:  'border-color 0.15s, background 0.15s',
+                    position:    'relative' as const,
+                  }}>
+                  {/* Radio dot */}
+                  <div style={{ width: 18, height: 18, borderRadius: '50%', border: `2px solid ${selected ? G.gold : C.border2}`, background: selected ? G.gold : 'transparent', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    {selected && <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#fff' }} />}
+                  </div>
+                  {/* Info */}
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 4 }}>{pm.nama_bank}</div>
+                    <div style={{ fontFamily: '"Geist Mono",monospace', fontSize: 18, fontWeight: 700, letterSpacing: 1.5, color: selected ? G.gold : C.text, marginBottom: 4 }}>
+                      {pm.nomor_rekening}
+                    </div>
+                    <div style={{ fontFamily: '"Geist Mono",monospace', fontSize: 11, color: C.dim }}>a.n. {pm.nama_rekening}</div>
+                    {pm.catatan && <div style={{ fontSize: 11, color: C.dimmer, marginTop: 4 }}>{pm.catatan}</div>}
+                  </div>
+                  {selected && (
+                    <div style={{ fontFamily: '"Geist Mono",monospace', fontSize: 9, color: G.gold, background: G.gold + '18', padding: '3px 8px', borderRadius: 4, letterSpacing: 0.6 }}>DIPILIH</div>
+                  )}
+                </button>
+              );
+            })}
           </div>
+
+          {/* Nomor rekening terpilih — copyable */}
+          {selectedPm && (
+            <div style={{ marginTop: 14, background: G.gold + '0d', border: `1px solid ${G.gold}33`, borderRadius: 8, padding: '14px 18px' }}>
+              <div style={{ fontFamily: '"Geist Mono",monospace', color: C.dimmer, fontSize: 10, letterSpacing: 0.8, marginBottom: 8 }}>TRANSFER KE</div>
+              <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 6 }}>{selectedPm.nama_bank}</div>
+              <div
+                onClick={() => navigator.clipboard?.writeText(selectedPm.nomor_rekening)}
+                title="Klik untuk salin"
+                style={{ fontFamily: '"Geist Mono",monospace', fontSize: 22, fontWeight: 700, letterSpacing: 2, color: G.gold, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 10 }}>
+                {selectedPm.nomor_rekening}
+                <span style={{ fontSize: 12, color: C.dim }}>⎘</span>
+              </div>
+              <div style={{ fontFamily: '"Geist Mono",monospace', fontSize: 11, color: C.dim, marginTop: 4 }}>a.n. {selectedPm.nama_rekening}</div>
+            </div>
+          )}
         </div>
 
+        {/* ── Kolom kanan: form ── */}
         <div>
-          <div style={{ fontFamily: 'monospace', color: C.dimmer, fontSize: 10, letterSpacing: 0.8, marginBottom: 12 }}>// DATA PEMESAN</div>
-          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column' as const, gap: 12 }}>
+          <div style={{ fontFamily: '"Geist Mono",monospace', color: C.dimmer, fontSize: 10, letterSpacing: 1.2, marginBottom: 14 }}>// DATA PEMESAN</div>
+          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column' as const, gap: 14 }}>
             {([
-              { label: 'Nama Lengkap', value: nama,  set: setNama,  type: 'text',  placeholder: 'Nama kamu' },
+              { label: 'Nama Lengkap', value: nama,  set: setNama,  type: 'text',  placeholder: 'Nama lengkap kamu' },
               { label: 'Email',        value: email, set: setEmail, type: 'email', placeholder: 'email@kamu.com' },
               { label: 'No. WhatsApp', value: noHp,  set: setNoHp,  type: 'tel',   placeholder: '08xxxxxxxxxx' },
             ] as { label: string; value: string; set: (v: string) => void; type: string; placeholder: string }[]).map(f => (
               <div key={f.label}>
-                <div style={{ fontFamily: 'monospace', color: C.dim, fontSize: 10, marginBottom: 5 }}>{f.label.toUpperCase()}</div>
+                <div style={{ fontFamily: '"Geist Mono",monospace', color: C.dim, fontSize: 10, letterSpacing: 0.6, marginBottom: 6 }}>{f.label.toUpperCase()}</div>
                 <input
                   type={f.type}
                   value={f.value}
                   onChange={e => f.set(e.target.value)}
                   placeholder={f.placeholder}
-                  style={{ width: '100%', boxSizing: 'border-box' as const, background: C.panel, border: `1px solid ${C.border}`, color: C.text, padding: '11px 14px', fontSize: 13, fontFamily: '"Geist",system-ui,sans-serif', outline: 'none' }}
+                  style={{ width: '100%', boxSizing: 'border-box' as const, background: C.panel, border: `1.5px solid ${C.border}`, color: C.text, padding: '12px 16px', fontSize: 14, fontFamily: '"Geist",system-ui,sans-serif', outline: 'none', borderRadius: 8, transition: 'border-color 0.15s' }}
                   onFocus={e => (e.target as HTMLInputElement).style.borderColor = G.gold}
                   onBlur={e  => (e.target as HTMLInputElement).style.borderColor = C.border}
                 />
               </div>
             ))}
 
+            {/* Info bayar */}
+            <div style={{ background: C.panel, border: `1px solid ${C.border}`, borderRadius: 8, padding: '14px 16px', fontSize: 13, color: C.dim, lineHeight: 1.6 }}>
+              Setelah mengisi form ini, transfer sesuai nominal ke rekening yang dipilih, lalu admin akan konfirmasi via WhatsApp.
+            </div>
+
             {errMsg && (
-              <div style={{ fontFamily: 'monospace', fontSize: 11, color: G.down, padding: '8px 12px', border: `1px solid ${G.down}33`, background: G.down + '0d' }}>
+              <div style={{ fontFamily: '"Geist Mono",monospace', fontSize: 11, color: G.down, padding: '10px 14px', border: `1px solid ${G.down}44`, background: G.down + '0d', borderRadius: 6 }}>
                 {errMsg}
               </div>
             )}
 
-            <button type="submit" disabled={submitting || !plan}
-              style={{ marginTop: 8, fontFamily: 'monospace', padding: '14px 0', background: G.gold, color: '#fff', border: 'none', cursor: submitting ? 'not-allowed' : 'pointer', fontWeight: 700, fontSize: 12, letterSpacing: 0.5, opacity: submitting ? 0.7 : 1 }}>
-              {submitting ? 'MEMPROSES...' : `BAYAR SEKARANG — Rp ${fmt(hargaDiskon)}`}
+            <button
+              type="submit"
+              style={{
+                marginTop: 4,
+                fontFamily: '"Geist Mono",monospace',
+                padding: '15px 0',
+                background: G.gold,
+                color: '#fff',
+                border: 'none',
+                cursor: 'pointer',
+                fontWeight: 700,
+                fontSize: 12,
+                letterSpacing: 0.8,
+                borderRadius: 8,
+              }}>
+              KONFIRMASI VIA WHATSAPP →
             </button>
-
-            <p style={{ fontFamily: 'monospace', fontSize: 10, color: C.dimmer, lineHeight: 1.5, margin: 0 }}>
-              Admin akan menghubungi kamu via WhatsApp setelah pesanan masuk untuk instruksi pembayaran.
-            </p>
           </form>
         </div>
+
       </div>
     </div>
   );
