@@ -553,6 +553,16 @@ export default function DashboardPage() {
         }
       )
       .on('postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'announcements' },
+        (payload: any) => {
+          const judul = payload.new?.judul || 'Pengumuman';
+          const content = payload.new?.content || '';
+          addMemberToast(`📢 ${judul}: ${content.slice(0, 80)}${content.length > 80 ? '...' : ''}`, 'info');
+          supabase.from('announcements').select('*').order('created_at', { ascending: false }).limit(5)
+            .then(({ data }) => { if (data) setAnnouncements(data); });
+        }
+      )
+      .on('postgres_changes',
         { event: 'UPDATE', schema: 'public', table: 'orders', filter: `member_id=eq.${member.id}` },
         (payload: any) => {
           const newStatus = payload.new?.status;
