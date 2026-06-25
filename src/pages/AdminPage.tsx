@@ -2056,17 +2056,15 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
   async function sendAnnounce() {
     if (!announceChannel || !announceMsg.trim()) { notify('Channel dan pesan wajib diisi.', 'err'); return; }
     setAnnounceSending(true);
-    try {
-      const res = await fetch('/api/discord/announce', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ channel_id: announceChannel, message: announceMsg }),
-      });
-      const data = await res.json();
-      if (data.success) { notify('Pengumuman berhasil dikirim ke Discord! ✅'); setAnnounceMsg(''); }
-      else notify('Gagal kirim: ' + data.error, 'err');
-    } catch { notify('Tidak bisa terhubung ke bot.', 'err'); }
+    const { error } = await supabase.from('discord_messages').insert({
+      channel_id: announceChannel,
+      message: announceMsg.trim(),
+      status: 'pending',
+    });
     setAnnounceSending(false);
+    if (error) { notify('Gagal kirim: ' + error.message, 'err'); return; }
+    notify('Pesan dikirim ke antrian bot Discord! ✅');
+    setAnnounceMsg('');
   }
 
   function startEditVideo(v: any) {
