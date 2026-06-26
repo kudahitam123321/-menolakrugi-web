@@ -39,6 +39,7 @@ No routing library. `App.tsx` inspects `window.location.pathname` in a `getPage(
 /komunitas             → KomunitasPage
 /discord-callback      → DiscordCallbackPage
 /competition           → CompetitionPage (standalone, or embedded as a DashboardPage tab)
+/bayar                 → BayarPage (visitor payment page from landing page CTA)
 /trading-plan          → DashboardPage (member, opens trading-plan tab)
 /member                → DashboardPage (requires session)
 /member/kurikulum      → CurriculumPage
@@ -78,7 +79,9 @@ Queries are raw `.from('table').select()...` chains — no ORM. Custom hooks in 
 
 **Critical RLS gotcha**: This app uses custom localStorage-based auth, **not** Supabase Auth. `auth.uid()` is always `null` at the database level. All RLS policies must use `using (true)` / `with check (true)` — access control is enforced at the application layer, not the database layer. Using `auth.uid()` in a policy will silently block inserts/updates. See `supabase-competition-rls-fix.sql` for the fix pattern.
 
-Key tables: `members`, `pricing_tiers`, `videos`, `journals`, `watch_history`, `testimonials`, `brokers`, `partnerships`, `activity_log`, `trading_plan_config`, `advance_requests`, `partnership_claims`, `landing_gallery`, `competitions`, `trading_journals`, `journal_settings`, `oneonone_requests`, `products`, `orders`, `payment_methods`, `discount_codes`.
+Key tables: `members`, `pricing_tiers`, `videos`, `journals`, `watch_history`, `testimonials`, `brokers`, `partnerships`, `activity_log`, `trading_plan_config`, `advance_requests`, `partnership_claims`, `landing_gallery`, `competitions`, `trading_journals`, `journal_settings`, `oneonone_requests`, `products`, `orders`, `payment_methods`, `discount_codes`, `announcements`, `discord_messages`, `landing_preview_config`.
+
+`products` has columns `panduan_url` and `panduan_name` (nullable) — admin can attach a downloadable guide file per product (`.pdf`, `.docx`, `.pptx`, etc.). Files stored in the `materi` bucket with `panduan_produk_*` prefix. Member's `produk` tab shows a "Download Panduan" button when the column is set. Migration: `supabase-products-panduan-migration.sql`.
 
 `members` has columns `last_seen` (ISO timestamp, updated on login and every 2 min while dashboard is open — used for "Online Sekarang" / "Terakhir Login" in admin) and `funded_status` (prop firm status string: `'DA'` | `'P1'` | `'P2'` | `'Master'` | `'MPAID'`; always written to DB first, Discord bot update is optional/async with 8 s timeout).
 
@@ -91,6 +94,12 @@ Supabase Storage buckets:
 - `materi` — video files, downloadable course files, **and broker/prop firm logos** (`brokerlogo_*.ext` prefix). All non-gallery uploads go here.
 
 Admin operations are logged via the module-level `logActivity(action, detail, adminName)` function in `AdminPanel.tsx`, which writes to `activity_log`.
+
+`announcements` stores admin broadcast messages (judul, content, type: `'info'`|`'warning'`|`'success'`). Members see these in real-time via a Supabase subscription in `DashboardPage`. `discord_messages` is a queue table for sending Discord bot messages — admin inserts a row, the Discord bot polls and sends, updating `status` (`'pending'`|`'sent'`|`'error'`). This pattern was introduced to bypass HTTP/CORS issues when calling the bot directly from the browser. `landing_preview_config` is a single-row config table (id=1, upsert pattern) holding the YouTube URL and three pricing plan cards shown on the landing page product preview section.
+
+### Cloudflare Pages Functions
+
+`functions/api/discord/[[path]].js` is a Cloudflare Pages Function that proxies requests from the browser to the Discord bot running at `http://93.115.101.152:12772` (Wispbyte). The proxy path is `/api/discord/*`. This resolves the mixed-content CORS issue of calling an HTTP bot from an HTTPS page. When browser → bot calls fail (e.g., bot is down), the code falls back to inserting into the `discord_messages` queue table instead.
 
 The `xlsx` package is available for data exports (e.g., exporting member lists or journal data from the admin panel).
 
@@ -229,6 +238,12 @@ Config is stored per `plan_type` (`'basic'` | `'advanced'`) in the `trading_plan
 | `supabase-products-migration.sql` | Schema tabel `products` dan `orders` untuk fitur produk indikator |
 | `supabase-orders-rls-fix.sql` | Fixes `orders` RLS to include USING clause for UPDATE; also adds `plan_type`, `kode_diskon`, `diskon_applied` columns |
 | `supabase-products-rls-fix.sql` | Fixes `products` RLS — same pattern: splits `for all with check (true)` into per-operation policies so UPDATE actually works |
+| `supabase-products-panduan-migration.sql` | Adds `panduan_url` and `panduan_name` columns to `products` table — run once in Supabase SQL editor |
+| `supabase-landing-preview-migration.sql` | Schema for `landing_preview_config` table (single-row upsert, id=1) |
+| `supabase-announcements-migration.sql` | Schema for `announcements` table (admin broadcast messages) |
+| `supabase-discord-queue-migration.sql` | Schema for `discord_messages` queue table (bot message delivery fallback) |
+| `functions/api/discord/[[path]].js` | Cloudflare Pages Function proxy — routes `/api/discord/*` to the Discord bot, bypassing CORS/mixed-content |
+| `src/pages/BayarPage.tsx` | Visitor payment page reached from landing page CTA |
 | `src/pages/CompetitionPage.tsx` | Member-facing competition + live leaderboard |
 | `src/pages/admin/AdminCompetitionPage.tsx` | Admin competition create/edit UI |
 | `src/hooks/useMyCompetitionStats.ts` | Per-member competition stats hook |

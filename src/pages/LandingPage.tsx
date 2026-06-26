@@ -893,7 +893,7 @@ function ProductPreview({ config }: { config: LandingPreviewConfig }) {
         </h2>
         <p style={{ color: MR.dim, fontSize: isMobile ? 14 : 16, lineHeight: 1.6, margin: 0, maxWidth: 600 }}>
           Indikator ini membantu Anda membaca struktur market dengan lebih mudah.{' '}
-          <span style={{ color: MR.gold, fontWeight: 600 }}>Beli indikatornya dan dapatkan diskon 50% untuk harga kelas private.</span>
+          <span style={{ color: MR.gold, fontWeight: 600 }}>Benefit untuk langganan tahunan dan lifetime: kalian akan dapat akses ke discord private Menolak Rugi.</span>
         </p>
       </div>
 
