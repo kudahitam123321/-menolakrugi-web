@@ -1,7 +1,5 @@
 import { useEffect, useState } from 'react';
 
-const BOT_SERVER = 'https://menolakrugi-bot-production.up.railway.app';
-
 export default function DiscordCallbackPage() {
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
   const [message, setMessage] = useState('');
@@ -11,7 +9,7 @@ export default function DiscordCallbackPage() {
     async function handleCallback() {
       const params = new URLSearchParams(window.location.search);
       const code = params.get('code');
-      const raw = localStorage.getItem('mr_session');
+      const raw = localStorage.getItem('mr_member') || sessionStorage.getItem('mr_member');
 
       if (!code || !raw) {
         setStatus('error');
@@ -19,11 +17,11 @@ export default function DiscordCallbackPage() {
         return;
       }
 
-      const session = JSON.parse(raw);
+      const member = JSON.parse(raw);
 
       try {
         const res = await fetch(
-          `${BOT_SERVER}/discord/callback?code=${code}&member_id=${session.member_id}`
+          `/api/discord/callback?code=${code}&member_id=${member.id}`
         );
         const data = await res.json();
 
@@ -31,6 +29,12 @@ export default function DiscordCallbackPage() {
           setStatus('success');
           setUsername(data.discord_username);
           setMessage(`Role Discord berhasil diset sesuai tier ${data.tier}!`);
+
+          // Sinkronkan status "terhubung" ke cache lokal (dipakai gate UI dashboard)
+          const updated = { ...member, discord_username: data.discord_username };
+          if (localStorage.getItem('mr_member')) localStorage.setItem('mr_member', JSON.stringify(updated));
+          else sessionStorage.setItem('mr_member', JSON.stringify(updated));
+
           setTimeout(() => { window.location.href = '/member'; }, 3000);
         } else {
           setStatus('error');

@@ -760,6 +760,13 @@ export default function DashboardPage() {
     setTimeout(() => setSettingMsg(''), 2000);
   }
 
+  function handleConnectDiscordOAuth() {
+    const CLIENT_ID = '1497825707173347409';
+    const REDIRECT_URI = encodeURIComponent('https://menolakrugi.pages.dev/discord-callback');
+    const SCOPE = encodeURIComponent('identify guilds.join');
+    window.location.href = `https://discord.com/oauth2/authorize?client_id=${CLIENT_ID}&redirect_uri=${REDIRECT_URI}&response_type=code&scope=${SCOPE}`;
+  }
+
   async function rateVideo(videoId: string, star: number) {
     if (!member) return;
     await supabase.from('video_ratings').upsert({ member_id: member.id, video_id: videoId, rating: star }, { onConflict: 'member_id,video_id' });
@@ -785,7 +792,7 @@ export default function DashboardPage() {
 
       // Coba update Discord nickname via bot (opsional, tidak gagalkan proses)
       try {
-        const res = await fetch('https://menolakrugi-bot-production.up.railway.app/discord/update-trading-status', {
+        const res = await fetch('/api/discord/update-trading-status', {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ member_id: member.id, funded_status: newStatus }),
           signal: AbortSignal.timeout(8000),
@@ -2037,17 +2044,25 @@ export default function DashboardPage() {
 
                 {/* Link Discord */}
                 <div style={{ background: C.panel, border: `1px solid ${C.border}`, borderRadius: 12, padding: 20 }}>
-                  <div style={{ fontFamily: C.mono, color: '#5865F2', fontSize: 11, letterSpacing: 1, marginBottom: 8 }}>// DISCORD USERNAME</div>
-                  <p style={{ color: C.dim, fontSize: 13, marginBottom: 14 }}>Hubungkan akun Discord kamu agar admin bisa verifikasi membership.</p>
-                  <div style={{ marginBottom: 10 }}>
-                    <div style={{ fontFamily: C.mono, color: C.dim, fontSize: 10, marginBottom: 5 }}>USERNAME DISCORD</div>
+                  <div style={{ fontFamily: C.mono, color: '#5865F2', fontSize: 11, letterSpacing: 1, marginBottom: 8 }}>// DISCORD</div>
+                  {member.discord_username ? (
+                    <p style={{ color: C.up, fontSize: 13, marginBottom: 14 }}>✓ Terhubung sebagai <strong>@{member.discord_username}</strong></p>
+                  ) : (
+                    <p style={{ color: C.dim, fontSize: 13, marginBottom: 14 }}>Hubungkan akun Discord kamu via OAuth — role server otomatis diset sesuai tier membership.</p>
+                  )}
+                  <button onClick={handleConnectDiscordOAuth} style={{ background: '#5865F2', color: '#fff', fontFamily: C.mono, fontSize: 12, fontWeight: 700, padding: '9px 18px', border: 'none', cursor: 'pointer', borderRadius: 6, marginBottom: 16 }}>
+                    {member.discord_username ? 'HUBUNGKAN ULANG (OAUTH)' : 'HUBUNGKAN VIA DISCORD OAUTH'}
+                  </button>
+
+                  <div style={{ borderTop: `1px solid ${C.border}`, paddingTop: 14 }}>
+                    <div style={{ fontFamily: C.mono, color: C.dim, fontSize: 10, marginBottom: 5 }}>ATAU ISI USERNAME MANUAL (opsional, tanpa auto-role)</div>
                     <input value={discordId || member.discord_username || ''} onChange={e => setDiscordId(e.target.value)}
                       placeholder="contoh: username#1234 atau @username" style={inp}
                       onFocus={e => e.target.style.borderColor = '#5865F2'} onBlur={e => e.target.style.borderColor = C.border2}/>
                   </div>
-                  {settingMsg && <div style={{ fontFamily: C.mono, color: C.up, fontSize: 12, marginBottom: 8 }}>{settingMsg}</div>}
-                  <button onClick={handleSaveDiscord} style={{ background: '#5865F2', color: '#fff', fontFamily: C.mono, fontSize: 12, fontWeight: 700, padding: '9px 18px', border: 'none', cursor: 'pointer', borderRadius: 6 }}>
-                    SIMPAN DISCORD
+                  {settingMsg && <div style={{ fontFamily: C.mono, color: C.up, fontSize: 12, margin: '8px 0' }}>{settingMsg}</div>}
+                  <button onClick={handleSaveDiscord} style={{ marginTop: 10, background: 'transparent', color: '#5865F2', fontFamily: C.mono, fontSize: 12, fontWeight: 700, padding: '9px 18px', border: '1px solid #5865F2', cursor: 'pointer', borderRadius: 6 }}>
+                    SIMPAN MANUAL
                   </button>
                 </div>
               </div>

@@ -3,7 +3,8 @@ const BOT_URL = 'http://93.115.101.152:12772';
 export async function onRequest(context) {
   const { request, params } = context;
   const path = (params.path || []).join('/');
-  const target = `${BOT_URL}/discord/${path}`;
+  const search = new URL(request.url).search;
+  const target = `${BOT_URL}/discord/${path}${search}`;
 
   try {
     const body = request.method !== 'GET' ? await request.text() : undefined;
