@@ -80,6 +80,9 @@ export default function BayarPage() {
     if (!plan) { setErrMsg('Plan tidak valid.'); return; }
 
     const pm = paymentMethods.find(p => p.id === metodePm);
+    const metodeInfo = pm?.jenis === 'qris'
+      ? `QRIS (${pm.nama_bank})`
+      : `Bank: ${pm?.nama_bank || metodePm} | Rek: ${pm?.nomor_rekening || ''}`;
 
     // Simpan ke DB dulu supaya masuk di dashboard admin
     const { error } = await supabase.from('orders').insert({
@@ -87,7 +90,7 @@ export default function BayarPage() {
       tier_member:    'visitor',
       nama_member:    nama.trim(),
       email_member:   email.trim(),
-      catatan:        `WA: ${noHp.trim()} | Bank: ${pm?.nama_bank || metodePm} | Rek: ${pm?.nomor_rekening || ''}`,
+      catatan:        `WA: ${noHp.trim()} | ${metodeInfo}`,
       plan_type:      plan.key,
       diskon_applied: plan.diskon || null,
       status:         'pending',
@@ -95,6 +98,11 @@ export default function BayarPage() {
     if (error) { setErrMsg('Gagal menyimpan pesanan: ' + error.message); return; }
 
     // Lalu buka WA admin
+    const metodeLine = pm
+      ? (pm.jenis === 'qris'
+          ? `*Metode:* QRIS (${pm.nama_bank}) — scan QR yang dikirim admin`
+          : `*Transfer ke:* ${pm.nama_bank} — ${pm.nomor_rekening} a.n. ${pm.nama_rekening}`)
+      : '';
     const msg = [
       `Halo Admin, saya ingin membeli Indikator SMC.`,
       ``,
@@ -102,7 +110,7 @@ export default function BayarPage() {
       `*Email:* ${email.trim()}`,
       `*No. WA:* ${noHp.trim()}`,
       `*Plan:* ${plan.nama} — Rp ${fmt(hargaDiskon)}`,
-      pm ? `*Transfer ke:* ${pm.nama_bank} — ${pm.nomor_rekening} a.n. ${pm.nama_rekening}` : '',
+      metodeLine,
       ``,
       `Mohon konfirmasi pesanan saya. Terima kasih!`,
     ].filter(Boolean).join('\n');
@@ -196,11 +204,21 @@ export default function BayarPage() {
                   {/* Info */}
                   <div style={{ flex: 1 }}>
                     <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 4 }}>{pm.nama_bank}</div>
-                    <div style={{ fontFamily: '"Geist Mono",monospace', fontSize: 18, fontWeight: 700, letterSpacing: 1.5, color: selected ? G.gold : C.text, marginBottom: 4 }}>
-                      {pm.nomor_rekening}
-                    </div>
-                    <div style={{ fontFamily: '"Geist Mono",monospace', fontSize: 11, color: C.dim }}>a.n. {pm.nama_rekening}</div>
-                    {pm.catatan && <div style={{ fontSize: 11, color: C.dimmer, marginTop: 4 }}>{pm.catatan}</div>}
+                    {pm.jenis === 'qris' ? (
+                      <>
+                        <img src={pm.qris_image_url} alt={`QRIS ${pm.nama_bank}`}
+                          style={{ width: '100%', maxWidth: 280, height: 280, objectFit: 'contain', background: '#fff', borderRadius: 8, border: `1px solid ${C.border}`, marginBottom: 6 }} />
+                        {pm.catatan && <div style={{ fontSize: 11, color: C.dimmer, marginTop: 4 }}>{pm.catatan}</div>}
+                      </>
+                    ) : (
+                      <>
+                        <div style={{ fontFamily: '"Geist Mono",monospace', fontSize: 18, fontWeight: 700, letterSpacing: 1.5, color: selected ? G.gold : C.text, marginBottom: 4 }}>
+                          {pm.nomor_rekening}
+                        </div>
+                        <div style={{ fontFamily: '"Geist Mono",monospace', fontSize: 11, color: C.dim }}>a.n. {pm.nama_rekening}</div>
+                        {pm.catatan && <div style={{ fontSize: 11, color: C.dimmer, marginTop: 4 }}>{pm.catatan}</div>}
+                      </>
+                    )}
                   </div>
                   {selected && (
                     <div style={{ fontFamily: '"Geist Mono",monospace', fontSize: 9, color: G.gold, background: G.gold + '18', padding: '3px 8px', borderRadius: 4, letterSpacing: 0.6 }}>DIPILIH</div>
@@ -213,16 +231,27 @@ export default function BayarPage() {
           {/* Nomor rekening terpilih — copyable */}
           {selectedPm && (
             <div style={{ marginTop: 14, background: G.gold + '0d', border: `1px solid ${G.gold}33`, borderRadius: 8, padding: '14px 18px' }}>
-              <div style={{ fontFamily: '"Geist Mono",monospace', color: C.dimmer, fontSize: 10, letterSpacing: 0.8, marginBottom: 8 }}>TRANSFER KE</div>
-              <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 6 }}>{selectedPm.nama_bank}</div>
-              <div
-                onClick={() => navigator.clipboard?.writeText(selectedPm.nomor_rekening)}
-                title="Klik untuk salin"
-                style={{ fontFamily: '"Geist Mono",monospace', fontSize: 22, fontWeight: 700, letterSpacing: 2, color: G.gold, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 10 }}>
-                {selectedPm.nomor_rekening}
-                <span style={{ fontSize: 12, color: C.dim }}>⎘</span>
-              </div>
-              <div style={{ fontFamily: '"Geist Mono",monospace', fontSize: 11, color: C.dim, marginTop: 4 }}>a.n. {selectedPm.nama_rekening}</div>
+              {selectedPm.jenis === 'qris' ? (
+                <>
+                  <div style={{ fontFamily: '"Geist Mono",monospace', color: C.dimmer, fontSize: 10, letterSpacing: 0.8, marginBottom: 8 }}>SCAN QRIS BERIKUT</div>
+                  <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 6 }}>{selectedPm.nama_bank}</div>
+                  <img src={selectedPm.qris_image_url} alt={`QRIS ${selectedPm.nama_bank}`}
+                    style={{ width: '100%', maxWidth: 280, height: 280, objectFit: 'contain', background: '#fff', borderRadius: 8, border: `1px solid ${C.border}` }} />
+                </>
+              ) : (
+                <>
+                  <div style={{ fontFamily: '"Geist Mono",monospace', color: C.dimmer, fontSize: 10, letterSpacing: 0.8, marginBottom: 8 }}>TRANSFER KE</div>
+                  <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 6 }}>{selectedPm.nama_bank}</div>
+                  <div
+                    onClick={() => navigator.clipboard?.writeText(selectedPm.nomor_rekening)}
+                    title="Klik untuk salin"
+                    style={{ fontFamily: '"Geist Mono",monospace', fontSize: 22, fontWeight: 700, letterSpacing: 2, color: G.gold, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 10 }}>
+                    {selectedPm.nomor_rekening}
+                    <span style={{ fontSize: 12, color: C.dim }}>⎘</span>
+                  </div>
+                  <div style={{ fontFamily: '"Geist Mono",monospace', fontSize: 11, color: C.dim, marginTop: 4 }}>a.n. {selectedPm.nama_rekening}</div>
+                </>
+              )}
             </div>
           )}
         </div>
