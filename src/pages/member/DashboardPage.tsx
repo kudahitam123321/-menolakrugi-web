@@ -6,6 +6,12 @@ import LeaderboardPage from './LeaderboardPage';
 import MemberTradingPlan from './MemberTradingPlan';
 import CompetitionPage from '../CompetitionPage';
 import { trackVideoWatch } from '../../hooks/useWatchHistory';
+import {
+  Search, LayoutGrid, PlayCircle, BookOpen, LineChart, NotebookPen, ClipboardList,
+  MessageCircle, Landmark, ShoppingBag, Rocket, Trophy, Medal, Award, Target, Star,
+  Link2, Settings, HelpCircle, LogOut, Bell, CheckCircle2, XCircle, Info, Megaphone,
+  Lock, FlaskConical, CircleDot, DollarSign, Briefcase,
+} from 'lucide-react';
 
 const G = { gold: 'var(--mr-gold)', gold2: 'var(--mr-gold2)' };
 const C = {
@@ -13,6 +19,23 @@ const C = {
   border2: 'var(--mr-border2)', dim: 'var(--mr-dim)', muted: 'var(--mr-muted)', text: 'var(--mr-text)',
   up: 'var(--mr-up)', down: 'var(--mr-down)', mono: '"Geist Mono",monospace',
   sans: '"Geist",system-ui,sans-serif',
+};
+const LP = {
+  bg:            'var(--lp-bg)',
+  surface:       'var(--lp-surface)',
+  text:          'var(--lp-text)',
+  muted:         'var(--lp-muted)',
+  border:        'var(--lp-border)',
+  primary:       'var(--lp-primary)',
+  primaryHover:  'var(--lp-primary-hover)',
+  primaryTint:   'var(--lp-primary-tint)',
+  danger:        'var(--lp-danger)',
+  sans: '"Geist",system-ui,sans-serif',
+  mono: '"Geist Mono",monospace',
+  radius:   16,
+  radiusSm: 10,
+  shadowSm: '0 1px 3px rgba(0,0,0,0.06)',
+  shadowMd: '0 8px 24px rgba(0,0,0,0.08)',
 };
 const DISCORD  = 'https://discord.gg/d2Tpf6sGMr';
 const TELEGRAM = 'https://t.me/+_azyX2h9oFhmNjNl';
@@ -24,28 +47,42 @@ function extractYtId(url: string): string | null {
 }
 
 const SIDEBAR = [
-  { id: 'dashboard',  label: 'Dashboard',      icon: '⊞' },
-  { id: 'kelas',      label: 'Kelas Saya',     icon: '▶' },
-  { id: 'materi',     label: 'Materi',         icon: '📚' },
-  { id: 'news',       label: 'Chart',          icon: '📈' },
-  { id: 'jurnal',       label: 'Jurnal Trading', icon: '📓' },
-  { id: 'trading-plan', label: 'Trading Plan',  icon: '📋' },
-  { id: 'komunitas',  label: 'Komunitas',      icon: '💬' },
-  { id: 'tools',      label: 'Broker',         icon: '🏦' },
-  { id: 'produk',     label: 'Produk',         icon: '🛍️' },
-  { id: 'sep1',       label: 'TOOLS & PROGRESS', icon: '', separator: true },
-  { id: 'funded',     label: 'Status Trading', icon: '🚀' },
-  { id: 'peringkat',  label: 'Peringkat',      icon: '🏆' },
-  { id: 'competition', label: 'Kompetisi',     icon: '🥇' },
-  { id: 'sertifikat', label: 'Sertifikat',     icon: '🎖' },
-  { id: '1on1',       label: '1-on-1 Mentoring', icon: '🎯' },
-  { id: 'ulasan',     label: 'Tulis Ulasan',   icon: '⭐' },
-  { id: 'referral',   label: 'Referral',       icon: '🔗' },
-  { id: 'sep2',       label: 'ACCOUNT',        icon: '', separator: true },
-  { id: 'pengaturan', label: 'Pengaturan',     icon: '⚙' },
-  { id: 'bantuan',    label: 'Bantuan',        icon: '❓' },
-  { id: 'logout',     label: 'Logout',         icon: '⏻' },
+  { id: 'dashboard',    label: 'Dashboard',       Icon: LayoutGrid },
+  { id: 'kelas',        label: 'Kelas Saya',      Icon: PlayCircle },
+  { id: 'materi',       label: 'Materi',          Icon: BookOpen },
+  { id: 'news',         label: 'Chart',           Icon: LineChart },
+  { id: 'jurnal',       label: 'Jurnal Trading',  Icon: NotebookPen },
+  { id: 'trading-plan', label: 'Trading Plan',    Icon: ClipboardList },
+  { id: 'komunitas',    label: 'Komunitas',       Icon: MessageCircle },
+  { id: 'tools',        label: 'Broker',          Icon: Landmark },
+  { id: 'produk',       label: 'Produk',          Icon: ShoppingBag },
+  { id: 'sep1',         label: 'TOOLS & PROGRESS', separator: true },
+  { id: 'funded',       label: 'Status Trading',  Icon: Rocket },
+  { id: 'peringkat',    label: 'Peringkat',       Icon: Trophy },
+  { id: 'competition',  label: 'Kompetisi',       Icon: Medal },
+  { id: 'sertifikat',   label: 'Sertifikat',      Icon: Award },
+  { id: '1on1',         label: '1-on-1 Mentoring', Icon: Target },
+  { id: 'ulasan',       label: 'Tulis Ulasan',    Icon: Star },
+  { id: 'referral',     label: 'Referral',        Icon: Link2 },
+  { id: 'sep2',         label: 'ACCOUNT',         separator: true },
+  { id: 'pengaturan',   label: 'Pengaturan',      Icon: Settings },
+  { id: 'bantuan',      label: 'Bantuan',         Icon: HelpCircle },
+  { id: 'logout',       label: 'Logout',          Icon: LogOut },
 ];
+
+function filterSidebar(items: typeof SIDEBAR, query: string) {
+  if (!query.trim()) return items;
+  const q = query.trim().toLowerCase();
+  const out: typeof SIDEBAR = [];
+  let pendingSeparator: typeof SIDEBAR[number] | null = null;
+  for (const item of items) {
+    if ((item as any).separator) { pendingSeparator = item; continue; }
+    if (!item.label.toLowerCase().includes(q)) continue;
+    if (pendingSeparator) { out.push(pendingSeparator); pendingSeparator = null; }
+    out.push(item);
+  }
+  return out;
+}
 
 // ── Mini sparkline ──────────────────────────────────────────────────────────
 function Spark({ up }: { up: boolean }) {
@@ -402,10 +439,14 @@ export default function DashboardPage() {
   const [testiTeks, setTestiTeks]               = useState('');
   const [testiSaving, setTestiSaving]           = useState(false);
   const [testiMsg, setTestiMsg]                 = useState('');
+  const [sidebarQuery, setSidebarQuery] = useState('');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
     return localStorage.getItem('mr_sidebar_collapsed') === '1';
   });
   const [mobileMenuOpen, setMobileMenuOpen]     = useState(false);
+  React.useEffect(() => {
+    if (sidebarCollapsed || !mobileMenuOpen) setSidebarQuery('');
+  }, [sidebarCollapsed, mobileMenuOpen]);
   const [isMobile, setIsMobile]                 = useState(() => window.innerWidth < 768);
   const [memberToasts, setMemberToasts]         = useState<{id:string;msg:string;type:'success'|'error'|'info'}[]>([]);
 
@@ -939,7 +980,7 @@ export default function DashboardPage() {
   };
 
   return (
-    <div style={{ fontFamily: C.sans, background: C.bg, minHeight: '100vh', color: C.text, display: 'flex', flexDirection: 'column', overflowX: 'hidden' }}>
+    <div className="mr-light-v2" style={{ fontFamily: LP.sans, background: LP.bg, minHeight: '100vh', color: LP.text, display: 'flex', flexDirection: 'column', overflowX: 'hidden' }}>
       <style>{`
         .mr-sidebar { width: 200px; flex-shrink: 0; }
         .mr-main { flex: 1; overflow-y: auto; min-width: 0; }

@@ -929,7 +929,7 @@ export default function LandingPage() {
     : null;
 
   return (
-    <div className="mr-landing-v2" style={{ fontFamily: LP.sans, color: LP.text, background: LP.bg, minHeight: '100vh', WebkitFontSmoothing: 'antialiased', overflowX: 'hidden' }}>
+    <div className="mr-light-v2" style={{ fontFamily: LP.sans, color: LP.text, background: LP.bg, minHeight: '100vh', WebkitFontSmoothing: 'antialiased', overflowX: 'hidden' }}>
       <style>{`
         .mr-nav-links { display: flex; }
         .mr-curriculum-grid { grid-template-columns: 1fr 1fr; }
