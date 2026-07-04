@@ -91,6 +91,18 @@
   --mr-tint-dark:    #f8fafc;
 }
 
+.mr-landing-v2 {
+  --lp-bg:            #FAFAFA;
+  --lp-surface:       #FFFFFF;
+  --lp-text:          #0F172A;
+  --lp-muted:         #64748B;
+  --lp-border:        #E5E7EB;
+  --lp-primary:       #16a34a;
+  --lp-primary-hover: #15803d;
+  --lp-primary-tint:  rgba(22,163,74,0.08);
+  --lp-danger:        #ef4444;
+}
+
 /* ── Broker banner animation ── */
 @keyframes mr-broker-pulse {
   0%, 100% { box-shadow: 0 0 0 0 rgba(234,179,8,0.0); border-color: var(--mr-tint-gold-b); }

@@ -3,13 +3,34 @@
 // Pricing dari DB (dengan fallback hardcode jika tabel belum ada).
 
 import React, { useState } from 'react';
+import { Menu, X, Star, ChevronDown, MessageCircle, Send, Music2, Youtube, Phone } from 'lucide-react';
 
-import { MR, TIER_ACCENT } from '../lib/theme';
-import { MRLogo, Ticker, StatusBar, TVTickerTape, CandleChart, CANDLE_GRID_STYLE } from '../components/mr';
+import { MR } from '../lib/theme';
+import { MRLogo, CandleChart, CANDLE_GRID_STYLE } from '../components/mr';
 import { useLandingStats, useApprovedTestimonials, usePricing, useLandingPreview } from '../hooks';
 import type { LandingPreviewConfig } from '../hooks';
 import type { PricingTier, Testimonial } from '../types/mr.types';
 import { supabase } from '../lib/supabase';
+
+// ─── Landing v2 design tokens ──────────────────────────────────────────────────
+
+const LP = {
+  bg:            'var(--lp-bg)',
+  surface:       'var(--lp-surface)',
+  text:          'var(--lp-text)',
+  muted:         'var(--lp-muted)',
+  border:        'var(--lp-border)',
+  primary:       'var(--lp-primary)',
+  primaryHover:  'var(--lp-primary-hover)',
+  primaryTint:   'var(--lp-primary-tint)',
+  danger:        'var(--lp-danger)',
+  sans: '"Geist",system-ui,sans-serif',
+  mono: '"Geist Mono",monospace',
+  radius:   16,
+  radiusSm: 10,
+  shadowSm: '0 1px 3px rgba(0,0,0,0.06)',
+  shadowMd: '0 8px 24px rgba(0,0,0,0.08)',
+};
 
 // ─── Static data ──────────────────────────────────────────────────────────────
 
@@ -97,140 +118,121 @@ function NavBar() {
   const [active, setActive]       = React.useState('KELAS');
   const [isLoggedIn, setIsLoggedIn] = React.useState(false);
   const [menuOpen, setMenuOpen]   = React.useState(false);
+  const [scrolled, setScrolled]   = React.useState(false);
 
   React.useEffect(() => {
     const member = localStorage.getItem('mr_member') || sessionStorage.getItem('mr_member');
     if (member) { try { JSON.parse(member); setIsLoggedIn(true); } catch {} }
   }, []);
 
+  React.useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 8);
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
   const NAV_ITEMS = [
-    { l: 'KELAS',       href: '#kelas',       icon: '📚' },
-    { l: 'KURIKULUM',   href: '#kurikulum',   icon: '🎓' },
-    { l: 'KOMUNITAS',   href: '/komunitas',   icon: '💬' },
-    { l: 'PARTNERSHIP', href: '/partnership', icon: '🤝' },
-    { l: 'KALENDER',    href: '/calendar',    icon: '📅' },
+    { l: 'Kelas',       key: 'KELAS',       href: '#kelas' },
+    { l: 'Kurikulum',   key: 'KURIKULUM',   href: '#kurikulum' },
+    { l: 'Komunitas',   key: 'KOMUNITAS',   href: '/komunitas' },
+    { l: 'Partnership', key: 'PARTNERSHIP', href: '/partnership' },
+    { l: 'Kalender',    key: 'KALENDER',    href: '/calendar' },
   ];
 
   return (
     <>
-    <nav className='mr-nav-topbar' style={{ background: 'var(--mr-sidebar)', padding: '12px 32px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'sticky', top: 0, zIndex: 50, borderBottom: '1px solid var(--mr-border)' }}>
-
-      {/* Logo — always visible */}
+    <nav className='mr-nav-topbar' style={{
+      background: scrolled ? 'rgba(255,255,255,0.85)' : LP.surface,
+      backdropFilter: scrolled ? 'blur(12px)' : 'none',
+      WebkitBackdropFilter: scrolled ? 'blur(12px)' : 'none',
+      padding: '14px 32px', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+      position: 'sticky', top: 0, zIndex: 50, borderBottom: `1px solid ${LP.border}`,
+      transition: 'background 0.2s, box-shadow 0.2s',
+      boxShadow: scrolled ? LP.shadowSm : 'none',
+    }}>
       <a href="/" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none', flexShrink: 0 }}>
-        <div style={{ width: 38, height: 38, flexShrink: 0 }}>
+        <div style={{ width: 34, height: 34, flexShrink: 0 }}>
           <img src="/logo.png" alt="MR" style={{ width: '100%', height: '100%', objectFit: 'contain' }}/>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1 }}>
-          <span style={{ fontWeight: 800, letterSpacing: 0.5, fontSize: 13, color: 'var(--mr-text)' }}>MENOLAK RUGI</span>
-          <span style={{ color: 'var(--mr-dim)', fontSize: 9, marginTop: 2, fontFamily: MR.mono, letterSpacing: 1 }}>SMC EDUCATION</span>
+          <span style={{ fontWeight: 800, letterSpacing: 0.3, fontSize: 14, color: LP.text }}>MENOLAK RUGI</span>
+          <span style={{ color: LP.muted, fontSize: 9, marginTop: 2, fontFamily: LP.mono, letterSpacing: 1 }}>SMC EDUCATION</span>
         </div>
       </a>
 
-      {/* Desktop nav tabs */}
-      <div className='mr-nav-links' style={{ display: 'flex', alignItems: 'center', background: 'var(--mr-dark)', border: '1px solid var(--mr-border)', borderRadius: 12, padding: '6px', gap: 2 }}>
+      <div className='mr-nav-links' style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
         {NAV_ITEMS.map(item => {
-          const isActive = active === item.l;
+          const isActive = active === item.key;
           return (
-            <a key={item.l} href={item.href} onClick={() => setActive(item.l)}
-              style={{ display: 'flex', flexDirection: 'column' as const, alignItems: 'center', gap: 3, padding: '8px 18px', borderRadius: 9, textDecoration: 'none',
-                color: isActive ? MR.gold : 'var(--mr-dim)',
-                background: isActive ? 'var(--mr-tint-gold)' : 'transparent',
-                border: isActive ? '1px solid var(--mr-tint-gold-b)' : '1px solid transparent',
-                transition: 'all .2s' }}>
-              <span style={{ fontFamily: MR.mono, fontSize: 10, fontWeight: 700, letterSpacing: 0.8 }}>{item.l}</span>
+            <a key={item.key} href={item.href} onClick={() => setActive(item.key)}
+              style={{ padding: '8px 14px', borderRadius: 8, textDecoration: 'none', fontSize: 14, fontWeight: 500,
+                color: isActive ? LP.primary : LP.muted, background: isActive ? LP.primaryTint : 'transparent', transition: 'all .15s' }}>
+              {item.l}
             </a>
           );
         })}
       </div>
 
-      {/* Desktop CTA */}
-      <div className='mr-nav-links' style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-        {/* Theme toggle */}
-        <button onClick={() => { const h = document.documentElement; const n = h.getAttribute('data-theme') === 'light' ? 'dark' : 'light'; h.setAttribute('data-theme', n); localStorage.setItem('mr_theme', n); }}
-          title="Toggle tema" style={{ background: 'none', border: '1px solid var(--mr-border2)', borderRadius: 7, width: 34, height: 34, cursor: 'pointer', color: 'var(--mr-dim)', fontSize: 15, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-          <span className="mr-theme-icon-dark">🌙</span>
-          <span className="mr-theme-icon-light">☀️</span>
-        </button>
+      <div className='mr-nav-links' style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
         {isLoggedIn ? (
           <button onClick={() => window.location.href = '/member'}
-            style={{ fontFamily: MR.mono, fontSize: 11, color: '#22ab94', padding: '9px 16px', border: '1px solid var(--mr-tint-green-b)', background: 'var(--mr-tint-green2)', cursor: 'pointer', borderRadius: 7, fontWeight: 700 }}>
-            DASHBOARD ›
+            style={{ fontFamily: LP.sans, fontSize: 13, fontWeight: 600, color: '#fff', padding: '9px 18px', border: 'none', background: LP.primary, cursor: 'pointer', borderRadius: 8 }}>
+            Dashboard
           </button>
         ) : (
+          <>
           <button onClick={() => window.location.href = '/login'}
-            style={{ fontFamily: MR.mono, fontSize: 11, color: 'var(--mr-muted)', padding: '9px 16px', border: '1px solid var(--mr-border2)', background: 'var(--mr-sidebar)', cursor: 'pointer', borderRadius: 7 }}>
-            LOG IN
+            style={{ fontFamily: LP.sans, fontSize: 13, fontWeight: 500, color: LP.text, padding: '9px 16px', border: 'none', background: 'transparent', cursor: 'pointer' }}>
+            Masuk
           </button>
+          <button onClick={() => window.location.href = '/signup'}
+            style={{ fontFamily: LP.sans, fontSize: 13, fontWeight: 600, color: '#fff', padding: '9px 18px', border: 'none', background: LP.primary, cursor: 'pointer', borderRadius: 8 }}>
+            Mulai Sekarang
+          </button>
+          </>
         )}
-        <button onClick={() => window.location.href = '/signup'}
-          className="mr-btn-shimmer" style={{ fontFamily: MR.mono, fontSize: 11, padding: '9px 16px', background: 'linear-gradient(135deg,#eab308,#ca9e00)', color: '#000', fontWeight: 700, border: 'none', cursor: 'pointer', borderRadius: 7 }}>
-          BUKA AKUN ›
-        </button>
       </div>
 
-      {/* Mobile right side: CTA + hamburger */}
       <div className='mr-mobile-nav-right' style={{ display: 'none', alignItems: 'center', gap: 8 }}>
-        {isLoggedIn ? (
-          <button onClick={() => window.location.href = '/member'}
-            style={{ fontFamily: MR.mono, fontSize: 11, color: '#22ab94', padding: '8px 12px', border: '1px solid var(--mr-tint-green-b)', background: 'var(--mr-tint-green2)', cursor: 'pointer', borderRadius: 7, fontWeight: 700, whiteSpace: 'nowrap' as const }}>
-            DASHBOARD ›
-          </button>
-        ) : (
-          <button onClick={() => window.location.href = '/login'}
-            style={{ fontFamily: MR.mono, fontSize: 11, color: 'var(--mr-muted)', padding: '8px 12px', border: '1px solid var(--mr-border2)', background: 'var(--mr-sidebar)', cursor: 'pointer', borderRadius: 7, whiteSpace: 'nowrap' as const }}>
-            LOG IN
-          </button>
-        )}
-        <button onClick={() => window.location.href = '/signup'}
-          className="mr-btn-shimmer" style={{ fontFamily: MR.mono, fontSize: 11, padding: '8px 12px', background: 'linear-gradient(135deg,#eab308,#ca9e00)', color: '#000', fontWeight: 700, border: 'none', cursor: 'pointer', borderRadius: 7, whiteSpace: 'nowrap' as const }}>
-          DAFTAR
+        <button onClick={() => window.location.href = isLoggedIn ? '/member' : '/signup'}
+          style={{ fontFamily: LP.sans, fontSize: 13, fontWeight: 600, color: '#fff', padding: '9px 14px', border: 'none', background: LP.primary, cursor: 'pointer', borderRadius: 8, whiteSpace: 'nowrap' as const }}>
+          {isLoggedIn ? 'Dashboard' : 'Mulai'}
         </button>
-        {/* Hamburger */}
-        <button onClick={() => setMenuOpen(o => !o)}
-          style={{ width: 38, height: 38, background: 'var(--mr-panel)', border: '1px solid var(--mr-border2)', borderRadius: 8, cursor: 'pointer', display: 'flex', flexDirection: 'column' as const, alignItems: 'center', justifyContent: 'center', gap: 5, flexShrink: 0 }}>
-          <span style={{ display: 'block', width: 16, height: 1.5, background: 'var(--mr-muted)', borderRadius: 2 }}/>
-          <span style={{ display: 'block', width: 16, height: 1.5, background: 'var(--mr-muted)', borderRadius: 2 }}/>
-          <span style={{ display: 'block', width: 12, height: 1.5, background: 'var(--mr-muted)', borderRadius: 2 }}/>
+        <button onClick={() => setMenuOpen(o => !o)} aria-label="Buka menu"
+          style={{ width: 38, height: 38, background: LP.surface, border: `1px solid ${LP.border}`, borderRadius: 8, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+          <Menu size={18} color={LP.text} />
         </button>
       </div>
     </nav>
 
-    {/* Mobile menu overlay */}
     {menuOpen && (
       <div style={{ position: 'fixed', inset: 0, zIndex: 100, display: 'flex', flexDirection: 'column' as const }}>
-        <div style={{ flex: 1, background: 'rgba(0,0,0,0.7)' }} onClick={() => setMenuOpen(false)}/>
-        <div style={{ background: 'var(--mr-sidebar)', borderTop: '1px solid var(--mr-border2)', padding: '20px 24px 32px' }}>
-          {/* Close bar */}
+        <div style={{ flex: 1, background: 'rgba(15,23,42,0.4)' }} onClick={() => setMenuOpen(false)}/>
+        <div style={{ background: LP.surface, borderTop: `1px solid ${LP.border}`, padding: '20px 24px 32px', borderRadius: '16px 16px 0 0' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-            <span style={{ fontFamily: MR.mono, color: '#eab308', fontSize: 11, letterSpacing: 1 }}>MENU</span>
-            <button onClick={() => setMenuOpen(false)} style={{ background: 'none', border: 'none', color: 'var(--mr-dim)', fontSize: 24, cursor: 'pointer', padding: '0 4px' }}>×</button>
+            <span style={{ fontFamily: LP.mono, color: LP.muted, fontSize: 11, letterSpacing: 1 }}>MENU</span>
+            <button onClick={() => setMenuOpen(false)} aria-label="Tutup menu" style={{ background: 'none', border: 'none', color: LP.muted, cursor: 'pointer', padding: 4, display: 'flex' }}>
+              <X size={22} />
+            </button>
           </div>
-          {/* Nav links */}
-          <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 4, marginBottom: 20 }}>
+          <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 6, marginBottom: 20 }}>
             {NAV_ITEMS.map(item => (
-              <a key={item.l} href={item.href} onClick={() => setMenuOpen(false)}
-                style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 16px', background: 'var(--mr-panel)', borderRadius: 10, textDecoration: 'none', color: 'var(--mr-text)', fontSize: 15, fontWeight: 600, border: '1px solid var(--mr-border)' }}>
-                <span style={{ fontSize: 20 }}>{item.icon}</span>
+              <a key={item.key} href={item.href} onClick={() => setMenuOpen(false)}
+                style={{ padding: '14px 16px', background: LP.bg, borderRadius: 10, textDecoration: 'none', color: LP.text, fontSize: 15, fontWeight: 600, border: `1px solid ${LP.border}` }}>
                 {item.l}
               </a>
             ))}
           </div>
-          {/* Action buttons */}
           <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 10 }}>
-            {isLoggedIn ? (
-              <button onClick={() => window.location.href = '/member'}
-                style={{ width: '100%', fontFamily: MR.mono, fontSize: 13, fontWeight: 700, color: '#22ab94', padding: '14px', background: 'var(--mr-tint-green2)', border: '1px solid #22ab94', cursor: 'pointer', borderRadius: 10 }}>
-                BUKA DASHBOARD →
-              </button>
-            ) : (
+            {!isLoggedIn && (
               <button onClick={() => window.location.href = '/login'}
-                style={{ width: '100%', fontFamily: MR.mono, fontSize: 13, fontWeight: 700, color: 'var(--mr-text)', padding: '14px', background: 'var(--mr-panel)', border: '1px solid var(--mr-border2)', cursor: 'pointer', borderRadius: 10 }}>
-                LOG IN
+                style={{ width: '100%', fontFamily: LP.sans, fontSize: 14, fontWeight: 600, color: LP.text, padding: '14px', background: LP.bg, border: `1px solid ${LP.border}`, cursor: 'pointer', borderRadius: 10 }}>
+                Masuk
               </button>
             )}
-            <button onClick={() => window.location.href = '/signup'}
-              style={{ width: '100%', fontFamily: MR.mono, fontSize: 13, fontWeight: 700, color: '#000', padding: '14px', background: 'linear-gradient(135deg,#eab308,#ca9e00)', border: 'none', cursor: 'pointer', borderRadius: 10 }}>
-              BUKA AKUN ›
+            <button onClick={() => window.location.href = isLoggedIn ? '/member' : '/signup'}
+              style={{ width: '100%', fontFamily: LP.sans, fontSize: 14, fontWeight: 700, color: '#fff', padding: '14px', background: LP.primary, border: 'none', cursor: 'pointer', borderRadius: 10 }}>
+              {isLoggedIn ? 'Buka Dashboard →' : 'Mulai Sekarang →'}
             </button>
           </div>
         </div>
@@ -1362,7 +1364,7 @@ export default function LandingPage() {
   const { preview }      = useLandingPreview();
 
   return (
-    <div style={{ fontFamily: MR.sans, color: MR.text, background: MR.bg, minHeight: '100vh', WebkitFontSmoothing: 'antialiased', overflowX: 'hidden' }}>
+    <div className="mr-landing-v2" style={{ fontFamily: LP.sans, color: LP.text, background: LP.bg, minHeight: '100vh', WebkitFontSmoothing: 'antialiased', overflowX: 'hidden' }}>
       <style>{`
         .mr-nav-links { display: flex; }
         .mr-section-pad { padding: 80px 40px; }
@@ -1404,11 +1406,6 @@ export default function LandingPage() {
         @media (min-width:768px) { .mr-pricing-card{transition:transform 0.25s ease,box-shadow 0.25s ease !important} .mr-pricing-card:hover{transform:translateY(-8px) !important;box-shadow:0 20px 56px rgba(0,0,0,0.5) !important} }
       `}</style>
 
-      {/* 1 — Ticker pair (chrome paling atas) */}
-      <Ticker />
-
-      {/* 2 — Navbar */}
-      <StatusBar />
       <NavBar />
 
       {/* 3 — Hero */}
