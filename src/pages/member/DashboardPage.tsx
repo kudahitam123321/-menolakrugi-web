@@ -1221,19 +1221,34 @@ export default function DashboardPage() {
       <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
 
         {/* ── Desktop Sidebar ── */}
-        <aside className='mr-sidebar' style={{ width: sidebarCollapsed ? 58 : 200, background: C.sidebar, borderRight: `1px solid ${C.border}`, flexShrink: 0, display: 'flex', flexDirection: 'column', overflowY: 'auto', transition: 'width 0.2s ease', overflow: 'hidden' }}>
+        <aside className='mr-sidebar' style={{ width: sidebarCollapsed ? 58 : 200, background: LP.surface, borderRight: `1px solid ${LP.border}`, flexShrink: 0, display: 'flex', flexDirection: 'column', overflowY: 'auto', transition: 'width 0.2s ease', overflow: 'hidden' }}>
           <div style={{ flex: 1, paddingTop: 10 }}>
-            {SIDEBAR.map(item => {
+            {!sidebarCollapsed && (
+              <div style={{ padding: '0 12px 12px' }}>
+                <div style={{ position: 'relative' }}>
+                  <Search size={14} color={LP.muted} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
+                  <input
+                    type="text"
+                    value={sidebarQuery}
+                    onChange={e => setSidebarQuery(e.target.value)}
+                    placeholder="Cari menu..."
+                    style={{ width: '100%', boxSizing: 'border-box' as const, background: LP.bg, border: `1px solid ${LP.border}`, borderRadius: 8, padding: '8px 10px 8px 30px', fontSize: 12, fontFamily: LP.sans, color: LP.text, outline: 'none' }}
+                  />
+                </div>
+              </div>
+            )}
+            {filterSidebar(SIDEBAR, sidebarQuery).map(item => {
               if ((item as any).separator) {
                 return !sidebarCollapsed ? (
                   <div key={item.id} style={{ padding: '16px 18px 6px', display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <div style={{ flex: 1, height: 1, background: '#1e1e1e' }}/>
-                    <span style={{ fontFamily: C.mono, fontSize: 8, color: '#333', letterSpacing: 2, whiteSpace: 'nowrap' as const }}>{item.label}</span>
-                    <div style={{ flex: 1, height: 1, background: '#1e1e1e' }}/>
+                    <div style={{ flex: 1, height: 1, background: LP.border }}/>
+                    <span style={{ fontFamily: LP.mono, fontSize: 8, color: LP.muted, letterSpacing: 2, whiteSpace: 'nowrap' as const }}>{item.label}</span>
+                    <div style={{ flex: 1, height: 1, background: LP.border }}/>
                   </div>
-                ) : <div key={item.id} style={{ margin: '8px 0', borderTop: '1px solid var(--mr-border)' }}/>;
+                ) : <div key={item.id} style={{ margin: '8px 0', borderTop: `1px solid ${LP.border}` }}/>;
               }
               const isA = active === item.id;
+              const ItemIcon = (item as any).Icon;
               return (
                 <button key={item.id}
                   onClick={() => {
@@ -1242,42 +1257,42 @@ export default function DashboardPage() {
                     else { setActive(item.id); }
                   }}
                   title={sidebarCollapsed ? item.label : undefined}
-                  style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: sidebarCollapsed ? '11px 0' : '10px 18px', justifyContent: sidebarCollapsed ? 'center' : 'flex-start', border: 'none', background: isA ? 'var(--mr-tint-gold)' : 'transparent', borderLeft: isA ? `3px solid ${G.gold}` : '3px solid transparent', color: isA ? G.gold : C.dim, cursor: 'pointer', fontSize: 13, textAlign: 'left' as const, transition: 'padding 0.2s' }}>
-                  <span style={{ fontSize: 17, flexShrink: 0 }}>{item.icon}</span>
+                  style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: sidebarCollapsed ? '11px 0' : '10px 18px', justifyContent: sidebarCollapsed ? 'center' : 'flex-start', border: 'none', background: isA ? LP.primaryTint : 'transparent', borderLeft: isA ? `3px solid ${LP.primary}` : '3px solid transparent', color: isA ? LP.primary : LP.muted, cursor: 'pointer', fontSize: 13, textAlign: 'left' as const, transition: 'padding 0.2s' }}>
+                  <ItemIcon size={17} style={{ flexShrink: 0 }} />
                   {!sidebarCollapsed && <span style={{ flex: 1, whiteSpace: 'nowrap' as const }}>{item.label}</span>}
-                  {!sidebarCollapsed && (item as any).badge && <span style={{ fontFamily: C.mono, fontSize: 8, background: C.down, color: '#fff', padding: '1px 5px', borderRadius: 3, fontWeight: 700 }}>{(item as any).badge}</span>}
+                  {!sidebarCollapsed && (item as any).badge && <span style={{ fontFamily: LP.mono, fontSize: 8, background: LP.danger, color: '#fff', padding: '1px 5px', borderRadius: 3, fontWeight: 700 }}>{(item as any).badge}</span>}
                 </button>
               );
             })}
           </div>
 
           {/* Membership card - only when expanded */}
-          {!sidebarCollapsed && <div style={{ margin: '0 12px 12px', background: '#0d0c00', border: `1px solid #2a2200`, borderRadius: 10, padding: '14px' }}>
-            <div style={{ fontFamily: C.mono, color: '#555', fontSize: 9, letterSpacing: 1, marginBottom: 6 }}>AKSES MEMBERSHIP</div>
-            <div style={{ fontWeight: 700, color: G.gold, fontSize: 13 }}>{member.tier}</div>
-            <div style={{ fontFamily: C.mono, color: C.dim, fontSize: 10, marginTop: 2 }}>{member.is_advance ? '(Advance)' : '(Basic)'}</div>
-            <div style={{ fontFamily: C.mono, color: '#555', fontSize: 10, marginTop: 8 }}>Aktif sampai</div>
+          {!sidebarCollapsed && <div style={{ margin: '0 12px 12px', background: LP.primaryTint, border: `1px solid ${LP.primary}33`, borderRadius: 10, padding: '14px' }}>
+            <div style={{ fontFamily: LP.mono, color: LP.muted, fontSize: 9, letterSpacing: 1, marginBottom: 6 }}>AKSES MEMBERSHIP</div>
+            <div style={{ fontWeight: 700, color: LP.primary, fontSize: 13 }}>{member.tier}</div>
+            <div style={{ fontFamily: LP.mono, color: LP.muted, fontSize: 10, marginTop: 2 }}>{member.is_advance ? '(Advance)' : '(Basic)'}</div>
+            <div style={{ fontFamily: LP.mono, color: LP.muted, fontSize: 10, marginTop: 8 }}>Aktif sampai</div>
             {isTrial && expiryDate ? (
               <>
-                <div style={{ fontSize: 12, fontWeight: 700, marginTop: 2, color: isExpired ? C.down : daysLeft! <= 7 ? '#f97316' : C.text }}>
+                <div style={{ fontSize: 12, fontWeight: 700, marginTop: 2, color: isExpired ? LP.danger : daysLeft! <= 7 ? '#f97316' : LP.text }}>
                   {expiryDate.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
                 </div>
                 {!isExpired && (
-                  <div style={{ fontFamily: C.mono, fontSize: 9, color: daysLeft! <= 7 ? '#f97316' : '#555', marginTop: 2 }}>
+                  <div style={{ fontFamily: LP.mono, fontSize: 9, color: daysLeft! <= 7 ? '#f97316' : LP.muted, marginTop: 2 }}>
                     {daysLeft} hari lagi
                   </div>
                 )}
                 {isExpired && (
-                  <div style={{ fontFamily: C.mono, fontSize: 9, color: C.down, marginTop: 2 }}>AKSES BERAKHIR</div>
+                  <div style={{ fontFamily: LP.mono, fontSize: 9, color: LP.danger, marginTop: 2 }}>AKSES BERAKHIR</div>
                 )}
-                <a href="/checkout" style={{ display: 'block', marginTop: 10, fontFamily: C.mono, fontSize: 10, fontWeight: 700,
-                  color: '#000', background: isExpired ? C.down : G.gold,
+                <a href="/checkout" style={{ display: 'block', marginTop: 10, fontFamily: LP.mono, fontSize: 10, fontWeight: 700,
+                  color: '#fff', background: isExpired ? LP.danger : LP.primary,
                   padding: '6px 0', textAlign: 'center' as const, textDecoration: 'none', borderRadius: 5 }}>
                   {isExpired ? 'AKTIFKAN LAGI' : 'NAIK TIER ▸'}
                 </a>
               </>
             ) : (
-              <div style={{ fontSize: 13, fontWeight: 600, marginTop: 2 }}>Seumur Hidup</div>
+              <div style={{ fontSize: 13, fontWeight: 600, marginTop: 2, color: LP.text }}>Seumur Hidup</div>
             )}
           </div>}
 
