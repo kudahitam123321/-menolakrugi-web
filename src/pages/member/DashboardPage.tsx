@@ -1463,53 +1463,53 @@ export default function DashboardPage() {
 
               {/* ── My Trading Stats ── */}
               {myJurnalStats ? (
-                <div style={{ background: C.panel, border: `1px solid ${C.border}`, borderRadius: 12, padding: '16px 18px' }}>
+                <div style={{ background: LP.surface, border: `1px solid ${LP.border}`, borderRadius: 12, padding: '16px 18px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14, flexWrap: 'wrap' as const, gap: 8 }}>
-                    <div style={{ fontFamily: C.mono, color: G.gold, fontSize: 10, letterSpacing: 1 }}>// MY TRADING STATS</div>
-                    <button onClick={() => setActive('jurnal')} style={{ fontFamily: C.mono, fontSize: 9, color: C.dim, background: 'none', border: `1px solid ${C.border2}`, padding: '3px 8px', borderRadius: 4, cursor: 'pointer' }}>Lihat Jurnal ›</button>
+                    <div style={{ fontFamily: LP.mono, color: LP.primary, fontSize: 10, letterSpacing: 1 }}>MY TRADING STATS</div>
+                    <button onClick={() => setActive('jurnal')} style={{ fontFamily: LP.mono, fontSize: 9, color: LP.muted, background: 'none', border: `1px solid ${LP.border}`, padding: '3px 8px', borderRadius: 4, cursor: 'pointer' }}>Lihat Jurnal ›</button>
                   </div>
                   {/* Equity gain banner */}
-                  <div style={{ marginBottom: 12, padding: '10px 14px', background: myJurnalStats.totalGain >= 0 ? 'var(--mr-tint-green)' : 'rgba(239,68,68,0.08)', border: `1px solid ${myJurnalStats.totalGain >= 0 ? 'rgba(34,197,94,0.25)' : 'rgba(239,68,68,0.25)'}`, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+                  <div style={{ marginBottom: 12, padding: '10px 14px', background: myJurnalStats.totalGain >= 0 ? LP.primaryTint : `${LP.danger}14`, border: `1px solid ${myJurnalStats.totalGain >= 0 ? LP.primary + '44' : LP.danger + '44'}`, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
                     <div>
-                      <div style={{ fontFamily: C.mono, fontSize: 9, color: C.dim, letterSpacing: 0.8, marginBottom: 2 }}>TOTAL EQUITY GAIN</div>
-                      <div style={{ fontSize: 26, fontWeight: 800, letterSpacing: -1, color: myJurnalStats.totalGain >= 0 ? C.up : C.down, fontFamily: C.mono }}>
+                      <div style={{ fontFamily: LP.mono, fontSize: 9, color: LP.muted, letterSpacing: 0.8, marginBottom: 2 }}>TOTAL EQUITY GAIN</div>
+                      <div style={{ fontSize: 26, fontWeight: 800, letterSpacing: -1, color: myJurnalStats.totalGain >= 0 ? LP.primary : LP.danger, fontFamily: LP.mono }}>
                         {myJurnalStats.totalGain >= 0 ? '+' : ''}{myJurnalStats.totalGain.toFixed(2)}%
                       </div>
                     </div>
                     <div style={{ textAlign: 'right' as const }}>
-                      <div style={{ fontFamily: C.mono, fontSize: 9, color: C.dim, marginBottom: 2 }}>TOTAL PNL</div>
-                      <div style={{ fontFamily: C.mono, fontSize: 16, fontWeight: 700, color: myJurnalStats.totalPnl >= 0 ? C.up : C.down }}>
+                      <div style={{ fontFamily: LP.mono, fontSize: 9, color: LP.muted, marginBottom: 2 }}>TOTAL PNL</div>
+                      <div style={{ fontFamily: LP.mono, fontSize: 16, fontWeight: 700, color: myJurnalStats.totalPnl >= 0 ? LP.primary : LP.danger }}>
                         {myJurnalStats.totalPnl >= 0 ? '+' : ''}${myJurnalStats.totalPnl.toFixed(0)}
                       </div>
-                      <div style={{ fontFamily: C.mono, fontSize: 9, color: C.dim, marginTop: 2 }}>dari ${myJurnalStats.equityAwal.toLocaleString()}</div>
+                      <div style={{ fontFamily: LP.mono, fontSize: 9, color: LP.muted, marginTop: 2 }}>dari ${myJurnalStats.equityAwal.toLocaleString()}</div>
                     </div>
                   </div>
                   {/* Stat grid */}
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(90px, 1fr))', gap: 8 }}>
                     {[
-                      { label: 'TOTAL TRADE', value: myJurnalStats.totalTrades, color: C.text, mono: true },
-                      { label: 'WIN RATE', value: `${myJurnalStats.winRate.toFixed(0)}%`, color: myJurnalStats.winRate >= 50 ? C.up : C.down, mono: true },
-                      { label: 'WIN', value: myJurnalStats.wins, color: C.up, mono: true },
-                      { label: 'LOSS', value: myJurnalStats.losses, color: C.down, mono: true },
-                      { label: 'BEST TRADE', value: `$${myJurnalStats.bestTrade >= 0 ? '+' : ''}${myJurnalStats.bestTrade.toFixed(0)}`, color: C.up, mono: true },
-                      { label: 'WORST TRADE', value: `$${myJurnalStats.worstTrade.toFixed(0)}`, color: C.down, mono: true },
-                      { label: 'TOP PAIR', value: myJurnalStats.mostTradedPair, color: C.text, mono: false },
+                      { label: 'TOTAL TRADE', value: myJurnalStats.totalTrades, color: LP.text, mono: true },
+                      { label: 'WIN RATE', value: `${myJurnalStats.winRate.toFixed(0)}%`, color: myJurnalStats.winRate >= 50 ? LP.primary : LP.danger, mono: true },
+                      { label: 'WIN', value: myJurnalStats.wins, color: LP.primary, mono: true },
+                      { label: 'LOSS', value: myJurnalStats.losses, color: LP.danger, mono: true },
+                      { label: 'BEST TRADE', value: `$${myJurnalStats.bestTrade >= 0 ? '+' : ''}${myJurnalStats.bestTrade.toFixed(0)}`, color: LP.primary, mono: true },
+                      { label: 'WORST TRADE', value: `$${myJurnalStats.worstTrade.toFixed(0)}`, color: LP.danger, mono: true },
+                      { label: 'TOP PAIR', value: myJurnalStats.mostTradedPair, color: LP.text, mono: false },
                     ].map(s => (
-                      <div key={s.label} style={{ background: C.bg, border: `1px solid ${C.border}`, borderRadius: 8, padding: '10px 12px' }}>
-                        <div style={{ fontFamily: C.mono, fontSize: 8, color: '#555', letterSpacing: 0.8, marginBottom: 5 }}>{s.label}</div>
-                        <div style={{ fontFamily: s.mono ? C.mono : C.sans, fontSize: s.label === 'TOP PAIR' ? 12 : 15, fontWeight: 700, color: s.color, letterSpacing: -0.3 }}>{String(s.value)}</div>
+                      <div key={s.label} style={{ background: LP.bg, border: `1px solid ${LP.border}`, borderRadius: 8, padding: '10px 12px' }}>
+                        <div style={{ fontFamily: LP.mono, fontSize: 8, color: LP.muted, letterSpacing: 0.8, marginBottom: 5 }}>{s.label}</div>
+                        <div style={{ fontFamily: s.mono ? LP.mono : LP.sans, fontSize: s.label === 'TOP PAIR' ? 12 : 15, fontWeight: 700, color: s.color, letterSpacing: -0.3 }}>{String(s.value)}</div>
                       </div>
                     ))}
                   </div>
                 </div>
               ) : (
-                <div style={{ background: C.panel, border: `1px solid ${C.border}`, borderRadius: 10, padding: '14px 18px', display: 'flex', alignItems: 'center', gap: 14 }}>
-                  <span style={{ fontSize: 22, flexShrink: 0 }}>📓</span>
+                <div style={{ background: LP.surface, border: `1px solid ${LP.border}`, borderRadius: 10, padding: '14px 18px', display: 'flex', alignItems: 'center', gap: 14 }}>
+                  <NotebookPen size={22} color={LP.primary} style={{ flexShrink: 0 }} />
                   <div>
-                    <div style={{ fontFamily: C.mono, color: G.gold, fontSize: 9, letterSpacing: 1, marginBottom: 3 }}>// MY TRADING STATS</div>
-                    <div style={{ fontSize: 12, color: C.dim }}>Belum ada data jurnal. Mulai isi jurnal trading untuk lihat statistikmu.</div>
+                    <div style={{ fontFamily: LP.mono, color: LP.primary, fontSize: 9, letterSpacing: 1, marginBottom: 3 }}>MY TRADING STATS</div>
+                    <div style={{ fontSize: 12, color: LP.muted }}>Belum ada data jurnal. Mulai isi jurnal trading untuk lihat statistikmu.</div>
                   </div>
-                  <button onClick={() => setActive('jurnal')} style={{ marginLeft: 'auto', fontFamily: C.mono, fontSize: 10, fontWeight: 700, color: '#000', background: G.gold, border: 'none', padding: '7px 14px', borderRadius: 6, cursor: 'pointer', flexShrink: 0 }}>
+                  <button onClick={() => setActive('jurnal')} style={{ marginLeft: 'auto', fontFamily: LP.mono, fontSize: 10, fontWeight: 700, color: '#fff', background: LP.primary, border: 'none', padding: '7px 14px', borderRadius: 6, cursor: 'pointer', flexShrink: 0 }}>
                     Buka Jurnal ›
                   </button>
                 </div>

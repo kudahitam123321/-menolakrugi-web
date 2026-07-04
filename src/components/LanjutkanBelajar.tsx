@@ -7,13 +7,13 @@ import {
 } from '../hooks/useWatchHistory';
 
 const C = {
-  panel: 'var(--mr-panel)',
-  border: 'var(--mr-border)',
-  border2: 'var(--mr-border2)',
-  text: 'var(--mr-text)',
-  dim: 'var(--mr-muted)',
-  dimmer: 'var(--mr-dim)',
-  gold: 'var(--mr-gold)',
+  panel: 'var(--lp-surface)',
+  border: 'var(--lp-border)',
+  border2: 'var(--lp-border)',
+  text: 'var(--lp-text)',
+  dim: 'var(--lp-muted)',
+  dimmer: 'var(--lp-muted)',
+  gold: 'var(--lp-primary)',
   mono: '"Geist Mono", monospace',
 };
 
@@ -135,12 +135,12 @@ export default function LanjutkanBelajar({ memberId, memberTier }: Props) {
                   style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
                 />
               ) : (
-                <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: C.dimmer, fontFamily: C.mono }}>
+                <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#6b7280', fontFamily: C.mono }}>
                   VIDEO
                 </div>
               )}
               <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <span style={{ width: 38, height: 38, borderRadius: 999, background: C.gold, color: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14 }}>
+                <span style={{ width: 38, height: 38, borderRadius: 999, background: C.gold, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14 }}>
                   ▶
                 </span>
               </div>
