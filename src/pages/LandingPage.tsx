@@ -424,25 +424,25 @@ function Curriculum() {
   function ModCard({ mod, idx, isAdv }: { mod: any; idx: number; isAdv?: boolean }) {
     const isOpen = isAdv ? activeAdv === idx : activeBasic === idx;
     const toggle = () => isAdv ? setActiveAdv(isOpen ? null : idx) : setActiveBasic(isOpen ? null : idx);
-    const accent = isAdv ? MR.gold : MR.up;
     const isBonusCard = mod.bonus;
+    const accent = isBonusCard ? '#7c3aed' : LP.primary;
     return (
-      <div style={{ borderBottom: `1px solid ${MR.border}`, overflow: 'hidden' }}>
+      <div style={{ borderBottom: `1px solid ${LP.border}`, overflow: 'hidden' }}>
         <button onClick={toggle}
-          style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 12, padding: '14px 20px', background: isOpen ? (isAdv ? 'var(--mr-tint-gold)' : 'var(--mr-tint-green3)') : 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left' as const, transition: 'background .2s' }}>
-          <span style={{ fontFamily: MR.mono, fontSize: 10, fontWeight: 700, color: isBonusCard ? '#a855f7' : accent, background: isBonusCard ? 'var(--mr-tint-purple)' : (isAdv ? 'var(--mr-tint-gold)' : 'var(--mr-tint-green3)'), border: `1px solid ${isBonusCard ? '#3a1a5a' : (isAdv ? 'var(--mr-tint-gold-b)' : 'var(--mr-tint-green-b)')}`, padding: '2px 8px', flexShrink: 0, minWidth: 52, textAlign: 'center' as const }}>
+          style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 12, padding: '16px 20px', background: isOpen ? LP.primaryTint : 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left' as const, transition: 'background .2s' }}>
+          <span style={{ fontFamily: LP.mono, fontSize: 10, fontWeight: 700, color: accent, background: `${accent}14`, padding: '2px 8px', flexShrink: 0, minWidth: 52, textAlign: 'center' as const, borderRadius: 4 }}>
             {mod.mod}
           </span>
-          <span style={{ flex: 1, fontSize: 14, fontWeight: 600, color: isOpen ? (isBonusCard ? '#c084fc' : accent) : MR.text }}>
+          <span style={{ flex: 1, fontSize: 14, fontWeight: 600, color: isOpen ? accent : LP.text }}>
             {mod.title}
           </span>
-          <span style={{ fontFamily: MR.mono, fontSize: 12, color: MR.dim, transition: 'transform .2s', transform: isOpen ? 'rotate(180deg)' : 'none', flexShrink: 0 }}>▾</span>
+          <ChevronDown size={16} color={isOpen ? accent : LP.muted} style={{ transition: 'transform .2s', transform: isOpen ? 'rotate(180deg)' : 'none', flexShrink: 0 }} />
         </button>
         {isOpen && (
-          <div style={{ padding: '4px 20px 14px 60px', background: isAdv ? 'var(--mr-tint-gold)' : 'var(--mr-tint-green)' }}>
+          <div style={{ padding: '4px 20px 16px 60px', background: LP.bg }}>
             {mod.items.map((item: string, i: number) => (
-              <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 8, padding: '5px 0', fontSize: 13, color: MR.dim }}>
-                <span style={{ color: isBonusCard ? '#a855f7' : accent, flexShrink: 0, marginTop: 1 }}>▸</span>
+              <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 8, padding: '5px 0', fontSize: 13, color: LP.muted }}>
+                <span style={{ color: accent, flexShrink: 0, marginTop: 1 }}>▸</span>
                 <span>{item}</span>
               </div>
             ))}
@@ -453,51 +453,39 @@ function Curriculum() {
   }
 
   return (
-    <section id="kurikulum" style={{ borderBottom: `1px solid ${MR.border}` }}>
-      {/* Header */}
-      <div ref={refHdr} style={{ ...hdrStyle, padding: '48px 40px 32px', borderBottom: `1px solid ${MR.border}` }}>
-        <div style={{ fontFamily: MR.mono, color: MR.dim, fontSize: 11, letterSpacing: 0.8, marginBottom: 8 }}>// KURIKULUM</div>
-        <h2 style={{ fontSize: isMobile ? 22 : 36, fontWeight: 700, margin: 0, letterSpacing: isMobile ? -0.5 : -1 }}>
-          Apa yang kamu pelajari
-        </h2>
-        <p style={{ color: MR.dim, fontSize: 15, marginTop: 10, maxWidth: 560 }}>
+    <section id="kurikulum" style={{ background: LP.surface, borderBottom: `1px solid ${LP.border}` }}>
+      <div ref={refHdr} style={{ ...hdrStyle, padding: isMobile ? '40px 20px 24px' : '56px 40px 32px', maxWidth: 1200, margin: '0 auto' }}>
+        <div style={{ fontFamily: LP.mono, color: LP.muted, fontSize: 11, letterSpacing: 0.8, marginBottom: 8 }}>// KURIKULUM</div>
+        <h2 style={{ fontSize: isMobile ? 24 : 40, fontWeight: 800, margin: 0, letterSpacing: -1, color: LP.text }}>Apa yang kamu pelajari</h2>
+        <p style={{ color: LP.muted, fontSize: 15, marginTop: 10, maxWidth: 560 }}>
           Dua jalur belajar: fondasi yang solid di Basic, eksekusi yang tajam di Advanced.
         </p>
       </div>
 
-      {/* Two-column layout */}
-      <div className='mr-curriculum-grid' style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr' }}>
-
-        {/* BASIC */}
-        <div style={{ borderRight: `1px solid ${MR.border}` }}>
-          <div style={{ padding: '24px 20px 16px', borderBottom: `1px solid ${MR.border}`, display: 'flex', alignItems: 'center', gap: 12 }}>
-            <div style={{ width: 10, height: 10, borderRadius: '50%', background: MR.up, flexShrink: 0 }} />
+      <div className='mr-curriculum-grid' style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', maxWidth: 1200, margin: '0 auto', border: `1px solid ${LP.border}`, borderBottom: 'none' }}>
+        <div style={{ borderRight: isMobile ? 'none' : `1px solid ${LP.border}`, borderBottom: isMobile ? `1px solid ${LP.border}` : 'none' }}>
+          <div style={{ padding: '20px 20px 14px', borderBottom: `1px solid ${LP.border}`, display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div style={{ width: 10, height: 10, borderRadius: '50%', background: LP.primary, flexShrink: 0 }} />
             <div>
-              <div style={{ fontFamily: MR.mono, fontSize: 10, color: MR.up, letterSpacing: 1, fontWeight: 700 }}>BASIC CLASS</div>
-              <div style={{ fontSize: 13, color: MR.dim, marginTop: 2 }}>Smart Money Concept Foundation</div>
+              <div style={{ fontFamily: LP.mono, fontSize: 10, color: LP.primary, letterSpacing: 1, fontWeight: 700 }}>BASIC CLASS</div>
+              <div style={{ fontSize: 13, color: LP.muted, marginTop: 2 }}>Smart Money Concept Foundation</div>
             </div>
-            <span style={{ marginLeft: 'auto', fontFamily: MR.mono, fontSize: 11, color: MR.dim }}>{BASIC_MODULES.length} modul</span>
+            <span style={{ marginLeft: 'auto', fontFamily: LP.mono, fontSize: 11, color: LP.muted }}>{BASIC_MODULES.length} modul</span>
           </div>
-          {BASIC_MODULES.map((mod, i) => (
-            <ModCard key={i} mod={mod} idx={i} isAdv={false} />
-          ))}
+          {BASIC_MODULES.map((mod, i) => <ModCard key={i} mod={mod} idx={i} isAdv={false} />)}
         </div>
 
-        {/* ADVANCED */}
         <div>
-          <div style={{ padding: '24px 20px 16px', borderBottom: `1px solid ${MR.border}`, display: 'flex', alignItems: 'center', gap: 12 }}>
-            <div style={{ width: 10, height: 10, borderRadius: '50%', background: MR.gold, flexShrink: 0 }} />
+          <div style={{ padding: '20px 20px 14px', borderBottom: `1px solid ${LP.border}`, display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#7c3aed', flexShrink: 0 }} />
             <div>
-              <div style={{ fontFamily: MR.mono, fontSize: 10, color: MR.gold, letterSpacing: 1, fontWeight: 700 }}>ADVANCED CLASS</div>
-              <div style={{ fontSize: 13, color: MR.dim, marginTop: 2 }}>Market Narrative & Execution</div>
+              <div style={{ fontFamily: LP.mono, fontSize: 10, color: '#7c3aed', letterSpacing: 1, fontWeight: 700 }}>ADVANCED CLASS</div>
+              <div style={{ fontSize: 13, color: LP.muted, marginTop: 2 }}>Market Narrative & Execution</div>
             </div>
-            <span style={{ marginLeft: 'auto', fontFamily: MR.mono, fontSize: 11, color: MR.dim }}>{ADVANCED_MODULES.length} modul</span>
+            <span style={{ marginLeft: 'auto', fontFamily: LP.mono, fontSize: 11, color: LP.muted }}>{ADVANCED_MODULES.length} modul</span>
           </div>
-          {ADVANCED_MODULES.map((mod, i) => (
-            <ModCard key={i} mod={mod} idx={i} isAdv={true} />
-          ))}
+          {ADVANCED_MODULES.map((mod, i) => <ModCard key={i} mod={mod} idx={i} isAdv={true} />)}
         </div>
-
       </div>
     </section>
   );
