@@ -1733,6 +1733,13 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
     else { notify('Status pesanan diperbarui!'); loadData(); }
   }
 
+  async function deleteOrder(orderId: string) {
+    if (!confirm('Hapus pesanan ini?')) return;
+    const { error } = await supabase.from('orders').delete().eq('id', orderId);
+    if (error) notify('Error: ' + error.message, 'err');
+    else { notify('Pesanan dihapus!'); loadData(); }
+  }
+
   async function addDiscountCode() {
     if (!dcKode.trim() || !dcDiskon) { notify('Kode dan besaran diskon wajib diisi.', 'err'); return; }
     const d = parseInt(dcDiskon);
@@ -3293,6 +3300,8 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
                             <option value="dibayar">Dibayar</option>
                             <option value="aktif">Aktif</option>
                           </select>
+                          <button onClick={()=>deleteOrder(o.id)}
+                            style={{background:'#1a0f0f',border:'1px solid #ef4444',color:'#ef4444',fontFamily:'monospace',fontSize:11,padding:'6px 10px',cursor:'pointer'}}>HAPUS</button>
                         </div>
                       </div>
                     );
