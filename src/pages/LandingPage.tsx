@@ -548,8 +548,7 @@ function Testimonials({ testimonials }: { testimonials: Testimonial[] }) {
   const total = testimonials.length;
   const perView = isMobile ? 1 : 3;
   const maxIdx = Math.max(0, total - perView);
-  const avgRating = total ? (testimonials.reduce((a: number, t: any) => a + (t.bintang||t.rating||5), 0) / total).toFixed(1) : '5.0';
-  const ACCENT = ['#eab308','#22ab94','#a855f7','#3b82f6','#ec4899','#f59e0b','#06b6d4','#10b981','#f97316','#8b5cf6','#e11d48','#0ea5e9','#84cc16','#d946ef','#fb923c'];
+  const avgRating = total ? (testimonials.reduce((a: number, t: any) => a + (t.bintang || t.rating || 5), 0) / total).toFixed(1) : '5.0';
 
   React.useEffect(() => {
     if (paused || total <= perView) return;
@@ -558,52 +557,43 @@ function Testimonials({ testimonials }: { testimonials: Testimonial[] }) {
   }, [paused, total, perView, maxIdx]);
 
   return (
-    <section style={{ padding: isMobile ? '48px 0' : '72px 0', background: 'linear-gradient(180deg,var(--mr-bg) 0%,var(--mr-dark) 50%,var(--mr-bg) 100%)', borderBottom: '1px solid var(--mr-border)', overflow: 'hidden', position: 'relative' }}>
-      <div style={{ position:'absolute', top:'40%', left:'50%', transform:'translateX(-50%)', width:800, height:300, background:'radial-gradient(ellipse,rgba(234,179,8,0.03) 0%,transparent 70%)', pointerEvents:'none', zIndex:0 }}/>
-
-      {/* Header */}
-      <div ref={refTmHdr} style={{ ...tmHdrStyle, textAlign:'center' as const, marginBottom: isMobile ? 32 : 48, padding:'0 24px', position:'relative', zIndex:1 }}>
-        <div style={{ display:'inline-flex', alignItems:'center', gap:8, background:'rgba(234,179,8,0.08)', border:'1px solid rgba(234,179,8,0.2)', padding:'5px 16px', borderRadius:20, marginBottom:16 }}>
-          <span style={{ color:MR.gold, fontSize:11 }}>★</span>
-          <span style={{ fontFamily:MR.mono, color:MR.gold, fontSize:10, letterSpacing:1.5 }}>APA KATA MEMBER KAMI</span>
+    <section style={{ padding: isMobile ? '48px 0' : '72px 0', background: LP.surface, borderTop: `1px solid ${LP.border}`, borderBottom: `1px solid ${LP.border}` }}>
+      <div ref={refTmHdr} style={{ ...tmHdrStyle, textAlign: 'center' as const, marginBottom: isMobile ? 28 : 40, padding: '0 24px' }}>
+        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: LP.primaryTint, padding: '5px 16px', borderRadius: 20, marginBottom: 16 }}>
+          <Star size={13} fill={LP.primary} color={LP.primary} />
+          <span style={{ fontFamily: LP.mono, color: LP.primary, fontSize: 10, letterSpacing: 1.5 }}>APA KATA MEMBER KAMI</span>
         </div>
-        <h2 style={{ fontSize: isMobile ? 28 : 44, fontWeight:800, letterSpacing:-1.5, margin:'0 0 12px', lineHeight:1.1 }}>
-          Bukan sekadar klaim.<br/>
-          <span style={{ color:MR.gold }}>Bukti nyata dari member.</span>
+        <h2 style={{ fontSize: isMobile ? 26 : 40, fontWeight: 800, letterSpacing: -1, margin: '0 0 12px', color: LP.text }}>
+          Bukan sekadar klaim. Bukti nyata dari member.
         </h2>
-        <div style={{ display:'flex', gap:8, justifyContent:'center', alignItems:'center' }}>
-          <div style={{ display:'flex', gap:2 }}>{[1,2,3,4,5].map(s=><span key={s} style={{ color:MR.gold, fontSize:16 }}>★</span>)}</div>
-          <span style={{ fontFamily:MR.mono, fontWeight:700, color:MR.gold, fontSize:15 }}>{avgRating}</span>
-          <span style={{ color:'var(--mr-dim)', fontSize:13 }}>· {total} ulasan</span>
+        <div style={{ display: 'flex', gap: 8, justifyContent: 'center', alignItems: 'center' }}>
+          <div style={{ display: 'flex', gap: 2 }}>{[1,2,3,4,5].map(s => <Star key={s} size={16} fill={LP.primary} color={LP.primary} />)}</div>
+          <span style={{ fontFamily: LP.mono, fontWeight: 700, color: LP.primary, fontSize: 15 }}>{avgRating}</span>
+          <span style={{ color: LP.muted, fontSize: 13 }}>· {total} ulasan</span>
         </div>
       </div>
 
-      {/* Slider */}
-      <div style={{ position:'relative', zIndex:1 }} onMouseEnter={()=>setPaused(true)} onMouseLeave={()=>setPaused(false)}>
-        <div style={{ overflow:'hidden', padding: isMobile ? '12px 24px' : '12px 60px' }}>
-          <div style={{ display:'flex', gap:16, transition:'transform 0.6s cubic-bezier(0.25,0.46,0.45,0.94)', transform:`translateX(calc(-${cur} * ${isMobile?'calc(100% + 16px)':'calc(33.333% + 5.5px)'}))`, willChange:'transform' }}>
-            {testimonials.map((t: any, i: number) => {
-              const accent = ACCENT[i % ACCENT.length];
+      <div style={{ position: 'relative' }} onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)}>
+        <div style={{ overflow: 'hidden', padding: isMobile ? '12px 24px' : '12px 60px' }}>
+          <div style={{ display: 'flex', gap: 16, transition: 'transform 0.6s cubic-bezier(0.25,0.46,0.45,0.94)', transform: `translateX(calc(-${cur} * ${isMobile ? 'calc(100% + 16px)' : 'calc(33.333% + 5.5px)'}))` }}>
+            {testimonials.map((t: any) => {
               const stars = t.bintang || t.rating || 5;
-              const isActive = i >= cur && i < cur + perView;
               return (
-                <div key={t.id} style={{ flexShrink:0, width: isMobile ? '100%' : 'calc(33.333% - 11px)', background:'linear-gradient(150deg,var(--mr-panel),var(--mr-sidebar))', border:`1px solid ${isActive ? accent+'44' : 'var(--mr-border)'}`, borderRadius:20, padding:'28px 24px', display:'flex', flexDirection:'column' as const, gap:18, position:'relative', overflow:'hidden', transition:'border-color 0.5s,box-shadow 0.5s', boxShadow: isActive ? `0 8px 40px ${accent}0f` : 'none', minHeight:300 }}>
-                  <div style={{ position:'absolute', top:0, left:24, right:24, height:2, background:`linear-gradient(90deg,transparent,${accent},transparent)`, opacity:isActive?1:0.2, transition:'opacity 0.5s' }}/>
-                  <div style={{ position:'absolute', bottom:-15, right:12, fontSize:140, color:accent, opacity:0.04, fontFamily:'Georgia,serif', lineHeight:1, pointerEvents:'none', userSelect:'none' as const }}>"</div>
-                  <div style={{ display:'flex', gap:3 }}>
-                    {[1,2,3,4,5].map(s=><span key={s} style={{ fontSize:13, color:stars>=s?MR.gold:'var(--mr-border2)' }}>★</span>)}
+                <div key={t.id} style={{ flexShrink: 0, width: isMobile ? '100%' : 'calc(33.333% - 11px)', background: LP.bg, border: `1px solid ${LP.border}`, borderRadius: LP.radius, padding: '24px 22px', display: 'flex', flexDirection: 'column' as const, gap: 16, minHeight: 260, boxShadow: LP.shadowSm }}>
+                  <div style={{ display: 'flex', gap: 3 }}>
+                    {[1,2,3,4,5].map(s => <Star key={s} size={13} fill={stars >= s ? LP.primary : 'none'} color={stars >= s ? LP.primary : LP.border} />)}
                   </div>
-                  <p style={{ fontSize:13.5, lineHeight:1.8, color:'var(--mr-dim)', margin:0, flex:1, fontStyle:'italic', display:'-webkit-box', WebkitLineClamp:6, WebkitBoxOrient:'vertical' as const, overflow:'hidden' }}>
+                  <p style={{ fontSize: 13.5, lineHeight: 1.75, color: LP.text, margin: 0, flex: 1, display: '-webkit-box', WebkitLineClamp: 6, WebkitBoxOrient: 'vertical' as const, overflow: 'hidden' }}>
                     "{t.ulasan || t.teks || t.content || ''}"
                   </p>
-                  <div style={{ display:'flex', alignItems:'center', gap:12, paddingTop:16, borderTop:'1px solid var(--mr-border)' }}>
-                    <div style={{ width:38, height:38, borderRadius:10, background:`${accent}18`, border:`1px solid ${accent}55`, display:'flex', alignItems:'center', justifyContent:'center', fontWeight:800, fontSize:15, color:accent, flexShrink:0, fontFamily:MR.mono }}>
-                      {(t.nama||t.nama_akun||'?')[0]?.toUpperCase()}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, paddingTop: 14, borderTop: `1px solid ${LP.border}` }}>
+                    <div style={{ width: 36, height: 36, borderRadius: 10, background: LP.primaryTint, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 14, color: LP.primary, flexShrink: 0 }}>
+                      {(t.nama || t.nama_akun || '?')[0]?.toUpperCase()}
                     </div>
-                    <div style={{ minWidth:0 }}>
-                      <div style={{ fontWeight:700, fontSize:13, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' as const, color:'var(--mr-text)' }}>{t.nama||t.nama_akun}</div>
-                      <div style={{ fontFamily:MR.mono, fontSize:9, color:accent, marginTop:3, letterSpacing:0.5 }}>
-                        {(t.kelas||t.tier||'Member').replace('SMC ','').replace(' Mentorship','').toUpperCase()}
+                    <div style={{ minWidth: 0 }}>
+                      <div style={{ fontWeight: 700, fontSize: 13, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const, color: LP.text }}>{t.nama || t.nama_akun}</div>
+                      <div style={{ fontFamily: LP.mono, fontSize: 9, color: LP.primary, marginTop: 3, letterSpacing: 0.5 }}>
+                        {(t.kelas || t.tier || 'Member').replace('SMC ', '').replace(' Mentorship', '').toUpperCase()}
                       </div>
                     </div>
                   </div>
@@ -613,22 +603,15 @@ function Testimonials({ testimonials }: { testimonials: Testimonial[] }) {
           </div>
         </div>
 
-        {total > perView && <>
-          <button onClick={()=>setCur(c=>Math.max(0,c-1))} disabled={cur===0}
-            style={{ position:'absolute', left: isMobile?4:12, top:'50%', transform:'translateY(-50%)', width:44, height:44, borderRadius:'50%', background:'rgba(8,8,8,0.85)', border:`1px solid ${cur===0?'var(--mr-border)':'var(--mr-border2)'}`, color:cur===0?'var(--mr-border2)':'var(--mr-text)', fontSize:22, cursor:cur===0?'default':'pointer', display:'flex', alignItems:'center', justifyContent:'center', backdropFilter:'blur(12px)', zIndex:2, transition:'all 0.2s', boxShadow:'0 4px 20px rgba(0,0,0,0.5)' }}>‹</button>
-          <button onClick={()=>setCur(c=>Math.min(maxIdx,c+1))} disabled={cur>=maxIdx}
-            style={{ position:'absolute', right: isMobile?4:12, top:'50%', transform:'translateY(-50%)', width:44, height:44, borderRadius:'50%', background:'rgba(8,8,8,0.85)', border:`1px solid ${cur>=maxIdx?'var(--mr-border)':'var(--mr-border2)'}`, color:cur>=maxIdx?'var(--mr-border2)':'var(--mr-text)', fontSize:22, cursor:cur>=maxIdx?'default':'pointer', display:'flex', alignItems:'center', justifyContent:'center', backdropFilter:'blur(12px)', zIndex:2, transition:'all 0.2s', boxShadow:'0 4px 20px rgba(0,0,0,0.5)' }}>›</button>
-        </>}
+        {total > perView && (
+          <div style={{ display: 'flex', justifyContent: 'center', gap: 6, marginTop: 24 }}>
+            {Array.from({ length: maxIdx + 1 }).map((_, i) => (
+              <button key={i} onClick={() => setCur(i)}
+                style={{ width: cur === i ? 22 : 6, height: 6, borderRadius: 4, background: cur === i ? LP.primary : LP.border, border: 'none', cursor: 'pointer', padding: 0 }} />
+            ))}
+          </div>
+        )}
       </div>
-
-      {total > perView && (
-        <div style={{ display:'flex', justifyContent:'center', gap:6, marginTop:28 }}>
-          {Array.from({length:maxIdx+1}).map((_,i)=>(
-            <button key={i} onClick={()=>setCur(i)}
-              style={{ width:cur===i?28:7, height:7, borderRadius:4, background:cur===i?MR.gold:'var(--mr-border2)', border:'none', cursor:'pointer', transition:'all 0.35s cubic-bezier(0.34,1.56,0.64,1)', padding:0 }}/>
-          ))}
-        </div>
-      )}
     </section>
   );
 }
