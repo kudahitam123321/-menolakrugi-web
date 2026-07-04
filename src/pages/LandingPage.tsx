@@ -341,22 +341,20 @@ function StatsBar({ memberCount, fundedCount, newThisMonth }: { memberCount: num
   React.useEffect(() => { const mq = window.matchMedia('(max-width: 767px)'); const h = (e: MediaQueryListEvent) => setIsMobile(e.matches); mq.addEventListener('change',h); return ()=>mq.removeEventListener('change',h); }, []);
 
   const STATS = [
-    { k: 'MEMBER AKTIF',  v: cMember.toString(), d: `+${cMonthly} bulan ini`, up: true,  glow: 'rgba(22,163,74,0.12)'   },
-    { k: 'FUNDED LULUS',  v: cFunded.toString(), d: '+5 bulan ini',            up: true,  glow: 'rgba(22,163,74,0.08)'   },
-    { k: 'RATING KELAS',  v: '4.9',              d: '/ 5.0',                   up: null,  glow: 'rgba(234,179,8,0.07)'   },
-    { k: 'AKSES MATERI',  v: '∞',                d: 'Lifetime access',         up: null,  glow: 'rgba(100,100,100,0.06)' },
+    { k: 'MEMBER AKTIF', v: cMember.toString(),  d: `+${cMonthly} bulan ini`, positive: true },
+    { k: 'FUNDED LULUS', v: cFunded.toString(),  d: '+5 bulan ini',           positive: true },
+    { k: 'RATING KELAS', v: '4.9',               d: '/ 5.0',                  positive: null },
+    { k: 'AKSES MATERI', v: '∞',                 d: 'Lifetime access',       positive: null },
   ];
 
   return (
-    <section ref={ref} style={{ background: 'linear-gradient(180deg,var(--mr-bg),var(--mr-dark))', padding: isMobile ? '24px 20px' : '28px 40px', position: 'relative', overflow: 'hidden' }}>
-      <div style={{ position: 'absolute', top: '50%', left: '25%', transform: 'translate(-50%,-50%)', width: 400, height: 200, background: 'radial-gradient(ellipse,rgba(22,163,74,0.05) 0%,transparent 70%)', pointerEvents: 'none' }} />
-      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(4, 1fr)', gap: isMobile ? '32px 16px' : 0, maxWidth: 960, margin: '0 auto' }}>
+    <section ref={ref} style={{ background: LP.bg, padding: isMobile ? '24px 20px 40px' : '0 40px 64px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(4, 1fr)', gap: isMobile ? 12 : 16, maxWidth: 1200, margin: '0 auto' }}>
         {STATS.map((s, i) => (
-          <div key={i} className={`mr-anim-stat-${i}`} style={{ textAlign: 'center' as const, padding: isMobile ? '0' : '0 24px', position: 'relative' }}>
-            {!isMobile && i < 3 && <div style={{ position: 'absolute', right: 0, top: '15%', bottom: '15%', width: 1, background: `linear-gradient(180deg,transparent,${MR.border},transparent)` }} />}
-            <div style={{ fontWeight: 800, fontSize: isMobile ? 40 : 56, letterSpacing: -3, lineHeight: 1, marginBottom: 10, background: `radial-gradient(ellipse at center, ${s.up ? '#22c55e' : '#d4af37'} 0%, ${MR.text} 60%)`, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>{s.v}</div>
-            <div style={{ fontFamily: MR.mono, color: MR.dim, fontSize: 10, letterSpacing: 1.2, marginBottom: 4 }}>{s.k}</div>
-            <div style={{ fontFamily: MR.mono, fontSize: 10, color: s.up === true ? MR.up : 'var(--mr-dim)' }}>{s.up ? '▲ ' : ''}{s.d}</div>
+          <div key={i} className={`mr-anim-stat-${i}`} style={{ background: LP.surface, border: `1px solid ${LP.border}`, borderRadius: LP.radiusSm, padding: isMobile ? '18px 16px' : '24px 22px', boxShadow: LP.shadowSm }}>
+            <div style={{ fontWeight: 800, fontSize: isMobile ? 30 : 40, letterSpacing: -1.5, lineHeight: 1, marginBottom: 8, color: s.positive ? LP.primary : LP.text }}>{s.v}</div>
+            <div style={{ fontFamily: LP.mono, color: LP.muted, fontSize: 10, letterSpacing: 1, marginBottom: 4 }}>{s.k}</div>
+            <div style={{ fontFamily: LP.mono, fontSize: 10, color: s.positive === true ? LP.primary : LP.muted }}>{s.positive ? '▲ ' : ''}{s.d}</div>
           </div>
         ))}
       </div>
