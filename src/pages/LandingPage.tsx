@@ -362,182 +362,6 @@ function StatsBar({ memberCount, fundedCount, newThisMonth }: { memberCount: num
   );
 }
 
-function LandingLeaderboard() {
-  const [entries, setEntries] = React.useState<any[]>([]);
-  const [loading, setLoading] = React.useState(true);
-  const [isMobile, setIsMobile] = React.useState(() => window.matchMedia('(max-width: 767px)').matches);
-  React.useEffect(() => { const mq = window.matchMedia('(max-width: 767px)'); const h = (e: MediaQueryListEvent) => setIsMobile(e.matches); mq.addEventListener('change',h); return ()=>mq.removeEventListener('change',h); }, []);
-
-  const TIER_COLOR: Record<string, string> = { platinum: '#e879f9', gold: '#eab308', bronze: '#f97316', trial: '#6b7280' };
-
-  React.useEffect(() => {
-    (async () => {
-      try {
-        const [
-          { data: members, error: errM },
-          { data: journals, error: errJ },
-          { data: settings },
-        ] = await Promise.all([
-          supabase.from('members').select('id,nama,tier'),
-          supabase.from('trading_journals').select('member_id,hasil,pnl'),
-          supabase.from('journal_settings').select('member_id,equity_awal'),
-        ]);
-
-        if (!journals || journals.length === 0) { setLoading(false); return; }
-
-        // Build dari jurnal dulu — tidak bergantung pada members match
-        const memberMap: Record<string, { nama: string; tier: string }> = {};
-        (members || []).forEach((m: any) => {
-          memberMap[m.id] = { nama: m.nama || 'Anon', tier: m.tier || 'trial' };
-        });
-
-        const eqMap: Record<string, number> = {};
-        (settings || []).forEach((s: any) => { eqMap[s.member_id] = s.equity_awal || 10000; });
-
-        const agg: Record<string, { tp: number; sl: number; total: number; pnl: number }> = {};
-        journals.forEach((j: any) => {
-          const mid = j.member_id;
-          if (!mid) return;
-          if (!agg[mid]) agg[mid] = { tp: 0, sl: 0, total: 0, pnl: 0 };
-          agg[mid].total++;
-          agg[mid].pnl += (j.pnl || 0);
-          if (j.hasil === 'Take Profit') agg[mid].tp++;
-          if (j.hasil === 'Stop Loss')   agg[mid].sl++;
-        });
-
-        const sorted = Object.entries(agg)
-          .map(([id, e]) => {
-            const ea  = eqMap[id] || 10000;
-            const m   = memberMap[id] || { nama: 'Anon', tier: 'trial' };
-            const winRate  = (e.tp + e.sl) > 0 ? (e.tp / (e.tp + e.sl)) * 100 : 0;
-            const gainPct  = (e.pnl / ea) * 100;
-            return { ...e, ...m, winRate, gainPct };
-          })
-          .sort((a, b) => b.gainPct - a.gainPct)
-          .slice(0, 10);
-
-        setEntries(sorted);
-      } catch (e) {
-        console.error('[LandingLeaderboard] error:', e);
-      }
-      setLoading(false);
-    })();
-  }, []);
-
-  const { ref: refLb, animStyle: lbStyle } = useFadeUp();
-
-  if (loading || entries.length === 0) return null;
-
-  const RANK_SRC  = (i: number) => i === 0 ? '/rank_1.png' : i === 1 ? '/rank_2.png' : i === 2 ? '/rank_3.png' : i < 10 ? '/rank_4-10.png' : '/rank_11-20.png';
-  const TOP3_META = [
-    { border: '#eab308', bg: 'linear-gradient(135deg,#1a1200 0%,var(--mr-sidebar) 100%)', glow: 'rgba(234,179,8,0.12)', label: '🥇 #1' },
-    { border: '#94a3b8', bg: 'linear-gradient(135deg,#101418 0%,var(--mr-sidebar) 100%)', glow: 'rgba(148,163,184,0.10)', label: '🥈 #2' },
-    { border: '#cd7c3a', bg: 'linear-gradient(135deg,#130d00 0%,var(--mr-sidebar) 100%)', glow: 'rgba(205,124,58,0.10)',  label: '🥉 #3' },
-  ];
-
-  return (
-    <section style={{ background: 'linear-gradient(180deg,var(--mr-sidebar),var(--mr-bg))', padding: isMobile ? '36px 20px' : '56px 40px', position: 'relative', overflow: 'hidden' }}>
-      <div style={{ position: 'absolute', top: 0, right: 0, width: 320, height: 320, background: 'radial-gradient(ellipse at top right,rgba(22,163,74,0.04) 0%,transparent 70%)', pointerEvents: 'none' }} />
-      <div ref={refLb} style={{ ...lbStyle, maxWidth: 760, margin: '0 auto' }}>
-
-        {/* Header */}
-        <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 36, flexWrap: 'wrap' as const, gap: 12 }}>
-          <div>
-            <div style={{ fontFamily: MR.mono, color: MR.gold, fontSize: 10, letterSpacing: 2, marginBottom: 10 }}>// LEADERBOARD</div>
-            <h2 style={{ fontSize: isMobile ? 26 : 38, fontWeight: 700, letterSpacing: -1, margin: 0, lineHeight: 1.1 }}>Top Performer<br/>Member Kami</h2>
-          </div>
-          <p style={{ color: MR.dim, fontSize: 13, maxWidth: 260, lineHeight: 1.6, margin: 0 }}>
-            Win rate & equity gain dari member yang aktif journaling setiap hari.
-          </p>
-        </div>
-
-        {/* Top 3 — podium cards */}
-        <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 8, marginBottom: 16 }}>
-          {entries.slice(0, 3).map((e, i) => {
-            const wr      = Math.round(e.winRate);
-            const gainPct: number = e.gainPct;
-            const tierKey = (e.tier || 'trial').toLowerCase().replace('smc ', '').replace(' mentorship', '').replace(' 1 on 1', '');
-            const accent  = TIER_COLOR[tierKey] || '#6b7280';
-            const m       = TOP3_META[i];
-            return (
-              <div key={i} style={{ position: 'relative', display: 'grid', gridTemplateColumns: isMobile ? '32px 1fr auto auto' : '48px 1fr auto auto', gap: '0 16px', alignItems: 'center', padding: isMobile ? '16px 16px' : '20px 24px', background: m.bg, border: `1px solid ${m.border}44`, borderLeft: `3px solid ${m.border}`, borderRadius: 12, boxShadow: `0 0 32px ${m.glow}, inset 0 1px 0 ${m.border}22`, overflow: 'hidden' }}>
-                {/* glow blob */}
-                <div style={{ position: 'absolute', top: -20, left: -20, width: 120, height: 120, background: `radial-gradient(ellipse,${m.glow} 0%,transparent 70%)`, pointerEvents: 'none' }} />
-                {/* rank badge */}
-                <div style={{ display: 'flex', flexDirection: 'column' as const, alignItems: 'center', gap: 2, position: 'relative' }}>
-                  <img src={RANK_SRC(i)} alt={m.label} style={{ width: isMobile ? 28 : 36, height: isMobile ? 28 : 36, objectFit: 'contain' }} />
-                  <span style={{ fontFamily: MR.mono, fontSize: 8, color: m.border, letterSpacing: 0.5 }}>#{i+1}</span>
-                </div>
-                {/* name + tier */}
-                <div style={{ minWidth: 0, position: 'relative' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' as const }}>
-                    <span style={{ fontWeight: 800, fontSize: isMobile ? 15 : 18 }}>{e.nama.split(' ')[0]}</span>
-                    <span style={{ fontFamily: MR.mono, fontSize: 8, color: accent, background: accent + '22', padding: '2px 6px', borderRadius: 3, letterSpacing: 0.5 }}>
-                      {tierKey.toUpperCase()}
-                    </span>
-                  </div>
-                </div>
-                {/* win rate */}
-                <div style={{ textAlign: 'right' as const }}>
-                  <div style={{ fontFamily: MR.mono, fontSize: isMobile ? 18 : 22, fontWeight: 700, color: wr >= 65 ? MR.up : wr >= 55 ? '#eab308' : MR.dim, letterSpacing: -0.5 }}>{wr}<span style={{ fontSize: 11 }}>%</span></div>
-                  <div style={{ fontFamily: MR.mono, fontSize: 8, color: MR.dimmer, marginTop: 2 }}>WIN RATE</div>
-                </div>
-                {/* equity gain */}
-                <div style={{ textAlign: 'right' as const }}>
-                  <div style={{ fontFamily: MR.mono, fontSize: isMobile ? 18 : 22, fontWeight: 700, color: gainPct >= 0 ? MR.up : MR.down, letterSpacing: -0.5 }}>
-                    {gainPct >= 0 ? '+' : ''}{gainPct.toFixed(1)}<span style={{ fontSize: 11 }}>%</span>
-                  </div>
-                  <div style={{ fontFamily: MR.mono, fontSize: 8, color: MR.dimmer, marginTop: 2 }}>EQUITY GAIN</div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-
-        {/* Rank 4–10 — compact rows */}
-        {entries.length > 3 && (
-          <>
-            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr auto auto' : '40px 1fr auto auto', gap: '0 16px', padding: '6px 12px', marginBottom: 2 }}>
-              {!isMobile && <div />}
-              <div style={{ fontFamily: MR.mono, fontSize: 9, color: MR.dimmer, letterSpacing: 1 }}>TRADER</div>
-              <div style={{ fontFamily: MR.mono, fontSize: 9, color: MR.dimmer, letterSpacing: 1, textAlign: 'right' as const }}>WIN RATE</div>
-              <div style={{ fontFamily: MR.mono, fontSize: 9, color: MR.dimmer, letterSpacing: 1, textAlign: 'right' as const }}>EQUITY GAIN</div>
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column' as const }}>
-              {entries.slice(3).map((e, j) => {
-                const i       = j + 3;
-                const wr      = Math.round(e.winRate);
-                const gainPct: number = e.gainPct;
-                const tierKey = (e.tier || 'trial').toLowerCase().replace('smc ', '').replace(' mentorship', '').replace(' 1 on 1', '');
-                const accent  = TIER_COLOR[tierKey] || '#6b7280';
-                return (
-                  <div key={i} style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr auto auto' : '40px 1fr auto auto', gap: '0 16px', alignItems: 'center', padding: '12px 12px', borderBottom: `1px solid ${MR.border}` }}>
-                    {!isMobile && <img src={RANK_SRC(i)} alt={`#${i+1}`} style={{ width: 24, height: 24, objectFit: 'contain' }} />}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
-                      {isMobile && <img src={RANK_SRC(i)} alt={`#${i+1}`} style={{ width: 20, height: 20, objectFit: 'contain', flexShrink: 0 }} />}
-                      <span style={{ fontWeight: 600, fontSize: 14 }}>{e.nama.split(' ')[0]}</span>
-                      <span style={{ fontFamily: MR.mono, fontSize: 8, color: accent, background: accent + '18', padding: '1px 5px', borderRadius: 3, letterSpacing: 0.5, flexShrink: 0 }}>{tierKey.toUpperCase()}</span>
-                    </div>
-                    <div style={{ textAlign: 'right' as const, fontFamily: MR.mono, fontSize: 15, fontWeight: 700, color: wr >= 65 ? MR.up : wr >= 55 ? '#eab308' : MR.dim }}>{wr}<span style={{ fontSize: 10 }}>%</span></div>
-                    <div style={{ textAlign: 'right' as const, fontFamily: MR.mono, fontSize: 15, fontWeight: 700, color: gainPct >= 0 ? MR.up : MR.down }}>{gainPct >= 0 ? '+' : ''}{gainPct.toFixed(1)}<span style={{ fontSize: 10 }}>%</span></div>
-                  </div>
-                );
-              })}
-            </div>
-          </>
-        )}
-
-        <div style={{ marginTop: 28, textAlign: 'center' as const }}>
-          <button onClick={() => window.location.href = '/login'}
-            style={{ fontFamily: MR.mono, fontSize: 11, padding: '11px 24px', background: 'transparent', border: `1px solid ${MR.border}`, color: MR.dim, cursor: 'pointer', letterSpacing: 0.5 }}>
-            LIHAT SEMUA PERINGKAT ▸
-          </button>
-        </div>
-      </div>
-    </section>
-  );
-}
-
 function DiscordCTA() {
   const [isMobile, setIsMobile] = React.useState(() => window.matchMedia('(max-width: 767px)').matches);
   React.useEffect(() => { const mq = window.matchMedia('(max-width: 767px)'); const h = (e: MediaQueryListEvent) => setIsMobile(e.matches); mq.addEventListener('change',h); return ()=>mq.removeEventListener('change',h); }, []);
@@ -1112,123 +936,126 @@ function Pricing({ tiers }: { tiers: PricingTier[] }) {
   );
 }
 
-function Mentor() {
+function BuktiHasil() {
+  const [entries, setEntries] = React.useState<any[]>([]);
+  const [loading, setLoading] = React.useState(true);
   const [isMobile, setIsMobile] = React.useState(() => window.matchMedia('(max-width: 767px)').matches);
   React.useEffect(() => { const mq = window.matchMedia('(max-width: 767px)'); const h = (e: MediaQueryListEvent) => setIsMobile(e.matches); mq.addEventListener('change',h); return ()=>mq.removeEventListener('change',h); }, []);
+
+  React.useEffect(() => {
+    (async () => {
+      try {
+        const [
+          { data: members },
+          { data: journals },
+          { data: settings },
+        ] = await Promise.all([
+          supabase.from('members').select('id,nama,tier'),
+          supabase.from('trading_journals').select('member_id,hasil,pnl'),
+          supabase.from('journal_settings').select('member_id,equity_awal'),
+        ]);
+
+        if (!journals || journals.length === 0) { setLoading(false); return; }
+
+        const memberMap: Record<string, { nama: string; tier: string }> = {};
+        (members || []).forEach((m: any) => {
+          memberMap[m.id] = { nama: m.nama || 'Anon', tier: m.tier || 'trial' };
+        });
+
+        const eqMap: Record<string, number> = {};
+        (settings || []).forEach((s: any) => { eqMap[s.member_id] = s.equity_awal || 10000; });
+
+        const agg: Record<string, { tp: number; sl: number; total: number; pnl: number }> = {};
+        journals.forEach((j: any) => {
+          const mid = j.member_id;
+          if (!mid) return;
+          if (!agg[mid]) agg[mid] = { tp: 0, sl: 0, total: 0, pnl: 0 };
+          agg[mid].total++;
+          agg[mid].pnl += (j.pnl || 0);
+          if (j.hasil === 'Take Profit') agg[mid].tp++;
+          if (j.hasil === 'Stop Loss')   agg[mid].sl++;
+        });
+
+        const sorted = Object.entries(agg)
+          .map(([id, e]) => {
+            const ea  = eqMap[id] || 10000;
+            const m   = memberMap[id] || { nama: 'Anon', tier: 'trial' };
+            const winRate = (e.tp + e.sl) > 0 ? (e.tp / (e.tp + e.sl)) * 100 : 0;
+            const gainPct = (e.pnl / ea) * 100;
+            return { ...e, ...m, winRate, gainPct };
+          })
+          .sort((a, b) => b.gainPct - a.gainPct)
+          .slice(0, 3);
+
+        setEntries(sorted);
+      } catch (e) {
+        console.error('[BuktiHasil] error:', e);
+      }
+      setLoading(false);
+    })();
+  }, []);
+
+  const { ref: refLb, animStyle: lbStyle } = useFadeUp();
+  const { ref: refFeat, animStyle: featStyle } = useFadeUp(150);
+
   const FEATURES = [
-    {
-      icon: (
-        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#22ab94" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
-          <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-        </svg>
-      ),
-      title: 'Mentor Review',
-      desc: 'Review setup & journaling langsung oleh mentor aktif.',
-    },
-    {
-      icon: (
-        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#22ab94" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/>
-          <path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/>
-          <line x1="8" y1="23" x2="16" y2="23"/>
-        </svg>
-      ),
-      title: 'Live Session',
-      desc: 'Live market, Q&A, dan pembahasan real time.',
-    },
-    {
-      icon: (
-        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#22ab94" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
-          <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-        </svg>
-      ),
-      title: 'Active Community',
-      desc: 'Komunitas trader aktif saling support & sharing.',
-    },
-    {
-      icon: (
-        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#22ab94" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
-          <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
-        </svg>
-      ),
-      title: 'Trade Journal',
-      desc: 'Bangun kebiasaan journaling & evaluasi setiap trade.',
-    },
-    {
-      icon: (
-        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#22ab94" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-          <circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/>
-        </svg>
-      ),
-      title: 'Execution Focus',
-      desc: 'Disiplin eksekusi & risk management yang kuat.',
-    },
-    {
-      icon: (
-        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#22ab94" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-          <polyline points="8 17 12 21 16 17"/><line x1="12" y1="12" x2="12" y2="21"/>
-          <path d="M20.88 18.09A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.29"/>
-        </svg>
-      ),
-      title: 'Funding Journey',
-      desc: 'Bimbingan menuju akun funded & payout konsisten.',
-    },
+    { title: 'Mentor Review',       desc: 'Review setup & journaling langsung oleh mentor aktif.' },
+    { title: 'Live Session',        desc: 'Live market, Q&A, dan pembahasan real time.' },
+    { title: 'Active Community',    desc: 'Komunitas trader aktif saling support & sharing.' },
+    { title: 'Trade Journal',       desc: 'Bangun kebiasaan journaling & evaluasi setiap trade.' },
+    { title: 'Execution Focus',     desc: 'Disiplin eksekusi & risk management yang kuat.' },
+    { title: 'Funding Journey',     desc: 'Bimbingan menuju akun funded & payout konsisten.' },
   ];
 
-  const { ref: refMentorL, animStyle: mentorLStyle } = useFadeUp(0);
-  const { ref: refMentorR, animStyle: mentorRStyle } = useFadeUp(150);
+  if (loading || entries.length === 0) return null;
 
   return (
-    <section className='mr-section-pad' style={{ padding: isMobile ? '40px 16px' : '80px 40px', borderBottom: `1px solid ${MR.border}`, background: 'var(--mr-sidebar)' }}>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.6fr', gap: 64, alignItems: 'center' }}>
+    <section style={{ padding: isMobile ? '48px 20px' : '72px 40px', background: LP.surface, borderTop: `1px solid ${LP.border}`, borderBottom: `1px solid ${LP.border}` }}>
+      <div style={{ maxWidth: 1000, margin: '0 auto' }}>
 
-        {/* Kiri */}
-        <div ref={refMentorL} style={mentorLStyle}>
-          <div style={{ fontFamily: MR.mono, color: '#22ab94', fontSize: 11, letterSpacing: 1.5, marginBottom: 24 }}>
-            // INSIDEMENOLAKRUGI
-          </div>
-          <h2 style={{ fontSize: isMobile ? 26 : 48, fontWeight: 700, letterSpacing: isMobile ? -0.5 : -1.5, lineHeight: 1.1, margin: '0 0 20px' }}>
-            Bukan cuma belajar.<br />
-            Kamu masuk environment<br />
-            trader aktif.
-          </h2>
-          <p style={{ color: MR.dim, fontSize: 16, lineHeight: 1.65, marginBottom: 40, maxWidth: 380 }}>
-            Dapatkan bimbingan, system, dan komunitas aktif yang bantu kamu berkembang lebih cepat & konsisten di market.
+        <div ref={refLb} style={{ ...lbStyle, marginBottom: 40 }}>
+          <div style={{ fontFamily: LP.mono, color: LP.primary, fontSize: 11, letterSpacing: 1.5, marginBottom: 10 }}>// BUKTI HASIL</div>
+          <h2 style={{ fontSize: isMobile ? 26 : 40, fontWeight: 800, letterSpacing: -1, margin: '0 0 12px', color: LP.text }}>Bukan klaim kosong.</h2>
+          <p style={{ color: LP.muted, fontSize: isMobile ? 14 : 16, lineHeight: 1.6, maxWidth: 520, margin: '0 0 28px' }}>
+            Top performer dari member yang aktif journaling setiap hari — win rate & equity gain riil, bukan testimoni tempelan.
           </p>
 
-          {/* CTA */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-            <button
-              onClick={() => window.location.href = '/signup?tier=gold'}
-              className="mr-btn-shimmer" style={{ fontFamily: MR.mono, background: '#22ab94', color: '#000', fontWeight: 700, padding: '16px 28px', fontSize: 13, letterSpacing: 0.6, border: 'none', cursor: 'pointer', textAlign: 'left' }}
-            >
-              GABUNG SEKARANG ▸
-            </button>
-            <button
-              onClick={() => window.location.href = '/signup?tier=trial'}
-              style={{ fontFamily: MR.mono, background: 'transparent', color: MR.text, padding: '16px 28px', fontSize: 13, letterSpacing: 0.6, border: `1px solid ${MR.borderHot}`, cursor: 'pointer', textAlign: 'left' }}
-            >
-              COBA TRIAL DULU · Rp 99K/BULAN
-            </button>
-            <div style={{ fontFamily: MR.mono, color: MR.dimmer, fontSize: 11, lineHeight: 1.6, marginTop: 4 }}>
-              Akses langsung setelah verifikasi pembayaran.<br />
-              Upgrade atau berhenti kapan saja.
-            </div>
+          <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 10 }}>
+            {entries.map((e, i) => {
+              const wr = Math.round(e.winRate);
+              const gainPct: number = e.gainPct;
+              const tierKey = (e.tier || 'trial').toLowerCase().replace('smc ', '').replace(' mentorship', '').replace(' 1 on 1', '');
+              return (
+                <div key={i} style={{ display: 'grid', gridTemplateColumns: isMobile ? '32px 1fr auto auto' : '40px 1fr auto auto', gap: '0 16px', alignItems: 'center', padding: isMobile ? '14px 16px' : '18px 22px', background: LP.bg, border: `1px solid ${LP.border}`, borderRadius: LP.radiusSm, boxShadow: i === 0 ? LP.shadowMd : LP.shadowSm }}>
+                  <div style={{ width: 32, height: 32, borderRadius: '50%', background: LP.primaryTint, color: LP.primary, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 14, fontFamily: LP.mono }}>{i + 1}</div>
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{ fontWeight: 700, fontSize: isMobile ? 14 : 16, color: LP.text }}>{e.nama.split(' ')[0]}</div>
+                    <div style={{ fontFamily: LP.mono, fontSize: 10, color: LP.muted, letterSpacing: 0.5, marginTop: 2 }}>{tierKey.toUpperCase()}</div>
+                  </div>
+                  <div style={{ textAlign: 'right' as const }}>
+                    <div style={{ fontFamily: LP.mono, fontSize: isMobile ? 16 : 20, fontWeight: 700, color: LP.text }}>{wr}%</div>
+                    <div style={{ fontFamily: LP.mono, fontSize: 9, color: LP.muted }}>WIN RATE</div>
+                  </div>
+                  <div style={{ textAlign: 'right' as const }}>
+                    <div style={{ fontFamily: LP.mono, fontSize: isMobile ? 16 : 20, fontWeight: 700, color: gainPct >= 0 ? LP.primary : LP.danger }}>{gainPct >= 0 ? '+' : ''}{gainPct.toFixed(1)}%</div>
+                    <div style={{ fontFamily: LP.mono, fontSize: 9, color: LP.muted }}>EQUITY GAIN</div>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
 
-        {/* Kanan — feature cards */}
-        <div ref={refMentorR} style={{ ...mentorRStyle, display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: 14 }}>
-          {FEATURES.map(f => (
-            <div key={f.title} style={{ background: 'var(--mr-panel)', border: `1px solid ${MR.border}`, padding: '24px 20px', display: 'flex', flexDirection: 'column', gap: 12 }}>
-              <div>{f.icon}</div>
-              <div style={{ fontWeight: 600, fontSize: 15, letterSpacing: -0.2 }}>{f.title}</div>
-              <div style={{ color: MR.dim, fontSize: 13, lineHeight: 1.55 }}>{f.desc}</div>
-            </div>
-          ))}
+        <div ref={refFeat} style={{ ...featStyle, borderTop: `1px solid ${LP.border}`, paddingTop: 32 }}>
+          <h3 style={{ fontSize: isMobile ? 20 : 26, fontWeight: 700, margin: '0 0 20px', color: LP.text }}>Bukan cuma belajar — kamu masuk environment trader aktif.</h3>
+          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: 14 }}>
+            {FEATURES.map(f => (
+              <div key={f.title} style={{ background: LP.bg, border: `1px solid ${LP.border}`, borderRadius: LP.radiusSm, padding: '20px 18px' }}>
+                <div style={{ fontWeight: 700, fontSize: 15, color: LP.text, marginBottom: 6 }}>{f.title}</div>
+                <div style={{ color: LP.muted, fontSize: 13, lineHeight: 1.55 }}>{f.desc}</div>
+              </div>
+            ))}
+          </div>
         </div>
 
       </div>
@@ -1432,6 +1259,8 @@ export default function LandingPage() {
         fundedCount={stats?.fundedCount ?? 0}
         newThisMonth={stats?.newMembersThisMonth ?? 0}
       />
+
+      <BuktiHasil />
 
       {/* 4.5 — Preview Platform */}
       {preview && <ProductPreview config={preview} />}
