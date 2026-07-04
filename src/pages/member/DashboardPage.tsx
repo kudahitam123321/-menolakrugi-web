@@ -1173,24 +1173,37 @@ export default function DashboardPage() {
       {/* ── Mobile Overlay ── */}
       {isMobile && mobileMenuOpen && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 50, display: 'flex' }}>
-          <div style={{ flex: 1, background: 'rgba(0,0,0,0.7)' }} onClick={() => setMobileMenuOpen(false)}/>
-          <div style={{ width: 240, background: C.sidebar, borderLeft: `1px solid ${C.border}`, display: 'flex', flexDirection: 'column', overflowY: 'auto' }}>
-            <div style={{ padding: '14px 16px', borderBottom: `1px solid ${C.border}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <span style={{ fontWeight: 700, fontSize: 13 }}>{member.nama}</span>
-              <button onClick={() => setMobileMenuOpen(false)} style={{ background: 'none', border: 'none', color: C.dim, cursor: 'pointer', fontSize: 20, padding: '0 4px' }}>×</button>
+          <div style={{ flex: 1, background: 'rgba(15,23,42,0.4)' }} onClick={() => setMobileMenuOpen(false)}/>
+          <div style={{ width: 240, background: LP.surface, borderLeft: `1px solid ${LP.border}`, display: 'flex', flexDirection: 'column', overflowY: 'auto' }}>
+            <div style={{ padding: '14px 16px', borderBottom: `1px solid ${LP.border}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <span style={{ fontWeight: 700, fontSize: 13, color: LP.text }}>{member.nama}</span>
+              <button onClick={() => setMobileMenuOpen(false)} style={{ background: 'none', border: 'none', color: LP.muted, cursor: 'pointer', fontSize: 20, padding: '0 4px' }}>×</button>
+            </div>
+            <div style={{ padding: '10px 16px 0' }}>
+              <div style={{ position: 'relative' }}>
+                <Search size={14} color={LP.muted} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
+                <input
+                  type="text"
+                  value={sidebarQuery}
+                  onChange={e => setSidebarQuery(e.target.value)}
+                  placeholder="Cari menu..."
+                  style={{ width: '100%', boxSizing: 'border-box' as const, background: LP.bg, border: `1px solid ${LP.border}`, borderRadius: 8, padding: '8px 10px 8px 30px', fontSize: 12, fontFamily: LP.sans, color: LP.text, outline: 'none' }}
+                />
+              </div>
             </div>
             <div style={{ flex: 1, paddingTop: 8 }}>
-              {SIDEBAR.map(item => {
+              {filterSidebar(SIDEBAR, sidebarQuery).map(item => {
                 if ((item as any).separator) {
                   return (
                     <div key={item.id} style={{ padding: '14px 20px 5px', display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <div style={{ flex: 1, height: 1, background: C.border }}/>
-                      <span style={{ fontFamily: C.mono, fontSize: 8, color: C.dim, letterSpacing: 2, whiteSpace: 'nowrap' as const }}>{item.label}</span>
-                      <div style={{ flex: 1, height: 1, background: C.border }}/>
+                      <div style={{ flex: 1, height: 1, background: LP.border }}/>
+                      <span style={{ fontFamily: LP.mono, fontSize: 8, color: LP.muted, letterSpacing: 2, whiteSpace: 'nowrap' as const }}>{item.label}</span>
+                      <div style={{ flex: 1, height: 1, background: LP.border }}/>
                     </div>
                   );
                 }
                 const isA = active === item.id;
+                const ItemIcon = (item as any).Icon;
                 return (
                   <button key={item.id}
                     onClick={() => {
@@ -1198,19 +1211,19 @@ export default function DashboardPage() {
                       else if (item.id === 'logout') { logout(); }
                       else { setActive(item.id); setMobileMenuOpen(false); }
                     }}
-                    style={{ display: 'flex', alignItems: 'center', gap: 12, width: '100%', padding: '12px 20px', border: 'none', background: isA ? 'var(--mr-tint-gold)' : 'transparent', borderLeft: isA ? `3px solid ${G.gold}` : '3px solid transparent', color: isA ? G.gold : C.dim, cursor: 'pointer', fontSize: 14, textAlign: 'left' as const }}>
-                    <span style={{ fontSize: 18 }}>{item.icon}</span>
+                    style={{ display: 'flex', alignItems: 'center', gap: 12, width: '100%', padding: '12px 20px', border: 'none', background: isA ? LP.primaryTint : 'transparent', borderLeft: isA ? `3px solid ${LP.primary}` : '3px solid transparent', color: isA ? LP.primary : LP.muted, cursor: 'pointer', fontSize: 14, textAlign: 'left' as const }}>
+                    <ItemIcon size={18} />
                     <span style={{ flex: 1 }}>{item.label}</span>
-                    {(item as any).badge && <span style={{ fontFamily: C.mono, fontSize: 8, background: C.down, color: '#fff', padding: '1px 5px', borderRadius: 3, fontWeight: 700 }}>{(item as any).badge}</span>}
+                    {(item as any).badge && <span style={{ fontFamily: LP.mono, fontSize: 8, background: LP.danger, color: '#fff', padding: '1px 5px', borderRadius: 3, fontWeight: 700 }}>{(item as any).badge}</span>}
                   </button>
                 );
               })}
             </div>
-            <div style={{ margin: '0 12px 12px', background: '#0d0c00', border: `1px solid #2a2200`, borderRadius: 10, padding: '12px' }}>
-              <div style={{ fontFamily: C.mono, color: '#555', fontSize: 9, marginBottom: 4 }}>AKSES MEMBERSHIP</div>
-              <div style={{ fontWeight: 700, color: G.gold, fontSize: 12 }}>{member.tier}</div>
+            <div style={{ margin: '0 12px 12px', background: LP.primaryTint, border: `1px solid ${LP.primary}33`, borderRadius: 10, padding: '12px' }}>
+              <div style={{ fontFamily: LP.mono, color: LP.muted, fontSize: 9, marginBottom: 4 }}>AKSES MEMBERSHIP</div>
+              <div style={{ fontWeight: 700, color: LP.primary, fontSize: 12 }}>{member.tier}</div>
               {isTrial && expiryDate && (
-                <div style={{ fontFamily: C.mono, fontSize: 10, color: daysLeft! <= 7 ? '#f97316' : C.dim, marginTop: 4 }}>{daysLeft} hari lagi</div>
+                <div style={{ fontFamily: LP.mono, fontSize: 10, color: daysLeft! <= 7 ? '#f97316' : LP.muted, marginTop: 4 }}>{daysLeft} hari lagi</div>
               )}
             </div>
 
