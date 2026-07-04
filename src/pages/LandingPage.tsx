@@ -289,27 +289,44 @@ function Hero() {
   React.useEffect(() => { const mq = window.matchMedia('(max-width: 767px)'); const h = (e: MediaQueryListEvent) => setIsMobile(e.matches); mq.addEventListener('change',h); return ()=>mq.removeEventListener('change',h); }, []);
 
   return (
-    <section id="kelas" style={{ position: 'relative', padding: isMobile ? '56px 20px 16px' : '88px 40px 24px' }}>
-      <div style={{ position: 'absolute', inset: 0, opacity: 0.4, ...CANDLE_GRID_STYLE }} />
-      <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 120, background: 'linear-gradient(transparent, var(--mr-bg))', pointerEvents: 'none' }} />
-      <div style={{ position: 'relative', maxWidth: 900, margin: '0 auto', textAlign: isMobile ? 'left' : 'center' }}>
-        <div className='mr-anim-badge' style={{ fontFamily: MR.mono, display: 'inline-flex', gap: 8, alignItems: 'center', padding: '6px 10px', border: `1px solid ${MR.border}`, color: MR.dim, fontSize: 11, letterSpacing: 0.6, marginBottom: 28 }}>
-          <span className="mr-blink" style={{ color: MR.up }}>●</span>
-          LIVE · SMART MONEY CONCEPT EDUCATION PLATFORM
+    <section id="kelas" style={{ padding: isMobile ? '48px 20px 32px' : '72px 40px 56px', background: LP.bg }}>
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1.1fr 1fr', gap: isMobile ? 32 : 48, alignItems: 'center', maxWidth: 1200, margin: '0 auto' }}>
+        <div>
+          <div className='mr-anim-badge' style={{ fontFamily: LP.mono, display: 'inline-flex', gap: 8, alignItems: 'center', padding: '6px 12px', borderRadius: 20, border: `1px solid ${LP.border}`, background: LP.surface, color: LP.muted, fontSize: 11, letterSpacing: 0.6, marginBottom: 24 }}>
+            <span className="mr-blink" style={{ color: LP.primary }}>●</span>
+            LIVE · SMART MONEY CONCEPT EDUCATION
+          </div>
+          <h1 className='mr-hero-h1' style={{ fontSize: isMobile ? 34 : 60, lineHeight: 1.08, letterSpacing: -1.5, margin: '0 0 24px', fontWeight: 800, color: LP.text } as React.CSSProperties}>
+            <span className='mr-anim-h1-1' style={{ display:'block' }}>Berhenti trading tanpa arah.</span>
+            <span className='mr-anim-h1-2' style={{ display:'block', color: LP.primary }}>Mulai pahami market structure.</span>
+          </h1>
+          <p className='mr-anim-desc' style={{ fontSize: isMobile ? 15 : 18, color: LP.muted, lineHeight: 1.65, maxWidth: 520, margin: '0 0 32px' }}>
+            Smart Money Concept yang kami gunakan langsung di funded account. Belajar membaca arah market lewat struktur yang jelas — dari trend, BOS, CHoCH, sampai validasi entry. Bukan sekadar entry karena feeling.
+          </p>
+          <div className='mr-anim-cta' style={{ display: 'flex', gap: 12, flexWrap: 'wrap' as const }}>
+            <button onClick={() => window.location.href = '/signup'}
+              style={{ fontFamily: LP.sans, background: LP.primary, color: '#fff', fontWeight: 700, padding: '15px 28px', fontSize: 14, borderRadius: 10, border: 'none', cursor: 'pointer', boxShadow: LP.shadowMd }}>
+              Pilih Kelas →
+            </button>
+            <button onClick={() => document.getElementById('kurikulum')?.scrollIntoView({ behavior: 'smooth' })}
+              style={{ fontFamily: LP.sans, border: `1px solid ${LP.border}`, padding: '15px 24px', fontSize: 14, fontWeight: 600, borderRadius: 10, background: LP.surface, color: LP.text, cursor: 'pointer' }}>
+              Lihat Kurikulum
+            </button>
+          </div>
         </div>
-        <h1 className='mr-hero-h1' style={{ fontSize: isMobile ? 38 : 96, lineHeight: isMobile ? 1.1 : 0.92, letterSpacing: isMobile ? -1 : -4.5, margin: '0 0 32px', fontWeight: 700 } as React.CSSProperties}>
-          <span className='mr-anim-h1-1' style={{ display:'block' }}>Berhenti trading</span>
-          <span className='mr-anim-h1-2' style={{ display:'block', color: MR.dim }}>tanpa arah.</span>
-          <span className='mr-anim-h1-3' style={{ display:'block' }}>Mulai pahami</span>
-          <span className='mr-anim-h1-4' style={{ display:'block', color: MR.up }}>market structure.</span>
-        </h1>
-        <p className='mr-anim-desc' style={{ fontSize: isMobile ? 15 : 18, color: MR.dim, lineHeight: 1.65, maxWidth: 600, margin: '0 auto 40px' }}>
-          Smart Money Concept yang kami gunakan langsung di funded account. Belajar membaca arah market lewat struktur yang jelas — dari trend, BOS, CHoCH, sampai validasi entry. Bukan sekadar entry karena feeling.
-        </p>
-        <div className='mr-anim-cta' style={{ display: 'flex', gap: 12, flexWrap: 'wrap' as const, justifyContent: isMobile ? 'flex-start' : 'center' }}>
-          <button onClick={() => window.location.href = '/signup'} className="mr-btn-shimmer" style={{ fontFamily: MR.mono, background: MR.gold, color: '#fff', fontWeight: 700, padding: '16px 32px', letterSpacing: 0.4, fontSize: 13, border: 'none', cursor: 'pointer' }}>PILIH KELAS ▸</button>
-          <button onClick={() => document.getElementById('kurikulum')?.scrollIntoView({ behavior: 'smooth' })} style={{ fontFamily: MR.mono, border: `1px solid ${MR.borderHot}`, padding: '16px 28px', letterSpacing: 0.4, fontSize: 13, background: 'transparent', color: MR.text, cursor: 'pointer' }}>LIHAT KURIKULUM</button>
-        </div>
+
+        {!isMobile && (
+          <div className='mr-anim-desc' style={{ borderRadius: LP.radius, border: `1px solid ${LP.border}`, background: LP.surface, boxShadow: LP.shadowMd, overflow: 'hidden' }}>
+            <div style={{ display: 'flex', gap: 6, padding: '12px 16px', borderBottom: `1px solid ${LP.border}` }}>
+              <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#ef4444' }} />
+              <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#eab308' }} />
+              <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#22c55e' }} />
+            </div>
+            <div style={{ padding: 16 }}>
+              <CandleChart width={480} height={280} density={22} showBOS />
+            </div>
+          </div>
+        )}
       </div>
     </section>
   );
