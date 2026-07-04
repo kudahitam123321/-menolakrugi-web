@@ -6,9 +6,9 @@ import React, { useState } from 'react';
 import { Menu, X, Star, ChevronDown, MessageCircle, Send, Music2, Youtube, Phone } from 'lucide-react';
 
 import { MRLogo, CandleChart } from '../components/mr';
-import { useLandingStats, useApprovedTestimonials, usePricing, useLandingPreview } from '../hooks';
+import { useApprovedTestimonials, useLandingPreview } from '../hooks';
 import type { LandingPreviewConfig } from '../hooks';
-import type { PricingTier, Testimonial } from '../types/mr.types';
+import type { Testimonial } from '../types/mr.types';
 import { supabase } from '../lib/supabase';
 
 // ─── Landing v2 design tokens ──────────────────────────────────────────────────
@@ -241,34 +241,16 @@ function NavBar() {
 
 
 function useInView(threshold = 0.15) {
-  const ref = React.useRef<HTMLDivElement>(null);
+  const [node, setNode] = React.useState<HTMLDivElement | null>(null);
   const [inView, setInView] = React.useState(false);
+  const ref = React.useCallback((el: HTMLDivElement | null) => setNode(el), []);
   React.useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const obs = new IntersectionObserver(([e]) => { if (e.isIntersecting) { setInView(true); obs.disconnect(); } }, { threshold });
-    obs.observe(el);
+    if (!node) return;
+    const obs = new IntersectionObserver(([e]) => { if (e.isIntersecting) { setInView(true); obs.disconnect(); } }, { threshold, rootMargin: '0px 0px 300px 0px' });
+    obs.observe(node);
     return () => obs.disconnect();
-  }, []);
+  }, [node, threshold]);
   return { ref, inView };
-}
-
-function useCounter(target: number, duration = 1400) {
-  const [val, setVal] = React.useState(0);
-  const started = React.useRef(false);
-  React.useEffect(() => {
-    if (!target || started.current) return;
-    started.current = true;
-    const start = performance.now();
-    function tick(now: number) {
-      const p = Math.min((now - start) / duration, 1);
-      const ease = 1 - Math.pow(1 - p, 3); // ease-out cubic
-      setVal(Math.round(ease * target));
-      if (p < 1) requestAnimationFrame(tick);
-    }
-    requestAnimationFrame(tick);
-  }, [target]);
-  return val;
 }
 
 function useFadeUp(delay = 0) {
@@ -286,21 +268,24 @@ function Hero() {
   React.useEffect(() => { const mq = window.matchMedia('(max-width: 767px)'); const h = (e: MediaQueryListEvent) => setIsMobile(e.matches); mq.addEventListener('change',h); return ()=>mq.removeEventListener('change',h); }, []);
 
   return (
-    <section id="kelas" style={{ padding: isMobile ? '48px 20px 32px' : '72px 40px 56px', background: LP.bg }}>
-      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1.1fr 1fr', gap: isMobile ? 32 : 48, alignItems: 'center', maxWidth: 1200, margin: '0 auto' }}>
-        <div>
+    <section id="kelas" style={{ background: LP.bg }}>
+      <div style={{ padding: isMobile ? '48px 20px 40px' : '72px 40px 56px' }}>
+        <div style={{ maxWidth: isMobile ? 720 : 1080, margin: '0 auto', textAlign: 'center' as const }}>
           <div className='mr-anim-badge' style={{ fontFamily: LP.mono, display: 'inline-flex', gap: 8, alignItems: 'center', padding: '6px 12px', borderRadius: 20, border: `1px solid ${LP.border}`, background: LP.surface, color: LP.muted, fontSize: 11, letterSpacing: 0.6, marginBottom: 24 }}>
             <span className="mr-blink" style={{ color: LP.primary }}>●</span>
             LIVE · SMART MONEY CONCEPT EDUCATION
           </div>
-          <h1 className='mr-hero-h1' style={{ fontSize: isMobile ? 34 : 60, lineHeight: 1.08, letterSpacing: -1.5, margin: '0 0 24px', fontWeight: 800, color: LP.text } as React.CSSProperties}>
-            <span className='mr-anim-h1-1' style={{ display:'block' }}>Berhenti trading tanpa arah.</span>
-            <span className='mr-anim-h1-2' style={{ display:'block', color: LP.primary }}>Mulai pahami market structure.</span>
+          <h1 className='mr-hero-h1' style={{ fontSize: isMobile ? 34 : 56, lineHeight: 1.1, letterSpacing: -1.5, margin: '0 0 24px', fontWeight: 800, color: LP.text, whiteSpace: isMobile ? 'normal' : 'nowrap' } as React.CSSProperties}>
+            <span className='mr-anim-h1-1' style={{ display: 'block' }}>Berhenti trading tanpa arah.</span>
+            <span className='mr-anim-h1-2' style={{ display: 'inline-block', position: 'relative' }}>
+              <span aria-hidden="true" style={{ position: 'absolute', inset: '-10px -20px', background: `linear-gradient(90deg, ${LP.primary}, #22c55e, ${LP.primary})`, filter: 'blur(28px)', opacity: 0.35, zIndex: 0 }} />
+              <span style={{ position: 'relative', color: LP.primary }}>Mulai pahami market structure.</span>
+            </span>
           </h1>
-          <p className='mr-anim-desc' style={{ fontSize: isMobile ? 15 : 18, color: LP.muted, lineHeight: 1.65, maxWidth: 520, margin: '0 0 32px' }}>
+          <p className='mr-anim-desc' style={{ fontSize: isMobile ? 15 : 18, color: LP.muted, lineHeight: 1.65, maxWidth: 520, margin: '0 auto 32px' }}>
             Smart Money Concept yang kami gunakan langsung di funded account. Belajar membaca arah market lewat struktur yang jelas — dari trend, BOS, CHoCH, sampai validasi entry. Bukan sekadar entry karena feeling.
           </p>
-          <div className='mr-anim-cta' style={{ display: 'flex', gap: 12, flexWrap: 'wrap' as const }}>
+          <div className='mr-anim-cta' style={{ display: 'flex', gap: 12, flexWrap: 'wrap' as const, justifyContent: 'center' }}>
             <button onClick={() => window.location.href = '/signup'}
               style={{ fontFamily: LP.sans, background: LP.primary, color: '#fff', fontWeight: 700, padding: '15px 28px', fontSize: 14, borderRadius: 10, border: 'none', cursor: 'pointer', boxShadow: LP.shadowMd }}>
               Pilih Kelas →
@@ -310,50 +295,44 @@ function Hero() {
               Lihat Kurikulum
             </button>
           </div>
+          <p style={{ fontFamily: LP.mono, fontSize: 12, color: LP.muted, marginTop: 24 }}>
+            Akses langsung setelah verifikasi pembayaran · Upgrade atau berhenti kapan saja
+          </p>
         </div>
-
-        {!isMobile && (
-          <div className='mr-anim-desc' style={{ borderRadius: LP.radius, border: `1px solid ${LP.border}`, background: LP.surface, boxShadow: LP.shadowMd, overflow: 'hidden' }}>
-            <div style={{ display: 'flex', gap: 6, padding: '12px 16px', borderBottom: `1px solid ${LP.border}` }}>
-              <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#ef4444' }} />
-              <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#eab308' }} />
-              <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#22c55e' }} />
-            </div>
-            <div style={{ padding: 16 }}>
-              <CandleChart width={480} height={280} density={22} showBOS />
-            </div>
-          </div>
-        )}
       </div>
     </section>
   );
 }
 
-function StatsBar({ memberCount, fundedCount, newThisMonth }: { memberCount: number; fundedCount: number; newThisMonth: number }) {
-  const { ref, inView } = useInView(0.2);
-  const cMember  = useCounter(inView ? memberCount : 0, 1600);
-  const cFunded  = useCounter(inView ? fundedCount  : 0, 1200);
-  const cMonthly = useCounter(inView ? newThisMonth : 0, 1000);
+function HeroPreview({ videoId }: { videoId: string | null }) {
   const [isMobile, setIsMobile] = React.useState(() => window.matchMedia('(max-width: 767px)').matches);
   React.useEffect(() => { const mq = window.matchMedia('(max-width: 767px)'); const h = (e: MediaQueryListEvent) => setIsMobile(e.matches); mq.addEventListener('change',h); return ()=>mq.removeEventListener('change',h); }, []);
 
-  const STATS = [
-    { k: 'MEMBER AKTIF', v: cMember.toString(),  d: `+${cMonthly} bulan ini`, positive: true },
-    { k: 'FUNDED LULUS', v: cFunded.toString(),  d: '+5 bulan ini',           positive: true },
-    { k: 'RATING KELAS', v: '4.9',               d: '/ 5.0',                  positive: null },
-    { k: 'AKSES MATERI', v: '∞',                 d: 'Lifetime access',       positive: null },
-  ];
-
   return (
-    <section ref={ref} style={{ background: LP.bg, padding: isMobile ? '24px 20px 40px' : '0 40px 64px' }}>
-      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(4, 1fr)', gap: isMobile ? 12 : 16, maxWidth: 1200, margin: '0 auto' }}>
-        {STATS.map((s, i) => (
-          <div key={i} className={`mr-anim-stat-${i}`} style={{ background: LP.surface, border: `1px solid ${LP.border}`, borderRadius: LP.radiusSm, padding: isMobile ? '18px 16px' : '24px 22px', boxShadow: LP.shadowSm }}>
-            <div style={{ fontWeight: 800, fontSize: isMobile ? 30 : 40, letterSpacing: -1.5, lineHeight: 1, marginBottom: 8, color: s.positive ? LP.primary : LP.text }}>{s.v}</div>
-            <div style={{ fontFamily: LP.mono, color: LP.muted, fontSize: 10, letterSpacing: 1, marginBottom: 4 }}>{s.k}</div>
-            <div style={{ fontFamily: LP.mono, fontSize: 10, color: s.positive === true ? LP.primary : LP.muted }}>{s.positive ? '▲ ' : ''}{s.d}</div>
+    <section className='mr-anim-desc' style={{ position: 'relative', background: LP.bg, paddingBottom: isMobile ? 40 : 64, overflow: 'hidden' }}>
+      <div style={{ position: 'absolute', inset: '0 0 40% 0', background: LP.bg }} />
+      <div style={{ position: 'relative', maxWidth: 1120, margin: '0 auto', padding: isMobile ? '0 16px' : '0 40px' }}>
+        <div style={{ borderRadius: LP.radius, border: `1px solid ${LP.border}`, background: LP.surface, boxShadow: '0 30px 80px rgba(15,23,42,0.14)', overflow: 'hidden' }}>
+          <div style={{ display: 'flex', gap: 6, padding: '14px 18px', borderBottom: `1px solid ${LP.border}` }}>
+            <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#ef4444' }} />
+            <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#eab308' }} />
+            <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#22c55e' }} />
           </div>
-        ))}
+          {videoId ? (
+            <div style={{ position: 'relative', paddingBottom: '56.25%', background: '#000' }}>
+              <iframe
+                src={`https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&loop=1&playlist=${videoId}&controls=1&modestbranding=1`}
+                allow="autoplay; encrypted-media"
+                allowFullScreen
+                style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 'none', display: 'block' }}
+              />
+            </div>
+          ) : (
+            <div style={{ padding: isMobile ? 16 : 28 }}>
+              <CandleChart width={1040} height={isMobile ? 220 : 360} density={isMobile ? 26 : 40} showBOS />
+            </div>
+          )}
+        </div>
       </div>
     </section>
   );
@@ -476,7 +455,7 @@ function Komunitas() {
               <div style={{ display: 'flex', transition: 'transform 0.55s cubic-bezier(0.25,0.46,0.45,0.94)', transform: `translateX(-${cur * 100}%)` }}>
                 {images.map((img, i) => (
                   <div key={i} style={{ flexShrink: 0, width: '100%', position: 'relative' }}>
-                    <img src={img.url} alt={img.caption || `galeri-${i + 1}`} style={{ width: '100%', height: isMobile ? 220 : 400, objectFit: 'cover', display: 'block' }} />
+                    <img src={img.url} alt={img.caption || `galeri-${i + 1}`} style={{ width: '100%', height: isMobile ? 220 : 400, objectFit: 'contain', display: 'block', background: '#0f172a' }} />
                     {img.caption && (
                       <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'linear-gradient(transparent,rgba(15,23,42,0.75))', padding: '28px 20px 14px', color: '#fff', fontSize: 13, lineHeight: 1.5 }}>
                         {img.caption}
@@ -608,10 +587,6 @@ function ProductPreview({ config }: { config: LandingPreviewConfig }) {
 
   const fmt = (n: number) => new Intl.NumberFormat('id-ID').format(n);
 
-  const videoId = config.yt_url
-    ? (config.yt_url.match(/(?:youtu\.be\/|[?&]v=)([^&?/\s]+)/)?.[1] ?? null)
-    : null;
-
   const plans = [
     { nama: config.plan1_nama, harga_asli: config.plan1_harga_asli, diskon: config.plan1_diskon, key: 'bulanan',  featured: false },
     { nama: config.plan2_nama, harga_asli: config.plan2_harga_asli, diskon: config.plan2_diskon, key: 'tahunan',  featured: true },
@@ -631,17 +606,6 @@ function ProductPreview({ config }: { config: LandingPreviewConfig }) {
             <span style={{ color: LP.primary, fontWeight: 600 }}>Benefit untuk langganan tahunan dan lifetime: akses ke Discord private Menolak Rugi.</span>
           </p>
         </div>
-
-        {videoId && (
-          <div style={{ borderRadius: LP.radius, overflow: 'hidden', border: `1px solid ${LP.border}`, boxShadow: LP.shadowMd, marginBottom: 40, position: 'relative', paddingBottom: '56.25%', background: '#000' }}>
-            <iframe
-              src={`https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&loop=1&playlist=${videoId}&controls=0&modestbranding=1`}
-              allow="autoplay; encrypted-media"
-              allowFullScreen
-              style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 'none', display: 'block' }}
-            />
-          </div>
-        )}
 
         <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: 16 }}>
           {plans.map((plan) => {
@@ -688,97 +652,6 @@ function ProductPreview({ config }: { config: LandingPreviewConfig }) {
               </div>
             );
           })}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-const TIER_ACCENT_COLOR: Record<string, string> = {
-  neutral:  '#16a34a',
-  bronze:   '#c2740b',
-  gold:     '#b8860b',
-  platinum: '#7c3aed',
-};
-
-function Pricing({ tiers }: { tiers: PricingTier[] }) {
-  const [isMobile, setIsMobile] = React.useState(() => window.matchMedia('(max-width: 767px)').matches);
-  React.useEffect(() => { const mq = window.matchMedia('(max-width: 767px)'); const h = (e: MediaQueryListEvent) => setIsMobile(e.matches); mq.addEventListener('change',h); return ()=>mq.removeEventListener('change',h); }, []);
-
-  const fmt = (n: number) => new Intl.NumberFormat('id-ID').format(n);
-
-  return (
-    <section id="kelas" style={{ background: LP.surface, padding: isMobile ? '48px 20px' : '72px 40px', borderTop: `1px solid ${LP.border}`, borderBottom: `1px solid ${LP.border}` }}>
-      <div style={{ maxWidth: 1200, margin: '0 auto' }}>
-        <div style={{ marginBottom: 32 }}>
-          <div style={{ fontFamily: LP.mono, color: LP.muted, fontSize: 11, letterSpacing: 0.8 }}>// PILIH TIER</div>
-          <h2 style={{ fontSize: isMobile ? 26 : 44, letterSpacing: -1, lineHeight: 1.1, margin: '14px 0 8px', fontWeight: 800, color: LP.text }}>Pilih tier kamu.</h2>
-          <p style={{ color: LP.muted, fontSize: 14, maxWidth: 480 }}>Trial bulanan untuk yang baru kenal. Bronze ke atas — sekali bayar, akses seumur hidup.</p>
-        </div>
-
-        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : `repeat(${tiers.length + 1}, 1fr)`, gap: 16 }}>
-          {tiers.map((p) => {
-            const accent = TIER_ACCENT_COLOR[p.accent] ?? TIER_ACCENT_COLOR.neutral;
-            return (
-              <div key={p.id} style={{
-                background: LP.bg, borderRadius: LP.radius, padding: '24px 20px',
-                border: p.is_featured ? `2px solid ${accent}` : `1px solid ${LP.border}`,
-                boxShadow: p.is_featured ? LP.shadowMd : LP.shadowSm,
-                display: 'flex', flexDirection: 'column' as const, position: 'relative',
-              }}>
-                {p.badge && (
-                  <div style={{ position: 'absolute', top: -12, left: 20, background: accent, color: '#fff', padding: '4px 12px', fontSize: 10, letterSpacing: 0.6, fontWeight: 700, borderRadius: 20 }}>
-                    {p.badge.toUpperCase()}
-                  </div>
-                )}
-                <div style={{ fontFamily: LP.mono, color: accent, fontSize: 10, letterSpacing: 1, marginBottom: 10, marginTop: p.badge ? 8 : 0 }}>{p.tag.toUpperCase()}</div>
-                <div style={{ fontWeight: 700, fontSize: 19, marginBottom: 6, color: LP.text }}>{p.name}</div>
-                <div style={{ color: LP.muted, fontSize: 12, marginBottom: 18, lineHeight: 1.5 }}>{p.pitch}</div>
-                <div style={{ marginBottom: 4 }}>
-                  {p.original_price && <div style={{ fontFamily: LP.mono, fontSize: 11, color: LP.muted, marginBottom: 2 }}><s>Rp {fmt(p.original_price)}</s></div>}
-                  <div style={{ display: 'flex', alignItems: 'baseline', gap: 4 }}>
-                    <span style={{ fontFamily: LP.mono, color: accent, fontSize: 13 }}>Rp</span>
-                    <span style={{ fontSize: 30, fontWeight: 800, letterSpacing: -1, lineHeight: 1, color: LP.text }}>{fmt(p.price)}</span>
-                  </div>
-                  <div style={{ fontFamily: LP.mono, color: LP.muted, fontSize: 10, marginTop: 4 }}>{p.period}</div>
-                </div>
-                {p.note && <div style={{ fontFamily: LP.mono, color: accent, fontSize: 10, marginTop: 6 }}>{p.note}</div>}
-                <div style={{ height: 14 }} />
-                <div style={{ borderTop: `1px solid ${LP.border}`, paddingTop: 14, marginBottom: 16, flex: 1 }}>
-                  {p.perks.map((perk, j) => (
-                    <div key={j} style={{ display: 'flex', gap: 8, fontSize: 12, padding: '5px 0', color: LP.muted, lineHeight: 1.45 }}>
-                      <span style={{ color: accent, flexShrink: 0 }}>✓</span>
-                      <span>{perk}</span>
-                    </div>
-                  ))}
-                </div>
-                <button onClick={() => window.location.href = `/signup?tier=${p.id}`}
-                  style={{ fontFamily: LP.sans, padding: '12px 0', fontSize: 13, fontWeight: 700, borderRadius: 8, background: p.is_featured ? accent : 'transparent', color: p.is_featured ? '#fff' : accent, border: `1px solid ${accent}`, cursor: 'pointer' }}>
-                  {p.is_featured ? `Ambil ${p.tag} →` : `Pilih ${p.tag} →`}
-                </button>
-              </div>
-            );
-          })}
-
-          <div style={{ background: LP.bg, borderRadius: LP.radius, padding: '24px 20px', border: `1px dashed ${LP.border}`, display: 'flex', flexDirection: 'column' as const }}>
-            <div style={{ fontFamily: LP.mono, color: LP.muted, fontSize: 10, letterSpacing: 1, marginBottom: 10 }}>PARTNERSHIP</div>
-            <div style={{ fontWeight: 700, fontSize: 19, marginBottom: 6, color: LP.text }}>Program Afiliasi</div>
-            <div style={{ color: LP.muted, fontSize: 12, marginBottom: 18, lineHeight: 1.5 }}>Rekomendasikan platform kami dan dapatkan komisi dari setiap member baru yang bergabung.</div>
-            <div style={{ fontSize: 30, fontWeight: 800, letterSpacing: -1, lineHeight: 1, color: LP.text, marginBottom: 4 }}>Gratis</div>
-            <div style={{ fontFamily: LP.mono, color: LP.muted, fontSize: 10, marginBottom: 14 }}>tanpa modal · komisi per referral</div>
-            <div style={{ borderTop: `1px solid ${LP.border}`, paddingTop: 14, marginBottom: 16, flex: 1 }}>
-              {['Komisi dari setiap referral berhasil', 'Dashboard tracking link & komisi', 'Tidak perlu jadi member aktif', 'Payout setiap bulan', 'Materi promosi tersedia'].map((perk, j) => (
-                <div key={j} style={{ display: 'flex', gap: 8, fontSize: 12, padding: '5px 0', color: LP.muted, lineHeight: 1.45 }}>
-                  <span style={{ color: LP.primary, flexShrink: 0 }}>✓</span>
-                  <span>{perk}</span>
-                </div>
-              ))}
-            </div>
-            <button onClick={() => window.location.href = '/partnership'}
-              style={{ fontFamily: LP.sans, padding: '12px 0', fontSize: 13, fontWeight: 700, borderRadius: 8, background: 'transparent', color: LP.primary, border: `1px solid ${LP.primary}`, cursor: 'pointer' }}>
-              Gabung Partnership →
-            </button>
-          </div>
         </div>
       </div>
     </section>
@@ -1048,10 +921,12 @@ function Footer() {
 // ─── Main export ──────────────────────────────────────────────────────────────
 
 export default function LandingPage() {
-  const { stats }        = useLandingStats();
   const { testimonials } = useApprovedTestimonials(12);
-  const { tiers }        = usePricing();
   const { preview }      = useLandingPreview();
+
+  const heroVideoId = preview?.yt_url
+    ? (preview.yt_url.match(/(?:youtu\.be\/|[?&]v=)([^&?/\s]+)/)?.[1] ?? null)
+    : null;
 
   return (
     <div className="mr-landing-v2" style={{ fontFamily: LP.sans, color: LP.text, background: LP.bg, minHeight: '100vh', WebkitFontSmoothing: 'antialiased', overflowX: 'hidden' }}>
@@ -1078,10 +953,6 @@ export default function LandingPage() {
         .mr-anim-h1-2  { animation: mr-fadeup  0.6s ease 0.24s both; }
         .mr-anim-desc  { animation: mr-fadeup  0.6s ease 0.58s both; }
         .mr-anim-cta   { animation: mr-fadeup  0.6s ease 0.68s both; }
-        .mr-anim-stat-0 { animation: mr-fadeup 0.5s ease 0s   both; }
-        .mr-anim-stat-1 { animation: mr-fadeup 0.5s ease 0.1s both; }
-        .mr-anim-stat-2 { animation: mr-fadeup 0.5s ease 0.2s both; }
-        .mr-anim-stat-3 { animation: mr-fadeup 0.5s ease 0.3s both; }
         @keyframes mr-blink { 0%,49%{opacity:1}50%,100%{opacity:0} }
         .mr-blink { animation: mr-blink 1s steps(1) infinite; }
       `}</style>
@@ -1091,20 +962,13 @@ export default function LandingPage() {
       {/* 3 — Hero */}
       <Hero />
 
-      {/* 4 — Stats bar */}
-      <StatsBar
-        memberCount={stats?.memberCount ?? 0}
-        fundedCount={stats?.fundedCount ?? 0}
-        newThisMonth={stats?.newMembersThisMonth ?? 0}
-      />
-
-      <BuktiHasil />
+      {/* 4.2 — Hero preview (video/chart) */}
+      <HeroPreview videoId={heroVideoId} />
 
       {/* 4.5 — Preview Platform */}
       {preview && <ProductPreview config={preview} />}
 
-      {/* 5 — Tier / Pricing */}
-      {tiers.length > 0 && <Pricing tiers={tiers} />}
+      <BuktiHasil />
 
       {/* 6 — Kurikulum */}
       <Curriculum />
