@@ -6,7 +6,7 @@ import React, { useState } from 'react';
 import { Menu, X, Star, ChevronDown, MessageCircle, Send, Music2, Youtube, Phone } from 'lucide-react';
 
 import { MR } from '../lib/theme';
-import { MRLogo, CandleChart, CANDLE_GRID_STYLE } from '../components/mr';
+import { MRLogo, CandleChart } from '../components/mr';
 import { useLandingStats, useApprovedTestimonials, usePricing, useLandingPreview } from '../hooks';
 import type { LandingPreviewConfig } from '../hooks';
 import type { PricingTier, Testimonial } from '../types/mr.types';
@@ -972,17 +972,20 @@ function CTA() {
   const { ref: refCta, animStyle: ctaStyle } = useFadeUp();
 
   return (
-    <section className='mr-section-pad' style={{ padding: '80px 40px', borderBottom: `1px solid ${MR.border}`, position: 'relative', overflow: 'hidden' }}>
-      <div style={{ position: 'absolute', inset: 0, opacity: 0.4, ...CANDLE_GRID_STYLE }} />
-      <div ref={refCta} style={{ ...ctaStyle, position: 'relative', maxWidth: 980 }}>
-        <div style={{ fontFamily: MR.mono, color: MR.gold, fontSize: 11, letterSpacing: 0.8 }}>// FINAL CALL</div>
-        <h2 style={{ fontSize: isMobile ? 36 : 86, letterSpacing: isMobile ? -1 : -3, lineHeight: isMobile ? 1.1 : 0.95, margin: '20px 0 28px', fontWeight: 700 }}>
-          Pasar buka senin pagi.<br />
-          <span style={{ color: MR.dim }}>Kamu udah siap, atau </span><span style={{ color: MR.down }}>masih nebak?</span>
+    <section style={{ padding: isMobile ? '56px 20px' : '96px 40px', background: LP.primary, textAlign: 'center' as const }}>
+      <div ref={refCta} style={{ ...ctaStyle, maxWidth: 700, margin: '0 auto' }}>
+        <h2 style={{ fontSize: isMobile ? 30 : 52, letterSpacing: -1.5, lineHeight: 1.1, margin: '0 0 24px', fontWeight: 800, color: '#fff' }}>
+          Pasar buka Senin pagi. Kamu udah siap, atau masih nebak?
         </h2>
-        <div style={{ display: 'flex', gap: 12 }}>
-          <button onClick={() => window.location.href = '/signup?tier=gold'} className="mr-btn-shimmer" style={{ fontFamily: MR.mono, background: MR.gold, color: '#181000', padding: '18px 26px', fontSize: 13, fontWeight: 700, letterSpacing: 0.4, border: 'none', cursor: 'pointer' }}>MULAI DENGAN GOLD ▸</button>
-          <button onClick={() => window.location.href = '/signup?tier=trial'} style={{ fontFamily: MR.mono, border: `1px solid ${MR.borderHot}`, padding: '18px 26px', fontSize: 13, letterSpacing: 0.4, background: 'transparent', color: MR.text, cursor: 'pointer' }}>COBA TRIAL · Rp 99K</button>
+        <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' as const }}>
+          <button onClick={() => window.location.href = '/signup?tier=gold'}
+            style={{ fontFamily: LP.sans, background: '#fff', color: LP.primary, padding: '16px 28px', fontSize: 14, fontWeight: 700, borderRadius: 10, border: 'none', cursor: 'pointer' }}>
+            Mulai dengan Gold →
+          </button>
+          <button onClick={() => window.location.href = '/signup?tier=trial'}
+            style={{ fontFamily: LP.sans, border: '1px solid rgba(255,255,255,0.4)', padding: '16px 28px', fontSize: 14, fontWeight: 600, borderRadius: 10, background: 'transparent', color: '#fff', cursor: 'pointer' }}>
+            Coba Trial · Rp 99K
+          </button>
         </div>
       </div>
     </section>
@@ -993,44 +996,43 @@ function Footer() {
   const [isMobile, setIsMobile] = React.useState(() => window.matchMedia('(max-width: 767px)').matches);
   React.useEffect(() => { const mq = window.matchMedia('(max-width: 767px)'); const h = (e: MediaQueryListEvent) => setIsMobile(e.matches); mq.addEventListener('change',h); return ()=>mq.removeEventListener('change',h); }, []);
   const SOCIALS = [
-    { label: 'Discord',  href: 'https://discord.gg/d2Tpf6sGMr',  icon: '💬' },
-    { label: 'Telegram', href: 'https://t.me/+_azyX2h9oFhmNjNl', icon: '📢' },
-    { label: 'TikTok',   href: 'https://www.tiktok.com/@menolakrugi',   icon: '🎵' },
-    { label: 'YouTube',  href: 'https://youtube.com/@menolakrugi',  icon: '▶' },
-    { label: 'WhatsApp', href: 'https://wa.me/6281242224939',  icon: '📱' },
+    { label: 'Discord',  href: 'https://discord.gg/d2Tpf6sGMr',           Icon: MessageCircle },
+    { label: 'Telegram', href: 'https://t.me/+_azyX2h9oFhmNjNl',          Icon: Send },
+    { label: 'TikTok',   href: 'https://www.tiktok.com/@menolakrugi',     Icon: Music2 },
+    { label: 'YouTube',  href: 'https://youtube.com/@menolakrugi',        Icon: Youtube },
+    { label: 'WhatsApp', href: 'https://wa.me/6281242224939',             Icon: Phone },
   ];
   return (
-    <footer style={{ padding: '48px 40px 32px', background: MR.dark }}>
-      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : '1.4fr repeat(3, 1fr)', gap: isMobile ? 16 : 32, marginBottom: 36 }}>
+    <footer style={{ padding: isMobile ? '40px 20px 24px' : '56px 40px 32px', background: LP.surface, borderTop: `1px solid ${LP.border}` }}>
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : '1.4fr repeat(3, 1fr)', gap: isMobile ? 24 : 32, marginBottom: 36 }}>
         <div>
           <MRLogo size={36} />
-          <div style={{ fontWeight: 800, marginTop: 12, letterSpacing: -0.4 }}>MENOLAK RUGI</div>
-          <div style={{ fontFamily: MR.mono, color: MR.dim, fontSize: 11, marginTop: 6, letterSpacing: 0.6 }}>SMC EDUCATION · EST. 2023</div>
-          <p style={{ color: MR.dim, fontSize: 13, marginTop: 14, maxWidth: 280, lineHeight: 1.55 }}>Belajar Smart Money Concept tanpa ribet — sampai konsisten, bukan sampai materi habis.</p>
-          {/* Social icons */}
+          <div style={{ fontWeight: 800, marginTop: 12, letterSpacing: -0.4, color: LP.text }}>MENOLAK RUGI</div>
+          <div style={{ fontFamily: LP.mono, color: LP.muted, fontSize: 11, marginTop: 6, letterSpacing: 0.6 }}>SMC EDUCATION · EST. 2023</div>
+          <p style={{ color: LP.muted, fontSize: 13, marginTop: 14, maxWidth: 280, lineHeight: 1.55 }}>Belajar Smart Money Concept tanpa ribet — sampai konsisten, bukan sampai materi habis.</p>
           <div style={{ display: 'flex', gap: 10, marginTop: 20, flexWrap: 'wrap' as const }}>
             {SOCIALS.map(s => (
-              <a key={s.label} href={s.href} target="_blank" rel="noopener noreferrer"
-                style={{ display: 'flex', alignItems: 'center', gap: 6, fontFamily: MR.mono, fontSize: 10, color: MR.dim, textDecoration: 'none', padding: '5px 10px', border: `1px solid ${MR.border}`, letterSpacing: 0.5, transition: 'color .15s, border-color .15s' }}
-                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = MR.gold; (e.currentTarget as HTMLElement).style.borderColor = MR.gold; }}
-                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = MR.dim; (e.currentTarget as HTMLElement).style.borderColor = MR.border; }}>
-                <span>{s.icon}</span>{s.label.toUpperCase()}
+              <a key={s.label} href={s.href} target="_blank" rel="noopener noreferrer" aria-label={s.label}
+                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 34, height: 34, borderRadius: 8, border: `1px solid ${LP.border}`, color: LP.muted, transition: 'color .15s, border-color .15s' }}
+                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = LP.primary as string; (e.currentTarget as HTMLElement).style.borderColor = LP.primary as string; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = LP.muted as string; (e.currentTarget as HTMLElement).style.borderColor = LP.border as string; }}>
+                <s.Icon size={16} />
               </a>
             ))}
           </div>
         </div>
         {[
-          { h: 'KELAS',   links: [
+          { h: 'KELAS', links: [
             { l: 'Trial',    href: '/signup?tier=trial' },
             { l: 'Bronze',   href: '/signup?tier=bronze' },
             { l: 'Gold',     href: '/signup?tier=gold' },
             { l: 'Platinum', href: '/signup?tier=platinum' },
           ]},
           { h: 'BELAJAR', links: [
-            { l: 'Kurikulum',    href: '/#kurikulum' },
-            { l: 'Komunitas',    href: 'https://discord.gg/d2Tpf6sGMr' },
-            { l: 'Kalender',     href: '/calendar' },
-            { l: 'Partnership',  href: '/partnership' },
+            { l: 'Kurikulum',   href: '/#kurikulum' },
+            { l: 'Komunitas',   href: 'https://discord.gg/d2Tpf6sGMr' },
+            { l: 'Kalender',    href: '/calendar' },
+            { l: 'Partnership', href: '/partnership' },
           ]},
           { h: 'BANTUAN', links: [
             { l: 'FAQ',               href: '/#faq' },
@@ -1040,13 +1042,13 @@ function Footer() {
           ]},
         ].map(c => (
           <div key={c.h}>
-            <div style={{ fontFamily: MR.mono, color: MR.dimmer, fontSize: 10, letterSpacing: 0.8, marginBottom: 12 }}>// {c.h}</div>
+            <div style={{ fontFamily: LP.mono, color: LP.muted, fontSize: 10, letterSpacing: 0.8, marginBottom: 12 }}>{c.h}</div>
             <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 8 }}>
-              {(c.links as any[]).map((item: any) => (
+              {c.links.map(item => (
                 <a key={item.l} href={item.href} target={item.href.startsWith('http') ? '_blank' : '_self'} rel="noopener noreferrer"
-                  style={{ fontSize: 14, color: '#bfbfbf', cursor: 'pointer', textDecoration: 'none', transition: 'color .15s' }}
-                  onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = MR.gold}
-                  onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = '#bfbfbf'}>
+                  style={{ fontSize: 14, color: LP.muted, textDecoration: 'none', transition: 'color .15s' }}
+                  onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = LP.primary as string}
+                  onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = LP.muted as string}>
                   {item.l}
                 </a>
               ))}
@@ -1054,7 +1056,7 @@ function Footer() {
           </div>
         ))}
       </div>
-      <div style={{ fontFamily: MR.mono, display: 'flex', justifyContent: 'space-between', paddingTop: 24, borderTop: `1px solid ${MR.border}`, color: MR.dimmer, fontSize: 11, letterSpacing: 0.4, flexWrap: 'wrap' as const, gap: 8 }}>
+      <div style={{ fontFamily: LP.mono, display: 'flex', justifyContent: 'space-between', paddingTop: 20, borderTop: `1px solid ${LP.border}`, color: LP.muted, fontSize: 11, flexWrap: 'wrap' as const, gap: 8 }}>
         <span>© 2026 Menolak Rugi · All rights reserved</span>
         <span>Trading mengandung risiko. Past performance ≠ future result.</span>
         <span>WA: 6281242224939</span>
@@ -1146,7 +1148,10 @@ export default function LandingPage() {
       {/* 11 — FAQ */}
       <FaqSection />
 
-      {/* 12 — Footer */}
+      {/* 12 — CTA */}
+      <CTA />
+
+      {/* 13 — Footer */}
       <Footer />
     </div>
   );
