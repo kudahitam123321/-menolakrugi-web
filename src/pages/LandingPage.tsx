@@ -5,7 +5,6 @@
 import React, { useState } from 'react';
 import { Menu, X, Star, ChevronDown, MessageCircle, Send, Music2, Youtube, Phone } from 'lucide-react';
 
-import { MR } from '../lib/theme';
 import { MRLogo, CandleChart } from '../components/mr';
 import { useLandingStats, useApprovedTestimonials, usePricing, useLandingPreview } from '../hooks';
 import type { LandingPreviewConfig } from '../hooks';
@@ -98,8 +97,6 @@ const ADVANCED_MODULES = [
     items: ['Case Study', 'Real Market Breakdown', 'Advanced Narrative', 'Psychology & Consistency'],
   },
 ];
-
-const CURRICULUM = [...BASIC_MODULES, ...ADVANCED_MODULES];
 
 const FAQ = [
   { q: 'Apa itu SMC dan kenapa beda dari indikator biasa?', a: 'Smart Money Concept membaca jejak likuiditas dan order pelaku institusi — bukan lagi soal indikator lagging. Kamu belajar struktur market, BOS, order block, dan inducement supaya entry punya konteks, bukan tebak-tebakan.' },
@@ -362,20 +359,6 @@ function StatsBar({ memberCount, fundedCount, newThisMonth }: { memberCount: num
   );
 }
 
-function Manifesto() {
-  const [isMobile, setIsMobile] = React.useState(() => window.matchMedia('(max-width: 767px)').matches);
-  React.useEffect(() => { const mq = window.matchMedia('(max-width: 767px)'); const h = (e: MediaQueryListEvent) => setIsMobile(e.matches); mq.addEventListener('change',h); return ()=>mq.removeEventListener('change',h); }, []);
-  const { ref, animStyle } = useFadeUp();
-  return (
-    <section ref={ref} className='mr-stats-row' style={{ ...animStyle, padding: '32px 40px', borderBottom: `1px solid ${MR.border}`, display: 'flex', justifyContent: 'space-between', gap: 32, alignItems: 'center' }}>
-      <div style={{ fontFamily: MR.mono, color: MR.dim, fontSize: 11, letterSpacing: 0.8, flexShrink: 0 }}>// MANIFESTO</div>
-      <div style={{ fontSize: isMobile ? 16 : 22, lineHeight: 1.5, letterSpacing: -0.25, maxWidth: 1080 }}>
-        Pasar bukan bergerak secara random. Setiap pergerakan membentuk <span style={{ color: MR.up }}>struktur</span>, dan struktur selalu memberi petunjuk arah berikutnya. Kami ngajarin cara membaca <em style={{ fontStyle: 'normal', color: MR.gold }}>market structure</em> dengan benar — memahami kapan trend berlanjut, kapan melemah, dan kapan market mulai <span style={{ color: MR.down }}>berubah arah</span>.
-      </div>
-    </section>
-  );
-}
-
 function Curriculum() {
   const [isMobile, setIsMobile] = React.useState(() => window.matchMedia('(max-width: 767px)').matches);
   React.useEffect(() => { const mq = window.matchMedia('(max-width: 767px)'); const h = (e: MediaQueryListEvent) => setIsMobile(e.matches); mq.addEventListener('change',h); return ()=>mq.removeEventListener('change',h); }, []);
@@ -474,9 +457,6 @@ function Komunitas() {
     const t = setInterval(() => setCur(c => (c + 1) % images.length), 4000);
     return () => clearInterval(t);
   }, [paused, images.length]);
-
-  const prev = () => setCur(c => (c - 1 + images.length) % images.length);
-  const next = () => setCur(c => (c + 1) % images.length);
 
   return (
     <section style={{ background: LP.bg, padding: isMobile ? '48px 20px' : '72px 40px' }}>
@@ -1077,14 +1057,12 @@ export default function LandingPage() {
     <div className="mr-landing-v2" style={{ fontFamily: LP.sans, color: LP.text, background: LP.bg, minHeight: '100vh', WebkitFontSmoothing: 'antialiased', overflowX: 'hidden' }}>
       <style>{`
         .mr-nav-links { display: flex; }
-        .mr-section-pad { padding: 80px 40px; }
         .mr-curriculum-grid { grid-template-columns: 1fr 1fr; }
         @media (max-width: 767px) {
           .mr-nav-links { display: none !important; }
           .mr-nav-topbar { padding: 10px 16px !important; }
           .mr-mobile-nav-right { display: flex !important; }
           .mr-hero-h1 { font-size: 38px !important; letter-spacing: -1.5px !important; line-height: 1.08 !important; }
-          .mr-section-pad { padding: 40px 16px !important; }
           .mr-curriculum-grid { grid-template-columns: 1fr !important; }
         }
         @keyframes mr-fadeup {
@@ -1098,8 +1076,6 @@ export default function LandingPage() {
         .mr-anim-badge { animation: mr-fadein  0.4s ease both; }
         .mr-anim-h1-1  { animation: mr-fadeup  0.6s ease 0.12s both; }
         .mr-anim-h1-2  { animation: mr-fadeup  0.6s ease 0.24s both; }
-        .mr-anim-h1-3  { animation: mr-fadeup  0.6s ease 0.36s both; }
-        .mr-anim-h1-4  { animation: mr-fadeup  0.6s ease 0.48s both; }
         .mr-anim-desc  { animation: mr-fadeup  0.6s ease 0.58s both; }
         .mr-anim-cta   { animation: mr-fadeup  0.6s ease 0.68s both; }
         .mr-anim-stat-0 { animation: mr-fadeup 0.5s ease 0s   both; }
@@ -1108,12 +1084,6 @@ export default function LandingPage() {
         .mr-anim-stat-3 { animation: mr-fadeup 0.5s ease 0.3s both; }
         @keyframes mr-blink { 0%,49%{opacity:1}50%,100%{opacity:0} }
         .mr-blink { animation: mr-blink 1s steps(1) infinite; }
-        @keyframes mr-ticker { 0%{transform:translateX(0)}100%{transform:translateX(-33.333%)} }
-        @keyframes mr-shimmer-sweep { 0%{left:-80%} 60%,100%{left:150%} }
-        .mr-btn-shimmer { position: relative !important; overflow: hidden !important; }
-        .mr-btn-shimmer::after { content:''; position:absolute; top:0; left:-80%; width:60%; height:100%; background:linear-gradient(90deg,transparent,rgba(255,255,255,0.18),transparent); animation:mr-shimmer-sweep 3s ease-in-out infinite; pointer-events:none; }
-        @keyframes mr-card-glow { 0%,100%{box-shadow:0 0 0 0 rgba(22,163,74,0.2)} 50%{box-shadow:0 0 32px 8px rgba(22,163,74,0.05)} }
-        @media (min-width:768px) { .mr-pricing-card{transition:transform 0.25s ease,box-shadow 0.25s ease !important} .mr-pricing-card:hover{transform:translateY(-8px) !important;box-shadow:0 20px 56px rgba(0,0,0,0.5) !important} }
       `}</style>
 
       <NavBar />
