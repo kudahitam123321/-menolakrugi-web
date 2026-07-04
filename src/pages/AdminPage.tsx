@@ -1238,6 +1238,9 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
   const [pmUrutan, setPmUrutan]               = useState('');
   const [pmAktif, setPmAktif]                 = useState(true);
   const [pmMsg, setPmMsg]                     = useState('');
+  const [pmJenis, setPmJenis]                 = useState<'bank'|'qris'>('bank');
+  const [pmQrisFile, setPmQrisFile]           = useState<File|null>(null);
+  const [pmQrisPreview, setPmQrisPreview]     = useState('');
   const [editPmId, setEditPmId]               = useState<string|null>(null);
   const [editPmNamaBank, setEditPmNamaBank]   = useState('');
   const [editPmNomorRek, setEditPmNomorRek]   = useState('');
@@ -1752,16 +1755,36 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
     loadData();
   }
 
+  async function uploadQrisImage(file: File): Promise<string|null> {
+    const ext = file.name.split('.').pop();
+    const fileName = `qris_${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
+    const { error } = await supabase.storage.from('materi').upload(fileName, file, { upsert: true, cacheControl: '3600' });
+    if (error) { notify('Gagal upload gambar QRIS: ' + error.message, 'err'); return null; }
+    const { data } = supabase.storage.from('materi').getPublicUrl(fileName);
+    return data.publicUrl;
+  }
+
   async function addPaymentMethod() {
-    if (!pmNamaBank || !pmNomorRek || !pmNamaRek) { setPmMsg('Nama bank, nomor rekening, dan atas nama wajib diisi.'); return; }
+    if (!pmNamaBank) { setPmMsg('Nama/label metode pembayaran wajib diisi.'); return; }
+    if (pmJenis === 'bank' && (!pmNomorRek || !pmNamaRek)) { setPmMsg('Nomor rekening dan atas nama wajib diisi.'); return; }
+    if (pmJenis === 'qris' && !pmQrisFile) { setPmMsg('Upload gambar QRIS wajib diisi.'); return; }
+    let qrisImageUrl: string|null = null;
+    if (pmJenis === 'qris') {
+      qrisImageUrl = await uploadQrisImage(pmQrisFile!);
+      if (!qrisImageUrl) return;
+    }
     const { error } = await supabase.from('payment_methods').insert({
-      nama_bank: pmNamaBank, nomor_rekening: pmNomorRek, nama_rekening: pmNamaRek,
+      nama_bank: pmNamaBank,
+      nomor_rekening: pmJenis === 'bank' ? pmNomorRek : null,
+      nama_rekening: pmJenis === 'bank' ? pmNamaRek : null,
       catatan: pmCatatan || null, urutan: parseInt(pmUrutan) || 0, aktif: pmAktif,
+      jenis: pmJenis, qris_image_url: qrisImageUrl,
     });
     if (error) { setPmMsg('Error: ' + error.message); return; }
     setPmMsg('✅ Metode pembayaran ditambahkan!');
     setTimeout(() => setPmMsg(''), 3000);
     setPmNamaBank(''); setPmNomorRek(''); setPmNamaRek(''); setPmCatatan(''); setPmUrutan(''); setPmAktif(true);
+    setPmJenis('bank'); setPmQrisFile(null); setPmQrisPreview('');
     loadData();
   }
 
@@ -3606,11 +3629,21 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
               {/* Form tambah */}
               <div style={{background:'#111',border:'1px solid #1e1e1e',borderRadius:12,padding:20,marginBottom:20}}>
                 <div style={{fontFamily:'"Geist Mono",monospace',color:'#555',fontSize:10,letterSpacing:1,marginBottom:14}}>+ TAMBAH METODE PEMBAYARAN</div>
+                <div style={{display:'flex',gap:8,marginBottom:12}}>
+                  {(['bank','qris'] as const).map(j=>(
+                    <button key={j} onClick={()=>setPmJenis(j)}
+                      style={{fontFamily:'"Geist Mono",monospace',fontSize:11,fontWeight:700,padding:'6px 16px',border:`1px solid ${pmJenis===j?'#16a34a':'#1e1e1e'}`,background:pmJenis===j?'#0a1a0e':'transparent',color:pmJenis===j?'#16a34a':'#555',cursor:'pointer',borderRadius:6}}>
+                      {j==='bank'?'TRANSFER BANK':'QRIS'}
+                    </button>
+                  ))}
+                </div>
                 <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginBottom:10}}>
                   {([
-                    {label:'NAMA BANK',v:pmNamaBank,s:setPmNamaBank,ph:'BCA / Mandiri / BRI / QRIS ...'},
-                    {label:'NOMOR REKENING / ID',v:pmNomorRek,s:setPmNomorRek,ph:'Nomor rekening atau nomor QRIS'},
-                    {label:'ATAS NAMA',v:pmNamaRek,s:setPmNamaRek,ph:'Nama pemilik rekening'},
+                    {label:'NAMA BANK / LABEL',v:pmNamaBank,s:setPmNamaBank,ph: pmJenis==='qris' ? 'QRIS / QRIS Dana / QRIS Merchant ...' : 'BCA / Mandiri / BRI ...'},
+                    ...(pmJenis==='bank' ? [
+                      {label:'NOMOR REKENING / ID',v:pmNomorRek,s:setPmNomorRek,ph:'Nomor rekening'},
+                      {label:'ATAS NAMA',v:pmNamaRek,s:setPmNamaRek,ph:'Nama pemilik rekening'},
+                    ] : []),
                     {label:'URUTAN TAMPIL',v:pmUrutan,s:setPmUrutan,ph:'0',type:'number'},
                   ] as {label:string;v:string;s:(x:string)=>void;ph:string;type?:string}[]).map(f=>(
                     <div key={f.label}>
@@ -3621,6 +3654,19 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
                     </div>
                   ))}
                 </div>
+                {pmJenis==='qris' && (
+                  <div style={{marginBottom:10}}>
+                    <div style={{fontFamily:'"Geist Mono",monospace',fontSize:9,color:'#555',marginBottom:5}}>GAMBAR QRIS</div>
+                    <div style={{display:'flex',alignItems:'center',gap:12}}>
+                      {pmQrisPreview && <img src={pmQrisPreview} alt="preview" style={{width:60,height:60,objectFit:'contain',borderRadius:8,border:'1px solid #2a2a2a',background:'#fff'}}/>}
+                      <label style={{display:'flex',alignItems:'center',gap:8,cursor:'pointer',background:'#0a0a0a',border:'1px solid #1e1e1e',padding:'8px 14px',fontFamily:'"Geist Mono",monospace',fontSize:11,color:'#aaa'}}>
+                        {pmQrisFile ? pmQrisFile.name : '📁 Pilih gambar QR (PNG/JPG)'}
+                        <input type="file" accept="image/*" style={{display:'none'}} onChange={e=>{const f=e.target.files?.[0];if(!f)return;setPmQrisFile(f);setPmQrisPreview(URL.createObjectURL(f));}}/>
+                      </label>
+                      {pmQrisPreview && <button onClick={()=>{setPmQrisFile(null);setPmQrisPreview('');}} style={{background:'transparent',border:'none',color:'#ef4444',cursor:'pointer',fontSize:12}}>✕ hapus</button>}
+                    </div>
+                  </div>
+                )}
                 <textarea value={pmCatatan} onChange={e=>setPmCatatan(e.target.value)} rows={2} placeholder="Catatan / instruksi transfer (opsional)"
                   style={{width:'100%',background:'#0a0a0a',border:'1px solid #1e1e1e',color:'#e7e5e4',padding:'9px 12px',fontFamily:'"Geist Mono",monospace',fontSize:12,outline:'none',resize:'vertical' as const,boxSizing:'border-box' as const,marginBottom:10}}
                   onFocus={e=>e.target.style.borderColor='#16a34a'} onBlur={e=>e.target.style.borderColor='#1e1e1e'}/>
