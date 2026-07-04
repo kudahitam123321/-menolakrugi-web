@@ -801,11 +801,11 @@ function ProductPreview({ config }: { config: LandingPreviewConfig }) {
   );
 }
 
-const TIER_STYLE: Record<string, { bg: string; accent: string; border: string }> = {
-  neutral:  { bg: 'linear-gradient(160deg,#061310 0%,var(--mr-bg) 100%)', accent: '#22c55e', border: '#22c55e28' },
-  bronze:   { bg: 'linear-gradient(160deg,#120700 0%,var(--mr-bg) 100%)', accent: '#f97316', border: '#f9731628' },
-  gold:     { bg: 'linear-gradient(160deg,#140e00 0%,var(--mr-bg) 100%)', accent: '#eab308', border: '#eab30828' },
-  platinum: { bg: 'linear-gradient(160deg,#0e0820 0%,var(--mr-bg) 100%)', accent: '#a855f7', border: '#a855f728' },
+const TIER_ACCENT_COLOR: Record<string, string> = {
+  neutral:  '#16a34a',
+  bronze:   '#c2740b',
+  gold:     '#b8860b',
+  platinum: '#7c3aed',
 };
 
 function Pricing({ tiers }: { tiers: PricingTier[] }) {
@@ -814,87 +814,78 @@ function Pricing({ tiers }: { tiers: PricingTier[] }) {
 
   const fmt = (n: number) => new Intl.NumberFormat('id-ID').format(n);
 
-  const totalCols = tiers.length + 1;
-  const PS = { bg: 'linear-gradient(160deg,#071a0f 0%,var(--mr-bg) 100%)', accent: '#10b981', border: '#10b98128' };
-
   return (
-    <section id="kelas" style={{ background: 'var(--mr-bg)' }}>
-      <div style={{ padding: isMobile ? '40px 20px 24px' : '56px 40px 28px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap' as const, gap: 16 }}>
-        <div>
-          <div style={{ fontFamily: MR.mono, color: MR.dim, fontSize: 11, letterSpacing: 0.8 }}>// ORDER TICKETS</div>
-          <h2 style={{ fontSize: isMobile ? 28 : 52, letterSpacing: isMobile ? -0.5 : -1.5, lineHeight: 1.1, margin: '16px 0 0', fontWeight: 700 }}>Pilih tier kamu.</h2>
+    <section id="kelas" style={{ background: LP.surface, padding: isMobile ? '48px 20px' : '72px 40px', borderTop: `1px solid ${LP.border}`, borderBottom: `1px solid ${LP.border}` }}>
+      <div style={{ maxWidth: 1200, margin: '0 auto' }}>
+        <div style={{ marginBottom: 32 }}>
+          <div style={{ fontFamily: LP.mono, color: LP.muted, fontSize: 11, letterSpacing: 0.8 }}>// PILIH TIER</div>
+          <h2 style={{ fontSize: isMobile ? 26 : 44, letterSpacing: -1, lineHeight: 1.1, margin: '14px 0 8px', fontWeight: 800, color: LP.text }}>Pilih tier kamu.</h2>
+          <p style={{ color: LP.muted, fontSize: 14, maxWidth: 480 }}>Trial bulanan untuk yang baru kenal. Bronze ke atas — sekali bayar, akses seumur hidup.</p>
         </div>
-        <div style={{ fontFamily: MR.mono, color: MR.dim, fontSize: 12, maxWidth: 360, textAlign: 'right' as const, lineHeight: 1.55 }}>
-          Trial bulanan untuk yang baru kenal. Bronze ke atas — sekali bayar, akses seumur hidup.
-        </div>
-      </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : `repeat(${totalCols}, 1fr)`, borderTop: `1px solid ${MR.border}` }}>
-        {tiers.map((p) => {
-          const s = TIER_STYLE[p.accent] ?? TIER_STYLE['neutral'];
-          return (
-            <div key={p.id} className="mr-pricing-card" style={{ background: s.bg, borderRight: `1px solid ${MR.border}`, borderTop: p.is_featured ? `2px solid ${s.accent}` : 'none', padding: '26px 22px', display: 'flex', flexDirection: 'column' as const, position: 'relative', boxShadow: p.is_featured ? `inset 0 0 40px ${s.accent}0a` : 'none', animation: p.is_featured ? 'mr-card-glow 3s ease-in-out infinite' : 'none' }}>
-              {p.is_featured && <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 1, background: `linear-gradient(90deg,transparent,${s.accent},transparent)` }} />}
-              {p.badge && (
-                <div style={{ fontFamily: MR.mono, position: 'absolute', top: 0, right: 0, background: s.accent, color: '#000', padding: '4px 9px', fontSize: 9, letterSpacing: 0.8, fontWeight: 700 }}>
-                  {p.badge.toUpperCase()}
-                </div>
-              )}
-              <div style={{ fontFamily: MR.mono, color: s.accent, fontSize: 10, letterSpacing: 1.2, marginBottom: 12 }}>// {p.tag.toUpperCase()}</div>
-              <div style={{ fontWeight: 700, fontSize: 20, letterSpacing: -0.5, marginBottom: 6 }}>{p.name}</div>
-              <div style={{ color: MR.dim, fontSize: 12, marginBottom: 20, lineHeight: 1.5 }}>{p.pitch}</div>
-              <div style={{ marginBottom: 4 }}>
-                {p.original_price && <div style={{ fontFamily: MR.mono, fontSize: 11, color: MR.dimmer, marginBottom: 2 }}><s>Rp {fmt(p.original_price)}</s></div>}
-                <div style={{ display: 'flex', alignItems: 'baseline', gap: 4 }}>
-                  <span style={{ fontFamily: MR.mono, color: s.accent, fontSize: 13 }}>Rp</span>
-                  <span style={{ fontSize: 34, fontWeight: 700, letterSpacing: -1.5, lineHeight: 1 }}>{fmt(p.price)}</span>
-                </div>
-                <div style={{ fontFamily: MR.mono, color: MR.dim, fontSize: 10, marginTop: 4 }}>{p.period}</div>
-              </div>
-              {p.note && <div style={{ fontFamily: MR.mono, color: s.accent, fontSize: 10, marginTop: 6, opacity: 0.8 }}>{p.note}</div>}
-              <div style={{ height: 16 }} />
-              <div style={{ borderTop: `1px solid ${s.border}`, paddingTop: 16, marginBottom: 16, flex: 1 }}>
-                {p.perks.map((perk, j) => (
-                  <div key={j} style={{ display: 'flex', gap: 8, fontSize: 12, padding: '5px 0', color: MR.muted, lineHeight: 1.45 }}>
-                    <span style={{ color: s.accent, flexShrink: 0 }}>▸</span>
-                    <span>{perk}</span>
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : `repeat(${tiers.length + 1}, 1fr)`, gap: 16 }}>
+          {tiers.map((p) => {
+            const accent = TIER_ACCENT_COLOR[p.accent] ?? TIER_ACCENT_COLOR.neutral;
+            return (
+              <div key={p.id} style={{
+                background: LP.bg, borderRadius: LP.radius, padding: '24px 20px',
+                border: p.is_featured ? `2px solid ${accent}` : `1px solid ${LP.border}`,
+                boxShadow: p.is_featured ? LP.shadowMd : LP.shadowSm,
+                display: 'flex', flexDirection: 'column' as const, position: 'relative',
+              }}>
+                {p.badge && (
+                  <div style={{ position: 'absolute', top: -12, left: 20, background: accent, color: '#fff', padding: '4px 12px', fontSize: 10, letterSpacing: 0.6, fontWeight: 700, borderRadius: 20 }}>
+                    {p.badge.toUpperCase()}
                   </div>
-                ))}
+                )}
+                <div style={{ fontFamily: LP.mono, color: accent, fontSize: 10, letterSpacing: 1, marginBottom: 10, marginTop: p.badge ? 8 : 0 }}>{p.tag.toUpperCase()}</div>
+                <div style={{ fontWeight: 700, fontSize: 19, marginBottom: 6, color: LP.text }}>{p.name}</div>
+                <div style={{ color: LP.muted, fontSize: 12, marginBottom: 18, lineHeight: 1.5 }}>{p.pitch}</div>
+                <div style={{ marginBottom: 4 }}>
+                  {p.original_price && <div style={{ fontFamily: LP.mono, fontSize: 11, color: LP.muted, marginBottom: 2 }}><s>Rp {fmt(p.original_price)}</s></div>}
+                  <div style={{ display: 'flex', alignItems: 'baseline', gap: 4 }}>
+                    <span style={{ fontFamily: LP.mono, color: accent, fontSize: 13 }}>Rp</span>
+                    <span style={{ fontSize: 30, fontWeight: 800, letterSpacing: -1, lineHeight: 1, color: LP.text }}>{fmt(p.price)}</span>
+                  </div>
+                  <div style={{ fontFamily: LP.mono, color: LP.muted, fontSize: 10, marginTop: 4 }}>{p.period}</div>
+                </div>
+                {p.note && <div style={{ fontFamily: LP.mono, color: accent, fontSize: 10, marginTop: 6 }}>{p.note}</div>}
+                <div style={{ height: 14 }} />
+                <div style={{ borderTop: `1px solid ${LP.border}`, paddingTop: 14, marginBottom: 16, flex: 1 }}>
+                  {p.perks.map((perk, j) => (
+                    <div key={j} style={{ display: 'flex', gap: 8, fontSize: 12, padding: '5px 0', color: LP.muted, lineHeight: 1.45 }}>
+                      <span style={{ color: accent, flexShrink: 0 }}>✓</span>
+                      <span>{perk}</span>
+                    </div>
+                  ))}
+                </div>
+                <button onClick={() => window.location.href = `/signup?tier=${p.id}`}
+                  style={{ fontFamily: LP.sans, padding: '12px 0', fontSize: 13, fontWeight: 700, borderRadius: 8, background: p.is_featured ? accent : 'transparent', color: p.is_featured ? '#fff' : accent, border: `1px solid ${accent}`, cursor: 'pointer' }}>
+                  {p.is_featured ? `Ambil ${p.tag} →` : `Pilih ${p.tag} →`}
+                </button>
               </div>
-              <button onClick={() => window.location.href = `/signup?tier=${p.id}`}
-                style={{ fontFamily: MR.mono, padding: '13px 0', letterSpacing: 0.5, fontSize: 11, fontWeight: 700, background: p.is_featured ? s.accent : 'transparent', color: p.is_featured ? '#000' : s.accent, border: `1px solid ${p.is_featured ? s.accent : s.border}`, cursor: 'pointer' }}
-                onMouseEnter={e => { if (!p.is_featured) (e.currentTarget as HTMLElement).style.background = s.accent + '18'; }}
-                onMouseLeave={e => { if (!p.is_featured) (e.currentTarget as HTMLElement).style.background = 'transparent'; }}>
-                {p.is_featured ? `AMBIL ${p.tag.toUpperCase()} ▸` : `PILIH ${p.tag.toUpperCase()} ▸`}
-              </button>
-            </div>
-          );
-        })}
+            );
+          })}
 
-        {/* Partnership card */}
-        <div className="mr-pricing-card" style={{ background: PS.bg, padding: '26px 22px', display: 'flex', flexDirection: 'column' as const, position: 'relative' }}>
-          <div style={{ fontFamily: MR.mono, color: PS.accent, fontSize: 10, letterSpacing: 1.2, marginBottom: 12 }}>// PARTNERSHIP</div>
-          <div style={{ fontWeight: 700, fontSize: 20, letterSpacing: -0.5, marginBottom: 6 }}>Program Afiliasi</div>
-          <div style={{ color: MR.dim, fontSize: 12, marginBottom: 20, lineHeight: 1.5 }}>Rekomendasikan platform kami dan dapatkan komisi dari setiap member baru yang bergabung.</div>
-          <div style={{ marginBottom: 4 }}>
-            <div style={{ fontSize: 34, fontWeight: 700, letterSpacing: -1.5, lineHeight: 1, color: PS.accent }}>GRATIS</div>
-            <div style={{ fontFamily: MR.mono, color: MR.dim, fontSize: 10, marginTop: 4 }}>tanpa modal · komisi per referral</div>
+          <div style={{ background: LP.bg, borderRadius: LP.radius, padding: '24px 20px', border: `1px dashed ${LP.border}`, display: 'flex', flexDirection: 'column' as const }}>
+            <div style={{ fontFamily: LP.mono, color: LP.muted, fontSize: 10, letterSpacing: 1, marginBottom: 10 }}>PARTNERSHIP</div>
+            <div style={{ fontWeight: 700, fontSize: 19, marginBottom: 6, color: LP.text }}>Program Afiliasi</div>
+            <div style={{ color: LP.muted, fontSize: 12, marginBottom: 18, lineHeight: 1.5 }}>Rekomendasikan platform kami dan dapatkan komisi dari setiap member baru yang bergabung.</div>
+            <div style={{ fontSize: 30, fontWeight: 800, letterSpacing: -1, lineHeight: 1, color: LP.text, marginBottom: 4 }}>Gratis</div>
+            <div style={{ fontFamily: LP.mono, color: LP.muted, fontSize: 10, marginBottom: 14 }}>tanpa modal · komisi per referral</div>
+            <div style={{ borderTop: `1px solid ${LP.border}`, paddingTop: 14, marginBottom: 16, flex: 1 }}>
+              {['Komisi dari setiap referral berhasil', 'Dashboard tracking link & komisi', 'Tidak perlu jadi member aktif', 'Payout setiap bulan', 'Materi promosi tersedia'].map((perk, j) => (
+                <div key={j} style={{ display: 'flex', gap: 8, fontSize: 12, padding: '5px 0', color: LP.muted, lineHeight: 1.45 }}>
+                  <span style={{ color: LP.primary, flexShrink: 0 }}>✓</span>
+                  <span>{perk}</span>
+                </div>
+              ))}
+            </div>
+            <button onClick={() => window.location.href = '/partnership'}
+              style={{ fontFamily: LP.sans, padding: '12px 0', fontSize: 13, fontWeight: 700, borderRadius: 8, background: 'transparent', color: LP.primary, border: `1px solid ${LP.primary}`, cursor: 'pointer' }}>
+              Gabung Partnership →
+            </button>
           </div>
-          <div style={{ height: 16 }} />
-          <div style={{ borderTop: `1px solid ${PS.border}`, paddingTop: 16, marginBottom: 16, flex: 1 }}>
-            {['Komisi dari setiap referral berhasil','Dashboard tracking link & komisi','Tidak perlu jadi member aktif','Payout setiap bulan','Materi promosi tersedia'].map((perk, j) => (
-              <div key={j} style={{ display: 'flex', gap: 8, fontSize: 12, padding: '5px 0', color: MR.muted, lineHeight: 1.45 }}>
-                <span style={{ color: PS.accent, flexShrink: 0 }}>▸</span>
-                <span>{perk}</span>
-              </div>
-            ))}
-          </div>
-          <button onClick={() => window.location.href = '/partnership'}
-            style={{ fontFamily: MR.mono, padding: '13px 0', letterSpacing: 0.5, fontSize: 11, fontWeight: 700, background: 'transparent', color: PS.accent, border: `1px solid ${PS.border}`, cursor: 'pointer' }}
-            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = PS.accent + '18'; }}
-            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent'; }}>
-            GABUNG PARTNERSHIP ▸
-          </button>
         </div>
       </div>
     </section>
