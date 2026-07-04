@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
-import { WA_NUMBER } from '../constants';
 
 const C = {
   bg:      'var(--mr-bg)',
@@ -29,6 +28,11 @@ function getPlanFromConfig(config: any, planKey: string): PlanInfo | null {
   return null;
 }
 
+function generateMemberPassword() {
+  const chars = 'ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
+  return Array.from({ length: 8 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+}
+
 export default function BayarPage() {
   const params  = new URLSearchParams(window.location.search);
   const planKey = params.get('plan') || 'bulanan';
@@ -42,6 +46,7 @@ export default function BayarPage() {
   const [noHp,       setNoHp]       = useState('');
   const [metodePm,   setMetodePm]   = useState<string>('');
   const [errMsg, setErrMsg] = useState('');
+  const [submitting, setSubmitting] = useState(false);
 
   const [isMobile, setIsMobile] = useState(() => window.matchMedia('(max-width: 767px)').matches);
   useEffect(() => {
@@ -79,44 +84,56 @@ export default function BayarPage() {
     if (!metodePm) { setErrMsg('Pilih metode pembayaran terlebih dahulu.'); return; }
     if (!plan) { setErrMsg('Plan tidak valid.'); return; }
 
+    setSubmitting(true);
+
     const pm = paymentMethods.find(p => p.id === metodePm);
     const metodeInfo = pm?.jenis === 'qris'
       ? `QRIS (${pm.nama_bank})`
       : `Bank: ${pm?.nama_bank || metodePm} | Rek: ${pm?.nomor_rekening || ''}`;
 
-    // Simpan ke DB dulu supaya masuk di dashboard admin
-    const { error } = await supabase.from('orders').insert({
-      member_id:      'guest',
-      tier_member:    'visitor',
+    // Cek nama sudah terdaftar sebagai member atau belum
+    const { data: existing } = await supabase
+      .from('members').select('id').ilike('nama', nama.trim()).single();
+    if (existing) {
+      setErrMsg('Nama sudah terdaftar. Silakan login atau hubungi admin jika ini akun kamu.');
+      setSubmitting(false);
+      return;
+    }
+
+    // Buat akun member baru (belum aktif — nunggu verifikasi admin)
+    const memberPassword = generateMemberPassword();
+    const { data: newMember, error: memberErr } = await supabase.from('members').insert({
+      nama:      nama.trim(),
+      tier:      'SMC Trial',
+      password:  memberPassword,
+      role:      'member',
+      is_active: false,
+      is_advance: false,
+    }).select('id').single();
+    if (memberErr || !newMember) {
+      setErrMsg('Gagal membuat akun: ' + (memberErr?.message || 'unknown error'));
+      setSubmitting(false);
+      return;
+    }
+
+    // Simpan order, dikaitkan ke member baru
+    const { data: newOrder, error } = await supabase.from('orders').insert({
+      member_id:      newMember.id,
+      tier_member:    'SMC Trial',
       nama_member:    nama.trim(),
       email_member:   email.trim(),
       catatan:        `WA: ${noHp.trim()} | ${metodeInfo}`,
       plan_type:      plan.key,
       diskon_applied: plan.diskon || null,
       status:         'pending',
-    });
-    if (error) { setErrMsg('Gagal menyimpan pesanan: ' + error.message); return; }
+    }).select('id').single();
+    if (error || !newOrder) {
+      setErrMsg('Gagal menyimpan pesanan: ' + (error?.message || 'unknown error'));
+      setSubmitting(false);
+      return;
+    }
 
-    // Lalu buka WA admin
-    const metodeLine = pm
-      ? (pm.jenis === 'qris'
-          ? `*Metode:* QRIS (${pm.nama_bank}) — scan QR yang dikirim admin`
-          : `*Transfer ke:* ${pm.nama_bank} — ${pm.nomor_rekening} a.n. ${pm.nama_rekening}`)
-      : '';
-    const msg = [
-      `Halo Admin, saya ingin membeli Indikator SMC.`,
-      ``,
-      `*Nama:* ${nama.trim()}`,
-      `*Email:* ${email.trim()}`,
-      `*No. WA:* ${noHp.trim()}`,
-      `*Plan:* ${plan.nama} — Rp ${fmt(hargaDiskon)}`,
-      metodeLine,
-      ``,
-      `Mohon konfirmasi pesanan saya. Terima kasih!`,
-    ].filter(Boolean).join('\n');
-
-    const waUrl = `https://wa.me/62${WA_NUMBER.replace(/^0/, '')}?text=${encodeURIComponent(msg)}`;
-    window.open(waUrl, '_blank');
+    window.location.href = `/bayar/akun?order=${newOrder.id}`;
   }
 
   if (loading) return (
@@ -281,7 +298,7 @@ export default function BayarPage() {
 
             {/* Info bayar */}
             <div style={{ background: C.panel, border: `1px solid ${C.border}`, borderRadius: 8, padding: '14px 16px', fontSize: 13, color: C.dim, lineHeight: 1.6 }}>
-              Setelah mengisi form ini, transfer sesuai nominal ke rekening yang dipilih, lalu admin akan konfirmasi via WhatsApp.
+              Setelah mengisi form ini, kamu akan dapat akun member. Transfer sesuai nominal, lalu konfirmasi ke admin dari halaman berikutnya.
             </div>
 
             {errMsg && (
@@ -292,6 +309,7 @@ export default function BayarPage() {
 
             <button
               type="submit"
+              disabled={submitting}
               style={{
                 marginTop: 4,
                 fontFamily: '"Geist Mono",monospace',
@@ -299,13 +317,14 @@ export default function BayarPage() {
                 background: G.gold,
                 color: '#fff',
                 border: 'none',
-                cursor: 'pointer',
+                cursor: submitting ? 'not-allowed' : 'pointer',
+                opacity: submitting ? 0.7 : 1,
                 fontWeight: 700,
                 fontSize: 12,
                 letterSpacing: 0.8,
                 borderRadius: 8,
               }}>
-              KONFIRMASI VIA WHATSAPP →
+              {submitting ? 'MEMPROSES...' : 'LANJUTKAN & KONFIRMASI PEMBAYARAN →'}
             </button>
           </form>
         </div>
