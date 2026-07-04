@@ -939,28 +939,25 @@ function FaqSection() {
   const [open, setOpen] = useState(0);
   const { ref: refFaq, animStyle: faqStyle } = useFadeUp();
   return (
-    <section ref={refFaq} style={{ ...faqStyle, padding: isMobile ? '36px 16px' : '64px 40px', borderBottom: `1px solid ${MR.border}`, display: isMobile ? 'block' : 'grid', gridTemplateColumns: '360px 1fr', gap: 40 }}>
+    <section ref={refFaq} style={{ ...faqStyle, padding: isMobile ? '40px 20px' : '64px 40px', background: LP.bg, display: isMobile ? 'block' : 'grid', gridTemplateColumns: '340px 1fr', gap: 40, maxWidth: 1200, margin: '0 auto' }}>
       <div>
-        <div style={{ fontFamily: MR.mono, color: MR.dim, fontSize: 11, letterSpacing: 0.8 }}>// HELP DESK</div>
-        <h2 style={{ fontSize: isMobile ? 24 : 44, letterSpacing: isMobile ? -0.5 : -1.2, lineHeight: 1.1, margin: '16px 0 20px', fontWeight: 700 }}>Pertanyaan yang paling sering muncul.</h2>
-        <p style={{ color: MR.dim, fontSize: 14, lineHeight: 1.55 }}>Masih ada yang ngeganjel? Ping admin di Telegram, balasannya rata-rata di bawah 2 jam.</p>
+        <div style={{ fontFamily: LP.mono, color: LP.muted, fontSize: 11, letterSpacing: 0.8 }}>// HELP DESK</div>
+        <h2 style={{ fontSize: isMobile ? 22 : 36, letterSpacing: -0.8, lineHeight: 1.15, margin: '14px 0 16px', fontWeight: 800, color: LP.text }}>Pertanyaan yang paling sering muncul.</h2>
+        <p style={{ color: LP.muted, fontSize: 14, lineHeight: 1.55 }}>Masih ada yang ngeganjel? Ping admin di Telegram, balasannya rata-rata di bawah 2 jam.</p>
         <a href="https://t.me/+_azyX2h9oFhmNjNl" target="_blank" rel="noreferrer">
-          <button style={{ fontFamily: MR.mono, marginTop: 18, padding: '12px 16px', border: `1px solid ${MR.borderHot}`, fontSize: 12, letterSpacing: 0.4, background: 'transparent', color: MR.text, cursor: 'pointer' }}>TANYA ADMIN ▸</button>
+          <button style={{ fontFamily: LP.sans, marginTop: 16, padding: '11px 18px', border: `1px solid ${LP.border}`, borderRadius: 8, fontSize: 13, fontWeight: 600, background: LP.surface, color: LP.text, cursor: 'pointer' }}>Tanya Admin →</button>
         </a>
       </div>
-      <div style={{ borderTop: `1px solid ${MR.border}` }}>
+      <div style={{ borderTop: `1px solid ${LP.border}` }}>
         {FAQ.map((f, i) => {
           const isOpen = i === open;
           return (
-            <div key={i} style={{ borderBottom: `1px solid ${MR.border}` }}>
-              <button onClick={() => setOpen(isOpen ? -1 : i)} style={{ width: '100%', textAlign: 'left', padding: '20px 0', display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 24, background: 'none', border: 'none', color: MR.text, cursor: 'pointer' }}>
-                <span style={{ display: 'flex', gap: 16, alignItems: 'baseline' }}>
-                  <span style={{ fontFamily: MR.mono, color: MR.dimmer, fontSize: 12 }}>Q.{String(i + 1).padStart(2, '0')}</span>
-                  <span style={{ fontSize: 19, fontWeight: 500, letterSpacing: -0.2 }}>{f.q}</span>
-                </span>
-                <span style={{ fontFamily: MR.mono, color: isOpen ? MR.gold : MR.dim, fontSize: 20, flexShrink: 0 }}>{isOpen ? '−' : '+'}</span>
+            <div key={i} style={{ borderBottom: `1px solid ${LP.border}` }}>
+              <button onClick={() => setOpen(isOpen ? -1 : i)} style={{ width: '100%', textAlign: 'left' as const, padding: '18px 0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 24, background: 'none', border: 'none', color: LP.text, cursor: 'pointer' }}>
+                <span style={{ fontSize: 16, fontWeight: 600, letterSpacing: -0.2 }}>{f.q}</span>
+                <ChevronDown size={18} color={isOpen ? LP.primary : LP.muted} style={{ transition: 'transform .2s', transform: isOpen ? 'rotate(180deg)' : 'none', flexShrink: 0 }} />
               </button>
-              {isOpen && <div style={{ paddingBottom: 22, paddingLeft: 50, paddingRight: 50, color: MR.dim, fontSize: 15, lineHeight: 1.65 }}>{f.a}</div>}
+              {isOpen && <div style={{ paddingBottom: 20, color: LP.muted, fontSize: 14, lineHeight: 1.65 }}>{f.a}</div>}
             </div>
           );
         })}
