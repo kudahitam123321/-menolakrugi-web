@@ -1517,26 +1517,26 @@ export default function DashboardPage() {
 
               {/* ── Top 3 Jurnal Trading ── */}
               {jurnalLeaderboard.length > 0 && (
-                <div style={{ background: C.panel, border: `1px solid ${C.border}`, borderRadius: 12, padding: '16px 18px' }}>
+                <div style={{ background: LP.surface, border: `1px solid ${LP.border}`, borderRadius: 12, padding: '16px 18px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-                    <div style={{ fontFamily: C.mono, color: G.gold, fontSize: 10, letterSpacing: 1 }}>// TOP 3 JURNAL TRADING</div>
-                    <button onClick={() => setActive('peringkat')} style={{ fontFamily: C.mono, fontSize: 9, color: C.dim, background: 'none', border: `1px solid ${C.border2}`, padding: '3px 8px', borderRadius: 4, cursor: 'pointer' }}>Lihat Semua ›</button>
+                    <div style={{ fontFamily: LP.mono, color: LP.primary, fontSize: 10, letterSpacing: 1 }}>TOP 3 JURNAL TRADING</div>
+                    <button onClick={() => setActive('peringkat')} style={{ fontFamily: LP.mono, fontSize: 9, color: LP.muted, background: 'none', border: `1px solid ${LP.border}`, padding: '3px 8px', borderRadius: 4, cursor: 'pointer' }}>Lihat Semua ›</button>
                   </div>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
                     {jurnalLeaderboard.slice(0, 3).map((m: any, i: number) => {
                       const rankImgs = ['/rank_1.png', '/rank_2.png', '/rank_3.png'];
                       const isMe = m.id === member.id;
-                      const borderColor = i === 0 ? 'var(--mr-tint-gold-b)' : C.border;
-                      const bgColor = i === 0 ? 'var(--mr-tint-gold)' : i === 1 ? 'var(--mr-tint-green)' : C.panel;
+                      const borderColor = i === 0 ? LP.primary + '44' : LP.border;
+                      const bgColor = i === 0 ? LP.primaryTint : i === 1 ? `${LP.primary}0d` : LP.surface;
                       return (
                         <div key={m.id} style={{ background: bgColor, border: `1px solid ${borderColor}`, borderRadius: 10, padding: '12px', textAlign: 'center' as const, position: 'relative' }}>
-                          {isMe && <div style={{ position: 'absolute', top: 4, right: 6, fontFamily: C.mono, fontSize: 7, color: G.gold, fontWeight: 700 }}>KAMU</div>}
+                          {isMe && <div style={{ position: 'absolute', top: 4, right: 6, fontFamily: LP.mono, fontSize: 7, color: LP.primary, fontWeight: 700 }}>KAMU</div>}
                           <img src={rankImgs[i]} alt={`rank-${i+1}`} style={{ width: 48, height: 48, objectFit: 'contain', marginBottom: 4 }}/>
-                          <div style={{ fontWeight: 700, fontSize: 12, marginBottom: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}>{m.nama}</div>
-                          <div style={{ fontFamily: C.mono, fontSize: 16, fontWeight: 800, color: m.gainPct >= 0 ? C.up : C.down }}>
+                          <div style={{ fontWeight: 700, fontSize: 12, marginBottom: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const, color: LP.text }}>{m.nama}</div>
+                          <div style={{ fontFamily: LP.mono, fontSize: 16, fontWeight: 800, color: m.gainPct >= 0 ? LP.primary : LP.danger }}>
                             {m.gainPct >= 0 ? '+' : ''}{m.gainPct.toFixed(1)}%
                           </div>
-                          <div style={{ fontFamily: C.mono, fontSize: 9, color: C.dim, marginTop: 2 }}>{m.trades} trade</div>
+                          <div style={{ fontFamily: LP.mono, fontSize: 9, color: LP.muted, marginTop: 2 }}>{m.trades} trade</div>
                         </div>
                       );
                     })}
@@ -1544,12 +1544,12 @@ export default function DashboardPage() {
                   {(() => {
                     const myRank = jurnalLeaderboard.findIndex((m: any) => m.id === member.id);
                     return myRank > 2 ? (
-                      <div style={{ marginTop: 10, padding: '8px 12px', borderTop: `1px solid ${C.border}`, fontFamily: C.mono, fontSize: 10, color: C.dim, display: 'flex', justifyContent: 'space-between' }}>
+                      <div style={{ marginTop: 10, padding: '8px 12px', borderTop: `1px solid ${LP.border}`, fontFamily: LP.mono, fontSize: 10, color: LP.muted, display: 'flex', justifyContent: 'space-between' }}>
                         <span>Posisimu saat ini</span>
-                        <span style={{ color: G.gold, fontWeight: 700 }}>#{myRank + 1} dari {jurnalLeaderboard.length} trader</span>
+                        <span style={{ color: LP.primary, fontWeight: 700 }}>#{myRank + 1} dari {jurnalLeaderboard.length} trader</span>
                       </div>
                     ) : myRank >= 0 ? (
-                      <div style={{ marginTop: 10, padding: '8px 12px', borderTop: `1px solid ${C.border}`, fontFamily: C.mono, fontSize: 10, color: C.up, textAlign: 'center' as const }}>
+                      <div style={{ marginTop: 10, padding: '8px 12px', borderTop: `1px solid ${LP.border}`, fontFamily: LP.mono, fontSize: 10, color: LP.primary, textAlign: 'center' as const }}>
                         🎉 Kamu ada di Top 3!
                       </div>
                     ) : null;
@@ -1559,30 +1559,30 @@ export default function DashboardPage() {
 
               {/* Pengumuman */}
               <div>
-                <div style={{ background: C.panel, border: `1px solid ${C.border}`, borderRadius: 12, padding: 18 }}>
-                  <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 14 }}>Pengumuman Terbaru</div>
+                <div style={{ background: LP.surface, border: `1px solid ${LP.border}`, borderRadius: 12, padding: 18 }}>
+                  <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 14, color: LP.text }}>Pengumuman Terbaru</div>
                   {/* Discord status - compact */}
                   {member.discord_username && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', background: 'var(--mr-tint-green)', border: `1px solid var(--mr-up-a20)`, borderRadius: 7, marginBottom: 12 }}>
-                      <span style={{ fontSize: 14 }}>✅</span>
-                      <div style={{ fontSize: 12, color: C.up, fontFamily: C.mono }}>Discord: @{member.discord_username}</div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', background: LP.primaryTint, border: `1px solid ${LP.primary}33`, borderRadius: 7, marginBottom: 12 }}>
+                      <CheckCircle2 size={14} color={LP.primary} />
+                      <div style={{ fontSize: 12, color: LP.primary, fontFamily: LP.mono }}>Discord: @{member.discord_username}</div>
                     </div>
                   )}
                   {/* Notifikasi personal (approve/reject advance) */}
                   {notifications.filter((n:any) => !dismissedNotifs.has(n.id)).map((n: any, ni: number) => (
                     <div key={n.id} style={{ display: 'flex', gap: 10, padding: '12px 14px', borderRadius: 8, marginBottom: 8,
-                      background: n.type === 'approve' ? 'var(--mr-tint-green)' : n.type === 'reject' ? '#1a0a0a' : '#0a0e1a',
-                      border: `1px solid ${n.type === 'approve' ? C.up + '44' : n.type === 'reject' ? C.down + '44' : '#1e2a4a'}` }}>
-                      <span style={{ fontSize: 18, flexShrink: 0 }}>
-                        {n.type === 'approve' ? '✅' : n.type === 'reject' ? '❌' : 'ℹ️'}
+                      background: n.type === 'approve' ? LP.primaryTint : n.type === 'reject' ? `${LP.danger}0d` : `${LP.primary}0d`,
+                      border: `1px solid ${n.type === 'approve' ? LP.primary + '44' : n.type === 'reject' ? LP.danger + '44' : LP.primary + '33'}` }}>
+                      <span style={{ flexShrink: 0 }}>
+                        {n.type === 'approve' ? <CheckCircle2 size={18} color={LP.primary} /> : n.type === 'reject' ? <XCircle size={18} color={LP.danger} /> : <Info size={18} color={LP.primary} />}
                       </span>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 3,
-                          color: n.type === 'approve' ? C.up : n.type === 'reject' ? C.down : '#93a8f0' }}>
+                          color: n.type === 'approve' ? LP.primary : n.type === 'reject' ? LP.danger : LP.text }}>
                           {n.type === 'approve' ? 'Request Advanced Disetujui 🎉' : n.type === 'reject' ? 'Request Advanced Ditolak' : 'Informasi'}
                         </div>
-                        <div style={{ fontSize: 12, color: C.dim, lineHeight: 1.6 }}>{n.message}</div>
-                        <div style={{ fontFamily: C.mono, fontSize: 10, color: '#444', marginTop: 4 }}>
+                        <div style={{ fontSize: 12, color: LP.muted, lineHeight: 1.6 }}>{n.message}</div>
+                        <div style={{ fontFamily: LP.mono, fontSize: 10, color: LP.muted, marginTop: 4 }}>
                           {new Date(n.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
                         </div>
                       </div>
@@ -1590,14 +1590,14 @@ export default function DashboardPage() {
                   ))}
                   {/* Pengumuman global */}
                   {announcements.length === 0 && notifications.length === 0 ? (
-                    <div style={{ fontFamily: C.mono, color: C.dim, fontSize: 12, padding: '12px 0' }}>Belum ada pengumuman.</div>
+                    <div style={{ fontFamily: LP.mono, color: LP.muted, fontSize: 12, padding: '12px 0' }}>Belum ada pengumuman.</div>
                   ) : announcements.map((a: any, i: number) => (
-                    <div key={i} style={{ display: 'flex', gap: 12, padding: '10px 0', borderBottom: `1px solid ${C.border}` }}>
-                      <span style={{ fontSize: 18, flexShrink: 0 }}>📢</span>
+                    <div key={i} style={{ display: 'flex', gap: 12, padding: '10px 0', borderBottom: `1px solid ${LP.border}` }}>
+                      <span style={{ flexShrink: 0 }}><Megaphone size={18} color={LP.muted} /></span>
                       <div style={{ flex: 1, minWidth: 0 }}>
-                        {a.judul && <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}>{a.judul}</div>}
-                        <div style={{ fontSize: 12, color: C.dim, lineHeight: 1.5 }}>{a.content || a.message || ''}</div>
-                        <div style={{ fontFamily: C.mono, fontSize: 10, color: '#444', marginTop: 4 }}>
+                        {a.judul && <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const, color: LP.text }}>{a.judul}</div>}
+                        <div style={{ fontSize: 12, color: LP.muted, lineHeight: 1.5 }}>{a.content || a.message || ''}</div>
+                        <div style={{ fontFamily: LP.mono, fontSize: 10, color: LP.muted, marginTop: 4 }}>
                           {new Date(a.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
                         </div>
                       </div>
