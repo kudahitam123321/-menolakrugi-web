@@ -1248,6 +1248,10 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
   const [editPmCatatan, setEditPmCatatan]     = useState('');
   const [editPmUrutan, setEditPmUrutan]       = useState('');
   const [editPmAktif, setEditPmAktif]         = useState(true);
+  const [editPmJenis, setEditPmJenis]         = useState<'bank'|'qris'>('bank');
+  const [editPmQrisFile, setEditPmQrisFile]   = useState<File|null>(null);
+  const [editPmQrisPreview, setEditPmQrisPreview] = useState('');
+  const [editPmQrisUrl, setEditPmQrisUrl]     = useState('');
   const [videoRatingStats, setVideoRatingStats] = useState<any[]>([]);
   const [adminReferrals, setAdminReferrals]     = useState<any[]>([]);
   const [propRules, setPropRules]           = useState<any[]>([]);
@@ -1800,16 +1804,31 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
   }
 
   function startEditPm(pm: any) {
-    setEditPmId(pm.id); setEditPmNamaBank(pm.nama_bank); setEditPmNomorRek(pm.nomor_rekening);
-    setEditPmNamaRek(pm.nama_rekening); setEditPmCatatan(pm.catatan||'');
+    setEditPmId(pm.id); setEditPmNamaBank(pm.nama_bank); setEditPmNomorRek(pm.nomor_rekening||'');
+    setEditPmNamaRek(pm.nama_rekening||''); setEditPmCatatan(pm.catatan||'');
     setEditPmUrutan(String(pm.urutan||0)); setEditPmAktif(pm.aktif !== false);
+    setEditPmJenis(pm.jenis === 'qris' ? 'qris' : 'bank');
+    setEditPmQrisUrl(pm.qris_image_url||''); setEditPmQrisPreview(pm.qris_image_url||''); setEditPmQrisFile(null);
   }
 
   async function saveEditPm() {
-    if (!editPmId || !editPmNamaBank || !editPmNomorRek || !editPmNamaRek) { setPmMsg('Semua field wajib diisi.'); return; }
+    if (!editPmId || !editPmNamaBank) { setPmMsg('Nama/label metode pembayaran wajib diisi.'); return; }
+    if (editPmJenis === 'bank' && (!editPmNomorRek || !editPmNamaRek)) { setPmMsg('Nomor rekening dan atas nama wajib diisi.'); return; }
+    let qrisImageUrl = editPmQrisUrl;
+    if (editPmJenis === 'qris') {
+      if (editPmQrisFile) {
+        const uploaded = await uploadQrisImage(editPmQrisFile);
+        if (!uploaded) return;
+        qrisImageUrl = uploaded;
+      }
+      if (!qrisImageUrl) { setPmMsg('Upload gambar QRIS wajib diisi.'); return; }
+    }
     const { error } = await supabase.from('payment_methods').update({
-      nama_bank: editPmNamaBank, nomor_rekening: editPmNomorRek, nama_rekening: editPmNamaRek,
+      nama_bank: editPmNamaBank,
+      nomor_rekening: editPmJenis === 'bank' ? editPmNomorRek : null,
+      nama_rekening: editPmJenis === 'bank' ? editPmNamaRek : null,
       catatan: editPmCatatan || null, urutan: parseInt(editPmUrutan) || 0, aktif: editPmAktif,
+      jenis: editPmJenis, qris_image_url: editPmJenis === 'qris' ? qrisImageUrl : null,
     }).eq('id', editPmId);
     if (error) { setPmMsg('Error: ' + error.message); return; }
     setPmMsg('✅ Berhasil diupdate!'); setTimeout(() => setPmMsg(''), 3000);
@@ -3695,10 +3714,18 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
                       <div style={{flex:1,minWidth:0}}>
                         <div style={{display:'flex',gap:8,alignItems:'center',marginBottom:4,flexWrap:'wrap' as const}}>
                           <span style={{fontWeight:700,fontSize:14,color:'#e7e5e4'}}>{pm.nama_bank}</span>
-                          <span style={{fontFamily:'"Geist Mono",monospace',fontSize:13,letterSpacing:1,color:'#e7e5e4'}}>{pm.nomor_rekening}</span>
+                          {pm.jenis === 'qris' ? (
+                            <span style={{fontFamily:'"Geist Mono",monospace',fontSize:9,color:'#16a34a',border:'1px solid #16a34a55',padding:'1px 6px',borderRadius:4}}>QRIS</span>
+                          ) : (
+                            <span style={{fontFamily:'"Geist Mono",monospace',fontSize:13,letterSpacing:1,color:'#e7e5e4'}}>{pm.nomor_rekening}</span>
+                          )}
                           {!pm.aktif && <span style={{fontFamily:'"Geist Mono",monospace',fontSize:9,color:'#555',border:'1px solid #2a2a2a',padding:'1px 6px'}}>NON-AKTIF</span>}
                         </div>
-                        <div style={{fontFamily:'"Geist Mono",monospace',fontSize:11,color:'#777',marginBottom:2}}>a.n. {pm.nama_rekening}</div>
+                        {pm.jenis === 'qris' ? (
+                          pm.qris_image_url && <img src={pm.qris_image_url} alt="QRIS" style={{width:48,height:48,objectFit:'contain',borderRadius:6,border:'1px solid #2a2a2a',background:'#fff',marginBottom:2}}/>
+                        ) : (
+                          <div style={{fontFamily:'"Geist Mono",monospace',fontSize:11,color:'#777',marginBottom:2}}>a.n. {pm.nama_rekening}</div>
+                        )}
                         {pm.catatan && <div style={{fontFamily:'"Geist Mono",monospace',fontSize:10,color:'#555',fontStyle:'italic'}}>{pm.catatan}</div>}
                       </div>
                       <div style={{display:'flex',gap:6,flexShrink:0}}>
@@ -3714,11 +3741,21 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
                     </div>
                     {editPmId===pm.id && (
                       <div style={{padding:'14px 18px',background:'#0d0d0d',borderTop:'1px solid #1a1a1a'}}>
+                        <div style={{display:'flex',gap:8,marginBottom:8}}>
+                          {(['bank','qris'] as const).map(j=>(
+                            <button key={j} onClick={()=>setEditPmJenis(j)}
+                              style={{fontFamily:'"Geist Mono",monospace',fontSize:10,fontWeight:700,padding:'4px 12px',border:`1px solid ${editPmJenis===j?'#16a34a':'#2a2a2a'}`,background:editPmJenis===j?'#0a1a0e':'transparent',color:editPmJenis===j?'#16a34a':'#555',cursor:'pointer',borderRadius:4}}>
+                              {j==='bank'?'TRANSFER BANK':'QRIS'}
+                            </button>
+                          ))}
+                        </div>
                         <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:8}}>
                           {([
-                            {label:'NAMA BANK',v:editPmNamaBank,s:setEditPmNamaBank,ph:'Nama bank'},
-                            {label:'NOMOR REKENING',v:editPmNomorRek,s:setEditPmNomorRek,ph:'Nomor rekening'},
-                            {label:'ATAS NAMA',v:editPmNamaRek,s:setEditPmNamaRek,ph:'Nama pemilik'},
+                            {label:'NAMA BANK / LABEL',v:editPmNamaBank,s:setEditPmNamaBank,ph:'Nama bank / label'},
+                            ...(editPmJenis==='bank' ? [
+                              {label:'NOMOR REKENING',v:editPmNomorRek,s:setEditPmNomorRek,ph:'Nomor rekening'},
+                              {label:'ATAS NAMA',v:editPmNamaRek,s:setEditPmNamaRek,ph:'Nama pemilik'},
+                            ] : []),
                             {label:'URUTAN',v:editPmUrutan,s:setEditPmUrutan,ph:'0',type:'number'},
                           ] as {label:string;v:string;s:(x:string)=>void;ph:string;type?:string}[]).map(f=>(
                             <div key={f.label}>
@@ -3729,6 +3766,18 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
                             </div>
                           ))}
                         </div>
+                        {editPmJenis==='qris' && (
+                          <div style={{marginBottom:8}}>
+                            <div style={{fontFamily:'"Geist Mono",monospace',fontSize:9,color:'#444',marginBottom:4}}>GAMBAR QRIS</div>
+                            <div style={{display:'flex',alignItems:'center',gap:10}}>
+                              {editPmQrisPreview && <img src={editPmQrisPreview} alt="preview" style={{width:44,height:44,objectFit:'contain',borderRadius:6,border:'1px solid #2a2a2a',background:'#fff'}}/>}
+                              <label style={{display:'flex',alignItems:'center',gap:8,cursor:'pointer',background:'#111',border:'1px solid #2a2a2a',padding:'7px 12px',fontFamily:'"Geist Mono",monospace',fontSize:11,color:'#aaa'}}>
+                                {editPmQrisFile?editPmQrisFile.name:'📁 Ganti gambar QR'}
+                                <input type="file" accept="image/*" style={{display:'none'}} onChange={e=>{const f=e.target.files?.[0];if(!f)return;setEditPmQrisFile(f);setEditPmQrisPreview(URL.createObjectURL(f));}}/>
+                              </label>
+                            </div>
+                          </div>
+                        )}
                         <textarea value={editPmCatatan} onChange={e=>setEditPmCatatan(e.target.value)} rows={2} placeholder="Catatan (opsional)"
                           style={{width:'100%',background:'#111',border:'1px solid #2a2a2a',color:'#e7e5e4',padding:'8px 10px',fontFamily:'"Geist Mono",monospace',fontSize:11,outline:'none',resize:'vertical' as const,boxSizing:'border-box' as const,marginBottom:8}}/>
                         <div style={{display:'flex',gap:10,alignItems:'center',marginBottom:10}}>
