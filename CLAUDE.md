@@ -40,6 +40,7 @@ No routing library. `App.tsx` inspects `window.location.pathname` in a `getPage(
 /discord-callback      → DiscordCallbackPage
 /competition           → CompetitionPage (standalone, or embedded as a DashboardPage tab)
 /bayar                 → BayarPage (visitor payment page from landing page CTA)
+/bayar/akun            → BayarAkunPage (post-submit account credentials, ?order=<uuid>)
 /trading-plan          → DashboardPage (member, opens trading-plan tab)
 /member                → DashboardPage (requires session)
 /member/kurikulum      → CurriculumPage
@@ -69,7 +70,7 @@ const session = raw ? JSON.parse(raw) : null;
 
 Logout is done by calling `localStorage.removeItem('mr_session')` then redirecting to `/login`.
 
-**Gotcha**: `LandingPage.tsx`'s navbar checks `localStorage.getItem('mr_member')` (not `mr_session`) for login status — this is an inconsistency from legacy code. `CompetitionPage.tsx` also uses `mr_member` (from either localStorage or sessionStorage) instead of `mr_session`. All other pages use `mr_session`.
+**Gotcha**: `LandingPage.tsx`'s navbar checks `localStorage.getItem('mr_member')` (not `mr_session`) for login status — this is an inconsistency from legacy code. `CompetitionPage.tsx` and `DiscordCallbackPage.tsx` also read `mr_member` (from either localStorage or sessionStorage) instead of `mr_session`. All other pages use `mr_session`.
 
 ### Data Layer
 
@@ -87,6 +88,8 @@ Key tables: `members`, `pricing_tiers`, `videos`, `journals`, `watch_history`, `
 
 `orders` has extra columns `plan_type`, `kode_diskon`, `diskon_applied` (added in `supabase-orders-rls-fix.sql`).
 
+**Visitor payment / auto account creation**: `BayarPage.tsx` (`/bayar`) submits the form by first inserting a new row into `members` directly (`tier: 'SMC Trial'`, a random 8-char generated `password`, `is_active: false`), then inserting the linked `orders` row (`member_id` set to the new member), then redirecting to `/bayar/akun?order=<orderId>`. `BayarAkunPage.tsx` looks up the order and its member to display the login credentials (name + generated password) and a "confirm via WhatsApp" button. The account stays unusable until an admin flips `is_active` to `true` after verifying payment — `LoginPage.tsx` blocks login while `is_active === false`. `payment_methods` rows have a `jenis` column (`'transfer'` | `'qris'`); QRIS methods render a `qris_image_url` image instead of `nomor_rekening`/`nama_rekening`.
+
 **Table name gotcha**: The broker/prop firm table is `brokers` (not `funded_brokers`). It has columns `jenis` (`'broker'` | `'propfirm'`), `logo_url` (optional image), `nama`, `link`, `diskon`, `deskripsi`, `urutan`.
 
 Supabase Storage buckets:
@@ -99,7 +102,9 @@ Admin operations are logged via the module-level `logActivity(action, detail, ad
 
 ### Cloudflare Pages Functions
 
-`functions/api/discord/[[path]].js` is a Cloudflare Pages Function that proxies requests from the browser to the Discord bot running at `http://93.115.101.152:12772` (Wispbyte). The proxy path is `/api/discord/*`. This resolves the mixed-content CORS issue of calling an HTTP bot from an HTTPS page. When browser → bot calls fail (e.g., bot is down), the code falls back to inserting into the `discord_messages` queue table instead.
+`functions/api/discord/[[path]].js` is a Cloudflare Pages Function that proxies requests from the browser to the Discord bot running at `http://93.115.101.152:12772` (Wispbyte), forwarding both path and query string. The proxy path is `/api/discord/*`. This resolves the mixed-content CORS issue of calling an HTTP bot from an HTTPS page. When browser → bot calls fail (e.g., bot is down), the code falls back to inserting into the `discord_messages` queue table instead.
+
+The member dashboard's `pengaturan` tab has a "Hubungkan via Discord OAuth" button (`DashboardPage.tsx`) that starts the OAuth flow; `DiscordCallbackPage.tsx` (`/discord-callback`) completes it by reading the member id from `mr_member`, calling the bot via the proxy to link the account and assign the Discord auto-role, then updating trading status through the same proxy (never the old Railway URL, which is decommissioned).
 
 The `xlsx` package is available for data exports (e.g., exporting member lists or journal data from the admin panel).
 
@@ -243,7 +248,8 @@ Config is stored per `plan_type` (`'basic'` | `'advanced'`) in the `trading_plan
 | `supabase-announcements-migration.sql` | Schema for `announcements` table (admin broadcast messages) |
 | `supabase-discord-queue-migration.sql` | Schema for `discord_messages` queue table (bot message delivery fallback) |
 | `functions/api/discord/[[path]].js` | Cloudflare Pages Function proxy — routes `/api/discord/*` to the Discord bot, bypassing CORS/mixed-content |
-| `src/pages/BayarPage.tsx` | Visitor payment page reached from landing page CTA |
+| `src/pages/BayarPage.tsx` | Visitor payment page reached from landing page CTA; creates the member row and order |
+| `src/pages/BayarAkunPage.tsx` | Post-submit page (`/bayar/akun`) showing generated login credentials |
 | `src/pages/CompetitionPage.tsx` | Member-facing competition + live leaderboard |
 | `src/pages/admin/AdminCompetitionPage.tsx` | Admin competition create/edit UI |
 | `src/hooks/useMyCompetitionStats.ts` | Per-member competition stats hook |
