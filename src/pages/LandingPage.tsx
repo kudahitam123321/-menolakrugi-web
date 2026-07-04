@@ -720,116 +720,81 @@ function ProductPreview({ config }: { config: LandingPreviewConfig }) {
     : null;
 
   const plans = [
-    { nama: config.plan1_nama, harga_asli: config.plan1_harga_asli, diskon: config.plan1_diskon, key: 'bulanan', featured: false },
-    { nama: config.plan2_nama, harga_asli: config.plan2_harga_asli, diskon: config.plan2_diskon, key: 'tahunan', featured: true },
+    { nama: config.plan1_nama, harga_asli: config.plan1_harga_asli, diskon: config.plan1_diskon, key: 'bulanan',  featured: false },
+    { nama: config.plan2_nama, harga_asli: config.plan2_harga_asli, diskon: config.plan2_diskon, key: 'tahunan',  featured: true },
     { nama: config.plan3_nama, harga_asli: config.plan3_harga_asli, diskon: config.plan3_diskon, key: 'lifetime', featured: false },
   ];
 
   return (
-    <section style={{ background: 'var(--mr-bg)', borderTop: `1px solid ${MR.border}` }}>
-      <div style={{ padding: isMobile ? '40px 20px 24px' : '56px 40px 28px', textAlign: 'center' as const, display: 'flex', flexDirection: 'column' as const, alignItems: 'center' }}>
-        <div style={{ fontFamily: MR.mono, color: MR.dim, fontSize: 11, letterSpacing: 0.8 }}>// PREVIEW PLATFORM</div>
-        <h2 style={{ fontSize: isMobile ? 26 : 44, letterSpacing: isMobile ? -0.5 : -1.5, lineHeight: 1.15, margin: '16px 0 12px', fontWeight: 700 }}>
-          Belum Paham SMC? Tidak Masalah.
-        </h2>
-        <p style={{ color: MR.dim, fontSize: isMobile ? 14 : 16, lineHeight: 1.6, margin: 0, maxWidth: 600 }}>
-          Indikator ini membantu Anda membaca struktur market dengan lebih mudah.{' '}
-          <span style={{ color: MR.gold, fontWeight: 600 }}>Benefit untuk langganan tahunan dan lifetime: kalian akan dapat akses ke discord private Menolak Rugi.</span>
-        </p>
-      </div>
-
-      {videoId && (
-        <div style={{ padding: isMobile ? '0 20px 40px' : '0 40px 48px' }}>
-          {/* Outer glow wrapper */}
-          <div style={{ maxWidth: 860, margin: '0 auto', borderRadius: 12, padding: 2, background: `linear-gradient(135deg, ${MR.gold}, #10b98144, ${MR.gold}22)`, boxShadow: `0 0 40px ${MR.gold}22, 0 0 80px ${MR.gold}0a` }}>
-            {/* Inner dark frame */}
-            <div style={{ borderRadius: 10, overflow: 'hidden', background: '#000', position: 'relative', paddingBottom: '56.25%' }}>
-              <iframe
-                src={`https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&loop=1&playlist=${videoId}&controls=0&modestbranding=1`}
-                allow="autoplay; encrypted-media"
-                allowFullScreen
-                style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 'none', display: 'block' }}
-              />
-            </div>
-          </div>
+    <section style={{ background: LP.bg, padding: isMobile ? '48px 20px' : '72px 40px' }}>
+      <div style={{ maxWidth: 900, margin: '0 auto' }}>
+        <div style={{ textAlign: 'center' as const, marginBottom: 32 }}>
+          <div style={{ fontFamily: LP.mono, color: LP.muted, fontSize: 11, letterSpacing: 0.8 }}>// PREVIEW PLATFORM</div>
+          <h2 style={{ fontSize: isMobile ? 24 : 40, letterSpacing: -1, lineHeight: 1.15, margin: '14px 0 12px', fontWeight: 800, color: LP.text }}>
+            Belum Paham SMC? Tidak Masalah.
+          </h2>
+          <p style={{ color: LP.muted, fontSize: isMobile ? 14 : 16, lineHeight: 1.6, margin: '0 auto', maxWidth: 560 }}>
+            Indikator ini membantu Anda membaca struktur market dengan lebih mudah.{' '}
+            <span style={{ color: LP.primary, fontWeight: 600 }}>Benefit untuk langganan tahunan dan lifetime: akses ke Discord private Menolak Rugi.</span>
+          </p>
         </div>
-      )}
 
-      <div style={{ padding: isMobile ? '0 20px 48px' : '0 40px 64px' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: isMobile ? 16 : 20, maxWidth: 900, margin: '0 auto' }}>
-        {plans.map((plan) => {
-          const hargaDiskon = plan.diskon > 0 ? Math.round(plan.harga_asli * (1 - plan.diskon / 100)) : plan.harga_asli;
-          const hemat = plan.harga_asli - hargaDiskon;
-          return (
-            <div key={plan.key} style={{
-              padding: 2,
-              borderRadius: 14,
-              background: plan.featured
-                ? `linear-gradient(135deg, ${MR.gold}, #10b981, ${MR.gold}88)`
-                : `linear-gradient(135deg, #2a2a2a44, #1a1a1a22)`,
-              boxShadow: plan.featured
-                ? `0 0 32px ${MR.gold}33, 0 8px 32px rgba(0,0,0,0.4)`
-                : '0 4px 20px rgba(0,0,0,0.3)',
-            }}>
-              <div style={{
-                borderRadius: 12,
-                padding: '28px 24px',
-                background: plan.featured ? 'linear-gradient(160deg,#061a0d 0%,#090909 100%)' : 'linear-gradient(160deg,#0f0f0f 0%,#090909 100%)',
-                position: 'relative',
-                display: 'flex',
-                flexDirection: 'column' as const,
-                height: '100%',
-                boxSizing: 'border-box' as const,
+        {videoId && (
+          <div style={{ borderRadius: LP.radius, overflow: 'hidden', border: `1px solid ${LP.border}`, boxShadow: LP.shadowMd, marginBottom: 40, position: 'relative', paddingBottom: '56.25%', background: '#000' }}>
+            <iframe
+              src={`https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&loop=1&playlist=${videoId}&controls=0&modestbranding=1`}
+              allow="autoplay; encrypted-media"
+              allowFullScreen
+              style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 'none', display: 'block' }}
+            />
+          </div>
+        )}
+
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: 16 }}>
+          {plans.map((plan) => {
+            const hargaDiskon = plan.diskon > 0 ? Math.round(plan.harga_asli * (1 - plan.diskon / 100)) : plan.harga_asli;
+            const hemat = plan.harga_asli - hargaDiskon;
+            return (
+              <div key={plan.key} style={{
+                borderRadius: LP.radius, padding: '26px 22px', background: LP.surface,
+                border: plan.featured ? `2px solid ${LP.primary}` : `1px solid ${LP.border}`,
+                boxShadow: plan.featured ? LP.shadowMd : LP.shadowSm,
+                display: 'flex', flexDirection: 'column' as const, position: 'relative',
               }}>
-              {plan.featured && (
-                <div style={{ position: 'absolute', top: -1, left: 0, right: 0, textAlign: 'center' as const }}>
-                  <span style={{ fontFamily: MR.mono, fontSize: 9, background: MR.gold, color: '#fff', padding: '4px 14px', letterSpacing: 1, fontWeight: 700, borderRadius: '0 0 8px 8px', display: 'inline-block' }}>
-                    ✦ PALING POPULER
-                  </span>
-                </div>
-              )}
-              <div style={{ fontFamily: MR.mono, color: plan.featured ? MR.gold : MR.dim, fontSize: 10, letterSpacing: 1.2, marginBottom: 10, marginTop: plan.featured ? 16 : 0 }}>
-                // {plan.nama.toUpperCase()}
-              </div>
-              <div style={{ fontWeight: 700, fontSize: 22, marginBottom: 20, letterSpacing: -0.5 }}>{plan.nama}</div>
-              <div>
-                {plan.diskon > 0 && (
-                  <div style={{ fontFamily: MR.mono, fontSize: 11, color: MR.dimmer, marginBottom: 4 }}>
-                    <s>Rp {fmt(plan.harga_asli)}</s>
+                {plan.featured && (
+                  <div style={{ position: 'absolute', top: -12, left: 20, background: LP.primary, color: '#fff', padding: '4px 12px', fontSize: 10, letterSpacing: 0.6, fontWeight: 700, borderRadius: 20 }}>
+                    PALING POPULER
                   </div>
                 )}
-                <div style={{ display: 'flex', alignItems: 'baseline', gap: 4 }}>
-                  <span style={{ fontFamily: MR.mono, color: MR.gold, fontSize: 14 }}>Rp</span>
-                  <span style={{ fontSize: 36, fontWeight: 700, letterSpacing: -1.5, lineHeight: 1 }}>{fmt(hargaDiskon)}</span>
-                </div>
-                {plan.diskon > 0 && (
-                  <div style={{ fontFamily: MR.mono, color: '#22c55e', fontSize: 10, marginTop: 6, background: '#22c55e12', display: 'inline-block', padding: '2px 8px', borderRadius: 4 }}>
-                    Hemat {plan.diskon}% · Rp {fmt(hemat)}
+                <div style={{ fontWeight: 700, fontSize: 18, marginBottom: 16, marginTop: plan.featured ? 8 : 0, color: LP.text }}>{plan.nama}</div>
+                <div style={{ marginBottom: 4 }}>
+                  {plan.diskon > 0 && (
+                    <div style={{ fontFamily: LP.mono, fontSize: 12, color: LP.muted, marginBottom: 4 }}><s>Rp {fmt(plan.harga_asli)}</s></div>
+                  )}
+                  <div style={{ display: 'flex', alignItems: 'baseline', gap: 4 }}>
+                    <span style={{ fontFamily: LP.mono, color: LP.primary, fontSize: 14 }}>Rp</span>
+                    <span style={{ fontSize: 32, fontWeight: 800, letterSpacing: -1, lineHeight: 1, color: LP.text }}>{fmt(hargaDiskon)}</span>
                   </div>
-                )}
+                  {plan.diskon > 0 && (
+                    <div style={{ fontFamily: LP.mono, color: LP.primary, fontSize: 11, marginTop: 6, background: LP.primaryTint, display: 'inline-block', padding: '2px 8px', borderRadius: 4 }}>
+                      Hemat {plan.diskon}% · Rp {fmt(hemat)}
+                    </div>
+                  )}
+                </div>
+                <div style={{ flex: 1 }} />
+                <button
+                  onClick={() => { window.location.href = `/bayar?plan=${plan.key}`; }}
+                  style={{
+                    marginTop: 24, fontFamily: LP.sans, padding: '13px 0', fontSize: 13, fontWeight: 700, width: '100%', cursor: 'pointer', borderRadius: 8,
+                    background: plan.featured ? LP.primary : 'transparent',
+                    color: plan.featured ? '#fff' : LP.primary,
+                    border: plan.featured ? 'none' : `1px solid ${LP.primary}`,
+                  }}>
+                  Pilih {plan.nama} →
+                </button>
               </div>
-              <div style={{ flex: 1 }} />
-              <button
-                onClick={() => { window.location.href = `/bayar?plan=${plan.key}`; }}
-                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.opacity = '0.85'; }}
-                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.opacity = '1'; }}
-                style={{
-                  marginTop: 28, fontFamily: MR.mono, padding: '14px 0', letterSpacing: 0.8,
-                  fontSize: 11, fontWeight: 700, width: '100%', cursor: 'pointer',
-                  borderRadius: 8,
-                  background: plan.featured
-                    ? `linear-gradient(135deg, ${MR.gold}, #10b981)`
-                    : 'transparent',
-                  color: plan.featured ? '#fff' : MR.gold,
-                  border: plan.featured ? 'none' : `1px solid ${MR.gold}44`,
-                  transition: 'opacity 0.15s',
-                }}>
-                PILIH {plan.nama.toUpperCase()} ▸
-              </button>
-              </div>
-            </div>
-          );
-        })}
+            );
+          })}
         </div>
       </div>
     </section>
