@@ -1072,22 +1072,22 @@ export default function DashboardPage() {
       `}</style>
 
       {/* ── Topbar ── */}
-      <div className='mr-topbar' style={{ borderBottom: `1px solid ${C.border}`, padding: '0 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: 56, background: C.sidebar, flexShrink: 0, position: 'sticky' as const, top: 0, zIndex: 40 }}>
+      <div className='mr-topbar' style={{ borderBottom: `1px solid ${LP.border}`, padding: '0 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: 56, background: LP.surface, flexShrink: 0, position: 'sticky' as const, top: 0, zIndex: 40 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           {/* Hamburger / collapse toggle */}
           <button onClick={() => isMobile ? setMobileMenuOpen(o => !o) : toggleSidebar()}
-            style={{ width: 36, height: 36, background: 'transparent', border: `1px solid ${C.border}`, borderRadius: 7, cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 4, flexShrink: 0 }}>
-            {[0,1,2].map(i => <span key={i} style={{ display: 'block', width: i === 1 ? 12 : 16, height: 1.5, background: C.dim, borderRadius: 2, transition: 'width 0.2s' }}/>)}
+            style={{ width: 36, height: 36, background: 'transparent', border: `1px solid ${LP.border}`, borderRadius: 7, cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 4, flexShrink: 0 }}>
+            {[0,1,2].map(i => <span key={i} style={{ display: 'block', width: i === 1 ? 12 : 16, height: 1.5, background: LP.muted, borderRadius: 2, transition: 'width 0.2s' }}/>)}
           </button>
           <div style={{ width: 32, height: 32, flexShrink: 0 }}><img src='/logo.png' alt='MR' style={{ width: '100%', height: '100%', objectFit: 'contain' }}/></div>
           <div className='mr-topbar-brand'>
-            <div style={{ fontWeight: 800, fontSize: 12, letterSpacing: 0.3 }}>MENOLAK RUGI</div>
-            <div style={{ fontFamily: C.mono, fontSize: 8, color: C.dim, letterSpacing: 1 }}>ELITE TRADING ENVIRONMENT</div>
+            <div style={{ fontWeight: 800, fontSize: 12, letterSpacing: 0.3, color: LP.text }}>MENOLAK RUGI</div>
+            <div style={{ fontFamily: LP.mono, fontSize: 8, color: LP.muted, letterSpacing: 1 }}>ELITE TRADING ENVIRONMENT</div>
           </div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? 8 : 14 }}>
-          {!isMobile && <div style={{ fontFamily: C.mono, fontSize: 10, color: C.dim }}>{member.tier.replace('SMC ', '').toUpperCase()}</div>}
-          {member.is_advance && <span style={{ fontFamily: C.mono, fontSize: 8, background: 'var(--mr-tint-gold)', border: "1px solid var(--mr-tint-gold-b)", color: G.gold, padding: '2px 6px', borderRadius: 4 }}>ADVANCE</span>}
+          {!isMobile && <div style={{ fontFamily: LP.mono, fontSize: 10, color: LP.muted }}>{member.tier.replace('SMC ', '').toUpperCase()}</div>}
+          {member.is_advance && <span style={{ fontFamily: LP.mono, fontSize: 8, background: LP.primaryTint, border: `1px solid ${LP.primary}33`, color: LP.primary, padding: '2px 6px', borderRadius: 4 }}>ADVANCE</span>}
           {/* ── Bell notification ── */}
           {(() => {
             const unreadP = notifications.filter((n:any) => !dismissedNotifs.has(n.id)).length;
@@ -1105,9 +1105,9 @@ export default function DashboardPage() {
                     }
                   }}
                   style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <span style={{ fontSize: 18 }}>🔔</span>
+                  <Bell size={18} color={LP.muted} />
                   {totalUnread > 0 && (
-                    <span style={{ position: 'absolute', top: -2, right: -2, minWidth: 16, height: 16, background: C.down, borderRadius: 8, fontSize: 9, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: C.mono, fontWeight: 700, color: '#fff', padding: '0 3px' }}>
+                    <span style={{ position: 'absolute', top: -2, right: -2, minWidth: 16, height: 16, background: LP.danger, borderRadius: 8, fontSize: 9, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: LP.mono, fontWeight: 700, color: '#fff', padding: '0 3px' }}>
                       {totalUnread > 9 ? '9+' : totalUnread}
                     </span>
                   )}
@@ -1115,41 +1115,42 @@ export default function DashboardPage() {
                 {showMemberNotif && (
                   <>
                     <div onClick={() => setShowMemberNotif(false)} style={{ position: 'fixed', inset: 0, zIndex: 49 }}/>
-                    <div style={{ position: 'absolute', top: 'calc(100% + 10px)', right: 0, width: 300, background: C.panel, border: `1px solid ${C.border2}`, borderRadius: 12, boxShadow: '0 8px 32px rgba(0,0,0,0.4)', zIndex: 50, overflow: 'hidden' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', borderBottom: `1px solid ${C.border}` }}>
-                        <span style={{ fontFamily: C.mono, fontSize: 10, color: G.gold, letterSpacing: 1.5 }}>// NOTIFIKASI</span>
-                        <button onClick={() => setShowMemberNotif(false)} style={{ background: 'none', border: 'none', color: C.dim, cursor: 'pointer', fontSize: 18, padding: '0 2px', lineHeight: 1 }}>×</button>
+                    <div style={{ position: 'absolute', top: 'calc(100% + 10px)', right: 0, width: 300, background: LP.surface, border: `1px solid ${LP.border}`, borderRadius: 12, boxShadow: LP.shadowMd, zIndex: 50, overflow: 'hidden' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', borderBottom: `1px solid ${LP.border}` }}>
+                        <span style={{ fontFamily: LP.mono, fontSize: 10, color: LP.primary, letterSpacing: 1.5 }}>NOTIFIKASI</span>
+                        <button onClick={() => setShowMemberNotif(false)} style={{ background: 'none', border: 'none', color: LP.muted, cursor: 'pointer', fontSize: 18, padding: '0 2px', lineHeight: 1 }}>×</button>
                       </div>
                       <div style={{ maxHeight: 360, overflowY: 'auto' }}>
                         {notifications.filter((n:any) => !dismissedNotifs.has(n.id)).map((n:any) => (
-                          <div key={n.id} style={{ display: 'flex', gap: 10, padding: '12px 14px', borderBottom: `1px solid ${C.border}` }}>
-                            <span style={{ fontSize: 16, flexShrink: 0, marginTop: 1 }}>
-                              {n.type === 'approve' ? '✅' : n.type === 'reject' ? '❌' : 'ℹ️'}
+                          <div key={n.id} style={{ display: 'flex', gap: 10, padding: '12px 14px', borderBottom: `1px solid ${LP.border}` }}>
+                            <span style={{ flexShrink: 0, marginTop: 1 }}>
+                              {n.type === 'approve' ? <CheckCircle2 size={16} color={LP.primary} /> : n.type === 'reject' ? <XCircle size={16} color={LP.danger} /> : <Info size={16} color={LP.muted} />}
                             </span>
                             <div style={{ flex: 1, minWidth: 0 }}>
-                              <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 2, color: n.type === 'approve' ? C.up : n.type === 'reject' ? C.down : C.text }}>
+                              <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 2, color: n.type === 'approve' ? LP.primary : n.type === 'reject' ? LP.danger : LP.text }}>
                                 {n.type === 'approve' ? 'Advance Disetujui 🎉' : n.type === 'reject' ? 'Advance Ditolak' : 'Info'}
                               </div>
-                              <div style={{ fontSize: 11, color: C.dim, lineHeight: 1.4 }}>{n.message}</div>
-                              <div style={{ fontFamily: C.mono, fontSize: 9, color: C.dim, marginTop: 3 }}>{new Date(n.created_at).toLocaleDateString('id-ID',{day:'numeric',month:'short',year:'numeric'})}</div>
+                              <div style={{ fontSize: 11, color: LP.muted, lineHeight: 1.4 }}>{n.message}</div>
+                              <div style={{ fontFamily: LP.mono, fontSize: 9, color: LP.muted, marginTop: 3 }}>{new Date(n.created_at).toLocaleDateString('id-ID',{day:'numeric',month:'short',year:'numeric'})}</div>
                             </div>
                             <button onClick={() => setDismissedNotifs(s => { const ns = new Set(s); ns.add(n.id); return ns; })}
-                              style={{ background: 'none', border: 'none', color: C.dim, cursor: 'pointer', fontSize: 16, flexShrink: 0, padding: '0 2px', alignSelf: 'flex-start' }}>×</button>
+                              style={{ background: 'none', border: 'none', color: LP.muted, cursor: 'pointer', fontSize: 16, flexShrink: 0, padding: '0 2px', alignSelf: 'flex-start' }}>×</button>
                           </div>
                         ))}
                         {announcements.map((a:any) => (
-                          <div key={a.id || a.created_at} style={{ display: 'flex', gap: 10, padding: '12px 14px', borderBottom: `1px solid ${C.border}` }}>
-                            <span style={{ fontSize: 16, flexShrink: 0, marginTop: 1 }}>📢</span>
+                          <div key={a.id || a.created_at} style={{ display: 'flex', gap: 10, padding: '12px 14px', borderBottom: `1px solid ${LP.border}` }}>
+                            <span style={{ flexShrink: 0, marginTop: 1 }}><Megaphone size={16} color={LP.muted} /></span>
                             <div style={{ flex: 1, minWidth: 0 }}>
-                              {a.judul && <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 2 }}>{a.judul}</div>}
-                              <div style={{ fontSize: 11, color: C.dim, lineHeight: 1.4 }}>{a.content || a.message || ''}</div>
-                              <div style={{ fontFamily: C.mono, fontSize: 9, color: C.dim, marginTop: 3 }}>{new Date(a.created_at).toLocaleDateString('id-ID',{day:'numeric',month:'short',year:'numeric'})}</div>
+                              {a.judul && <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 2, color: LP.text }}>{a.judul}</div>}
+                              <div style={{ fontSize: 11, color: LP.muted, lineHeight: 1.4 }}>{a.content || a.message || ''}</div>
+                              <div style={{ fontFamily: LP.mono, fontSize: 9, color: LP.muted, marginTop: 3 }}>{new Date(a.created_at).toLocaleDateString('id-ID',{day:'numeric',month:'short',year:'numeric'})}</div>
                             </div>
                           </div>
                         ))}
                         {notifications.filter((n:any) => !dismissedNotifs.has(n.id)).length === 0 && announcements.length === 0 && (
-                          <div style={{ padding: '28px 16px', textAlign: 'center' as const, fontFamily: C.mono, color: C.dim, fontSize: 12 }}>
-                            ✅ Tidak ada notifikasi
+                          <div style={{ padding: '28px 16px', textAlign: 'center' as const, display: 'flex', flexDirection: 'column' as const, alignItems: 'center', gap: 8, fontFamily: LP.mono, color: LP.muted, fontSize: 12 }}>
+                            <CheckCircle2 size={20} color={LP.muted} />
+                            Tidak ada notifikasi
                           </div>
                         )}
                       </div>
@@ -1160,17 +1161,12 @@ export default function DashboardPage() {
             );
           })()}
           <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-            <div style={{ width: 28, height: 28, background: `linear-gradient(135deg,${G.gold},${G.gold2})`, borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: 11, color: '#000' }}>
+            <div style={{ width: 28, height: 28, background: `linear-gradient(135deg,${LP.primary},${LP.primaryHover})`, borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: 11, color: '#fff' }}>
               {member.nama[0].toUpperCase()}
             </div>
-            {!isMobile && <span style={{ fontSize: 13, fontWeight: 600 }}>{member.nama}</span>}
+            {!isMobile && <span style={{ fontSize: 13, fontWeight: 600, color: LP.text }}>{member.nama}</span>}
           </div>
-          <button onClick={() => { const h = document.documentElement; const n = h.getAttribute('data-theme') === 'light' ? 'dark' : 'light'; h.setAttribute('data-theme', n); localStorage.setItem('mr_theme', n); }}
-            title="Toggle tema" style={{ background: 'none', border: `1px solid ${C.border2}`, borderRadius: 7, width: 30, height: 30, cursor: 'pointer', color: C.dim, fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-            <span className="mr-theme-icon-dark">🌙</span>
-            <span className="mr-theme-icon-light">☀️</span>
-          </button>
-          {!isMobile && <button onClick={() => window.location.href = '/'} style={{ fontFamily: C.mono, fontSize: 10, color: C.dim, background: 'none', border: `1px solid ${C.border2}`, padding: '4px 10px', cursor: 'pointer', borderRadius: 5 }}>Web ↗</button>}
+          {!isMobile && <button onClick={() => window.location.href = '/'} style={{ fontFamily: LP.mono, fontSize: 10, color: LP.muted, background: 'none', border: `1px solid ${LP.border}`, padding: '4px 10px', cursor: 'pointer', borderRadius: 5 }}>Web ↗</button>}
         </div>
       </div>
 
