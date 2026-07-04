@@ -1322,19 +1322,19 @@ export default function DashboardPage() {
               {/* ── Top bar: Welcome + quick stats ── */}
               <div className='mr-welcome-anim' style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' as const }}>
                 <div>
-                  <div style={{ fontFamily: C.mono, color: '#444', fontSize: 9, letterSpacing: 1.5, marginBottom: 3 }}>SELAMAT DATANG KEMBALI</div>
-                  <h1 style={{ fontSize: 22, fontWeight: 700, letterSpacing: -0.5, margin: 0, color: C.text }}>{member.nama}</h1>
+                  <div style={{ fontFamily: LP.mono, color: LP.muted, fontSize: 9, letterSpacing: 1.5, marginBottom: 3 }}>SELAMAT DATANG KEMBALI</div>
+                  <h1 style={{ fontSize: 22, fontWeight: 700, letterSpacing: -0.5, margin: 0, color: LP.text }}>{member.nama}</h1>
                 </div>
                 {/* Inline stats pills */}
                 <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' as const }}>
-                  <div style={{ fontFamily: C.mono, fontSize: 11, fontWeight: 700, color: G.gold, background: 'var(--mr-tint-gold)', border: '1px solid var(--mr-gold-a27)', padding: '6px 14px', borderRadius: 20 }}>
+                  <div style={{ fontFamily: LP.mono, fontSize: 11, fontWeight: 700, color: LP.primary, background: LP.primaryTint, border: `1px solid ${LP.primary}44`, padding: '6px 14px', borderRadius: 20 }}>
                     {progressPct}% selesai
                   </div>
-                  <div style={{ fontFamily: C.mono, fontSize: 11, color: C.up, background: '#0a1a1044', border: '1px solid #22ab9422', padding: '6px 14px', borderRadius: 20 }}>
+                  <div style={{ fontFamily: LP.mono, fontSize: 11, color: LP.primary, background: LP.primaryTint, border: `1px solid ${LP.primary}44`, padding: '6px 14px', borderRadius: 20 }}>
                     {completedVideos}/{totalVideos} video
                   </div>
                   {member.is_advance && (
-                    <div style={{ fontFamily: C.mono, fontSize: 11, color: '#a855f7', background: 'var(--mr-tint-purple)', border: '1px solid #a855f722', padding: '6px 14px', borderRadius: 20 }}>
+                    <div style={{ fontFamily: LP.mono, fontSize: 11, color: '#7c3aed', background: '#7c3aed14', border: '1px solid #7c3aed33', padding: '6px 14px', borderRadius: 20 }}>
                       ADVANCE
                     </div>
                   )}
@@ -1359,26 +1359,26 @@ export default function DashboardPage() {
                 }).filter(Boolean);
                 if (!catBars.length) return null;
                 return (
-                  <div style={{ background: C.panel, border: `1px solid ${C.border}`, borderRadius: 10, padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' as const }}>
-                    <div style={{ fontFamily: C.mono, color: G.gold, fontSize: 9, letterSpacing: 1.5, flexShrink: 0 }}>// PROGRESS</div>
+                  <div style={{ background: LP.surface, border: `1px solid ${LP.border}`, borderRadius: 10, padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' as const }}>
+                    <div style={{ fontFamily: LP.mono, color: LP.primary, fontSize: 9, letterSpacing: 1.5, flexShrink: 0 }}>PROGRESS</div>
                     <div style={{ flex: 1, display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(100px,1fr))', gap: '6px 12px', minWidth: 0 }}>
                       {catBars.map(cat => cat && (
                         <div key={cat.key}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 3 }}>
-                            <span style={{ fontFamily: C.mono, fontSize: 8, color: cat.isLocked ? '#444' : cat.color, fontWeight: 700 }}>
-                              {cat.isLocked ? '🔒 ' : ''}{cat.label.toUpperCase()}
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 3 }}>
+                            <span style={{ display: 'flex', alignItems: 'center', gap: 3, fontFamily: LP.mono, fontSize: 8, color: cat.isLocked ? LP.muted : cat.color, fontWeight: 700 }}>
+                              {cat.isLocked && <Lock size={9} />}{cat.label.toUpperCase()}
                             </span>
-                            <span style={{ fontFamily: C.mono, fontSize: 8, color: cat.isLocked ? '#333' : C.dim }}>
+                            <span style={{ fontFamily: LP.mono, fontSize: 8, color: LP.muted }}>
                               {cat.isLocked ? 'Advance' : `${cat.done}/${cat.vids.length}`}
                             </span>
                           </div>
-                          <div style={{ height: 5, background: C.border2, borderRadius: 3, overflow: 'hidden' }}>
-                            <div style={{ height: '100%', width: `${cat.pct}%`, background: cat.isLocked ? '#222' : cat.color, borderRadius: 3, transition: 'width 0.8s ease' }}/>
+                          <div style={{ height: 5, background: LP.border, borderRadius: 3, overflow: 'hidden' }}>
+                            <div style={{ height: '100%', width: `${cat.pct}%`, background: cat.isLocked ? LP.muted : cat.color, borderRadius: 3, transition: 'width 0.8s ease' }}/>
                           </div>
                         </div>
                       ))}
                     </div>
-                    <div style={{ fontFamily: C.mono, fontSize: 11, fontWeight: 700, color: G.gold, flexShrink: 0 }}>{progressPct}%</div>
+                    <div style={{ fontFamily: LP.mono, fontSize: 11, fontWeight: 700, color: LP.primary, flexShrink: 0 }}>{progressPct}%</div>
                   </div>
                 );
               })()}
@@ -1386,23 +1386,26 @@ export default function DashboardPage() {
               {/* ── Status row ── 2-col ── */}
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: 8 }}>
                 {/* Status Trading */}
-                <div style={{ background: C.panel, border: `1px solid ${member.funded_status ? 'var(--mr-gold-a27)' : C.border}`, borderRadius: 10, padding: '12px 14px', cursor: 'pointer' }}
+                <div style={{ background: LP.surface, border: `1px solid ${member.funded_status ? LP.primary + '44' : LP.border}`, borderRadius: 10, padding: '12px 14px', cursor: 'pointer' }}
                   onClick={() => setActive('funded')}>
-                  <div style={{ fontFamily: C.mono, color: '#444', fontSize: 9, letterSpacing: 1, marginBottom: 5 }}>STATUS TRADING</div>
-                  <div style={{ fontWeight: 700, fontSize: 16, color: member.funded_status ? G.gold : '#333', letterSpacing: -0.3 }}>
-                    {member.funded_status
-                      ? (member.funded_status==='DA'?'📊 Demo':member.funded_status==='P1'?'🟣 Phase 1':member.funded_status==='P2'?'🟡 Phase 2':member.funded_status==='Master'?'🏆 Master':member.funded_status==='MPAID'?'💰 Sudah Payout':'💼 '+member.funded_status)
-                      : '— Belum diset'}
+                  <div style={{ fontFamily: LP.mono, color: LP.muted, fontSize: 9, letterSpacing: 1, marginBottom: 5 }}>STATUS TRADING</div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 700, fontSize: 16, color: member.funded_status ? LP.primary : LP.muted, letterSpacing: -0.3 }}>
+                    {member.funded_status ? (
+                      <>
+                        {member.funded_status === 'DA' ? <FlaskConical size={16} /> : member.funded_status === 'P1' ? <CircleDot size={16} color="#a855f7" /> : member.funded_status === 'P2' ? <CircleDot size={16} color="#eab308" /> : member.funded_status === 'Master' ? <Trophy size={16} /> : member.funded_status === 'MPAID' ? <DollarSign size={16} /> : <Briefcase size={16} />}
+                        {member.funded_status==='DA'?'Demo':member.funded_status==='P1'?'Phase 1':member.funded_status==='P2'?'Phase 2':member.funded_status==='Master'?'Master':member.funded_status==='MPAID'?'Sudah Payout':member.funded_status}
+                      </>
+                    ) : '— Belum diset'}
                   </div>
-                  {!member.funded_status && <div style={{ fontFamily: C.mono, fontSize: 9, color: '#f97316', marginTop: 4 }}>Klik untuk set →</div>}
+                  {!member.funded_status && <div style={{ fontFamily: LP.mono, fontSize: 9, color: '#f97316', marginTop: 4 }}>Klik untuk set →</div>}
                 </div>
                 {/* Akses Kelas */}
-                <div style={{ background: C.panel, border: `1px solid ${isExpired ? C.down+'44' : C.border}`, borderRadius: 10, padding: '12px 14px' }}>
-                  <div style={{ fontFamily: C.mono, color: '#444', fontSize: 9, letterSpacing: 1, marginBottom: 5 }}>AKSES KELAS</div>
-                  <div style={{ fontWeight: 700, fontSize: 16, color: isExpired ? C.down : C.up }}>
+                <div style={{ background: LP.surface, border: `1px solid ${isExpired ? LP.danger + '44' : LP.border}`, borderRadius: 10, padding: '12px 14px' }}>
+                  <div style={{ fontFamily: LP.mono, color: LP.muted, fontSize: 9, letterSpacing: 1, marginBottom: 5 }}>AKSES KELAS</div>
+                  <div style={{ fontWeight: 700, fontSize: 16, color: isExpired ? LP.danger : LP.primary }}>
                     {isExpired ? 'BERAKHIR' : 'AKTIF'}
                   </div>
-                  <div style={{ fontFamily: C.mono, fontSize: 9, color: '#555', marginTop: 4 }}>
+                  <div style={{ fontFamily: LP.mono, fontSize: 9, color: LP.muted, marginTop: 4 }}>
                     {isTrial && expiryDate
                       ? isExpired
                         ? `Berakhir ${expiryDate.toLocaleDateString('id-ID',{day:'numeric',month:'short'})}`
@@ -1417,18 +1420,18 @@ export default function DashboardPage() {
                 <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 6 }}>
                   {!member.discord_username && (
                     <button onClick={() => setActive('pengaturan')}
-                      style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px', background: '#080d1a', border: '1px solid #1e2a4a44', borderRadius: 8, cursor: 'pointer', textAlign: 'left' as const, width: '100%' }}>
-                      <span style={{ fontSize: 14 }}>💬</span>
-                      <span style={{ fontSize: 12, color: '#5a6a9a', flex: 1 }}>Hubungkan akun Discord untuk akses server & notifikasi live</span>
-                      <span style={{ fontFamily: C.mono, fontSize: 9, color: '#5865F2', border: '1px solid #5865F222', padding: '3px 8px', borderRadius: 4, flexShrink: 0 }}>HUBUNGKAN ▸</span>
+                      style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px', background: '#5865F20d', border: '1px solid #5865F233', borderRadius: 8, cursor: 'pointer', textAlign: 'left' as const, width: '100%' }}>
+                      <MessageCircle size={16} color="#5865F2" />
+                      <span style={{ fontSize: 12, color: LP.text, flex: 1 }}>Hubungkan akun Discord untuk akses server & notifikasi live</span>
+                      <span style={{ fontFamily: LP.mono, fontSize: 9, color: '#5865F2', border: '1px solid #5865F244', padding: '3px 8px', borderRadius: 4, flexShrink: 0 }}>HUBUNGKAN ▸</span>
                     </button>
                   )}
                   {!member.funded_status && (
                     <button onClick={() => setActive('funded')}
-                      style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px', background: '#0a0c00', border: '1px solid #2a2e0044', borderRadius: 8, cursor: 'pointer', textAlign: 'left' as const, width: '100%' }}>
-                      <span style={{ fontSize: 14 }}>🚀</span>
-                      <span style={{ fontSize: 12, color: '#666', flex: 1 }}>Set status trading kamu — Demo, Phase, Funded, dll</span>
-                      <span style={{ fontFamily: C.mono, fontSize: 9, color: G.gold, border: '1px solid var(--mr-tint-gold-b)', padding: '3px 8px', borderRadius: 4, flexShrink: 0 }}>SET STATUS ▸</span>
+                      style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px', background: LP.primaryTint, border: `1px solid ${LP.primary}33`, borderRadius: 8, cursor: 'pointer', textAlign: 'left' as const, width: '100%' }}>
+                      <Rocket size={16} color={LP.primary} />
+                      <span style={{ fontSize: 12, color: LP.text, flex: 1 }}>Set status trading kamu — Demo, Phase, Funded, dll</span>
+                      <span style={{ fontFamily: LP.mono, fontSize: 9, color: LP.primary, border: `1px solid ${LP.primary}44`, padding: '3px 8px', borderRadius: 4, flexShrink: 0 }}>SET STATUS ▸</span>
                     </button>
                   )}
                 </div>
@@ -1436,17 +1439,16 @@ export default function DashboardPage() {
 
               {/* ── Banner broker rekomendasi ── */}
               {brokers.length > 0 && (
-                <div className="mr-broker-banner" style={{ background: 'linear-gradient(135deg,var(--mr-tint-gold),var(--mr-bg))', border: `1px solid var(--mr-tint-gold-b)`, borderRadius: 12, padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 14 }}>
-                  <span className="mr-broker-icon" style={{ fontSize: 24, flexShrink: 0 }}>🏦</span>
+                <div className="mr-broker-banner" style={{ background: `linear-gradient(135deg,${LP.primaryTint},${LP.bg})`, border: `1px solid ${LP.primary}33`, borderRadius: 12, padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 14 }}>
+                  <span className="mr-broker-icon" style={{ flexShrink: 0 }}><Landmark size={22} color={LP.primary} /></span>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontWeight: 700, fontSize: 13, color: C.text }}>
+                    <div style={{ fontWeight: 700, fontSize: 13, color: LP.text }}>
                       Cek broker rekomendasi kami
                     </div>
                   </div>
                   <button
                     onClick={() => setActive('tools')}
-                    className="mr-btn-shimmer"
-                    style={{ fontFamily: C.mono, fontSize: 11, fontWeight: 700, color: '#000', background: G.gold, border: 'none', padding: '7px 14px', borderRadius: 7, cursor: 'pointer', whiteSpace: 'nowrap' as const, flexShrink: 0 }}
+                    style={{ fontFamily: LP.mono, fontSize: 11, fontWeight: 700, color: '#fff', background: LP.primary, border: 'none', padding: '7px 14px', borderRadius: 7, cursor: 'pointer', whiteSpace: 'nowrap' as const, flexShrink: 0 }}
                   >
                     Cek Broker ›
                   </button>
