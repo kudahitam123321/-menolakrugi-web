@@ -1313,7 +1313,7 @@ export default function DashboardPage() {
         </aside>
 
         {/* ── Main Content ── */}
-        <main className='mr-main' style={{ flex: 1, overflowY: 'auto', minWidth: 0 }}>
+        <main className='mr-main' style={{ flex: 1, overflowY: 'auto', minWidth: 0, background: active === 'dashboard' ? LP.bg : C.bg, color: active === 'dashboard' ? LP.text : C.text }}>
 
           {/* ══ DASHBOARD ══ */}
           {active === 'dashboard' && (
