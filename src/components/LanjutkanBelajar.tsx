@@ -100,7 +100,7 @@ export default function LanjutkanBelajar({ memberId, memberTier }: Props) {
             fontSize: 11,
             color: C.gold,
             background: 'transparent',
-            border: `1px solid #3a2e00`,
+            border: `1px solid ${C.border}`,
             padding: '6px 12px',
             cursor: 'pointer',
             borderRadius: 6,
