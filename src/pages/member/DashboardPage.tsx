@@ -1314,7 +1314,7 @@ export default function DashboardPage() {
         </aside>
 
         {/* ── Main Content ── */}
-        <main className='mr-main' style={{ flex: 1, overflowY: 'auto', minWidth: 0, background: active === 'dashboard' ? LP.bg : C.bg, color: active === 'dashboard' ? LP.text : C.text }}>
+        <main className='mr-main' style={{ flex: 1, overflowY: 'auto', minWidth: 0, background: ['dashboard','kelas','materi','news'].includes(active) ? LP.bg : C.bg, color: ['dashboard','kelas','materi','news'].includes(active) ? LP.text : C.text }}>
 
           {/* ══ DASHBOARD ══ */}
           {active === 'dashboard' && (
@@ -1946,15 +1946,15 @@ export default function DashboardPage() {
 
           {/* ══ MARKET NEWS ══ */}
           {active === 'news' && (
-            <div style={{ padding: 24 }}>
+            <div style={{ padding: 24, background: LP.bg, minHeight: '100%' }}>
               <div style={{ marginBottom: 20 }}>
-                <div style={{ fontFamily: C.mono, color: G.gold, fontSize: 10, letterSpacing: 1, marginBottom: 6 }}>// MARKET NEWS</div>
-                <h2 style={{ fontSize: 22, fontWeight: 700, margin: 0 }}>Market Overview & News</h2>
+                <div style={{ fontFamily: LP.mono, color: LP.primary, fontSize: 10, letterSpacing: 1, marginBottom: 6 }}>MARKET NEWS</div>
+                <h2 style={{ fontSize: 22, fontWeight: 700, margin: 0, color: LP.text }}>Market Overview & News</h2>
               </div>
-              <div style={{ background: C.panel, border: `1px solid ${C.border}`, borderRadius: 12, overflow: 'hidden' }}>
-                <div style={{ padding: '12px 20px', borderBottom: `1px solid ${C.border}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontFamily: C.mono, color: G.gold, fontSize: 11, letterSpacing: 1 }}>// ADVANCED CHART · REALTIME</span>
-                  <span style={{ fontFamily: C.mono, color: C.dim, fontSize: 10 }}>POWERED BY TRADINGVIEW</span>
+              <div style={{ background: LP.surface, border: `1px solid ${LP.border}`, borderRadius: 12, overflow: 'hidden' }}>
+                <div style={{ padding: '12px 20px', borderBottom: `1px solid ${LP.border}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontFamily: LP.mono, color: LP.primary, fontSize: 11, letterSpacing: 1 }}>ADVANCED CHART · REALTIME</span>
+                  <span style={{ fontFamily: LP.mono, color: LP.muted, fontSize: 10 }}>POWERED BY TRADINGVIEW</span>
                 </div>
                 <div style={{ height: 680 }}>
                   <AdvancedChartWidget/>
