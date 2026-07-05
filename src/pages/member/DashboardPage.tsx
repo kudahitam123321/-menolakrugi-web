@@ -12,6 +12,7 @@ import {
   Link2, Settings, HelpCircle, LogOut, Bell, CheckCircle2, XCircle, Info, Megaphone,
   Lock, FlaskConical, CircleDot, DollarSign, Briefcase,
   Paperclip, Check, Clock, Play, Circle, RotateCcw, FileText, Presentation, FileSpreadsheet, File, Download,
+  Package, Receipt, BarChart3, Ticket, MessageSquare,
 } from 'lucide-react';
 
 const G = { gold: 'var(--mr-gold)', gold2: 'var(--mr-gold2)' };
@@ -2481,19 +2482,20 @@ export default function DashboardPage() {
 
           {/* ══ PRODUK ══ */}
           {active === 'produk' && (
-            <div className="mr-content-pad" style={{ padding: 24 }}>
+            <div className="mr-content-pad" style={{ padding: 24, background: LP.bg, minHeight: '100%' }}>
               {/* Header + toggle */}
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24, flexWrap: 'wrap' as const, gap: 12 }}>
                 <div>
-                  <div style={{ fontFamily: C.mono, color: G.gold, fontSize: 10, letterSpacing: 1, marginBottom: 6 }}>// TOKO PRODUK</div>
-                  <h2 style={{ fontSize: 22, fontWeight: 700, margin: '0 0 4px' }}>Produk Indikator</h2>
-                  <p style={{ color: C.dim, fontSize: 13, margin: 0 }}>Indikator TradingView eksklusif dari Menolak Rugi.</p>
+                  <div style={{ fontFamily: LP.mono, color: LP.primary, fontSize: 10, letterSpacing: 1, marginBottom: 6 }}>TOKO PRODUK</div>
+                  <h2 style={{ fontSize: 22, fontWeight: 700, margin: '0 0 4px', color: LP.text }}>Produk Indikator</h2>
+                  <p style={{ color: LP.muted, fontSize: 13, margin: 0 }}>Indikator TradingView eksklusif dari Menolak Rugi.</p>
                 </div>
                 <div style={{ display: 'flex', gap: 6 }}>
                   {(['katalog','pesanan'] as const).map(v => (
                     <button key={v} onClick={() => setProdView(v)}
-                      style={{ fontFamily: C.mono, fontSize: 11, fontWeight: 700, padding: '7px 18px', border: `1px solid ${prodView === v ? G.gold : C.border}`, background: prodView === v ? 'var(--mr-tint-gold)' : 'transparent', color: prodView === v ? G.gold : C.muted, cursor: 'pointer', borderRadius: 8 }}>
-                      {v === 'katalog' ? '📦 Katalog' : '🧾 Pesanan Saya'}
+                      style={{ display: 'flex', alignItems: 'center', gap: 6, fontFamily: LP.mono, fontSize: 11, fontWeight: 700, padding: '7px 18px', border: `1px solid ${prodView === v ? LP.primary : LP.border}`, background: prodView === v ? LP.primaryTint : 'transparent', color: prodView === v ? LP.primary : LP.muted, cursor: 'pointer', borderRadius: 8 }}>
+                      {v === 'katalog' ? <Package size={13}/> : <Receipt size={13}/>}
+                      {v === 'katalog' ? 'Katalog' : 'Pesanan Saya'}
                     </button>
                   ))}
                 </div>
@@ -2503,7 +2505,7 @@ export default function DashboardPage() {
               {prodView === 'katalog' && (
                 <>
                   {!products.length && (
-                    <div style={{ textAlign: 'center' as const, padding: '60px 20px', color: C.muted, fontFamily: C.mono, fontSize: 13 }}>
+                    <div style={{ textAlign: 'center' as const, padding: '60px 20px', color: LP.muted, fontFamily: LP.mono, fontSize: 13 }}>
                       Belum ada produk tersedia saat ini.
                     </div>
                   )}
