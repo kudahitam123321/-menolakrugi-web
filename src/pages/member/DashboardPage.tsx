@@ -2605,24 +2605,24 @@ export default function DashboardPage() {
 
               {/* ── Pesanan Saya ── */}
               {prodView === 'pesanan' && (
-                <div style={{ background: C.panel, border: `1px solid ${C.border}`, borderRadius: 14, overflow: 'hidden' }}>
+                <div style={{ background: LP.surface, border: `1px solid ${LP.border}`, borderRadius: 14, overflow: 'hidden' }}>
                   {!myOrders.length
-                    ? <div style={{ textAlign: 'center' as const, padding: '60px 20px', color: C.muted, fontFamily: C.mono, fontSize: 13 }}>Belum ada pesanan.</div>
+                    ? <div style={{ textAlign: 'center' as const, padding: '60px 20px', color: LP.muted, fontFamily: LP.mono, fontSize: 13 }}>Belum ada pesanan.</div>
                     : myOrders.map(o => {
-                        const sc = o.status === 'aktif' ? C.up : o.status === 'dibayar' ? '#3b82f6' : '#eab308';
+                        const sc = o.status === 'aktif' ? LP.primary : o.status === 'dibayar' ? '#3b82f6' : '#eab308';
                         const label = o.status === 'aktif' ? 'Aktif' : o.status === 'dibayar' ? 'Dibayar' : 'Pending';
                         return (
-                          <div key={o.id} style={{ borderBottom: `1px solid ${C.border}`, padding: '16px 20px', display: 'flex', gap: 16, alignItems: 'center', flexWrap: 'wrap' as const }}>
+                          <div key={o.id} style={{ borderBottom: `1px solid ${LP.border}`, padding: '16px 20px', display: 'flex', gap: 16, alignItems: 'center', flexWrap: 'wrap' as const }}>
                             <div style={{ flex: 1, minWidth: 160 }}>
-                              <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 4 }}>{(o as any).products?.nama || '—'}</div>
-                              {o.plan_type && <span style={{ display: 'inline-block', fontFamily: C.mono, fontSize: 10, color: G.gold, border: `1px solid ${G.gold}44`, padding: '2px 8px', borderRadius: 4, marginBottom: 4 }}>{o.plan_type.toUpperCase()}</span>}
-                              <div style={{ fontFamily: C.mono, fontSize: 11, color: C.muted }}>
+                              <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 4, color: LP.text }}>{(o as any).products?.nama || '—'}</div>
+                              {o.plan_type && <span style={{ display: 'inline-block', fontFamily: LP.mono, fontSize: 10, color: LP.primary, border: `1px solid ${LP.primary}44`, padding: '2px 8px', borderRadius: 4, marginBottom: 4 }}>{o.plan_type.toUpperCase()}</span>}
+                              <div style={{ fontFamily: LP.mono, fontSize: 11, color: LP.muted }}>
                                 {new Date(o.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
                               </div>
-                              {o.kode_diskon && <div style={{ fontFamily: C.mono, fontSize: 10, color: '#16a34a', marginTop: 2 }}>🎟️ {o.kode_diskon} (-{o.diskon_applied}%)</div>}
-                              {o.catatan && <div style={{ fontFamily: C.mono, fontSize: 11, color: C.dim, marginTop: 4 }}>💬 {o.catatan}</div>}
+                              {o.kode_diskon && <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontFamily: LP.mono, fontSize: 10, color: '#16a34a', marginTop: 2 }}><Ticket size={11}/> {o.kode_diskon} (-{o.diskon_applied}%)</div>}
+                              {o.catatan && <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontFamily: LP.mono, fontSize: 11, color: LP.muted, marginTop: 4 }}><MessageSquare size={11}/> {o.catatan}</div>}
                             </div>
-                            <span style={{ fontFamily: C.mono, fontSize: 11, fontWeight: 700, color: sc, border: `1px solid ${sc}44`, padding: '4px 12px', borderRadius: 20, flexShrink: 0 }}>
+                            <span style={{ fontFamily: LP.mono, fontSize: 11, fontWeight: 700, color: sc, border: `1px solid ${sc}44`, padding: '4px 12px', borderRadius: 20, flexShrink: 0 }}>
                               {label}
                             </span>
                           </div>
