@@ -11,6 +11,7 @@ import {
   MessageCircle, Landmark, ShoppingBag, Rocket, Trophy, Medal, Award, Target, Star,
   Link2, Settings, HelpCircle, LogOut, Bell, CheckCircle2, XCircle, Info, Megaphone,
   Lock, FlaskConical, CircleDot, DollarSign, Briefcase,
+  Paperclip, Check, Clock, Play, Circle, RotateCcw, FileText, Presentation, FileSpreadsheet, File, Download,
 } from 'lucide-react';
 
 const G = { gold: 'var(--mr-gold)', gold2: 'var(--mr-gold2)' };
@@ -1612,18 +1613,18 @@ export default function DashboardPage() {
 
           {/* ══ KELAS SAYA ══ */}
           {active === 'kelas' && (
-            <div style={{ padding: 24 }}>
+            <div style={{ padding: 24, background: LP.bg, minHeight: '100%' }}>
               <div style={{ marginBottom: 20 }}>
-                <div style={{ fontFamily: C.mono, color: G.gold, fontSize: 10, letterSpacing: 1, marginBottom: 6 }}>// KELAS SAYA</div>
-                <h2 style={{ fontSize: 22, fontWeight: 700, margin: 0 }}>Kurikulum Saya</h2>
+                <div style={{ fontFamily: LP.mono, color: LP.primary, fontSize: 10, letterSpacing: 1, marginBottom: 6 }}>KELAS SAYA</div>
+                <h2 style={{ fontSize: 22, fontWeight: 700, margin: 0, color: LP.text }}>Kurikulum Saya</h2>
               </div>
               {/* Request Advanced Modal */}
               {showAdvModal && (
-                <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', zIndex: 999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
-                  <div className='mr-modal mr-modal-anim' style={{ background: C.sidebar, border: `1px solid ${C.border2}`, borderRadius: 14, padding: 28, width: '100%', maxWidth: 480 }}>
-                    <div style={{ fontFamily: C.mono, color: G.gold, fontSize: 10, letterSpacing: 1, marginBottom: 6 }}>// REQUEST NAIK KELAS ADVANCED</div>
-                    <h3 className='mr-modal-title' style={{ fontSize: 18, fontWeight: 700, margin: '0 0 8px' }}>Ajukan Naik Kelas</h3>
-                    <p style={{ color: C.dim, fontSize: 13, margin: '0 0 20px', lineHeight: 1.6 }}>
+                <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.6)', zIndex: 999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+                  <div className='mr-modal mr-modal-anim' style={{ background: LP.surface, border: `1px solid ${LP.border}`, borderRadius: 14, padding: 28, width: '100%', maxWidth: 480, boxShadow: LP.shadowMd }}>
+                    <div style={{ fontFamily: LP.mono, color: LP.primary, fontSize: 10, letterSpacing: 1, marginBottom: 6 }}>REQUEST NAIK KELAS ADVANCED</div>
+                    <h3 className='mr-modal-title' style={{ fontSize: 18, fontWeight: 700, margin: '0 0 8px', color: LP.text }}>Ajukan Naik Kelas</h3>
+                    <p style={{ color: LP.muted, fontSize: 13, margin: '0 0 20px', lineHeight: 1.6 }}>
                       Lampirkan minimal 1 jurnal trading (link atau file) sebagai syarat naik kelas Advanced. Admin akan mereview dan memberikan keputusan.
                     </p>
                     {([
@@ -1633,47 +1634,49 @@ export default function DashboardPage() {
                     ] as {l:string;v:string;s:(v:string)=>void;idx:number}[]).map((f) => (
                       <div key={f.idx} style={{ marginBottom: 14 }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-                          <span style={{ fontFamily: C.mono, color: C.dim, fontSize: 10 }}>{f.l.toUpperCase()}</span>
+                          <span style={{ fontFamily: LP.mono, color: LP.muted, fontSize: 10 }}>{f.l.toUpperCase()}</span>
                           <div style={{ display: 'flex', gap: 4 }}>
                             {(['link','file'] as const).map(mode => (
                               <button key={mode} onClick={() => {
                                 const nm = [...jurnalMode]; nm[f.idx] = mode; setJurnalMode(nm);
-                              }} style={{ fontFamily: C.mono, fontSize: 9, padding: '2px 8px', cursor: 'pointer',
-                                background: jurnalMode[f.idx]===mode ? G.gold : 'transparent',
-                                color: jurnalMode[f.idx]===mode ? '#000' : C.dim,
-                                border: `1px solid ${jurnalMode[f.idx]===mode ? G.gold : C.border2}`, borderRadius: 3 }}>
-                                {mode === 'link' ? '🔗 LINK' : '📎 FILE'}
+                              }} style={{ fontFamily: LP.mono, fontSize: 9, padding: '3px 8px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4,
+                                background: jurnalMode[f.idx]===mode ? LP.primary : 'transparent',
+                                color: jurnalMode[f.idx]===mode ? '#fff' : LP.muted,
+                                border: `1px solid ${jurnalMode[f.idx]===mode ? LP.primary : LP.border}`, borderRadius: 4 }}>
+                                {mode === 'link' ? <Link2 size={11} /> : <Paperclip size={11} />}
+                                {mode.toUpperCase()}
                               </button>
                             ))}
                           </div>
                         </div>
                         {jurnalMode[f.idx] === 'link' ? (
                           <input value={f.v} onChange={e => f.s(e.target.value)} placeholder="https://..."
-                            style={{ width: '100%', background: C.panel, border: `1px solid ${C.border2}`, color: C.text, padding: '9px 14px', fontSize: 13, fontFamily: C.mono, outline: 'none', borderRadius: 6, boxSizing: 'border-box' as const }}
-                            onFocus={e => e.target.style.borderColor = G.gold} onBlur={e => e.target.style.borderColor = C.border2}/>
+                            style={{ width: '100%', background: LP.bg, border: `1px solid ${LP.border}`, color: LP.text, padding: '9px 14px', fontSize: 13, fontFamily: LP.mono, outline: 'none', borderRadius: 6, boxSizing: 'border-box' as const }}
+                            onFocus={e => e.target.style.borderColor = LP.primary} onBlur={e => e.target.style.borderColor = LP.border}/>
                         ) : (
                           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                            <label style={{ flex: 1, display: 'block', background: C.panel, border: `1px dashed ${C.border2}`, borderRadius: 6, padding: '9px 14px', cursor: 'pointer', fontSize: 12, color: jurnalFiles[f.idx] ? C.up : C.dim, fontFamily: C.mono }}>
-                              {jurnalFiles[f.idx] ? `✓ ${jurnalFiles[f.idx]!.name}` : 'Klik untuk pilih file (PDF/gambar)'}
+                            <label style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 6, background: LP.bg, border: `1px dashed ${LP.border}`, borderRadius: 6, padding: '9px 14px', cursor: 'pointer', fontSize: 12, color: jurnalFiles[f.idx] ? LP.primary : LP.muted, fontFamily: LP.mono }}>
+                              {jurnalFiles[f.idx] && <Check size={13} />}
+                              {jurnalFiles[f.idx] ? jurnalFiles[f.idx]!.name : 'Klik untuk pilih file (PDF/gambar)'}
                               <input type="file" accept=".pdf,.jpg,.jpeg,.png,.webp" style={{ display: 'none' }}
                                 onChange={e => { const nf = [...jurnalFiles]; nf[f.idx] = e.target.files?.[0]||null; setJurnalFiles(nf); }}/>
                             </label>
                             {jurnalFiles[f.idx] && (
                               <button onClick={() => { const nf=[...jurnalFiles]; nf[f.idx]=null; setJurnalFiles(nf); }}
-                                style={{ background: 'none', border: 'none', color: C.down, cursor: 'pointer', fontSize: 16 }}>×</button>
+                                style={{ background: 'none', border: 'none', color: LP.danger, cursor: 'pointer', fontSize: 16 }}>×</button>
                             )}
                           </div>
                         )}
                       </div>
                     ))}
-                    {advMsg && <div style={{ fontFamily: C.mono, color: C.down, fontSize: 12, marginBottom: 10 }}>{advMsg}</div>}
+                    {advMsg && <div style={{ fontFamily: LP.mono, color: LP.danger, fontSize: 12, marginBottom: 10 }}>{advMsg}</div>}
                     <div style={{ display: 'flex', gap: 10, marginTop: 20 }}>
                       <button onClick={submitAdvanceRequest} disabled={advSubmitting}
-                        style={{ flex: 1, background: advSubmitting ? 'var(--mr-border2)' : G.gold, color: '#000', fontFamily: C.mono, fontSize: 12, fontWeight: 700, padding: '11px', border: 'none', cursor: 'pointer', borderRadius: 6 }}>
-                        {advSubmitting ? 'MENGIRIM...' : '▸ KIRIM REQUEST'}
+                        style={{ flex: 1, background: advSubmitting ? LP.border : LP.primary, color: '#fff', fontFamily: LP.mono, fontSize: 12, fontWeight: 700, padding: '11px', border: 'none', cursor: 'pointer', borderRadius: 6 }}>
+                        {advSubmitting ? 'MENGIRIM...' : 'KIRIM REQUEST →'}
                       </button>
                       <button onClick={() => { setShowAdvModal(false); setAdvMsg(''); }}
-                        style={{ padding: '11px 18px', background: 'none', border: `1px solid ${C.border2}`, color: C.dim, fontFamily: C.mono, fontSize: 12, cursor: 'pointer', borderRadius: 6 }}>
+                        style={{ padding: '11px 18px', background: 'none', border: `1px solid ${LP.border}`, color: LP.muted, fontFamily: LP.mono, fontSize: 12, cursor: 'pointer', borderRadius: 6 }}>
                         BATAL
                       </button>
                     </div>
