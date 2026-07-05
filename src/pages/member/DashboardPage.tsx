@@ -1692,44 +1692,46 @@ export default function DashboardPage() {
                   if (!vids.length) return null;
                   const done = vids.filter(v => progress[v.id] === 'selesai').length;
                   const pct  = locked ? 0 : Math.round(done / vids.length * 100);
-                  const colors: Record<string,string> = { intro:'#eab308', basic:'#22ab94', 'tips-basic':'#22ab94', advanced:'#a855f7', 'tips-advanced':'#a855f7' };
-                  const color = locked ? '#444' : (colors[kat] || G.gold);
+                  const colors: Record<string,string> = { intro:'#eab308', basic:'#22ab94', 'tips-basic':'#22ab94', advanced:'#7c3aed', 'tips-advanced':'#7c3aed' };
+                  const color = locked ? LP.muted : (colors[kat] || LP.primary);
                   return (
-                    <div key={kat} style={{ background: C.panel, border: `1px solid ${locked ? C.border2 : C.border}`, borderRadius: 12, opacity: locked ? 0.85 : 1 }}>
-                      <div style={{ padding: '14px 18px', borderBottom: `1px solid ${C.border}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div key={kat} style={{ background: LP.surface, border: `1px solid ${LP.border}`, borderRadius: 12, opacity: locked ? 0.85 : 1 }}>
+                      <div style={{ padding: '14px 18px', borderBottom: `1px solid ${LP.border}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                          {locked && <span style={{ fontSize: 14 }}>🔒</span>}
-                          <span style={{ fontFamily: C.mono, color, fontSize: 11, fontWeight: 700, letterSpacing: 1 }}>{kat.replace('-',' ').toUpperCase()}</span>
+                          {locked && <Lock size={13} color={LP.muted} />}
+                          <span style={{ fontFamily: LP.mono, color, fontSize: 11, fontWeight: 700, letterSpacing: 1 }}>{kat.replace('-',' ').toUpperCase()}</span>
                         </div>
-                        <span style={{ fontFamily: C.mono, color: C.dim, fontSize: 10 }}>{locked ? 'Butuh Advanced' : `${done}/${vids.length} · ${pct}%`}</span>
+                        <span style={{ fontFamily: LP.mono, color: LP.muted, fontSize: 10 }}>{locked ? 'Butuh Advanced' : `${done}/${vids.length} · ${pct}%`}</span>
                       </div>
-                      <div style={{ height: 3, background: C.border }}>
+                      <div style={{ height: 3, background: LP.border }}>
                         <div style={{ width: `${pct}%`, height: '100%', background: color }}/>
                       </div>
                       {locked ? (
                         <div style={{ padding: '20px 18px', textAlign: 'center' as const }}>
-                          <p style={{ color: C.dim, fontSize: 13, margin: '0 0 14px', lineHeight: 1.6 }}>
-                            Kelas ini hanya untuk member <strong style={{ color: '#a855f7' }}>Advanced</strong>.<br/>
+                          <p style={{ color: LP.muted, fontSize: 13, margin: '0 0 14px', lineHeight: 1.6 }}>
+                            Kelas ini hanya untuk member <strong style={{ color: '#7c3aed' }}>Advanced</strong>.<br/>
                             Ajukan naik kelas dengan melampirkan 3 jurnal trading.
                           </p>
                           {advanceReq?.status === 'pending' ? (
-                            <div style={{ fontFamily: C.mono, fontSize: 11, color: G.gold, background: 'var(--mr-tint-gold)', border: "1px solid var(--mr-tint-gold-b)", padding: '8px 14px', borderRadius: 6 }}>
-                              ⏳ REQUEST SEDANG DIREVIEW ADMIN
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, fontFamily: LP.mono, fontSize: 11, color: LP.primary, background: LP.primaryTint, border: `1px solid ${LP.primary}44`, padding: '8px 14px', borderRadius: 6 }}>
+                              <Clock size={13} />
+                              REQUEST SEDANG DIREVIEW ADMIN
                             </div>
                           ) : advanceReq?.status === 'rejected' ? (
                             <div>
-                              <div style={{ fontFamily: C.mono, fontSize: 11, color: C.down, background: '#1a0a0a', border: `1px solid #3a1010`, padding: '8px 14px', borderRadius: 6, marginBottom: 10 }}>
-                                ❌ REQUEST DITOLAK — {advanceReq.alasan_tolak?.split('\n')[0] || 'Lihat notifikasi'}
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontFamily: LP.mono, fontSize: 11, color: LP.danger, background: `${LP.danger}0d`, border: `1px solid ${LP.danger}44`, padding: '8px 14px', borderRadius: 6, marginBottom: 10 }}>
+                                <XCircle size={13} />
+                                REQUEST DITOLAK — {advanceReq.alasan_tolak?.split('\n')[0] || 'Lihat notifikasi'}
                               </div>
                               <button onClick={() => setShowAdvModal(true)}
-                                style={{ fontFamily: C.mono, fontSize: 11, fontWeight: 700, color: '#a855f7', background: 'var(--mr-tint-purple)', border: `1px solid #4a2a8a`, padding: '8px 20px', cursor: 'pointer', borderRadius: 6 }}>
-                                AJUKAN ULANG ▸
+                                style={{ fontFamily: LP.mono, fontSize: 11, fontWeight: 700, color: '#7c3aed', background: '#7c3aed14', border: `1px solid #7c3aed44`, padding: '8px 20px', cursor: 'pointer', borderRadius: 6 }}>
+                                AJUKAN ULANG →
                               </button>
                             </div>
                           ) : (
                             <button onClick={() => setShowAdvModal(true)}
-                              style={{ fontFamily: C.mono, fontSize: 12, fontWeight: 700, color: '#000', background: '#a855f7', padding: '10px 24px', border: 'none', cursor: 'pointer', borderRadius: 6 }}>
-                              REQUEST NAIK KELAS ▸
+                              style={{ fontFamily: LP.mono, fontSize: 12, fontWeight: 700, color: '#fff', background: '#7c3aed', padding: '10px 24px', border: 'none', cursor: 'pointer', borderRadius: 6 }}>
+                              REQUEST NAIK KELAS →
                             </button>
                           )}
                         </div>
@@ -1743,26 +1745,26 @@ export default function DashboardPage() {
                             const s = progress[v.id];
                             const isComingSoon = !v.youtube_url && !v.coming_soon_img;
                             return (
-                              <div key={v.id} style={{ display: 'flex', gap: 12, padding: '12px 16px', borderBottom: `1px solid ${C.border}`, transition: 'background 0.15s' }}
-                                onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = C.sidebar}
+                              <div key={v.id} style={{ display: 'flex', gap: 12, padding: '12px 16px', borderBottom: `1px solid ${LP.border}`, transition: 'background 0.15s' }}
+                                onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = LP.bg}
                                 onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = 'transparent'}>
                                 {/* Status icon */}
-                                <div style={{ width: 30, height: 30, background: s==='selesai'?'var(--mr-tint-green2)':s==='mulai'?'var(--mr-tint-gold)':C.bg, border: `1px solid ${s==='selesai'?C.up:s==='mulai'?G.gold:C.border}`, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, flexShrink: 0, marginTop: 2 }}>
-                                  {s==='selesai'?'✓':s==='mulai'?'▶':'○'}
+                                <div style={{ width: 30, height: 30, background: s==='selesai'?LP.primaryTint:s==='mulai'?'#f9731614':LP.bg, border: `1px solid ${s==='selesai'?LP.primary:s==='mulai'?'#f97316':LP.border}`, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 2 }}>
+                                  {s==='selesai' ? <Check size={14} color={LP.primary} /> : s==='mulai' ? <Play size={12} color="#f97316" /> : <Circle size={10} color={LP.muted} />}
                                 </div>
                                 {/* Content */}
                                 <div style={{ flex: 1, minWidth: 0 }}>
-                                  <div style={{ fontSize: 13, fontWeight: 600, color: s==='selesai'?C.dim:C.text, marginBottom: v.deskripsi ? 4 : 0, lineHeight: 1.4 }}>{v.judul}</div>
+                                  <div style={{ fontSize: 13, fontWeight: 600, color: s==='selesai'?LP.muted:LP.text, marginBottom: v.deskripsi ? 4 : 0, lineHeight: 1.4 }}>{v.judul}</div>
                                   {v.deskripsi && (
-                                    <div style={{ fontSize: 11, color: C.dim, lineHeight: 1.5, marginBottom: 6, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' as const, overflow: 'hidden' }}>{v.deskripsi}</div>
+                                    <div style={{ fontSize: 11, color: LP.muted, lineHeight: 1.5, marginBottom: 6, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' as const, overflow: 'hidden' }}>{v.deskripsi}</div>
                                   )}
                                   {/* Actions row */}
                                   <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' as const }}>
                                     {v.coming_soon_img && !hasVideo && (
-                                      <span style={{ fontFamily: C.mono, fontSize: 9, color: '#555', border: `1px solid ${C.border}`, padding: '2px 7px', borderRadius: 3 }}>SEGERA</span>
+                                      <span style={{ fontFamily: LP.mono, fontSize: 9, color: LP.muted, border: `1px solid ${LP.border}`, padding: '2px 7px', borderRadius: 3 }}>SEGERA</span>
                                     )}
                                     {isComingSoon && !v.coming_soon_img && (
-                                      <span style={{ fontFamily: C.mono, fontSize: 9, color: '#555', border: `1px solid ${C.border}`, padding: '2px 7px', borderRadius: 3 }}>SEGERA</span>
+                                      <span style={{ fontFamily: LP.mono, fontSize: 9, color: LP.muted, border: `1px solid ${LP.border}`, padding: '2px 7px', borderRadius: 3 }}>SEGERA</span>
                                     )}
                                     {hasVideo && (
                                       <>
@@ -1774,8 +1776,8 @@ export default function DashboardPage() {
                                             await trackVideoWatch(member!.id, v.id);
                                             setWatchRefreshKey(k => k + 1);
                                           }}
-                                          style={{ fontFamily: C.mono, fontSize: 10, fontWeight: 700, color: '#000', background: G.gold, textDecoration: 'none', padding: '4px 10px', borderRadius: 4, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                                          ▶ TONTON
+                                          style={{ fontFamily: LP.mono, fontSize: 10, fontWeight: 700, color: '#fff', background: LP.primary, textDecoration: 'none', padding: '4px 10px', borderRadius: 4, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                                          <Play size={11} /> TONTON
                                         </a>
                                         {s !== 'selesai' ? (
                                           <button onClick={async () => {
@@ -1783,20 +1785,22 @@ export default function DashboardPage() {
                                             await trackVideoWatch(member!.id, v.id);
                                             setWatchRefreshKey(k => k + 1);
                                             loadData(member!);
-                                          }} style={{ fontFamily: C.mono, fontSize: 10, color: C.up, background: 'var(--mr-tint-green2)', border: `1px solid var(--mr-up-a27)`, padding: '4px 10px', cursor: 'pointer', borderRadius: 4 }}>
-                                            ✓ SELESAI
+                                          }} style={{ fontFamily: LP.mono, fontSize: 10, color: LP.primary, background: LP.primaryTint, border: `1px solid ${LP.primary}44`, padding: '4px 10px', cursor: 'pointer', borderRadius: 4, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                                            <Check size={11} /> SELESAI
                                           </button>
                                         ) : (
                                           <button onClick={async () => {
                                             await supabase.from('member_progress').upsert({ member_id: member!.id, video_id: v.id, status: 'mulai' }, { onConflict: 'member_id,video_id' });
                                             loadData(member!);
-                                          }} style={{ fontFamily: C.mono, fontSize: 10, color: '#555', background: 'transparent', border: `1px solid ${C.border}`, padding: '4px 10px', cursor: 'pointer', borderRadius: 4 }}>
-                                            ↩ RESET
+                                          }} style={{ fontFamily: LP.mono, fontSize: 10, color: LP.muted, background: 'transparent', border: `1px solid ${LP.border}`, padding: '4px 10px', cursor: 'pointer', borderRadius: 4, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                                            <RotateCcw size={11} /> RESET
                                           </button>
                                         )}
                                         <div style={{ display:'flex', gap:1 }}>
                                           {[1,2,3,4,5].map(star=>(
-                                            <button key={star} onClick={()=>rateVideo(v.id,star)} style={{ background:'none', border:'none', cursor:'pointer', fontSize:13, color:(videoRatings[v.id]||0)>=star?'#eab308':'#333', padding:'1px', lineHeight:1 }}>★</button>
+                                            <button key={star} onClick={()=>rateVideo(v.id,star)} style={{ background:'none', border:'none', cursor:'pointer', padding:'1px', lineHeight:1, display: 'flex' }}>
+                                              <Star size={13} fill={(videoRatings[v.id]||0)>=star ? LP.primary : 'none'} color={(videoRatings[v.id]||0)>=star ? LP.primary : LP.border} />
+                                            </button>
                                           ))}
                                         </div>
                                       </>
