@@ -377,6 +377,7 @@ export default function DashboardPage() {
   const [modalStep, setModalStep]       = useState<'konfirmasi'|'pembayaran'>('konfirmasi');
   const [pendingOrder, setPendingOrder] = useState<any|null>(null);
   const [rekCopied, setRekCopied]       = useState('');
+  const [selectedPlanByProduct, setSelectedPlanByProduct] = useState<Record<string,string>>({});
   const [oldPass, setOldPass]         = useState('');
   const [newPass, setNewPass]         = useState('');
   const [confPass, setConfPass]       = useState('');
@@ -2519,9 +2520,16 @@ export default function DashboardPage() {
                         { plan: 'tahunan'  as const, label: 'Tahunan',  h: p.harga_tahunan,  d: p.diskon_tahunan  },
                         { plan: 'lifetime' as const, label: 'Lifetime', h: p.harga_lifetime, d: p.diskon_lifetime },
                       ]).filter(r => r.h);
+                      const activePlanKey = selectedPlanByProduct[p.id] ?? plans[0]?.plan;
+                      const activePlan    = plans.find(r => r.plan === activePlanKey) ?? plans[0];
+                      const finalH        = activePlan ? (activePlan.d ? Math.round(activePlan.h * (1 - activePlan.d / 100)) : activePlan.h) : 0;
                       return (
-                        <div key={p.id} style={{ background: C.panel, border: `1px solid ${C.border}`, borderRadius: 14, overflow: 'hidden', display: 'flex', flexDirection: 'column' as const }}>
-                          <div style={{ aspectRatio: '16/9', background: C.sidebar, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', position: 'relative' as const }}>
+                        <div key={p.id} style={{ background: LP.surface, border: `1px solid ${LP.border}`, borderRadius: 14, overflow: 'hidden', display: 'flex', flexDirection: 'column' as const }}>
+                          <div style={{ aspectRatio: '16/9', background: LP.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', position: 'relative' as const }}>
+                            <div style={{ position: 'absolute', top: 10, left: 10, zIndex: 1, display: 'flex', alignItems: 'center', gap: 5, fontFamily: LP.mono, fontSize: 10, fontWeight: 700, padding: '4px 10px', borderRadius: 20, background: p.status === 'preorder' ? LP.text : LP.surface, color: p.status === 'preorder' ? LP.surface : LP.text }}>
+                              {p.status === 'preorder' ? <Clock size={11}/> : <CheckCircle2 size={11}/>}
+                              {p.status === 'preorder' ? `PRE-ORDER${tglRilis ? ` · ${tglRilis}` : ''}` : 'TERSEDIA'}
+                            </div>
                             {!p.gambar_url && extractYtId(p.video_url)
                               ? <iframe
                                   src={`https://www.youtube.com/embed/${extractYtId(p.video_url)}?autoplay=1&mute=1&rel=0&modestbranding=1&controls=1`}
@@ -2531,51 +2539,47 @@ export default function DashboardPage() {
                                   title={p.nama}
                                 />
                               : p.gambar_url
-                                ? <img src={p.gambar_url} alt={p.nama} style={{ width: '100%', height: '100%', objectFit: 'cover' as const }}/>
-                                : <span style={{ fontSize: 48 }}>📊</span>
+                                ? <img src={p.gambar_url} alt={p.nama} style={{ width: '100%', height: '100%', objectFit: 'cover' as const, transition: 'transform 0.3s' }}
+                                    onMouseEnter={e => (e.currentTarget as HTMLElement).style.transform = 'scale(1.05)'}
+                                    onMouseLeave={e => (e.currentTarget as HTMLElement).style.transform = 'scale(1)'}/>
+                                : <BarChart3 size={48} color={LP.muted}/>
                             }
                           </div>
                           <div style={{ padding: '20px 22px', display: 'flex', flexDirection: 'column' as const, flex: 1, gap: 12 }}>
-                            <div>
-                              {p.status === 'preorder'
-                                ? <span style={{ fontFamily: C.mono, fontSize: 11, fontWeight: 700, color: '#eab308', background: '#1a150022', border: '1px solid #eab30844', padding: '4px 12px', borderRadius: 6 }}>
-                                    ⏳ PRE-ORDER{tglRilis ? ` · Rilis ${tglRilis}` : ''}
-                                  </span>
-                                : <span style={{ fontFamily: C.mono, fontSize: 11, fontWeight: 700, color: C.up, background: 'var(--mr-tint-up,#0a1a0e)', border: `1px solid ${C.up}33`, padding: '4px 12px', borderRadius: 6 }}>
-                                    ✅ TERSEDIA
-                                  </span>
-                              }
-                            </div>
-                            <div style={{ fontWeight: 700, fontSize: 19 }}>{p.nama}</div>
-                            <div style={{ color: C.dim, fontSize: 14, lineHeight: 1.55, display: '-webkit-box' as any, WebkitLineClamp: 3, WebkitBoxOrient: 'vertical' as any, overflow: 'hidden' }}>{p.deskripsi}</div>
-                            <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 6, marginTop: 4 }}>
-                              {plans.map(row => {
-                                const finalH = row.d ? Math.round(row.h * (1 - row.d / 100)) : row.h;
-                                return (
-                                  <div key={row.plan} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', background: C.bg, border: `1px solid ${C.border}`, borderRadius: 8, gap: 8 }}>
-                                    <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 2 }}>
-                                      <span style={{ fontFamily: C.mono, fontSize: 10, color: C.dim }}>{row.label}</span>
-                                      <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                                        {row.d && <span style={{ fontFamily: C.mono, fontSize: 10, color: C.muted, textDecoration: 'line-through' }}>Rp{Number(row.h).toLocaleString('id-ID')}</span>}
-                                        <span style={{ fontFamily: C.mono, fontSize: 12, fontWeight: 700, color: row.d ? C.down : C.text }}>Rp{Number(finalH).toLocaleString('id-ID')}</span>
-                                        {row.d && <span style={{ fontFamily: C.mono, fontSize: 9, color: C.down, border: `1px solid ${C.down}44`, padding: '1px 5px', borderRadius: 4 }}>-{row.d}%</span>}
-                                      </div>
-                                    </div>
-                                    {bisaOrder && (
-                                      <button onClick={() => { setKodeDiskon(''); setKodeDiskonData(null); setKodeErr(''); setOrderModal({ ...p, _selectedPlan: row.plan, _selectedLabel: row.label, _selectedHarga: finalH, _hargaBase: row.h }); }}
-                                        style={{ fontFamily: C.mono, fontSize: 10, fontWeight: 700, padding: '6px 14px', background: G.gold, color: '#000', border: 'none', borderRadius: 6, cursor: 'pointer', flexShrink: 0, whiteSpace: 'nowrap' as const }}>
-                                        Pilih
-                                      </button>
-                                    )}
-                                  </div>
-                                );
-                              })}
-                              {!bisaOrder && (
-                                <button disabled style={{ width: '100%', padding: '10px', fontFamily: C.mono, fontSize: 12, fontWeight: 700, background: C.sidebar, color: C.muted, border: `1px solid ${C.border}`, borderRadius: 8, cursor: 'not-allowed', marginTop: 4 }}>
-                                  🔒 Upgrade Tier untuk Order
-                                </button>
-                              )}
-                            </div>
+                            <div style={{ fontWeight: 700, fontSize: 19, color: LP.text }}>{p.nama}</div>
+                            <div style={{ color: LP.muted, fontSize: 14, lineHeight: 1.55, display: '-webkit-box' as any, WebkitLineClamp: 3, WebkitBoxOrient: 'vertical' as any, overflow: 'hidden' }}>{p.deskripsi}</div>
+
+                            {plans.length > 1 && (
+                              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' as const }}>
+                                {plans.map(row => (
+                                  <button key={row.plan} onClick={() => setSelectedPlanByProduct(prev => ({ ...prev, [p.id]: row.plan }))}
+                                    style={{ fontFamily: LP.mono, fontSize: 10, fontWeight: 700, padding: '5px 12px', border: `1px solid ${activePlanKey === row.plan ? LP.primary : LP.border}`, background: activePlanKey === row.plan ? LP.primaryTint : 'transparent', color: activePlanKey === row.plan ? LP.primary : LP.muted, cursor: 'pointer', borderRadius: 20 }}>
+                                    {row.label}
+                                  </button>
+                                ))}
+                              </div>
+                            )}
+
+                            {activePlan && (
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                {activePlan.d ? <span style={{ fontFamily: LP.mono, fontSize: 12, color: LP.muted, textDecoration: 'line-through' }}>Rp{Number(activePlan.h).toLocaleString('id-ID')}</span> : null}
+                                <span style={{ fontFamily: LP.mono, fontSize: 20, fontWeight: 700, color: LP.text }}>Rp{Number(finalH).toLocaleString('id-ID')}</span>
+                                {activePlan.d ? <span style={{ fontFamily: LP.mono, fontSize: 10, color: LP.danger, border: `1px solid ${LP.danger}44`, padding: '2px 6px', borderRadius: 4 }}>-{activePlan.d}%</span> : null}
+                              </div>
+                            )}
+
+                            {bisaOrder ? (
+                              <button onClick={() => { if (!activePlan) return; setKodeDiskon(''); setKodeDiskonData(null); setKodeErr(''); setOrderModal({ ...p, _selectedPlan: activePlan.plan, _selectedLabel: activePlan.label, _selectedHarga: finalH, _hargaBase: activePlan.h }); }}
+                                disabled={!activePlan}
+                                style={{ width: '100%', padding: '11px', fontFamily: LP.mono, fontSize: 12, fontWeight: 700, background: LP.primary, color: '#fff', border: 'none', borderRadius: 8, cursor: activePlan ? 'pointer' : 'not-allowed', opacity: activePlan ? 1 : 0.5 }}>
+                                Pilih Paket
+                              </button>
+                            ) : (
+                              <button disabled style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, width: '100%', padding: '10px', fontFamily: LP.mono, fontSize: 12, fontWeight: 700, background: LP.bg, color: LP.muted, border: `1px solid ${LP.border}`, borderRadius: 8, cursor: 'not-allowed' }}>
+                                <Lock size={13}/> Upgrade Tier untuk Order
+                              </button>
+                            )}
+
                             {p.panduan_url && (
                               <button onClick={async () => {
                                 try {
@@ -2587,8 +2591,8 @@ export default function DashboardPage() {
                                   setTimeout(() => URL.revokeObjectURL(url), 10000);
                                 } catch { window.open(p.panduan_url, '_blank'); }
                               }}
-                                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, width: '100%', marginTop: 8, padding: '10px', fontFamily: C.mono, fontSize: 12, fontWeight: 700, background: 'transparent', color: '#f59e0b', border: '1px solid #f59e0b55', borderRadius: 8, cursor: 'pointer' }}>
-                                📘 ↓ Download Panduan
+                                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, width: '100%', padding: '10px', fontFamily: LP.mono, fontSize: 12, fontWeight: 700, background: 'transparent', color: '#f59e0b', border: '1px solid #f59e0b55', borderRadius: 8, cursor: 'pointer' }}>
+                                <BookOpen size={13}/> <Download size={13}/> Download Panduan
                               </button>
                             )}
                           </div>
