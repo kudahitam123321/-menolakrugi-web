@@ -1316,7 +1316,7 @@ export default function DashboardPage() {
         </aside>
 
         {/* ── Main Content ── */}
-        <main className='mr-main' style={{ flex: 1, overflowY: 'auto', minWidth: 0, background: ['dashboard','kelas','materi','news'].includes(active) ? LP.bg : C.bg, color: ['dashboard','kelas','materi','news'].includes(active) ? LP.text : C.text }}>
+        <main className='mr-main' style={{ flex: 1, overflowY: 'auto', minWidth: 0, background: ['dashboard','kelas','materi','news','produk'].includes(active) ? LP.bg : C.bg, color: ['dashboard','kelas','materi','news','produk'].includes(active) ? LP.text : C.text }}>
 
           {/* ══ DASHBOARD ══ */}
           {active === 'dashboard' && (
@@ -2643,50 +2643,50 @@ export default function DashboardPage() {
                 return (
                   <div style={{ position: 'fixed', inset: 0, background: '#000a', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}
                     onClick={e => { if (e.target === e.currentTarget) closeOrderModal(); }}>
-                    <div style={{ background: C.panel, border: `1px solid ${C.border}`, borderRadius: 16, padding: 28, maxWidth: 420, width: '100%' }}>
-                      <div style={{ fontFamily: C.mono, color: G.gold, fontSize: 10, letterSpacing: 1, marginBottom: 12 }}>// KONFIRMASI ORDER · LANGKAH 1/2</div>
-                      <div style={{ fontWeight: 700, fontSize: 18, marginBottom: 4 }}>{orderModal.nama}</div>
-                      <div style={{ color: C.dim, fontSize: 13, marginBottom: 16 }}>{orderModal.deskripsi}</div>
+                    <div style={{ background: LP.surface, border: `1px solid ${LP.border}`, borderRadius: 16, padding: 28, maxWidth: 420, width: '100%', boxShadow: LP.shadowMd }}>
+                      <div style={{ fontFamily: LP.mono, color: LP.primary, fontSize: 10, letterSpacing: 1, marginBottom: 12 }}>KONFIRMASI ORDER · LANGKAH 1/2</div>
+                      <div style={{ fontWeight: 700, fontSize: 18, marginBottom: 4, color: LP.text }}>{orderModal.nama}</div>
+                      <div style={{ color: LP.muted, fontSize: 13, marginBottom: 16 }}>{orderModal.deskripsi}</div>
                       {orderModal.status === 'preorder' && orderModal.tanggal_rilis && (
-                        <div style={{ background: '#1a150022', border: '1px solid #eab30833', borderRadius: 8, padding: '10px 14px', marginBottom: 14, fontFamily: C.mono, fontSize: 12, color: '#eab308' }}>
-                          ⏳ Pre-order · Tersedia: {new Date(orderModal.tanggal_rilis).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#1a150022', border: '1px solid #eab30833', borderRadius: 8, padding: '10px 14px', marginBottom: 14, fontFamily: LP.mono, fontSize: 12, color: '#eab308' }}>
+                          <Clock size={13}/> Pre-order · Tersedia: {new Date(orderModal.tanggal_rilis).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
                         </div>
                       )}
-                      <div style={{ background: C.bg, border: `1px solid ${kodeAktif ? G.gold : C.border}`, borderRadius: 10, padding: '12px 16px', marginBottom: 16 }}>
+                      <div style={{ background: LP.bg, border: `1px solid ${kodeAktif ? LP.primary : LP.border}`, borderRadius: 10, padding: '12px 16px', marginBottom: 16 }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                           <div>
-                            <div style={{ fontFamily: C.mono, fontSize: 10, color: C.muted }}>Paket</div>
-                            <div style={{ fontFamily: C.mono, fontSize: 14, fontWeight: 700, color: C.text }}>{orderModal._selectedLabel}</div>
+                            <div style={{ fontFamily: LP.mono, fontSize: 10, color: LP.muted }}>Paket</div>
+                            <div style={{ fontFamily: LP.mono, fontSize: 14, fontWeight: 700, color: LP.text }}>{orderModal._selectedLabel}</div>
                           </div>
                           <div style={{ textAlign: 'right' as const }}>
-                            {kodeAktif && <div style={{ fontFamily: C.mono, fontSize: 10, color: C.muted, textDecoration: 'line-through' }}>Rp{Number(orderModal._selectedHarga).toLocaleString('id-ID')}</div>}
-                            <div style={{ fontFamily: C.mono, fontSize: 22, fontWeight: 700, color: G.gold }}>Rp{Number(finalHarga).toLocaleString('id-ID')}</div>
-                            {kodeAktif && <div style={{ fontFamily: C.mono, fontSize: 10, color: '#16a34a' }}>Hemat {kodeDiskonData.diskon}% dengan kode</div>}
+                            {kodeAktif && <div style={{ fontFamily: LP.mono, fontSize: 10, color: LP.muted, textDecoration: 'line-through' }}>Rp{Number(orderModal._selectedHarga).toLocaleString('id-ID')}</div>}
+                            <div style={{ fontFamily: LP.mono, fontSize: 22, fontWeight: 700, color: LP.primary }}>Rp{Number(finalHarga).toLocaleString('id-ID')}</div>
+                            {kodeAktif && <div style={{ fontFamily: LP.mono, fontSize: 10, color: '#16a34a' }}>Hemat {kodeDiskonData.diskon}% dengan kode</div>}
                           </div>
                         </div>
                       </div>
                       <div style={{ marginBottom: 20 }}>
-                        <div style={{ fontFamily: C.mono, fontSize: 10, color: C.muted, marginBottom: 6 }}>Punya kode diskon? (opsional)</div>
+                        <div style={{ fontFamily: LP.mono, fontSize: 10, color: LP.muted, marginBottom: 6 }}>Punya kode diskon? (opsional)</div>
                         <div style={{ display: 'flex', gap: 8 }}>
                           <input value={kodeDiskon} onChange={e=>{ setKodeDiskon(e.target.value.toUpperCase()); setKodeDiskonData(null); setKodeErr(''); }}
                             onKeyDown={e=>{ if(e.key==='Enter') cekKodeDiskon(); }}
                             placeholder="MASUKKAN KODE"
-                            style={{ flex: 1, background: C.bg, border: `1px solid ${kodeDiskonData ? '#16a34a' : kodeErr ? '#ef4444' : C.border}`, color: C.text, padding: '9px 14px', fontSize: 13, fontFamily: C.mono, outline: 'none', borderRadius: 8, letterSpacing: 1 }}/>
+                            style={{ flex: 1, background: LP.bg, border: `1px solid ${kodeDiskonData ? '#16a34a' : kodeErr ? '#ef4444' : LP.border}`, color: LP.text, padding: '9px 14px', fontSize: 13, fontFamily: LP.mono, outline: 'none', borderRadius: 8, letterSpacing: 1 }}/>
                           <button onClick={cekKodeDiskon} disabled={kodeLoading || !kodeDiskon.trim()}
-                            style={{ padding: '9px 16px', fontFamily: C.mono, fontSize: 12, fontWeight: 700, background: 'transparent', color: G.gold, border: `1px solid ${G.gold}`, borderRadius: 8, cursor: kodeLoading || !kodeDiskon.trim() ? 'not-allowed' : 'pointer', opacity: !kodeDiskon.trim() ? 0.4 : 1, whiteSpace: 'nowrap' as const }}>
+                            style={{ padding: '9px 16px', fontFamily: LP.mono, fontSize: 12, fontWeight: 700, background: 'transparent', color: LP.primary, border: `1px solid ${LP.primary}`, borderRadius: 8, cursor: kodeLoading || !kodeDiskon.trim() ? 'not-allowed' : 'pointer', opacity: !kodeDiskon.trim() ? 0.4 : 1, whiteSpace: 'nowrap' as const }}>
                             {kodeLoading ? '...' : 'Terapkan'}
                           </button>
                         </div>
-                        {kodeDiskonData && <div style={{ fontFamily: C.mono, fontSize: 11, color: '#16a34a', marginTop: 6 }}>✅ Kode valid — diskon {kodeDiskonData.diskon}% diterapkan</div>}
-                        {kodeErr && <div style={{ fontFamily: C.mono, fontSize: 11, color: '#ef4444', marginTop: 6 }}>❌ {kodeErr}</div>}
+                        {kodeDiskonData && <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontFamily: LP.mono, fontSize: 11, color: '#16a34a', marginTop: 6 }}><CheckCircle2 size={12}/> Kode valid — diskon {kodeDiskonData.diskon}% diterapkan</div>}
+                        {kodeErr && <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontFamily: LP.mono, fontSize: 11, color: '#ef4444', marginTop: 6 }}><XCircle size={12}/> {kodeErr}</div>}
                       </div>
                       <div style={{ display: 'flex', gap: 10 }}>
                         <button onClick={() => buatOrder(orderModal, orderModal._selectedPlan, kodeDiskonData)} disabled={orderLoading}
-                          style={{ flex: 1, padding: '12px', fontFamily: C.mono, fontSize: 13, fontWeight: 700, background: G.gold, color: '#000', border: 'none', borderRadius: 10, cursor: orderLoading ? 'not-allowed' : 'pointer', opacity: orderLoading ? 0.6 : 1 }}>
+                          style={{ flex: 1, padding: '12px', fontFamily: LP.mono, fontSize: 13, fontWeight: 700, background: LP.primary, color: '#fff', border: 'none', borderRadius: 10, cursor: orderLoading ? 'not-allowed' : 'pointer', opacity: orderLoading ? 0.6 : 1 }}>
                           {orderLoading ? 'Memproses...' : 'Lanjutkan ke Pembayaran →'}
                         </button>
                         <button onClick={closeOrderModal}
-                          style={{ padding: '12px 20px', fontFamily: C.mono, fontSize: 13, background: 'transparent', color: C.muted, border: `1px solid ${C.border}`, borderRadius: 10, cursor: 'pointer' }}>
+                          style={{ padding: '12px 20px', fontFamily: LP.mono, fontSize: 13, background: 'transparent', color: LP.muted, border: `1px solid ${LP.border}`, borderRadius: 10, cursor: 'pointer' }}>
                           Batal
                         </button>
                       </div>
@@ -2698,67 +2698,67 @@ export default function DashboardPage() {
               {/* ── Step 2: Detail Pembayaran ── */}
               {pendingOrder && modalStep === 'pembayaran' && (
                 <div style={{ position: 'fixed', inset: 0, background: '#000a', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
-                  <div style={{ background: C.panel, border: `1px solid ${C.border}`, borderRadius: 16, padding: 28, maxWidth: 440, width: '100%' }}>
-                    <div style={{ fontFamily: C.mono, color: G.gold, fontSize: 10, letterSpacing: 1, marginBottom: 12 }}>// DETAIL PEMBAYARAN · LANGKAH 2/2</div>
-                    <div style={{ fontWeight: 700, fontSize: 18, marginBottom: 16 }}>Transfer ke Rekening Berikut</div>
+                  <div style={{ background: LP.surface, border: `1px solid ${LP.border}`, borderRadius: 16, padding: 28, maxWidth: 440, width: '100%', boxShadow: LP.shadowMd }}>
+                    <div style={{ fontFamily: LP.mono, color: LP.primary, fontSize: 10, letterSpacing: 1, marginBottom: 12 }}>DETAIL PEMBAYARAN · LANGKAH 2/2</div>
+                    <div style={{ fontWeight: 700, fontSize: 18, marginBottom: 16, color: LP.text }}>Transfer ke Rekening Berikut</div>
 
                     {/* Ringkasan order */}
-                    <div style={{ background: C.bg, border: `1px solid ${C.border}`, borderRadius: 10, padding: '12px 16px', marginBottom: 16 }}>
+                    <div style={{ background: LP.bg, border: `1px solid ${LP.border}`, borderRadius: 10, padding: '12px 16px', marginBottom: 16 }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
                         <div>
-                          <div style={{ fontFamily: C.mono, fontSize: 11, color: C.muted }}>Produk</div>
-                          <div style={{ fontSize: 14, fontWeight: 700 }}>{pendingOrder.products?.nama}</div>
+                          <div style={{ fontFamily: LP.mono, fontSize: 11, color: LP.muted }}>Produk</div>
+                          <div style={{ fontSize: 14, fontWeight: 700, color: LP.text }}>{pendingOrder.products?.nama}</div>
                         </div>
                         <div style={{ textAlign: 'right' as const }}>
-                          <div style={{ fontFamily: C.mono, fontSize: 11, color: C.muted }}>Paket {pendingOrder._labelPlan}</div>
-                          <div style={{ fontFamily: C.mono, fontSize: 20, fontWeight: 700, color: G.gold }}>Rp{Number(pendingOrder._harga).toLocaleString('id-ID')}</div>
+                          <div style={{ fontFamily: LP.mono, fontSize: 11, color: LP.muted }}>Paket {pendingOrder._labelPlan}</div>
+                          <div style={{ fontFamily: LP.mono, fontSize: 20, fontWeight: 700, color: LP.primary }}>Rp{Number(pendingOrder._harga).toLocaleString('id-ID')}</div>
                         </div>
                       </div>
                       {pendingOrder._appliedCode && (
-                        <div style={{ fontFamily: C.mono, fontSize: 10, color: '#16a34a', borderTop: `1px solid ${C.border}`, paddingTop: 6, marginTop: 6 }}>
-                          🎟️ Kode {pendingOrder._appliedCode.kode} (-{pendingOrder._appliedCode.diskon}%) diterapkan
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontFamily: LP.mono, fontSize: 10, color: '#16a34a', borderTop: `1px solid ${LP.border}`, paddingTop: 6, marginTop: 6 }}>
+                          <Ticket size={11}/> Kode {pendingOrder._appliedCode.kode} (-{pendingOrder._appliedCode.diskon}%) diterapkan
                         </div>
                       )}
-                      <div style={{ fontFamily: C.mono, fontSize: 9, color: C.muted, marginTop: 4 }}>Order ID: {pendingOrder.id}</div>
+                      <div style={{ fontFamily: LP.mono, fontSize: 9, color: LP.muted, marginTop: 4 }}>Order ID: {pendingOrder.id}</div>
                     </div>
 
                     {/* Metode pembayaran */}
                     <div style={{ marginBottom: 16 }}>
-                      <div style={{ fontFamily: C.mono, fontSize: 10, color: C.muted, marginBottom: 10 }}>// PILIH METODE PEMBAYARAN</div>
+                      <div style={{ fontFamily: LP.mono, fontSize: 10, color: LP.muted, marginBottom: 10 }}>PILIH METODE PEMBAYARAN</div>
                       {!paymentMethods.length ? (
-                        <div style={{ background: C.bg, border: `1px solid ${C.border}`, borderRadius: 10, padding: '14px 16px', fontFamily: C.mono, fontSize: 12, color: C.muted }}>
+                        <div style={{ background: LP.bg, border: `1px solid ${LP.border}`, borderRadius: 10, padding: '14px 16px', fontFamily: LP.mono, fontSize: 12, color: LP.muted }}>
                           Info rekening belum dikonfigurasi. Hubungi admin.
                         </div>
                       ) : (
                         <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 10 }}>
                           {paymentMethods.map(pm => (
-                            <div key={pm.id} style={{ background: '#0a1a0e', border: '1px solid #16a34a33', borderRadius: 10, padding: '14px 16px' }}>
+                            <div key={pm.id} style={{ background: LP.bg, border: `1px solid ${LP.border}`, borderRadius: 10, padding: '14px 16px' }}>
                               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                                <span style={{ fontFamily: C.mono, fontSize: 13, fontWeight: 700, color: C.text }}>{pm.nama_bank}</span>
-                                {pm.jenis !== 'qris' && <span style={{ fontFamily: C.mono, fontSize: 12, color: C.muted }}>a.n. {pm.nama_rekening}</span>}
+                                <span style={{ fontFamily: LP.mono, fontSize: 13, fontWeight: 700, color: LP.text }}>{pm.nama_bank}</span>
+                                {pm.jenis !== 'qris' && <span style={{ fontFamily: LP.mono, fontSize: 12, color: LP.muted }}>a.n. {pm.nama_rekening}</span>}
                               </div>
                               {pm.jenis === 'qris' ? (
                                 <img src={pm.qris_image_url} alt={`QRIS ${pm.nama_bank}`}
-                                  style={{ width: '100%', maxWidth: 280, height: 280, objectFit: 'contain', background: '#fff', borderRadius: 8, border: `1px solid ${C.border}` }} />
+                                  style={{ width: '100%', maxWidth: 280, height: 280, objectFit: 'contain', background: '#fff', borderRadius: 8, border: `1px solid ${LP.border}` }} />
                               ) : (
                                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                                  <span style={{ fontFamily: C.mono, fontSize: 17, fontWeight: 700, letterSpacing: 2, color: C.text }}>{pm.nomor_rekening}</span>
+                                  <span style={{ fontFamily: LP.mono, fontSize: 17, fontWeight: 700, letterSpacing: 2, color: LP.text }}>{pm.nomor_rekening}</span>
                                   <button onClick={() => { navigator.clipboard.writeText(pm.nomor_rekening); setRekCopied(pm.id); setTimeout(() => setRekCopied(''), 2000); }}
-                                    style={{ fontFamily: C.mono, fontSize: 11, padding: '4px 12px', background: rekCopied === pm.id ? '#16a34a' : 'transparent', color: rekCopied === pm.id ? '#000' : '#16a34a', border: '1px solid #16a34a', borderRadius: 6, cursor: 'pointer', transition: 'all 0.15s' }}>
-                                    {rekCopied === pm.id ? '✓ Disalin' : 'Salin'}
+                                    style={{ display: 'flex', alignItems: 'center', gap: 4, fontFamily: LP.mono, fontSize: 11, padding: '4px 12px', background: rekCopied === pm.id ? LP.primary : 'transparent', color: rekCopied === pm.id ? '#fff' : LP.primary, border: `1px solid ${LP.primary}`, borderRadius: 6, cursor: 'pointer', transition: 'all 0.15s' }}>
+                                    {rekCopied === pm.id ? <Check size={12}/> : null} {rekCopied === pm.id ? 'Disalin' : 'Salin'}
                                   </button>
                                 </div>
                               )}
                               {pm.catatan && (
-                                <div style={{ marginTop: 8, paddingTop: 8, borderTop: '1px solid #16a34a22', fontFamily: C.mono, fontSize: 10, color: C.dim, lineHeight: 1.6 }}>
-                                  📋 {pm.catatan}
+                                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 5, marginTop: 8, paddingTop: 8, borderTop: `1px solid ${LP.border}`, fontFamily: LP.mono, fontSize: 10, color: LP.muted, lineHeight: 1.6 }}>
+                                  <ClipboardList size={12}/> {pm.catatan}
                                 </div>
                               )}
                             </div>
                           ))}
-                          <div style={{ background: C.bg, border: `1px solid ${C.border}`, borderRadius: 8, padding: '10px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <span style={{ fontFamily: C.mono, fontSize: 11, color: C.muted }}>Nominal yang ditransfer</span>
-                            <span style={{ fontFamily: C.mono, fontSize: 16, fontWeight: 700, color: G.gold }}>Rp{Number(pendingOrder._harga).toLocaleString('id-ID')}</span>
+                          <div style={{ background: LP.bg, border: `1px solid ${LP.border}`, borderRadius: 8, padding: '10px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <span style={{ fontFamily: LP.mono, fontSize: 11, color: LP.muted }}>Nominal yang ditransfer</span>
+                            <span style={{ fontFamily: LP.mono, fontSize: 16, fontWeight: 700, color: LP.primary }}>Rp{Number(pendingOrder._harga).toLocaleString('id-ID')}</span>
                           </div>
                         </div>
                       )}
@@ -2766,11 +2766,11 @@ export default function DashboardPage() {
 
                     <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 10 }}>
                       <button onClick={konfirmasiKePembayaranWA}
-                        style={{ width: '100%', padding: '13px', fontFamily: C.mono, fontSize: 13, fontWeight: 700, background: '#25D366', color: '#fff', border: 'none', borderRadius: 10, cursor: 'pointer' }}>
-                        ✅ Konfirmasi Pembayaran ke WA Admin
+                        style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, width: '100%', padding: '13px', fontFamily: LP.mono, fontSize: 13, fontWeight: 700, background: '#25D366', color: '#fff', border: 'none', borderRadius: 10, cursor: 'pointer' }}>
+                        <CheckCircle2 size={14}/> Konfirmasi Pembayaran ke WA Admin
                       </button>
                       <button onClick={closeOrderModal}
-                        style={{ width: '100%', padding: '11px', fontFamily: C.mono, fontSize: 12, background: 'transparent', color: C.muted, border: `1px solid ${C.border}`, borderRadius: 10, cursor: 'pointer' }}>
+                        style={{ width: '100%', padding: '11px', fontFamily: LP.mono, fontSize: 12, background: 'transparent', color: LP.muted, border: `1px solid ${LP.border}`, borderRadius: 10, cursor: 'pointer' }}>
                         Tutup (pembayaran bisa dikonfirmasi nanti)
                       </button>
                     </div>
