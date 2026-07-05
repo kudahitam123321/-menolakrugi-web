@@ -1834,43 +1834,44 @@ export default function DashboardPage() {
               } catch { window.open(url, '_blank'); }
             }
             const CATS = [
-              { id: 'file-basic',   label: '// FILE BASIC',    color: C.up },
-              { id: 'file-advanced',label: '// FILE ADVANCED', color: '#a855f7' },
+              { id: 'file-basic',   label: 'FILE BASIC',    color: LP.primary },
+              { id: 'file-advanced',label: 'FILE ADVANCED', color: '#7c3aed' },
             ];
             return (
-            <div style={{ padding: 24 }}>
+            <div style={{ padding: 24, background: LP.bg, minHeight: '100%' }}>
               <div style={{ marginBottom: 20 }}>
-                <div style={{ fontFamily: C.mono, color: G.gold, fontSize: 10, letterSpacing: 1, marginBottom: 6 }}>// MATERI</div>
-                <h2 style={{ fontSize: 22, fontWeight: 700, margin: 0 }}>File Materi</h2>
-                <p style={{ color: C.dim, fontSize: 13, margin: '6px 0 0' }}>Download materi dan panduan pendukung pembelajaran.</p>
+                <div style={{ fontFamily: LP.mono, color: LP.primary, fontSize: 10, letterSpacing: 1, marginBottom: 6 }}>MATERI</div>
+                <h2 style={{ fontSize: 22, fontWeight: 700, margin: 0, color: LP.text }}>File Materi</h2>
+                <p style={{ color: LP.muted, fontSize: 13, margin: '6px 0 0' }}>Download materi dan panduan pendukung pembelajaran.</p>
               </div>
               {CATS.map(cat => {
                 const items = files.filter((f: any) => f.kategori === cat.id).sort((a:any,b:any) => a.urutan - b.urutan);
                 if (!items.length) return null;
                 const isPanduan = cat.id === 'file-panduan';
                 return (
-                  <div key={cat.id} style={{ background: C.panel, border: `1px solid ${isPanduan ? '#f59e0b44' : C.border}`, borderRadius: 12, marginBottom: 14 }}>
-                    <div style={{ padding: '12px 20px', borderBottom: `1px solid ${C.border}`, display: 'flex', alignItems: 'center', gap: 10 }}>
-                      {isPanduan && <span style={{ fontSize: 16 }}>📘</span>}
-                      <span style={{ fontFamily: C.mono, color: cat.color, fontSize: 11, fontWeight: 700, letterSpacing: 1 }}>{cat.label}</span>
-                      {isPanduan && <span style={{ fontFamily: C.mono, fontSize: 10, color: '#f59e0b99' }}>— bisa di-download</span>}
+                  <div key={cat.id} style={{ background: LP.surface, border: `1px solid ${isPanduan ? '#f59e0b44' : LP.border}`, borderRadius: 12, marginBottom: 14 }}>
+                    <div style={{ padding: '12px 20px', borderBottom: `1px solid ${LP.border}`, display: 'flex', alignItems: 'center', gap: 10 }}>
+                      {isPanduan && <BookOpen size={16} color="#f59e0b" />}
+                      <span style={{ fontFamily: LP.mono, color: cat.color, fontSize: 11, fontWeight: 700, letterSpacing: 1 }}>{cat.label}</span>
+                      {isPanduan && <span style={{ fontFamily: LP.mono, fontSize: 10, color: '#f59e0b99' }}>— bisa di-download</span>}
                     </div>
                     {items.map((f: any) => {
                       const ext = (f.file_name || f.file_type || '').split('.').pop()?.toUpperCase() || 'FILE';
-                      const icon = ext === 'PDF' ? '📕' : ext === 'DOCX' || ext === 'DOC' ? '📝' : ext === 'PPTX' || ext === 'PPT' ? '📊' : ext === 'XLSX' || ext === 'XLS' ? '📗' : '📄';
+                      const FileIcon = ext === 'PDF' ? FileText : ext === 'DOCX' || ext === 'DOC' ? FileText : ext === 'PPTX' || ext === 'PPT' ? Presentation : ext === 'XLSX' || ext === 'XLS' ? FileSpreadsheet : File;
+                      const fileIconColor = ext === 'PDF' ? '#ef4444' : ext === 'DOCX' || ext === 'DOC' ? '#3b82f6' : ext === 'PPTX' || ext === 'PPT' ? '#f97316' : ext === 'XLSX' || ext === 'XLS' ? LP.primary : LP.muted;
                       return (
-                        <div key={f.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 20px', borderBottom: `1px solid ${C.border}` }}>
+                        <div key={f.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 20px', borderBottom: `1px solid ${LP.border}` }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                            <span style={{ fontSize: 22 }}>{icon}</span>
+                            <FileIcon size={22} color={fileIconColor} />
                             <div>
-                              <div style={{ fontWeight: 600, fontSize: 14 }}>{f.judul}</div>
-                              <div style={{ fontFamily: C.mono, color: C.dim, fontSize: 11, marginTop: 2 }}>{f.file_name || ext}</div>
+                              <div style={{ fontWeight: 600, fontSize: 14, color: LP.text }}>{f.judul}</div>
+                              <div style={{ fontFamily: LP.mono, color: LP.muted, fontSize: 11, marginTop: 2 }}>{f.file_name || ext}</div>
                             </div>
                           </div>
                           {f.file_url && (
                             <button onClick={() => downloadFile(f.file_url, f.file_name || f.judul)}
-                              style={{ fontFamily: C.mono, fontSize: 11, fontWeight: 700, color: cat.color, background: 'transparent', border: `1px solid ${cat.color}`, padding: '7px 16px', borderRadius: 6, cursor: 'pointer', whiteSpace: 'nowrap' as const }}>
-                              ↓ Download
+                              style={{ fontFamily: LP.mono, fontSize: 11, fontWeight: 700, color: cat.color, background: 'transparent', border: `1px solid ${cat.color}`, padding: '7px 16px', borderRadius: 6, cursor: 'pointer', whiteSpace: 'nowrap' as const, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                              <Download size={13} /> Download
                             </button>
                           )}
                         </div>
@@ -1880,7 +1881,7 @@ export default function DashboardPage() {
                 );
               })}
               {files.length === 0 && (
-                <div style={{ background: C.panel, border: `1px solid ${C.border}`, borderRadius: 12, padding: 40, textAlign: 'center' as const, fontFamily: C.mono, color: C.dim, fontSize: 13 }}>
+                <div style={{ background: LP.surface, border: `1px solid ${LP.border}`, borderRadius: 12, padding: 40, textAlign: 'center' as const, fontFamily: LP.mono, color: LP.muted, fontSize: 13 }}>
                   — Belum ada file materi —
                 </div>
               )}
