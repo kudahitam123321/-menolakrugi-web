@@ -122,6 +122,7 @@ export default function BayarPage() {
       tier_member:    'SMC Trial',
       nama_member:    nama.trim(),
       email_member:   email.trim(),
+      no_hp:          noHp.trim(),
       catatan:        `WA: ${noHp.trim()} | ${metodeInfo}`,
       plan_type:      plan.key,
       diskon_applied: plan.diskon || null,
