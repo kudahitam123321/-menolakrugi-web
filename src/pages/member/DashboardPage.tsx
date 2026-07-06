@@ -49,6 +49,14 @@ function extractYtId(url: string): string | null {
   return m ? m[1] : null;
 }
 
+function hitungJatuhTempo(activatedAt: string | null, planType: string | null): Date | null {
+  if (!activatedAt || !planType || planType === 'lifetime') return null;
+  const d = new Date(activatedAt);
+  if (planType === 'bulanan') { d.setMonth(d.getMonth() + 1); return d; }
+  if (planType === 'tahunan') { d.setFullYear(d.getFullYear() + 1); return d; }
+  return null;
+}
+
 const SIDEBAR = [
   { id: 'dashboard',    label: 'Dashboard',       Icon: LayoutGrid },
   { id: 'kelas',        label: 'Kelas Saya',      Icon: PlayCircle },
@@ -2620,6 +2628,13 @@ export default function DashboardPage() {
                               <div style={{ fontFamily: LP.mono, fontSize: 11, color: LP.muted }}>
                                 {new Date(o.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
                               </div>
+                              {(() => {
+                                if (o.plan_type === 'lifetime') return <div style={{ fontFamily: LP.mono, fontSize: 11, color: LP.muted, marginTop: 2 }}>Jatuh tempo: Seumur Hidup</div>;
+                                const jt = hitungJatuhTempo(o.activated_at, o.plan_type);
+                                if (!jt) return <div style={{ fontFamily: LP.mono, fontSize: 11, color: LP.muted, marginTop: 2 }}>Jatuh tempo: —</div>;
+                                const lewat = jt < new Date();
+                                return <div style={{ fontFamily: LP.mono, fontSize: 11, color: lewat ? LP.danger : LP.muted, marginTop: 2 }}>Jatuh tempo: {jt.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}</div>;
+                              })()}
                               {o.kode_diskon && <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontFamily: LP.mono, fontSize: 10, color: '#16a34a', marginTop: 2 }}><Ticket size={11}/> {o.kode_diskon} (-{o.diskon_applied}%)</div>}
                               {o.catatan && <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontFamily: LP.mono, fontSize: 11, color: LP.muted, marginTop: 4 }}><MessageSquare size={11}/> {o.catatan}</div>}
                             </div>
