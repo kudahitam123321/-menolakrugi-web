@@ -109,6 +109,57 @@ function ProductPreview({ config }: { config: LandingPreviewConfig }) {
   );
 }
 
+const LANGKAH_PEMBELIAN = [
+  { judul: 'Pilih Plan Indikator', desc: 'Pilih paket Bulanan, Tahunan, atau Lifetime sesuai kebutuhanmu.' },
+  { judul: 'Isi Data Diri & Bayar', desc: 'Isi nama, email, nomor WhatsApp, lalu pilih metode pembayaran dan transfer sesuai nominal yang tertera.' },
+  { judul: 'Konfirmasi via WhatsApp', desc: 'Setelah submit, kirim bukti transfer ke admin lewat tombol konfirmasi WhatsApp yang muncul.' },
+  { judul: 'Verifikasi Admin', desc: 'Admin memeriksa dan memverifikasi pembayaranmu.' },
+  { judul: 'Siapkan & Join Akun Discord', desc: 'Wajib sudah punya akun Discord, lalu join server Discord Menolak Rugi.' },
+  { judul: 'Masuk Channel Privat Indikator', desc: 'Admin menambahkanmu ke channel privat khusus indikator — di sana ada file indikatornya, tutorial pasang, dan tutorial setting-nya.' },
+];
+
+function LangkahPembelian() {
+  const [isMobile, setIsMobile] = React.useState(() => window.matchMedia('(max-width: 767px)').matches);
+  React.useEffect(() => {
+    const mq = window.matchMedia('(max-width: 767px)');
+    const h = (e: MediaQueryListEvent) => setIsMobile(e.matches);
+    mq.addEventListener('change', h);
+    return () => mq.removeEventListener('change', h);
+  }, []);
+
+  return (
+    <section style={{ background: LP.surface, borderTop: `1px solid ${LP.border}`, padding: isMobile ? '48px 20px' : '72px 40px' }}>
+      <div style={{ maxWidth: 640, margin: '0 auto' }}>
+        <div style={{ textAlign: 'center' as const, marginBottom: 32 }}>
+          <div style={{ fontFamily: LP.mono, color: LP.muted, fontSize: 11, letterSpacing: 0.8 }}>// CARA PEMBELIAN</div>
+          <h3 style={{ fontSize: isMobile ? 20 : 26, fontWeight: 800, margin: '10px 0 0', color: LP.text }}>Gampang, Cuma 6 Langkah</h3>
+        </div>
+        <div>
+          {LANGKAH_PEMBELIAN.map((step, i) => (
+            <div key={step.judul} style={{ display: 'flex', gap: 16, position: 'relative' as const, paddingBottom: i < LANGKAH_PEMBELIAN.length - 1 ? 24 : 0 }}>
+              {i < LANGKAH_PEMBELIAN.length - 1 && (
+                <div style={{ position: 'absolute', left: 15, top: 34, bottom: 0, width: 2, background: LP.border }} />
+              )}
+              <div style={{ width: 32, height: 32, borderRadius: '50%', background: LP.primaryTint, color: LP.primary, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 13, flexShrink: 0, zIndex: 1, fontFamily: LP.mono }}>
+                {i + 1}
+              </div>
+              <div style={{ paddingBottom: 4 }}>
+                <div style={{ fontWeight: 700, fontSize: 15, color: LP.text, marginBottom: 4 }}>{step.judul}</div>
+                <div style={{ color: LP.muted, fontSize: 13, lineHeight: 1.6 }}>
+                  {step.desc}
+                  {i === 4 && (
+                    <>{' '}<a href="https://discord.gg/d2Tpf6sGMr" target="_blank" rel="noreferrer" style={{ color: LP.primary, fontWeight: 700, textDecoration: 'none' }}>Join Discord →</a></>
+                  )}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
 export default function PricingIndikatorPage() {
   const { preview } = useLandingPreview();
 
@@ -121,7 +172,10 @@ export default function PricingIndikatorPage() {
         </a>
       </div>
       {preview ? (
-        <ProductPreview config={preview} />
+        <>
+          <ProductPreview config={preview} />
+          <LangkahPembelian />
+        </>
       ) : (
         <div style={{ padding: 60, textAlign: 'center' as const, color: LP.muted, fontFamily: LP.mono, fontSize: 13 }}>Memuat...</div>
       )}
