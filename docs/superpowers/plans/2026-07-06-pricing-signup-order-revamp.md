@@ -879,9 +879,11 @@ Cari:
 Ganti jadi:
 ```tsx
       // Insert member baru
+      // CATATAN: kolom `email` TIDAK ada di tabel `members` sesungguhnya (hanya di tipe
+      // TypeScript `Member`) -- ditemukan saat implementasi Task 4. Tidak dimasukkan ke
+      // insert ini; email tetap disimpan lewat `orders.email_member` di bawah.
       const { data: newMember, error: memberErr } = await supabase.from('members').insert({
         nama:          form.nama.trim(),
-        email:         form.email.trim(),
         tier:          tier,
         password:      form.password,
         role:          'member',

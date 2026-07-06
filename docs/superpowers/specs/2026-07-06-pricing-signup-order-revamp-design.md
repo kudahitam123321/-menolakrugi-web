@@ -83,7 +83,7 @@ Tambah 2 entri baru mengikuti pola `getPage()`/render yang sudah ada:
   if (orderErr || !newOrder) throw new Error('Gagal membuat order: ' + (orderErr?.message ?? 'unknown error'));
   ```
 - Redirect akhir berubah dari `/payment?tier=...&name=...&method=...` menjadi **`/payment?order=${newOrder.id}`**.
-- Juga tambahkan `email: form.email.trim()` ke payload insert `members` — kolom ini sudah ada di tipe `Member` (`src/types/mr.types.ts`) tapi sejauh ini tidak pernah diisi oleh kode manapun; mulai diisi di sini bersifat prospektif (tidak ada migrasi/backfill untuk member lama, dan tidak ada bagian aplikasi lain yang mensyaratkan `email` selalu terisi — login tetap pakai Nama+Password).
+- **Koreksi implementasi (ditemukan saat Task 4 dikerjakan):** rencana awal spec ini adalah juga menambahkan `email: form.email.trim()` ke payload insert `members`, dengan asumsi kolom `email` sudah ada di tabel tersebut (berdasarkan tipe `Member` di `src/types/mr.types.ts`). **Asumsi ini salah** — kolom `email` ternyata tidak pernah ada di tabel `members` yang sebenarnya di Supabase (tidak ada migrasi manapun yang menambahkannya, dan tidak ada kode lain di codebase — termasuk `BayarPage.tsx` — yang pernah berhasil menulis `email` ke `members`). Memasukkannya akan membuat setiap submit gagal dengan error `PGRST204: column members.email does not exist`. **Keputusan final**: field Email tetap ada di form dan tetap wajib diisi, dan tetap disimpan ke `orders.email_member` (kolom ini memang ada dan berfungsi) — tapi **tidak** dimasukkan ke payload insert `members`. Ini konsisten dengan pola yang sudah ada di `BayarPage.tsx` (member dibuat tanpa `email`, order dibuat dengan `email_member`).
 
 ### Perubahan `PaymentPage.tsx`
 
