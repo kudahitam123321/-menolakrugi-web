@@ -9,14 +9,6 @@ import { MRLogo, Ticker } from '../components/mr';
 import { usePricing } from '../hooks';
 import type { PricingTier } from '../types/mr.types';
 
-const STEPS = ['AKUN', 'PEMBAYARAN', 'KONFIRMASI'];
-const PAY_METHODS = [
-  { id: 'qris',    l: 'QRIS',        s: 'Semua bank / e-wallet' },
-  { id: 'va',      l: 'VIRTUAL ACC', s: 'BCA · BNI · Mandiri'  },
-  { id: 'ewallet', l: 'E-WALLET',    s: 'GoPay · OVO · DANA'   },
-  { id: 'card',    l: 'KARTU',       s: 'Visa · Master · JCB'  },
-];
-
 // ─── Input atom ──────────────────────────────────────────────────────────────
 
 function AInput({ label, value, onChange, type = 'text', placeholder = '' }: {
@@ -123,19 +115,17 @@ export default function SignupPage() {
 
   const refCode = params.get('ref') ?? '';
 
-  const [step, setStep]       = useState(1);
   const [tier, setTier]       = useState(params.get('tier') ?? 'gold');
-  const [method, setMethod]   = useState('qris');
   const [agree, setAgree]     = useState(false);
   const [submitting, setSub]  = useState(false);
   const [error, setError]     = useState('');
 
-  const [form, setForm] = useState({ nama: '', password: '' });
+  const [form, setForm] = useState({ nama: '', email: '', password: '' });
   const set = (k: keyof typeof form) => (v: string) => setForm(f => ({ ...f, [k]: v }));
 
   async function handleSubmit() {
-    if (!form.nama || !form.password || !tier) {
-      setError('Nama, password, dan tier wajib diisi.');
+    if (!form.nama || !form.email || !form.password || !tier) {
+      setError('Nama, email, password, dan tier wajib diisi.');
       return;
     }
     if (!agree) { setError('Centang persetujuan dulu ya.'); return; }
@@ -180,8 +170,19 @@ export default function SignupPage() {
         });
       }
 
+      // Catat order pembelian tier
+      const { data: newOrder, error: orderErr } = await supabase.from('orders').insert({
+        product_id:   null,
+        member_id:    newMember.id,
+        nama_member:  form.nama.trim(),
+        email_member: form.email.trim(),
+        tier_member:  tier,
+        status:       'pending',
+      }).select('id').single();
+      if (orderErr || !newOrder) throw new Error('Gagal membuat order: ' + (orderErr?.message ?? 'unknown error'));
+
       // Redirect ke payment
-      window.location.href = `/payment?tier=${tier}&name=${encodeURIComponent(form.nama)}&method=${method}`;
+      window.location.href = `/payment?order=${newOrder.id}`;
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Terjadi kesalahan. Coba lagi.');
     } finally {
@@ -204,27 +205,15 @@ export default function SignupPage() {
       </div>
 
       {/* Step indicator */}
-      <div style={{ display: 'flex', borderBottom: `1px solid ${MR.border}`, background: MR.dark }}>
-        {STEPS.map((s, i) => {
-          const idx = i + 1;
-          const active = idx === step;
-          const done   = idx < step;
-          return (
-            <div key={s} style={{ flex: 1, padding: isMobile ? '10px 12px' : '14px 24px', borderRight: i < 2 ? `1px solid ${MR.border}` : 0, display: 'flex', alignItems: 'center', gap: isMobile ? 6 : 12, color: active ? MR.text : MR.dim, background: active ? MR.panel : 'transparent', fontFamily: MR.mono }}>
-              <span style={{ width: 22, height: 22, border: `1px solid ${active ? MR.gold : MR.borderHot}`, color: active ? MR.gold : done ? MR.up : MR.dim, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 11 }}>
-                {done ? '✓' : idx}
-              </span>
-              <span style={{ fontSize: isMobile ? 10 : 12, letterSpacing: 0.6 }}>{s}</span>
-            </div>
-          );
-        })}
+      <div style={{ padding: isMobile ? '10px 16px' : '12px 40px', borderBottom: `1px solid ${MR.border}`, background: MR.dark, fontFamily: MR.mono, fontSize: 11, color: MR.dim, letterSpacing: 0.6 }}>
+        LANGKAH 1 DARI 2 · AKUN & PILIH KELAS
       </div>
 
       {/* Content */}
       <div style={{ flex: 1, display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 460px', minHeight: 0 }}>
         {/* Form */}
         <div style={{ padding: isMobile ? '20px 16px' : '40px 56px', borderRight: isMobile ? 'none' : `1px solid ${MR.border}`, overflow: 'auto' }}>
-          <div style={{ fontFamily: MR.mono, color: MR.dim, fontSize: 11, letterSpacing: 0.6 }}>// LANGKAH {step}/3</div>
+          <div style={{ fontFamily: MR.mono, color: MR.dim, fontSize: 11, letterSpacing: 0.6 }}>// LANGKAH 1/2</div>
           <h2 style={{ fontSize: isMobile ? 24 : 38, fontWeight: 700, letterSpacing: -1, margin: '10px 0 6px' }}>Daftar akun kamu.</h2>
           <p style={{ color: MR.dim, fontSize: 14, lineHeight: 1.55, marginBottom: 28 }}>Email dipakai untuk akses materi & login ke dashboard. Nomor WhatsApp untuk invite ke channel komunitas.</p>
 
@@ -239,6 +228,7 @@ export default function SignupPage() {
           )}
           <div style={{ display: 'grid', gap: 20, maxWidth: 560 }}>
             <AInput label="NAMA LENGKAP" value={form.nama}     onChange={set('nama')}     placeholder="Nama sesuai KTP" />
+            <AInput label="EMAIL"        value={form.email}    onChange={set('email')}    type="email" placeholder="email@kamu.com" />
             <AInput label="PASSWORD"     value={form.password}  onChange={set('password')} type="password" placeholder="Min. 8 karakter" />
 
             <label style={{ display: 'flex', gap: 10, alignItems: 'flex-start', fontSize: 13, color: MR.dim, cursor: 'pointer' }}>
@@ -258,21 +248,6 @@ export default function SignupPage() {
             </div>
           </div>
 
-          {/* Payment method preview */}
-          <div style={{ marginTop: 40, borderTop: `1px dashed ${MR.borderHot}`, paddingTop: 28 }}>
-            <div style={{ fontFamily: MR.mono, color: MR.dim, fontSize: 11, letterSpacing: 0.6, marginBottom: 12 }}>// METODE PEMBAYARAN — STEP 2</div>
-            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)', gap: 10 }}>
-              {PAY_METHODS.map(m => {
-                const active = method === m.id;
-                return (
-                  <button key={m.id} onClick={() => setMethod(m.id)} style={{ textAlign: 'left', border: `1px solid ${active ? MR.gold : MR.border}`, background: active ? '#0e0c04' : MR.panel, padding: 14, cursor: 'pointer', width: '100%' }}>
-                    <div style={{ fontFamily: MR.mono, fontSize: 12, color: active ? MR.gold : MR.text, letterSpacing: 0.6 }}>{m.l}</div>
-                    <div style={{ fontSize: 11, color: MR.dim, marginTop: 4 }}>{m.s}</div>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
         </div>
 
         {/* Order summary */}
