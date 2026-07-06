@@ -1,16 +1,26 @@
-﻿import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../../lib/supabase';
+import { BookOpen, NotebookPen } from 'lucide-react';
 
-const C = {
-  bg: 'var(--mr-bg)', panel: 'var(--mr-panel)', border: 'var(--mr-border)', border2: 'var(--mr-border2)',
-  dim: 'var(--mr-dim)', muted: 'var(--mr-muted)', text: 'var(--mr-text)',
-  up: 'var(--mr-up)', down: 'var(--mr-down)', warn: '#f59e0b',
-  mono: '"Geist Mono",monospace', sans: '"Geist",system-ui,sans-serif',
+const LP = {
+  bg:            'var(--lp-bg)',
+  surface:       'var(--lp-surface)',
+  text:          'var(--lp-text)',
+  muted:         'var(--lp-muted)',
+  border:        'var(--lp-border)',
+  primary:       'var(--lp-primary)',
+  primaryHover:  'var(--lp-primary-hover)',
+  primaryTint:   'var(--lp-primary-tint)',
+  danger:        'var(--lp-danger)',
+  sans: '"Geist",system-ui,sans-serif',
+  mono: '"Geist Mono",monospace',
+  radius:   16,
+  radiusSm: 10,
+  shadowSm: '0 1px 3px rgba(0,0,0,0.06)',
+  shadowMd: '0 8px 24px rgba(0,0,0,0.08)',
 };
-const G = { gold: 'var(--mr-gold)' };
 
 const MEDAL_COLORS = ['#a78bfa', '#f97316', '#94a3b8'];
-const MEDAL_ICONS  = ['🥇', '🥈', '🥉']; // fallback only
 const RANK_IMGS: Record<string, string> = {
   '1':    '/rank_1.png',
   '2':    '/rank_2.png',
@@ -19,7 +29,6 @@ const RANK_IMGS: Record<string, string> = {
   '11-20':'/rank_11-20.png',
   '21+':  '/rank_21-sampai_seterusnya.png',
 };
-const PODIUM_BG    = ['#1c1200', '#12161c', '#1a0f00'];
 function RankImg({ rank, size = 32 }: { rank: number; size?: number }) {
   const src = rank === 1 ? RANK_IMGS['1']
             : rank === 2 ? RANK_IMGS['2']
@@ -113,10 +122,10 @@ export default function LeaderboardPage({ memberId, onViewJurnal }: { memberId: 
   };
 
   const tabStyle = (t: string): React.CSSProperties => ({
-    fontFamily: C.mono, fontSize: 11, letterSpacing: 1, padding: '8px 20px',
+    fontFamily: LP.mono, fontSize: 11, letterSpacing: 1, padding: '8px 20px',
     borderRadius: 6, cursor: 'pointer', border: 'none',
-    background: tab === t ? G.gold : 'transparent',
-    color: tab === t ? '#fff' : C.muted, transition: 'all .2s',
+    background: tab === t ? LP.primary : 'transparent',
+    color: tab === t ? '#fff' : LP.muted, transition: 'all .2s',
   });
 
   // ── Podium ─────────────────────────────────────────────────────────────────
@@ -128,7 +137,7 @@ export default function LeaderboardPage({ memberId, onViewJurnal }: { memberId: 
     const BLOCK_H: Record<number, number> = { 0: 120, 1: 72, 2: 50 };
     const ORDER = [1, 0, 2]; // display: left=silver, center=gold, right=bronze
     return (
-      <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'center', padding: '16px 0 0', background: 'linear-gradient(180deg,#0a0a0a,#111)' }}>
+      <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'center', padding: '16px 0 0', background: LP.bg }}>
         {ORDER.map(rankIdx => {
           const m = top3[rankIdx]; if (!m) return null;
           const isMe    = m.id === memberId;
@@ -139,17 +148,17 @@ export default function LeaderboardPage({ memberId, onViewJurnal }: { memberId: 
               {/* Info — fixed height container, content bottom-aligned */}
               <div style={{ height: 140, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end', gap: 5, paddingBottom: 8, width: '100%' }}>
                 <RankImg rank={rankIdx + 1} size={rankIdx === 0 ? 52 : 40} />
-                <div style={{ width: rankIdx === 0 ? 58 : 48, height: rankIdx === 0 ? 58 : 48, borderRadius: '50%', background: isMe ? `${col}33` : '#1a1a1a', border: `${rankIdx === 0 ? 3 : 2}px solid ${col}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: rankIdx === 0 ? 22 : 18, color: col, boxShadow: rankIdx === 0 ? `0 0 20px ${col}88` : 'none', flexShrink: 0 }}>
+                <div style={{ width: rankIdx === 0 ? 58 : 48, height: rankIdx === 0 ? 58 : 48, borderRadius: '50%', background: isMe ? `${col}33` : LP.surface, border: `${rankIdx === 0 ? 3 : 2}px solid ${col}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: rankIdx === 0 ? 22 : 18, color: col, boxShadow: rankIdx === 0 ? `0 0 20px ${col}55` : 'none', flexShrink: 0 }}>
                   {m.nama?.[0]?.toUpperCase()}
                 </div>
-                <div style={{ fontWeight: rankIdx === 0 ? 800 : 700, fontSize: rankIdx === 0 ? 13 : 11, color: isMe ? col : C.text, textAlign: 'center' as const, maxWidth: 90, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}>
-                  {m.nama}{isMe && <span style={{ color: G.gold, fontSize: 8 }}> ✦</span>}
+                <div style={{ fontWeight: rankIdx === 0 ? 800 : 700, fontSize: rankIdx === 0 ? 13 : 11, color: isMe ? col : LP.text, textAlign: 'center' as const, maxWidth: 90, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}>
+                  {m.nama}{isMe && <span style={{ color: LP.primary, fontSize: 8 }}> ✦</span>}
                 </div>
-                <div style={{ fontFamily: C.mono, fontSize: rankIdx === 0 ? 13 : 10, fontWeight: 700, color: col }}>{valueFmt(m[valueKey])}</div>
+                <div style={{ fontFamily: LP.mono, fontSize: rankIdx === 0 ? 13 : 10, fontWeight: 700, color: col }}>{valueFmt(m[valueKey])}</div>
               </div>
               {/* Podium block — explicit px height, flexShrink:0 prevents compression */}
-              <div style={{ width: '100%', height: blockH, flexShrink: 0, background: `linear-gradient(180deg,${col}${rankIdx === 0 ? '66' : '44'},${col}${rankIdx === 0 ? '44' : '22'})`, border: `1px solid ${col}${rankIdx === 0 ? '88' : '55'}`, borderBottom: 'none', borderRadius: '8px 8px 0 0', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: rankIdx === 0 ? `inset 0 0 20px ${col}33` : 'none' }}>
-                <span style={{ fontFamily: C.mono, fontWeight: 900, fontSize: rankIdx === 0 ? 20 : 15, color: col }}>#{rankIdx + 1}</span>
+              <div style={{ width: '100%', height: blockH, flexShrink: 0, background: `linear-gradient(180deg,${col}44,${col}22)`, border: `1px solid ${col}${rankIdx === 0 ? '88' : '55'}`, borderBottom: 'none', borderRadius: '8px 8px 0 0', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: rankIdx === 0 ? `inset 0 0 20px ${col}22` : 'none' }}>
+                <span style={{ fontFamily: LP.mono, fontWeight: 900, fontSize: rankIdx === 0 ? 20 : 15, color: col }}>#{rankIdx + 1}</span>
               </div>
             </div>
           );
@@ -162,14 +171,14 @@ export default function LeaderboardPage({ memberId, onViewJurnal }: { memberId: 
   function MyRankBar({ rank, m, valueLabel }: { rank: number; m: any; valueLabel: string }) {
     if (rank === -1 || rank < 10) return null;
     return (
-      <div style={{ margin: '0 16px 16px', padding: '12px 16px', background: 'var(--mr-tint-green)', border: `1px solid var(--mr-gold-a20)`, borderRadius: 10 }}>
-        <div style={{ fontFamily: C.mono, color: C.dim, fontSize: 9, textAlign: 'center' as const, marginBottom: 8 }}>· · · POSISIMU · · ·</div>
+      <div style={{ margin: '0 16px 16px', padding: '12px 16px', background: LP.primaryTint, border: `1px solid ${LP.primary}33`, borderRadius: 10 }}>
+        <div style={{ fontFamily: LP.mono, color: LP.muted, fontSize: 9, textAlign: 'center' as const, marginBottom: 8 }}>· · · POSISIMU · · ·</div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <div style={{ fontFamily: C.mono, fontSize: 13, fontWeight: 700, color: G.gold, minWidth: 36 }}>#{rank + 1}</div>
-          <div style={{ width: 36, height: 36, borderRadius: '50%', background: '#2a2000', border: `2px solid ${G.gold}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 14, color: G.gold }}>{m.nama?.[0]?.toUpperCase()}</div>
+          <div style={{ fontFamily: LP.mono, fontSize: 13, fontWeight: 700, color: LP.primary, minWidth: 36 }}>#{rank + 1}</div>
+          <div style={{ width: 36, height: 36, borderRadius: '50%', background: LP.surface, border: `2px solid ${LP.primary}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 14, color: LP.primary }}>{m.nama?.[0]?.toUpperCase()}</div>
           <div style={{ flex: 1 }}>
-            <div style={{ fontWeight: 600, fontSize: 13, color: G.gold }}>{m.nama}</div>
-            <div style={{ fontFamily: C.mono, fontSize: 10, color: C.muted, marginTop: 2 }}>{valueLabel}</div>
+            <div style={{ fontWeight: 600, fontSize: 13, color: LP.primary }}>{m.nama}</div>
+            <div style={{ fontFamily: LP.mono, fontSize: 10, color: LP.muted, marginTop: 2 }}>{valueLabel}</div>
           </div>
         </div>
       </div>
@@ -177,66 +186,66 @@ export default function LeaderboardPage({ memberId, onViewJurnal }: { memberId: 
   }
 
   if (loading) return (
-    <div style={{ padding: 60, textAlign: 'center' as const, color: C.muted, fontFamily: C.mono, fontSize: 12 }}>
+    <div style={{ padding: 60, textAlign: 'center' as const, color: LP.muted, fontFamily: LP.mono, fontSize: 12, background: LP.bg, minHeight: '100%' }}>
       Memuat data peringkat...
     </div>
   );
 
   return (
-    <div style={{ fontFamily: C.sans, color: C.text }}>
+    <div style={{ fontFamily: LP.sans, color: LP.text, background: LP.bg, minHeight: '100%' }}>
       {/* Header */}
       <div style={{ marginBottom: 24 }}>
-        <div style={{ fontFamily: C.mono, color: G.gold, fontSize: 10, letterSpacing: 2, marginBottom: 6 }}>// PERINGKAT</div>
-        <div style={{ fontSize: 22, fontWeight: 700, marginBottom: 4 }}>Leaderboard Member</div>
-        <div style={{ color: C.muted, fontSize: 13 }}>Ranking progress belajar dan performa jurnal trading seluruh member.</div>
+        <div style={{ fontFamily: LP.mono, color: LP.primary, fontSize: 10, letterSpacing: 2, marginBottom: 6 }}>PERINGKAT</div>
+        <div style={{ fontSize: 22, fontWeight: 700, marginBottom: 4, color: LP.text }}>Leaderboard Member</div>
+        <div style={{ color: LP.muted, fontSize: 13 }}>Ranking progress belajar dan performa jurnal trading seluruh member.</div>
       </div>
 
       {/* My rank summary */}
       <div style={{ display: 'flex', gap: 12, marginBottom: 20, flexWrap: 'wrap' }}>
         {myProgressRank !== -1 && (
-          <div style={{ background: C.panel, border: `1px solid ${C.border}`, borderRadius: 10, padding: '12px 20px', display: 'flex', gap: 12, alignItems: 'center' }}>
+          <div style={{ background: LP.surface, border: `1px solid ${LP.border}`, borderRadius: 10, padding: '12px 20px', display: 'flex', gap: 12, alignItems: 'center' }}>
             <RankImg rank={myProgressRank + 1} size={36} />
             <div>
-              <div style={{ fontFamily: C.mono, color: C.dim, fontSize: 9, letterSpacing: 1 }}>PERINGKAT PROGRESS</div>
-              <div style={{ fontFamily: C.mono, fontSize: 20, fontWeight: 700, color: myProgressRank < 3 ? MEDAL_COLORS[myProgressRank] : G.gold }}>#{myProgressRank + 1}</div>
-              <div style={{ fontFamily: C.mono, fontSize: 10, color: C.muted }}>{progress[myProgressRank]?.selesai}/{totalVideos} materi</div>
+              <div style={{ fontFamily: LP.mono, color: LP.muted, fontSize: 9, letterSpacing: 1 }}>PERINGKAT PROGRESS</div>
+              <div style={{ fontFamily: LP.mono, fontSize: 20, fontWeight: 700, color: myProgressRank < 3 ? MEDAL_COLORS[myProgressRank] : LP.primary }}>#{myProgressRank + 1}</div>
+              <div style={{ fontFamily: LP.mono, fontSize: 10, color: LP.muted }}>{progress[myProgressRank]?.selesai}/{totalVideos} materi</div>
             </div>
           </div>
         )}
         {myJurnalRank !== -1 && (
-          <div style={{ background: C.panel, border: `1px solid ${C.border}`, borderRadius: 10, padding: '12px 20px', display: 'flex', gap: 12, alignItems: 'center' }}>
+          <div style={{ background: LP.surface, border: `1px solid ${LP.border}`, borderRadius: 10, padding: '12px 20px', display: 'flex', gap: 12, alignItems: 'center' }}>
             <RankImg rank={myJurnalRank + 1} size={36} />
             <div>
-              <div style={{ fontFamily: C.mono, color: C.dim, fontSize: 9, letterSpacing: 1 }}>PERINGKAT JURNAL</div>
-              <div style={{ fontFamily: C.mono, fontSize: 20, fontWeight: 700, color: myJurnalRank < 3 ? MEDAL_COLORS[myJurnalRank] : '#3b82f6' }}>#{myJurnalRank + 1}</div>
-              <div style={{ fontFamily: C.mono, fontSize: 10, color: C.muted }}>{jurnal[myJurnalRank]?.gainPct >= 0 ? '+' : ''}{jurnal[myJurnalRank]?.gainPct.toFixed(1)}% gain</div>
+              <div style={{ fontFamily: LP.mono, color: LP.muted, fontSize: 9, letterSpacing: 1 }}>PERINGKAT JURNAL</div>
+              <div style={{ fontFamily: LP.mono, fontSize: 20, fontWeight: 700, color: myJurnalRank < 3 ? MEDAL_COLORS[myJurnalRank] : '#3b82f6' }}>#{myJurnalRank + 1}</div>
+              <div style={{ fontFamily: LP.mono, fontSize: 10, color: LP.muted }}>{jurnal[myJurnalRank]?.gainPct >= 0 ? '+' : ''}{jurnal[myJurnalRank]?.gainPct.toFixed(1)}% gain</div>
             </div>
           </div>
         )}
-        <div style={{ background: C.panel, border: `1px solid ${C.border}`, borderRadius: 10, padding: '12px 20px' }}>
-          <div style={{ fontFamily: C.mono, color: C.dim, fontSize: 9, letterSpacing: 1 }}>TOTAL MEMBER</div>
-          <div style={{ fontFamily: C.mono, fontSize: 20, fontWeight: 700, color: C.text }}>{progress.length + (progress.length === 0 ? 0 : 0)}</div>
-          <div style={{ fontFamily: C.mono, fontSize: 10, color: C.muted }}>aktif belajar</div>
+        <div style={{ background: LP.surface, border: `1px solid ${LP.border}`, borderRadius: 10, padding: '12px 20px' }}>
+          <div style={{ fontFamily: LP.mono, color: LP.muted, fontSize: 9, letterSpacing: 1 }}>TOTAL MEMBER</div>
+          <div style={{ fontFamily: LP.mono, fontSize: 20, fontWeight: 700, color: LP.text }}>{progress.length + (progress.length === 0 ? 0 : 0)}</div>
+          <div style={{ fontFamily: LP.mono, fontSize: 10, color: LP.muted }}>aktif belajar</div>
         </div>
       </div>
 
       {/* Tab */}
-      <div style={{ display: 'flex', gap: 4, marginBottom: 20, background: C.panel, border: `1px solid ${C.border}`, borderRadius: 8, padding: 4, width: 'fit-content' }}>
-        <button style={tabStyle('progress')} onClick={() => setTab('progress')}>📚 PROGRESS BELAJAR</button>
-        <button style={tabStyle('jurnal')}   onClick={() => setTab('jurnal')}>📓 JURNAL TRADING</button>
+      <div style={{ display: 'flex', gap: 4, marginBottom: 20, background: LP.surface, border: `1px solid ${LP.border}`, borderRadius: 8, padding: 4, width: 'fit-content' }}>
+        <button style={tabStyle('progress')} onClick={() => setTab('progress')}><BookOpen size={13} style={{ marginRight: 6, verticalAlign: 'text-bottom' }}/>PROGRESS BELAJAR</button>
+        <button style={tabStyle('jurnal')}   onClick={() => setTab('jurnal')}><NotebookPen size={13} style={{ marginRight: 6, verticalAlign: 'text-bottom' }}/>JURNAL TRADING</button>
       </div>
 
       {/* ── PROGRESS TAB ── */}
       {tab === 'progress' && (
-        <div style={{ background: C.panel, border: `1px solid ${C.border}`, borderRadius: 14, overflow: 'hidden' }}>
+        <div style={{ background: LP.surface, border: `1px solid ${LP.border}`, borderRadius: 14, overflow: 'hidden' }}>
           <Podium items={progress} valueKey="selesai" valueFmt={(v) => `${v}/${totalVideos}`} />
           {/* Table */}
           <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontFamily: C.mono, fontSize: 12 }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontFamily: LP.mono, fontSize: 12 }}>
               <thead>
-                <tr style={{ borderBottom: `1px solid ${C.border2}` }}>
+                <tr style={{ borderBottom: `1px solid ${LP.border}` }}>
                   {['RANK', 'NAMA', 'TIER', 'PROGRESS', 'MATERI SELESAI'].map(h => (
-                    <th key={h} style={{ padding: '12px 16px', textAlign: 'left' as const, color: C.dim, fontWeight: 600, fontSize: 10, letterSpacing: 1 }}>{h}</th>
+                    <th key={h} style={{ padding: '12px 16px', textAlign: 'left' as const, color: LP.muted, fontWeight: 600, fontSize: 10, letterSpacing: 1 }}>{h}</th>
                   ))}
                 </tr>
               </thead>
@@ -244,9 +253,9 @@ export default function LeaderboardPage({ memberId, onViewJurnal }: { memberId: 
                 {progress.map((m, i) => {
                   const isMe = m.id === memberId;
                   const pct  = Math.min(100, Math.round(m.selesai / (totalVideos || 1) * 100));
-                  const col  = i < 3 ? MEDAL_COLORS[i] : C.muted;
+                  const col  = i < 3 ? MEDAL_COLORS[i] : LP.muted;
                   return (
-                    <tr key={m.id} style={{ borderBottom: `1px solid ${C.border}`, background: isMe ? 'var(--mr-tint-gold)' : 'transparent' }}>
+                    <tr key={m.id} style={{ borderBottom: `1px solid ${LP.border}`, background: isMe ? LP.primaryTint : 'transparent' }}>
                       <td style={{ padding: '12px 16px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                           <RankImg rank={i + 1} size={i < 3 ? 36 : 28} />
@@ -254,26 +263,26 @@ export default function LeaderboardPage({ memberId, onViewJurnal }: { memberId: 
                       </td>
                       <td style={{ padding: '12px 16px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                          <div style={{ width: 34, height: 34, borderRadius: '50%', background: isMe ? '#2a2000' : '#161616', border: `2px solid ${isMe ? G.gold : col + '55'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 13, color: isMe ? G.gold : col, flexShrink: 0 }}>
+                          <div style={{ width: 34, height: 34, borderRadius: '50%', background: isMe ? LP.primaryTint : LP.bg, border: `2px solid ${isMe ? LP.primary : col + '55'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 13, color: isMe ? LP.primary : col, flexShrink: 0 }}>
                             {m.nama?.[0]?.toUpperCase()}
                           </div>
                           <div>
-                            <div style={{ fontWeight: 600, fontSize: 13, color: isMe ? G.gold : C.text }}>{m.nama}</div>
-                            {isMe && <div style={{ fontFamily: C.mono, fontSize: 9, color: G.gold, marginTop: 2 }}>● KAMU</div>}
+                            <div style={{ fontWeight: 600, fontSize: 13, color: isMe ? LP.primary : LP.text }}>{m.nama}</div>
+                            {isMe && <div style={{ fontFamily: LP.mono, fontSize: 9, color: LP.primary, marginTop: 2 }}>● KAMU</div>}
                           </div>
                         </div>
                       </td>
                       <td style={{ padding: '12px 16px' }}>
-                        <span style={{ fontFamily: C.mono, fontSize: 10, color: tierColor(m.tier), background: `${tierColor(m.tier)}15`, padding: '2px 8px', borderRadius: 4 }}>{m.tier}</span>
+                        <span style={{ fontFamily: LP.mono, fontSize: 10, color: tierColor(m.tier), background: `${tierColor(m.tier)}15`, padding: '2px 8px', borderRadius: 4 }}>{m.tier}</span>
                       </td>
                       <td style={{ padding: '12px 16px', minWidth: 140 }}>
-                        <div style={{ height: 6, background: '#1a1a1a', borderRadius: 3 }}>
-                          <div style={{ height: '100%', width: `${pct}%`, background: isMe ? G.gold : col, borderRadius: 3, transition: 'width 0.8s' }}/>
+                        <div style={{ height: 6, background: LP.border, borderRadius: 3 }}>
+                          <div style={{ height: '100%', width: `${pct}%`, background: isMe ? LP.primary : col, borderRadius: 3, transition: 'width 0.8s' }}/>
                         </div>
-                        <div style={{ fontFamily: C.mono, fontSize: 9, color: C.dim, marginTop: 4 }}>{pct}%</div>
+                        <div style={{ fontFamily: LP.mono, fontSize: 9, color: LP.muted, marginTop: 4 }}>{pct}%</div>
                       </td>
-                      <td style={{ padding: '12px 16px', fontFamily: C.mono, fontWeight: 700, color: isMe ? G.gold : col, fontSize: 14 }}>
-                        {m.selesai}<span style={{ color: '#333', fontWeight: 400, fontSize: 11 }}>/{totalVideos}</span>
+                      <td style={{ padding: '12px 16px', fontFamily: LP.mono, fontWeight: 700, color: isMe ? LP.primary : col, fontSize: 14 }}>
+                        {m.selesai}<span style={{ color: LP.muted, fontWeight: 400, fontSize: 11 }}>/{totalVideos}</span>
                       </td>
                     </tr>
                   );
@@ -287,60 +296,60 @@ export default function LeaderboardPage({ memberId, onViewJurnal }: { memberId: 
 
       {/* ── JURNAL TAB ── */}
       {tab === 'jurnal' && (
-        <div style={{ background: C.panel, border: `1px solid ${C.border}`, borderRadius: 14, overflow: 'hidden' }}>
+        <div style={{ background: LP.surface, border: `1px solid ${LP.border}`, borderRadius: 14, overflow: 'hidden' }}>
           {jurnal.length === 0 ? (
             <div style={{ padding: '60px 20px', textAlign: 'center' as const }}>
-              <div style={{ fontSize: 40, marginBottom: 12 }}>📓</div>
-              <div style={{ color: C.muted, fontFamily: C.mono, fontSize: 12, marginBottom: 8 }}>Belum ada member yang mengisi jurnal</div>
+              <div style={{ marginBottom: 12, display: 'flex', justifyContent: 'center' }}><NotebookPen size={40} color={LP.muted}/></div>
+              <div style={{ color: LP.muted, fontFamily: LP.mono, fontSize: 12, marginBottom: 8 }}>Belum ada member yang mengisi jurnal</div>
             </div>
           ) : (
             <>
               <Podium items={jurnal} valueKey="gainPct" valueFmt={(v) => `${v >= 0 ? '+' : ''}${v.toFixed(1)}%`} />
               <div style={{ overflowX: 'auto' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontFamily: C.mono, fontSize: 12 }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontFamily: LP.mono, fontSize: 12 }}>
                   <thead>
-                    <tr style={{ borderBottom: `1px solid ${C.border2}` }}>
+                    <tr style={{ borderBottom: `1px solid ${LP.border}` }}>
                       {['RANK', 'NAMA', 'TIER', 'TRADES', 'WIN RATE', 'TOTAL PNL', 'EQUITY GAIN', ''].map(h => (
-                        <th key={h} style={{ padding: '12px 16px', textAlign: 'left' as const, color: C.dim, fontWeight: 600, fontSize: 10, letterSpacing: 1 }}>{h}</th>
+                        <th key={h} style={{ padding: '12px 16px', textAlign: 'left' as const, color: LP.muted, fontWeight: 600, fontSize: 10, letterSpacing: 1 }}>{h}</th>
                       ))}
                     </tr>
                   </thead>
                   <tbody>
                     {jurnal.map((m, i) => {
                       const isMe     = m.id === memberId;
-                      const col      = i < 3 ? MEDAL_COLORS[i] : C.muted;
+                      const col      = i < 3 ? MEDAL_COLORS[i] : LP.muted;
                       const isProfit = m.totalPnl >= 0;
                       return (
-                        <tr key={m.id} style={{ borderBottom: `1px solid ${C.border}`, background: isMe ? '#0c1a2e' : 'transparent' }}>
+                        <tr key={m.id} style={{ borderBottom: `1px solid ${LP.border}`, background: isMe ? '#eff6ff' : 'transparent' }}>
                           <td style={{ padding: '12px 16px' }}>
                             <RankImg rank={i + 1} size={i < 3 ? 36 : 28} />
                           </td>
                           <td style={{ padding: '12px 16px' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                              <div style={{ width: 34, height: 34, borderRadius: '50%', background: isMe ? '#1d4ed8' : '#161616', border: `2px solid ${isMe ? '#3b82f6' : col + '55'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 13, color: isMe ? '#93c5fd' : col, flexShrink: 0 }}>
+                              <div style={{ width: 34, height: 34, borderRadius: '50%', background: isMe ? '#3b82f6' : LP.bg, border: `2px solid ${isMe ? '#3b82f6' : col + '55'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 13, color: isMe ? '#fff' : col, flexShrink: 0 }}>
                                 {m.nama?.[0]?.toUpperCase()}
                               </div>
                               <div>
-                                <div style={{ fontWeight: 600, fontSize: 13, color: isMe ? '#93c5fd' : C.text }}>{m.nama}</div>
-                                {isMe && <div style={{ fontFamily: C.mono, fontSize: 9, color: '#3b82f6', marginTop: 2 }}>● KAMU</div>}
+                                <div style={{ fontWeight: 600, fontSize: 13, color: isMe ? '#3b82f6' : LP.text }}>{m.nama}</div>
+                                {isMe && <div style={{ fontFamily: LP.mono, fontSize: 9, color: '#3b82f6', marginTop: 2 }}>● KAMU</div>}
                               </div>
                             </div>
                           </td>
                           <td style={{ padding: '12px 16px' }}>
-                            <span style={{ fontFamily: C.mono, fontSize: 10, color: tierColor(m.tier), background: `${tierColor(m.tier)}15`, padding: '2px 8px', borderRadius: 4 }}>{m.tier}</span>
+                            <span style={{ fontFamily: LP.mono, fontSize: 10, color: tierColor(m.tier), background: `${tierColor(m.tier)}15`, padding: '2px 8px', borderRadius: 4 }}>{m.tier}</span>
                           </td>
-                          <td style={{ padding: '12px 16px', color: C.text }}>{m.trades}</td>
-                          <td style={{ padding: '12px 16px', color: m.winRate >= 50 ? C.up : C.down, fontWeight: 700 }}>{m.winRate.toFixed(1)}%</td>
-                          <td style={{ padding: '12px 16px', color: isProfit ? C.up : C.down, fontWeight: 700 }}>
+                          <td style={{ padding: '12px 16px', color: LP.text }}>{m.trades}</td>
+                          <td style={{ padding: '12px 16px', color: m.winRate >= 50 ? LP.primary : LP.danger, fontWeight: 700 }}>{m.winRate.toFixed(1)}%</td>
+                          <td style={{ padding: '12px 16px', color: isProfit ? LP.primary : LP.danger, fontWeight: 700 }}>
                             {isProfit ? '+' : ''}${m.totalPnl.toFixed(2)}
                           </td>
-                          <td style={{ padding: '12px 16px', fontWeight: 700, color: isProfit ? C.up : C.down, fontSize: 14 }}>
+                          <td style={{ padding: '12px 16px', fontWeight: 700, color: isProfit ? LP.primary : LP.danger, fontSize: 14 }}>
                             {isProfit ? '+' : ''}{m.gainPct.toFixed(2)}%
                           </td>
                           <td style={{ padding: '12px 16px' }}>
                             {onViewJurnal && (
                               <button onClick={() => onViewJurnal(m)}
-                                style={{ background: '#0c1a2e', border: '1px solid #1d4ed844', color: '#60a5fa', fontFamily: C.mono, fontSize: 10, padding: '4px 12px', borderRadius: 5, cursor: 'pointer' }}>
+                                style={{ background: '#eff6ff', border: '1px solid #3b82f633', color: '#3b82f6', fontFamily: LP.mono, fontSize: 10, padding: '4px 12px', borderRadius: 5, cursor: 'pointer' }}>
                                 LIHAT
                               </button>
                             )}
@@ -354,16 +363,16 @@ export default function LeaderboardPage({ memberId, onViewJurnal }: { memberId: 
               {myJurnalRank >= 10 && (() => {
                 const me = jurnal[myJurnalRank];
                 return (
-                  <div style={{ margin: '0 16px 16px', padding: '12px 16px', background: '#0c1a2e', border: '1px solid #3b82f622', borderRadius: 10 }}>
-                    <div style={{ fontFamily: C.mono, color: C.dim, fontSize: 9, textAlign: 'center' as const, marginBottom: 8 }}>· · · POSISIMU · · ·</div>
+                  <div style={{ margin: '0 16px 16px', padding: '12px 16px', background: '#eff6ff', border: '1px solid #3b82f622', borderRadius: 10 }}>
+                    <div style={{ fontFamily: LP.mono, color: LP.muted, fontSize: 9, textAlign: 'center' as const, marginBottom: 8 }}>· · · POSISIMU · · ·</div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                      <div style={{ fontFamily: C.mono, fontSize: 13, fontWeight: 700, color: '#3b82f6', minWidth: 36 }}>#{myJurnalRank + 1}</div>
-                      <div style={{ width: 34, height: 34, borderRadius: '50%', background: '#1d4ed8', border: '2px solid #3b82f6', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 14, color: '#93c5fd' }}>{me.nama?.[0]?.toUpperCase()}</div>
+                      <div style={{ fontFamily: LP.mono, fontSize: 13, fontWeight: 700, color: '#3b82f6', minWidth: 36 }}>#{myJurnalRank + 1}</div>
+                      <div style={{ width: 34, height: 34, borderRadius: '50%', background: '#3b82f6', border: '2px solid #3b82f6', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 14, color: '#fff' }}>{me.nama?.[0]?.toUpperCase()}</div>
                       <div style={{ flex: 1 }}>
-                        <div style={{ fontWeight: 600, fontSize: 13, color: '#93c5fd' }}>{me.nama}</div>
-                        <div style={{ fontFamily: C.mono, fontSize: 10, color: C.muted, marginTop: 2 }}>{me.gainPct >= 0 ? '+' : ''}{me.gainPct.toFixed(1)}% gain · {me.trades} trade</div>
+                        <div style={{ fontWeight: 600, fontSize: 13, color: '#3b82f6' }}>{me.nama}</div>
+                        <div style={{ fontFamily: LP.mono, fontSize: 10, color: LP.muted, marginTop: 2 }}>{me.gainPct >= 0 ? '+' : ''}{me.gainPct.toFixed(1)}% gain · {me.trades} trade</div>
                       </div>
-                      <div style={{ fontFamily: C.mono, fontSize: 14, fontWeight: 700, color: me.gainPct >= 0 ? C.up : C.down }}>{me.gainPct >= 0 ? '+' : ''}{me.gainPct.toFixed(1)}%</div>
+                      <div style={{ fontFamily: LP.mono, fontSize: 14, fontWeight: 700, color: me.gainPct >= 0 ? LP.primary : LP.danger }}>{me.gainPct >= 0 ? '+' : ''}{me.gainPct.toFixed(1)}%</div>
                     </div>
                   </div>
                 );
