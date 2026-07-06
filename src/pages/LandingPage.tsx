@@ -7,7 +7,6 @@ import { Menu, X, Star, ChevronDown, MessageCircle, Send, Music2, Youtube, Phone
 
 import { MRLogo, CandleChart } from '../components/mr';
 import { useApprovedTestimonials, useLandingPreview } from '../hooks';
-import type { LandingPreviewConfig } from '../hooks';
 import type { Testimonial } from '../types/mr.types';
 import { supabase } from '../lib/supabase';
 
@@ -32,71 +31,6 @@ const LP = {
 };
 
 // ─── Static data ──────────────────────────────────────────────────────────────
-
-// ── BASIC CLASS ───────────────────────────────────────────────────────────
-const BASIC_MODULES = [
-  {
-    mod: 'B1', title: 'Valid Market Structure',
-    items: ['Valid Pullback', 'Valid High & Low', 'BOS (Break of Structure)', 'CHoCH (Change of Character)', 'Inducement Dasar'],
-  },
-  {
-    mod: 'B2', title: 'Liquidity',
-    items: ['Imbalance', 'EQH & EQL', 'Liquidity Pool', 'Cara Market Mengambil Likuiditas'],
-  },
-  {
-    mod: 'B3', title: 'Point of Interest (POI)',
-    items: ['Order Flow', 'Order Block', 'High Probability POI', 'Cara Memilih POI Valid'],
-  },
-  {
-    mod: 'B4', title: 'Simple SMC',
-    items: ['Penyatuan Structure + Liquidity + POI', 'Simple Entry Model', 'Basic Market Narrative'],
-  },
-  {
-    mod: 'BONUS', title: 'Bonus Basic Tips',
-    items: ['Tips membaca market lebih sederhana', 'Cara menghindari entry FOMO', 'Kesalahan umum trader SMC', 'Cara membangun bias harian'],
-    bonus: true,
-  },
-];
-
-// ── ADVANCED CLASS ─────────────────────────────────────────────────────────
-const ADVANCED_MODULES = [
-  {
-    mod: 'A1', title: 'Internal Structure',
-    items: ['Internal BOS', 'Internal CHoCH', 'Internal Liquidity', 'Refinement Structure'],
-  },
-  {
-    mod: 'A2', title: 'Top Down Analysis',
-    items: ['HTF to LTF Narrative', 'HTF Bias', 'Multi Timeframe Mapping'],
-  },
-  {
-    mod: 'A3', title: 'Konfirmasi Entry',
-    items: ['SCOB', 'Mchoch', 'Flip'],
-  },
-  {
-    mod: 'A4', title: 'IFC',
-    items: ['Institutional Funding Candle'],
-  },
-  {
-    mod: 'A5', title: 'Liquidity Optional',
-    items: ['PDH-PDL', 'Session'],
-  },
-  {
-    mod: 'A6', title: 'Trading Plan',
-    items: ['Risk Management', 'Position Management', 'Session Planning', 'Consistency Framework'],
-  },
-  {
-    mod: 'A7', title: 'Simple Trading Plan',
-    items: ['Template Trading Plan', 'Daily Execution Workflow', 'Journaling & Review'],
-  },
-  {
-    mod: 'A8', title: 'Prop Firm Preparation',
-    items: ['Cara Lolos Challenge', 'Risk Control untuk Propfirm', 'Konsistensi Target Harian', 'Rules & Psychology'],
-  },
-  {
-    mod: 'A9', title: 'Advanced Tips & Deep Discussion',
-    items: ['Case Study', 'Real Market Breakdown', 'Advanced Narrative', 'Psychology & Consistency'],
-  },
-];
 
 const FAQ = [
   { q: 'Apa itu SMC dan kenapa beda dari indikator biasa?', a: 'Smart Money Concept membaca jejak likuiditas dan order pelaku institusi — bukan lagi soal indikator lagging. Kamu belajar struktur market, BOS, order block, dan inducement supaya entry punya konteks, bukan tebak-tebakan.' },
@@ -129,8 +63,8 @@ function NavBar() {
   }, []);
 
   const NAV_ITEMS = [
-    { l: 'Kelas',       key: 'KELAS',       href: '#kelas' },
-    { l: 'Kurikulum',   key: 'KURIKULUM',   href: '#kurikulum' },
+    { l: 'Kelas',       key: 'KELAS',       href: '/pricing-kelas' },
+    { l: 'Kurikulum',   key: 'KURIKULUM',   href: '/pricing-kelas#kurikulum' },
     { l: 'Komunitas',   key: 'KOMUNITAS',   href: '/komunitas' },
     { l: 'Partnership', key: 'PARTNERSHIP', href: '/partnership' },
     { l: 'Kalender',    key: 'KALENDER',    href: '/calendar' },
@@ -268,7 +202,7 @@ function Hero() {
   React.useEffect(() => { const mq = window.matchMedia('(max-width: 767px)'); const h = (e: MediaQueryListEvent) => setIsMobile(e.matches); mq.addEventListener('change',h); return ()=>mq.removeEventListener('change',h); }, []);
 
   return (
-    <section id="kelas" style={{ background: LP.bg }}>
+    <section style={{ background: LP.bg }}>
       <div style={{ padding: isMobile ? '48px 20px 40px' : '72px 40px 56px' }}>
         <div style={{ maxWidth: isMobile ? 720 : 1080, margin: '0 auto', textAlign: 'center' as const }}>
           <div className='mr-anim-badge' style={{ fontFamily: LP.mono, display: 'inline-flex', gap: 8, alignItems: 'center', padding: '6px 12px', borderRadius: 20, border: `1px solid ${LP.border}`, background: LP.surface, color: LP.muted, fontSize: 11, letterSpacing: 0.6, marginBottom: 24 }}>
@@ -286,13 +220,13 @@ function Hero() {
             Smart Money Concept yang kami gunakan langsung di funded account. Belajar membaca arah market lewat struktur yang jelas — dari trend, BOS, CHoCH, sampai validasi entry. Bukan sekadar entry karena feeling.
           </p>
           <div className='mr-anim-cta' style={{ display: 'flex', gap: 12, flexWrap: 'wrap' as const, justifyContent: 'center' }}>
-            <button onClick={() => window.location.href = '/signup'}
+            <button onClick={() => window.location.href = '/pricing-kelas'}
               style={{ fontFamily: LP.sans, background: LP.primary, color: '#fff', fontWeight: 700, padding: '15px 28px', fontSize: 14, borderRadius: 10, border: 'none', cursor: 'pointer', boxShadow: LP.shadowMd }}>
-              Pilih Kelas →
+              Beli Kelas →
             </button>
-            <button onClick={() => document.getElementById('kurikulum')?.scrollIntoView({ behavior: 'smooth' })}
+            <button onClick={() => window.location.href = '/pricing-indikator'}
               style={{ fontFamily: LP.sans, border: `1px solid ${LP.border}`, padding: '15px 24px', fontSize: 14, fontWeight: 600, borderRadius: 10, background: LP.surface, color: LP.text, cursor: 'pointer' }}>
-              Lihat Kurikulum
+              Beli Indikator →
             </button>
           </div>
           <p style={{ fontFamily: LP.mono, fontSize: 12, color: LP.muted, marginTop: 24 }}>
@@ -337,84 +271,6 @@ function HeroPreview({ videoId }: { videoId: string | null }) {
     </section>
   );
 }
-
-function Curriculum() {
-  const [isMobile, setIsMobile] = React.useState(() => window.matchMedia('(max-width: 767px)').matches);
-  React.useEffect(() => { const mq = window.matchMedia('(max-width: 767px)'); const h = (e: MediaQueryListEvent) => setIsMobile(e.matches); mq.addEventListener('change',h); return ()=>mq.removeEventListener('change',h); }, []);
-  const [activeBasic, setActiveBasic] = React.useState<number|null>(null);
-  const [activeAdv, setActiveAdv]     = React.useState<number|null>(null);
-  const { ref: refHdr, animStyle: hdrStyle } = useFadeUp();
-
-  function ModCard({ mod, idx, isAdv }: { mod: any; idx: number; isAdv?: boolean }) {
-    const isOpen = isAdv ? activeAdv === idx : activeBasic === idx;
-    const toggle = () => isAdv ? setActiveAdv(isOpen ? null : idx) : setActiveBasic(isOpen ? null : idx);
-    const isBonusCard = mod.bonus;
-    const accent = isBonusCard ? '#7c3aed' : LP.primary;
-    return (
-      <div style={{ borderBottom: `1px solid ${LP.border}`, overflow: 'hidden' }}>
-        <button onClick={toggle}
-          style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 12, padding: '16px 20px', background: isOpen ? LP.primaryTint : 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left' as const, transition: 'background .2s' }}>
-          <span style={{ fontFamily: LP.mono, fontSize: 10, fontWeight: 700, color: accent, background: `${accent}14`, padding: '2px 8px', flexShrink: 0, minWidth: 52, textAlign: 'center' as const, borderRadius: 4 }}>
-            {mod.mod}
-          </span>
-          <span style={{ flex: 1, fontSize: 14, fontWeight: 600, color: isOpen ? accent : LP.text }}>
-            {mod.title}
-          </span>
-          <ChevronDown size={16} color={isOpen ? accent : LP.muted} style={{ transition: 'transform .2s', transform: isOpen ? 'rotate(180deg)' : 'none', flexShrink: 0 }} />
-        </button>
-        {isOpen && (
-          <div style={{ padding: '4px 20px 16px 60px', background: LP.bg }}>
-            {mod.items.map((item: string, i: number) => (
-              <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 8, padding: '5px 0', fontSize: 13, color: LP.muted }}>
-                <span style={{ color: accent, flexShrink: 0, marginTop: 1 }}>▸</span>
-                <span>{item}</span>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-    );
-  }
-
-  return (
-    <section id="kurikulum" style={{ background: LP.surface, borderBottom: `1px solid ${LP.border}` }}>
-      <div ref={refHdr} style={{ ...hdrStyle, padding: isMobile ? '40px 20px 24px' : '56px 40px 32px', maxWidth: 1200, margin: '0 auto' }}>
-        <div style={{ fontFamily: LP.mono, color: LP.muted, fontSize: 11, letterSpacing: 0.8, marginBottom: 8 }}>// KURIKULUM</div>
-        <h2 style={{ fontSize: isMobile ? 24 : 40, fontWeight: 800, margin: 0, letterSpacing: -1, color: LP.text }}>Apa yang kamu pelajari</h2>
-        <p style={{ color: LP.muted, fontSize: 15, marginTop: 10, maxWidth: 560 }}>
-          Dua jalur belajar: fondasi yang solid di Basic, eksekusi yang tajam di Advanced.
-        </p>
-      </div>
-
-      <div className='mr-curriculum-grid' style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', maxWidth: 1200, margin: '0 auto', border: `1px solid ${LP.border}`, borderBottom: 'none' }}>
-        <div style={{ borderRight: isMobile ? 'none' : `1px solid ${LP.border}`, borderBottom: isMobile ? `1px solid ${LP.border}` : 'none' }}>
-          <div style={{ padding: '20px 20px 14px', borderBottom: `1px solid ${LP.border}`, display: 'flex', alignItems: 'center', gap: 12 }}>
-            <div style={{ width: 10, height: 10, borderRadius: '50%', background: LP.primary, flexShrink: 0 }} />
-            <div>
-              <div style={{ fontFamily: LP.mono, fontSize: 10, color: LP.primary, letterSpacing: 1, fontWeight: 700 }}>BASIC CLASS</div>
-              <div style={{ fontSize: 13, color: LP.muted, marginTop: 2 }}>Smart Money Concept Foundation</div>
-            </div>
-            <span style={{ marginLeft: 'auto', fontFamily: LP.mono, fontSize: 11, color: LP.muted }}>{BASIC_MODULES.length} modul</span>
-          </div>
-          {BASIC_MODULES.map((mod, i) => <ModCard key={i} mod={mod} idx={i} isAdv={false} />)}
-        </div>
-
-        <div>
-          <div style={{ padding: '20px 20px 14px', borderBottom: `1px solid ${LP.border}`, display: 'flex', alignItems: 'center', gap: 12 }}>
-            <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#7c3aed', flexShrink: 0 }} />
-            <div>
-              <div style={{ fontFamily: LP.mono, fontSize: 10, color: '#7c3aed', letterSpacing: 1, fontWeight: 700 }}>ADVANCED CLASS</div>
-              <div style={{ fontSize: 13, color: LP.muted, marginTop: 2 }}>Market Narrative & Execution</div>
-            </div>
-            <span style={{ marginLeft: 'auto', fontFamily: LP.mono, fontSize: 11, color: LP.muted }}>{ADVANCED_MODULES.length} modul</span>
-          </div>
-          {ADVANCED_MODULES.map((mod, i) => <ModCard key={i} mod={mod} idx={i} isAdv={true} />)}
-        </div>
-      </div>
-    </section>
-  );
-}
-
 
 function Komunitas() {
   const [images, setImages] = React.useState<{ url: string; caption?: string }[]>([]);
@@ -575,88 +431,6 @@ function Testimonials({ testimonials }: { testimonials: Testimonial[] }) {
   );
 }
 
-
-function ProductPreview({ config }: { config: LandingPreviewConfig }) {
-  const [isMobile, setIsMobile] = React.useState(() => window.matchMedia('(max-width: 767px)').matches);
-  React.useEffect(() => {
-    const mq = window.matchMedia('(max-width: 767px)');
-    const h = (e: MediaQueryListEvent) => setIsMobile(e.matches);
-    mq.addEventListener('change', h);
-    return () => mq.removeEventListener('change', h);
-  }, []);
-
-  const fmt = (n: number) => new Intl.NumberFormat('id-ID').format(n);
-
-  const plans = [
-    { nama: config.plan1_nama, harga_asli: config.plan1_harga_asli, diskon: config.plan1_diskon, key: 'bulanan',  featured: false },
-    { nama: config.plan2_nama, harga_asli: config.plan2_harga_asli, diskon: config.plan2_diskon, key: 'tahunan',  featured: true },
-    { nama: config.plan3_nama, harga_asli: config.plan3_harga_asli, diskon: config.plan3_diskon, key: 'lifetime', featured: false },
-  ];
-
-  return (
-    <section style={{ background: LP.bg, padding: isMobile ? '48px 20px' : '72px 40px' }}>
-      <div style={{ maxWidth: 900, margin: '0 auto' }}>
-        <div style={{ textAlign: 'center' as const, marginBottom: 32 }}>
-          <div style={{ fontFamily: LP.mono, color: LP.muted, fontSize: 11, letterSpacing: 0.8 }}>// PREVIEW PLATFORM</div>
-          <h2 style={{ fontSize: isMobile ? 24 : 40, letterSpacing: -1, lineHeight: 1.15, margin: '14px 0 12px', fontWeight: 800, color: LP.text }}>
-            Belum Paham SMC? Tidak Masalah.
-          </h2>
-          <p style={{ color: LP.muted, fontSize: isMobile ? 14 : 16, lineHeight: 1.6, margin: '0 auto', maxWidth: 560 }}>
-            Indikator ini membantu Anda membaca struktur market dengan lebih mudah.{' '}
-            <span style={{ color: LP.primary, fontWeight: 600 }}>Benefit untuk langganan tahunan dan lifetime: akses ke Discord private Menolak Rugi.</span>
-          </p>
-        </div>
-
-        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: 16 }}>
-          {plans.map((plan) => {
-            const hargaDiskon = plan.diskon > 0 ? Math.round(plan.harga_asli * (1 - plan.diskon / 100)) : plan.harga_asli;
-            const hemat = plan.harga_asli - hargaDiskon;
-            return (
-              <div key={plan.key} style={{
-                borderRadius: LP.radius, padding: '26px 22px', background: LP.surface,
-                border: plan.featured ? `2px solid ${LP.primary}` : `1px solid ${LP.border}`,
-                boxShadow: plan.featured ? LP.shadowMd : LP.shadowSm,
-                display: 'flex', flexDirection: 'column' as const, position: 'relative',
-              }}>
-                {plan.featured && (
-                  <div style={{ position: 'absolute', top: -12, left: 20, background: LP.primary, color: '#fff', padding: '4px 12px', fontSize: 10, letterSpacing: 0.6, fontWeight: 700, borderRadius: 20 }}>
-                    PALING POPULER
-                  </div>
-                )}
-                <div style={{ fontWeight: 700, fontSize: 18, marginBottom: 16, marginTop: plan.featured ? 8 : 0, color: LP.text }}>{plan.nama}</div>
-                <div style={{ marginBottom: 4 }}>
-                  {plan.diskon > 0 && (
-                    <div style={{ fontFamily: LP.mono, fontSize: 12, color: LP.muted, marginBottom: 4 }}><s>Rp {fmt(plan.harga_asli)}</s></div>
-                  )}
-                  <div style={{ display: 'flex', alignItems: 'baseline', gap: 4 }}>
-                    <span style={{ fontFamily: LP.mono, color: LP.primary, fontSize: 14 }}>Rp</span>
-                    <span style={{ fontSize: 32, fontWeight: 800, letterSpacing: -1, lineHeight: 1, color: LP.text }}>{fmt(hargaDiskon)}</span>
-                  </div>
-                  {plan.diskon > 0 && (
-                    <div style={{ fontFamily: LP.mono, color: LP.primary, fontSize: 11, marginTop: 6, background: LP.primaryTint, display: 'inline-block', padding: '2px 8px', borderRadius: 4 }}>
-                      Hemat {plan.diskon}% · Rp {fmt(hemat)}
-                    </div>
-                  )}
-                </div>
-                <div style={{ flex: 1 }} />
-                <button
-                  onClick={() => { window.location.href = `/bayar?plan=${plan.key}`; }}
-                  style={{
-                    marginTop: 24, fontFamily: LP.sans, padding: '13px 0', fontSize: 13, fontWeight: 700, width: '100%', cursor: 'pointer', borderRadius: 8,
-                    background: plan.featured ? LP.primary : 'transparent',
-                    color: plan.featured ? '#fff' : LP.primary,
-                    border: plan.featured ? 'none' : `1px solid ${LP.primary}`,
-                  }}>
-                  Pilih {plan.nama} →
-                </button>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-    </section>
-  );
-}
 
 function BuktiHasil() {
   const [entries, setEntries] = React.useState<any[]>([]);
@@ -882,7 +656,7 @@ function Footer() {
             { l: 'Platinum', href: '/signup?tier=platinum' },
           ]},
           { h: 'BELAJAR', links: [
-            { l: 'Kurikulum',   href: '/#kurikulum' },
+            { l: 'Kurikulum',   href: '/pricing-kelas#kurikulum' },
             { l: 'Komunitas',   href: 'https://discord.gg/d2Tpf6sGMr' },
             { l: 'Kalender',    href: '/calendar' },
             { l: 'Partnership', href: '/partnership' },
@@ -965,13 +739,7 @@ export default function LandingPage() {
       {/* 4.2 — Hero preview (video/chart) */}
       <HeroPreview videoId={heroVideoId} />
 
-      {/* 4.5 — Preview Platform */}
-      {preview && <ProductPreview config={preview} />}
-
       <BuktiHasil />
-
-      {/* 6 — Kurikulum */}
-      <Curriculum />
 
       {/* 7 — Komunitas */}
       <Komunitas />
