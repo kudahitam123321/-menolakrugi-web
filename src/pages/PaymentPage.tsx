@@ -18,7 +18,7 @@ interface OrderRow {
 }
 interface PaymentMethodRow {
   id: string;
-  jenis: 'transfer' | 'qris';
+  jenis: 'bank' | 'qris';
   nama_bank: string;
   nomor_rekening: string | null;
   nama_rekening: string | null;
@@ -155,7 +155,7 @@ export default function PaymentPage() {
             })}
           </div>
 
-          {selected && selected.jenis === 'transfer' && selected.nomor_rekening && (
+          {selected && selected.jenis === 'bank' && selected.nomor_rekening && (
             <button onClick={() => copyAccNo(selected.nomor_rekening!)} style={{ marginTop: 12, fontFamily: MR.mono, border: `1px solid ${MR.border}`, background: copied ? MR.up : 'transparent', color: copied ? '#000' : MR.text, padding: '8px 14px', fontSize: 11, letterSpacing: 0.6, cursor: 'pointer' }}>
               {copied ? 'TERSALIN ✓' : 'SALIN NOMOR REKENING ▸'}
             </button>
