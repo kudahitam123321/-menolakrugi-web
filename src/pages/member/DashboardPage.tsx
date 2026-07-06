@@ -13,6 +13,7 @@ import {
   Lock, FlaskConical, CircleDot, DollarSign, Briefcase,
   Paperclip, Check, Clock, Play, Circle, RotateCcw, FileText, Presentation, FileSpreadsheet, File, Download,
   Package, Receipt, BarChart3, Ticket, MessageSquare,
+  Gift,
 } from 'lucide-react';
 
 const G = { gold: 'var(--mr-gold)', gold2: 'var(--mr-gold2)' };
@@ -245,8 +246,8 @@ function LotCalculator() {
   const riskAmt  = parseFloat(balance) * (parseFloat(risk) / 100);
   const lotSize  = riskAmt / (parseFloat(sl) * pipVal);
   return (
-    <div style={{ background: C.panel, border: `1px solid ${C.border}`, borderRadius: 12, padding: 20 }}>
-      <div style={{ fontFamily: C.mono, color: G.gold, fontSize: 11, letterSpacing: 1, marginBottom: 16 }}>// LOT SIZE CALCULATOR</div>
+    <div style={{ background: LP.surface, border: `1px solid ${LP.border}`, borderRadius: 12, padding: 20 }}>
+      <div style={{ fontFamily: LP.mono, color: LP.primary, fontSize: 11, letterSpacing: 1, marginBottom: 16 }}>LOT SIZE CALCULATOR</div>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 14 }}>
         {[
           { l: 'BALANCE ($)', v: balance, s: setBalance, ph: '10000' },
@@ -254,31 +255,31 @@ function LotCalculator() {
           { l: 'STOP LOSS (pips)', v: sl, s: setSl, ph: '20' },
         ].map(f => (
           <div key={f.l}>
-            <div style={{ fontFamily: C.mono, color: C.dim, fontSize: 10, marginBottom: 5 }}>{f.l}</div>
+            <div style={{ fontFamily: LP.mono, color: LP.muted, fontSize: 10, marginBottom: 5 }}>{f.l}</div>
             <input value={f.v} onChange={e => f.s(e.target.value)} placeholder={f.ph}
-              style={{ width: '100%', background: C.bg, border: `1px solid ${C.border2}`, color: C.text, padding: '8px 12px', fontSize: 12, fontFamily: C.mono, outline: 'none', borderRadius: 5, boxSizing: 'border-box' as const }}
-              onFocus={e => e.target.style.borderColor = G.gold} onBlur={e => e.target.style.borderColor = C.border2}/>
+              style={{ width: '100%', background: LP.bg, border: `1px solid ${LP.border}`, color: LP.text, padding: '8px 12px', fontSize: 12, fontFamily: LP.mono, outline: 'none', borderRadius: 5, boxSizing: 'border-box' as const }}
+              onFocus={e => e.target.style.borderColor = LP.primary} onBlur={e => e.target.style.borderColor = LP.border}/>
           </div>
         ))}
         <div>
-          <div style={{ fontFamily: C.mono, color: C.dim, fontSize: 10, marginBottom: 5 }}>PAIR</div>
+          <div style={{ fontFamily: LP.mono, color: LP.muted, fontSize: 10, marginBottom: 5 }}>PAIR</div>
           <select value={pair} onChange={e => setPair(e.target.value)}
-            style={{ width: '100%', background: C.bg, border: `1px solid ${C.border2}`, color: C.text, padding: '8px 12px', fontSize: 12, fontFamily: C.mono, outline: 'none', borderRadius: 5, cursor: 'pointer' }}>
+            style={{ width: '100%', background: LP.bg, border: `1px solid ${LP.border}`, color: LP.text, padding: '8px 12px', fontSize: 12, fontFamily: LP.mono, outline: 'none', borderRadius: 5, cursor: 'pointer' }}>
             {Object.keys(PAIRS).map(p => <option key={p} value={p}>{p}</option>)}
           </select>
         </div>
       </div>
-      <div style={{ background: '#0a0c00', border: `1px solid #2a2200`, borderRadius: 8, padding: '16px 20px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+      <div style={{ background: LP.bg, border: `1px solid ${LP.border}`, borderRadius: 8, padding: '16px 20px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
         <div>
-          <div style={{ fontFamily: C.mono, color: C.dim, fontSize: 10, marginBottom: 5 }}>LOT SIZE</div>
-          <div style={{ fontSize: 32, fontWeight: 700, color: G.gold, letterSpacing: -1 }}>{isNaN(lotSize) ? '—' : lotSize.toFixed(2)}</div>
+          <div style={{ fontFamily: LP.mono, color: LP.muted, fontSize: 10, marginBottom: 5 }}>LOT SIZE</div>
+          <div style={{ fontSize: 32, fontWeight: 700, color: LP.primary, letterSpacing: -1 }}>{isNaN(lotSize) ? '—' : lotSize.toFixed(2)}</div>
         </div>
         <div>
-          <div style={{ fontFamily: C.mono, color: C.dim, fontSize: 10, marginBottom: 5 }}>RISK AMOUNT</div>
-          <div style={{ fontSize: 32, fontWeight: 700, color: C.up, letterSpacing: -1 }}>${isNaN(riskAmt) ? '—' : riskAmt.toFixed(0)}</div>
+          <div style={{ fontFamily: LP.mono, color: LP.muted, fontSize: 10, marginBottom: 5 }}>RISK AMOUNT</div>
+          <div style={{ fontSize: 32, fontWeight: 700, color: LP.primary, letterSpacing: -1 }}>${isNaN(riskAmt) ? '—' : riskAmt.toFixed(0)}</div>
         </div>
       </div>
-      <div style={{ fontFamily: C.mono, color: '#333', fontSize: 10, marginTop: 10, lineHeight: 1.5 }}>
+      <div style={{ fontFamily: LP.mono, color: LP.muted, fontSize: 10, marginTop: 10, lineHeight: 1.5 }}>
         Formula: Lot = (Balance × Risk%) ÷ (SL pips × Pip Value)<br/>
         Pip value {pair}: ${pipVal}/lot/pip
       </div>
@@ -1967,17 +1968,17 @@ export default function DashboardPage() {
 
           {/* ══ TOOLS ══ */}
           {active === 'tools' && (
-            <div className='mr-content-pad' style={{ padding: 24 }}>
+            <div className='mr-content-pad' style={{ padding: 24, background: LP.bg, minHeight: '100%' }}>
               {/* Header */}
               <div style={{ marginBottom: 24 }}>
-                <div style={{ fontFamily: C.mono, color: G.gold, fontSize: 10, letterSpacing: 1, marginBottom: 6 }}>// BROKER & PROP FIRM</div>
-                <h2 style={{ fontSize: 22, fontWeight: 700, margin: '0 0 4px' }}>Broker & Prop Firm</h2>
-                <p style={{ color: C.dim, fontSize: 13, margin: 0 }}>Rekomendasi broker terpercaya dan rules prop firm dari mentor.</p>
+                <div style={{ fontFamily: LP.mono, color: LP.primary, fontSize: 10, letterSpacing: 1, marginBottom: 6 }}>BROKER & PROP FIRM</div>
+                <h2 style={{ fontSize: 22, fontWeight: 700, margin: '0 0 4px', color: LP.text }}>Broker & Prop Firm</h2>
+                <p style={{ color: LP.muted, fontSize: 13, margin: 0 }}>Rekomendasi broker terpercaya dan rules prop firm dari mentor.</p>
               </div>
 
               {/* Lot Size Calculator — full width, compact */}
-              <div style={{ background: 'linear-gradient(135deg,var(--mr-tint-gold),var(--mr-bg))', border: `1px solid var(--mr-tint-gold-b)`, borderRadius: 14, padding: '20px 24px', marginBottom: 20 }}>
-                <div style={{ fontFamily: C.mono, color: G.gold, fontSize: 10, letterSpacing: 1, marginBottom: 14 }}>// LOT SIZE CALCULATOR</div>
+              <div style={{ background: LP.primaryTint, border: `1px solid ${LP.primary}33`, borderRadius: 14, padding: '20px 24px', marginBottom: 20 }}>
+                <div style={{ fontFamily: LP.mono, color: LP.primary, fontSize: 10, letterSpacing: 1, marginBottom: 14 }}>LOT SIZE CALCULATOR</div>
                 <LotCalculator/>
               </div>
 
@@ -1986,25 +1987,25 @@ export default function DashboardPage() {
                 const brokerList = brokers.filter((b: any) => b.jenis !== 'propfirm');
                 const propfirmList = brokers.filter((b: any) => b.jenis === 'propfirm');
                 const BrokerCard = ({ b }: { b: any }) => (
-                  <div key={b.id} style={{ background: C.panel, border: `1px solid ${C.border}`, borderRadius: 12, padding: '18px', display: 'flex', flexDirection: 'column' as const, gap: 8, transition: 'border-color 0.15s' }}
-                    onMouseEnter={e => (e.currentTarget as HTMLElement).style.borderColor = 'var(--mr-tint-gold-b)'}
-                    onMouseLeave={e => (e.currentTarget as HTMLElement).style.borderColor = C.border}>
+                  <div key={b.id} style={{ background: LP.surface, border: `1px solid ${LP.border}`, borderRadius: 12, padding: '18px', display: 'flex', flexDirection: 'column' as const, gap: 8, transition: 'border-color 0.15s' }}
+                    onMouseEnter={e => (e.currentTarget as HTMLElement).style.borderColor = `${LP.primary}55`}
+                    onMouseLeave={e => (e.currentTarget as HTMLElement).style.borderColor = LP.border}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                       {b.logo_url
-                        ? <img src={b.logo_url} alt={b.nama} style={{ width: 40, height: 40, objectFit: 'contain', borderRadius: 10, border: '1px solid var(--mr-tint-gold-b)', background: 'var(--mr-panel)', flexShrink: 0 }} />
-                        : <div style={{ width: 40, height: 40, background: 'var(--mr-tint-gold)', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: 13, color: G.gold, flexShrink: 0, border: "1px solid var(--mr-tint-gold-b)" }}>
+                        ? <img src={b.logo_url} alt={b.nama} style={{ width: 40, height: 40, objectFit: 'contain', borderRadius: 10, border: `1px solid ${LP.primary}33`, background: LP.surface, flexShrink: 0 }} />
+                        : <div style={{ width: 40, height: 40, background: LP.primaryTint, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: 13, color: LP.primary, flexShrink: 0, border: `1px solid ${LP.primary}33` }}>
                             {b.nama?.[0]?.toUpperCase()}
                           </div>
                       }
                       <div>
-                        <div style={{ fontWeight: 700, fontSize: 14 }}>{b.nama}</div>
-                        {b.diskon && <div style={{ fontFamily: C.mono, color: C.up, fontSize: 10 }}>🎁 {b.diskon}</div>}
+                        <div style={{ fontWeight: 700, fontSize: 14, color: LP.text }}>{b.nama}</div>
+                        {b.diskon && <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontFamily: LP.mono, color: LP.primary, fontSize: 10 }}><Gift size={11}/> {b.diskon}</div>}
                       </div>
                     </div>
-                    {b.deskripsi && <div style={{ color: C.dim, fontSize: 12, lineHeight: 1.55, flex: 1 }}>{b.deskripsi}</div>}
+                    {b.deskripsi && <div style={{ color: LP.muted, fontSize: 12, lineHeight: 1.55, flex: 1 }}>{b.deskripsi}</div>}
                     {b.link && (
                       <a href={b.link} target="_blank" rel="noopener noreferrer"
-                        style={{ display: 'block', textAlign: 'center' as const, fontFamily: C.mono, fontSize: 11, fontWeight: 700, color: '#000', background: G.gold, padding: '8px', borderRadius: 7, textDecoration: 'none', marginTop: 4 }}>
+                        style={{ display: 'block', textAlign: 'center' as const, fontFamily: LP.mono, fontSize: 11, fontWeight: 700, color: '#fff', background: LP.primary, padding: '8px', borderRadius: 7, textDecoration: 'none', marginTop: 4 }}>
                         DAFTAR ▸
                       </a>
                     )}
@@ -2014,13 +2015,13 @@ export default function DashboardPage() {
                   <>
                     {/* Broker section */}
                     <div style={{ marginBottom: 20 }}>
-                      <div style={{ fontFamily: C.mono, color: C.dim, fontSize: 10, letterSpacing: 1, marginBottom: 12 }}>// BROKER REKOMENDASI</div>
+                      <div style={{ fontFamily: LP.mono, color: LP.muted, fontSize: 10, letterSpacing: 1, marginBottom: 12 }}>BROKER REKOMENDASI</div>
                       {brokerList.length > 0 ? (
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 12 }}>
                           {brokerList.map((b: any) => <BrokerCard key={b.id} b={b} />)}
                         </div>
                       ) : (
-                        <div style={{ color: C.dim, fontSize: 13, padding: '20px', background: C.panel, borderRadius: 12, textAlign: 'center' as const }}>
+                        <div style={{ color: LP.muted, fontSize: 13, padding: '20px', background: LP.surface, borderRadius: 12, textAlign: 'center' as const }}>
                           Belum ada rekomendasi broker.
                         </div>
                       )}
@@ -2028,7 +2029,7 @@ export default function DashboardPage() {
                     {/* Prop Firm Rekomendasi section */}
                     {propfirmList.length > 0 && (
                       <div style={{ marginBottom: 20 }}>
-                        <div style={{ fontFamily: C.mono, color: '#a855f7', fontSize: 10, letterSpacing: 1, marginBottom: 12 }}>// PROP FIRM REKOMENDASI</div>
+                        <div style={{ fontFamily: LP.mono, color: '#a855f7', fontSize: 10, letterSpacing: 1, marginBottom: 12 }}>PROP FIRM REKOMENDASI</div>
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 12 }}>
                           {propfirmList.map((b: any) => <BrokerCard key={b.id} b={b} />)}
                         </div>
@@ -2041,26 +2042,26 @@ export default function DashboardPage() {
               {/* Prop Firm Rules */}
               {propRules.length > 0 && (
                 <div>
-                  <div style={{ fontFamily: C.mono, color: C.dim, fontSize: 10, letterSpacing: 1, marginBottom: 12 }}>// PROP FIRM RULES</div>
+                  <div style={{ fontFamily: LP.mono, color: LP.muted, fontSize: 10, letterSpacing: 1, marginBottom: 12 }}>PROP FIRM RULES</div>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 12 }}>
                     {propRules.map((r: any) => (
-                      <div key={r.id} style={{ background: C.panel, border: `1px solid #1e1440`, borderRadius: 12, padding: '18px', display: 'flex', flexDirection: 'column' as const, gap: 10 }}>
+                      <div key={r.id} style={{ background: LP.surface, border: `1px solid #a855f733`, borderRadius: 12, padding: '18px', display: 'flex', flexDirection: 'column' as const, gap: 10 }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                          <span style={{ fontSize: 20 }}>📋</span>
-                          <div style={{ fontWeight: 700, fontSize: 14 }}>{r.judul}</div>
+                          <ClipboardList size={20} color="#a855f7"/>
+                          <div style={{ fontWeight: 700, fontSize: 14, color: LP.text }}>{r.judul}</div>
                         </div>
-                        {r.deskripsi && <div style={{ color: C.dim, fontSize: 12, lineHeight: 1.55 }}>{r.deskripsi}</div>}
+                        {r.deskripsi && <div style={{ color: LP.muted, fontSize: 12, lineHeight: 1.55 }}>{r.deskripsi}</div>}
                         <div style={{ display: 'flex', gap: 8, marginTop: 'auto' as const, flexWrap: 'wrap' as const }}>
                           {r.link && (
                             <a href={r.link} target="_blank" rel="noopener noreferrer"
-                              style={{ fontFamily: C.mono, fontSize: 10, fontWeight: 700, color: '#a855f7', textDecoration: 'none', border: '1px solid #4a2a8a', padding: '5px 12px', borderRadius: 6, background: 'var(--mr-tint-purple)' }}>
+                              style={{ fontFamily: LP.mono, fontSize: 10, fontWeight: 700, color: '#a855f7', textDecoration: 'none', border: '1px solid #a855f755', padding: '5px 12px', borderRadius: 6, background: '#a855f711' }}>
                               BUKA LINK ▸
                             </a>
                           )}
                           {r.file_url && (
                             <a href={r.file_url} target="_blank" rel="noopener noreferrer"
-                              style={{ fontFamily: C.mono, fontSize: 10, fontWeight: 700, color: C.up, textDecoration: 'none', border: `1px solid var(--mr-up-a27)`, padding: '5px 12px', borderRadius: 6, background: 'var(--mr-tint-green3)' }}>
-                              ⬇ DOWNLOAD
+                              style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontFamily: LP.mono, fontSize: 10, fontWeight: 700, color: LP.primary, textDecoration: 'none', border: `1px solid ${LP.primary}33`, padding: '5px 12px', borderRadius: 6, background: LP.primaryTint }}>
+                              <Download size={11}/> DOWNLOAD
                             </a>
                           )}
                         </div>
