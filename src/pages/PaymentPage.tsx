@@ -142,7 +142,11 @@ export default function PaymentPage() {
                   style={{ textAlign: 'left' as const, border: `1.5px solid ${isSelected ? MR.gold : MR.border}`, background: isSelected ? '#0e0c04' : MR.panel, padding: '16px 20px', cursor: 'pointer', display: 'flex', flexDirection: 'column' as const, gap: 8 }}>
                   <div style={{ fontWeight: 700, fontSize: 15 }}>{pm.nama_bank}</div>
                   {pm.jenis === 'qris' ? (
-                    pm.qris_image_url && <img src={pm.qris_image_url} alt={`QRIS ${pm.nama_bank}`} style={{ width: '100%', maxWidth: 240, height: 240, objectFit: 'contain', background: '#fff', borderRadius: 6 }} />
+                    isSelected && pm.qris_image_url ? (
+                      <img src={pm.qris_image_url} alt={`QRIS ${pm.nama_bank}`} style={{ width: '100%', maxWidth: 320, height: 320, objectFit: 'contain', background: '#fff', borderRadius: 6, marginTop: 4 }} />
+                    ) : (
+                      <div style={{ fontFamily: MR.mono, fontSize: 11, color: MR.dim }}>Klik untuk lihat QR code</div>
+                    )
                   ) : (
                     <>
                       <div style={{ fontFamily: MR.mono, fontSize: 18, fontWeight: 700, letterSpacing: 1.5, color: isSelected ? MR.gold : MR.text }}>{pm.nomor_rekening}</div>

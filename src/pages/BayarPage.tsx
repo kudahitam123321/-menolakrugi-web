@@ -224,8 +224,7 @@ export default function BayarPage() {
                     <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 4 }}>{pm.nama_bank}</div>
                     {pm.jenis === 'qris' ? (
                       <>
-                        <img src={pm.qris_image_url} alt={`QRIS ${pm.nama_bank}`}
-                          style={{ width: '100%', maxWidth: 280, height: 280, objectFit: 'contain', background: '#fff', borderRadius: 8, border: `1px solid ${C.border}`, marginBottom: 6 }} />
+                        {!selected && <div style={{ fontFamily: '"Geist Mono",monospace', fontSize: 11, color: C.dim }}>Klik untuk lihat QR code</div>}
                         {pm.catatan && <div style={{ fontSize: 11, color: C.dimmer, marginTop: 4 }}>{pm.catatan}</div>}
                       </>
                     ) : (
@@ -254,7 +253,7 @@ export default function BayarPage() {
                   <div style={{ fontFamily: '"Geist Mono",monospace', color: C.dimmer, fontSize: 10, letterSpacing: 0.8, marginBottom: 8 }}>SCAN QRIS BERIKUT</div>
                   <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 6 }}>{selectedPm.nama_bank}</div>
                   <img src={selectedPm.qris_image_url} alt={`QRIS ${selectedPm.nama_bank}`}
-                    style={{ width: '100%', maxWidth: 280, height: 280, objectFit: 'contain', background: '#fff', borderRadius: 8, border: `1px solid ${C.border}` }} />
+                    style={{ width: '100%', maxWidth: 320, height: 320, objectFit: 'contain', background: '#fff', borderRadius: 8, border: `1px solid ${C.border}` }} />
                 </>
               ) : (
                 <>
