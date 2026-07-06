@@ -24,6 +24,8 @@ const LP = {
   shadowMd: '0 8px 24px rgba(0,0,0,0.08)',
 };
 
+const KURS_USD = 18000; // Rp per 1 USD — dipakai buat estimasi harga USD di kartu pricing
+
 function ProductPreview({ config }: { config: LandingPreviewConfig }) {
   const [isMobile, setIsMobile] = React.useState(() => window.matchMedia('(max-width: 767px)').matches);
   React.useEffect(() => {
@@ -80,6 +82,7 @@ function ProductPreview({ config }: { config: LandingPreviewConfig }) {
                     <span style={{ fontFamily: LP.mono, color: LP.primary, fontSize: 14 }}>Rp</span>
                     <span style={{ fontSize: 32, fontWeight: 800, letterSpacing: -1, lineHeight: 1, color: LP.text }}>{fmt(hargaDiskon)}</span>
                   </div>
+                  <div style={{ fontFamily: LP.mono, fontSize: 11, color: LP.muted, marginTop: 2 }}>≈ ${(hargaDiskon / KURS_USD).toFixed(2)}</div>
                   {plan.diskon > 0 && (
                     <div style={{ fontFamily: LP.mono, color: LP.primary, fontSize: 11, marginTop: 6, background: LP.primaryTint, display: 'inline-block', padding: '2px 8px', borderRadius: 4 }}>
                       Hemat {plan.diskon}% · Rp {fmt(hemat)}
