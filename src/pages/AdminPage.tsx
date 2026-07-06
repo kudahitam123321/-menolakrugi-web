@@ -13,6 +13,14 @@ function RankImg({ rank, size = 28 }: { rank: number; size?: number }) {
   return <img src={src} alt={`rank-${rank}`} style={{ width: size, height: size, objectFit: 'contain', flexShrink: 0 }} />;
 }
 
+function hitungJatuhTempo(activatedAt: string | null, planType: string | null): Date | null {
+  if (!activatedAt || !planType || planType === 'lifetime') return null;
+  const d = new Date(activatedAt);
+  if (planType === 'bulanan') { d.setMonth(d.getMonth() + 1); return d; }
+  if (planType === 'tahunan') { d.setFullYear(d.getFullYear() + 1); return d; }
+  return null;
+}
+
 interface Admin { id: string; username: string; password: string; role: string; }
 interface Member { id: string; nama: string; tier: string; password: string; is_active: boolean; is_advance: boolean; last_seen?: string; discord_id?: string; discord_username?: string; }
 interface VideoItem { id: string; judul: string; deskripsi: string; youtube_url: string; tier_akses: string[]; level: string; urutan: number; }
@@ -1725,10 +1733,12 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
   }
 
   async function updateOrderStatus(orderId: string, newStatus: string) {
-    const { error } = await supabase.from('orders').update({
+    const payload: { status: string; catatan: string | null; activated_at?: string } = {
       status: newStatus,
       catatan: orderCatatanMap[orderId] ?? null,
-    }).eq('id', orderId);
+    };
+    if (newStatus === 'aktif') payload.activated_at = new Date().toISOString();
+    const { error } = await supabase.from('orders').update(payload).eq('id', orderId);
     if (error) notify('Error: ' + error.message, 'err');
     else { notify('Status pesanan diperbarui!'); loadData(); }
   }
@@ -3289,6 +3299,13 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
                           </div>
                           <div style={{fontFamily:'monospace',fontSize:11,color:'#888',marginBottom:2}}>📦 {(o as any).products?.nama||'—'}{o.plan_type ? <span style={{marginLeft:6,color:'#16a34a',fontSize:9,border:'1px solid #16a34a33',padding:'1px 6px'}}>{o.plan_type.toUpperCase()}</span> : ''}{o.kode_diskon ? <span style={{marginLeft:6,color:'#eab308',fontSize:9,border:'1px solid #eab30833',padding:'1px 6px'}}>🎟️ {o.kode_diskon} -{o.diskon_applied}%</span> : ''}</div>
                           <div style={{fontFamily:'monospace',fontSize:10,color:'#444'}}>{new Date(o.created_at).toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'})}</div>
+                          {(() => {
+                            if (o.plan_type === 'lifetime') return <div style={{fontFamily:'monospace',fontSize:10,color:'#444',marginTop:2}}>Jatuh tempo: Seumur Hidup</div>;
+                            const jt = hitungJatuhTempo(o.activated_at, o.plan_type);
+                            if (!jt) return <div style={{fontFamily:'monospace',fontSize:10,color:'#444',marginTop:2}}>Jatuh tempo: —</div>;
+                            const lewat = jt < new Date();
+                            return <div style={{fontFamily:'monospace',fontSize:10,color:lewat?'#ef4444':'#444',marginTop:2}}>Jatuh tempo: {jt.toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'})}</div>;
+                          })()}
                           {o.catatan&&<div style={{fontFamily:'monospace',fontSize:10,color:'#666',marginTop:4,fontStyle:'italic'}}>Catatan: {o.catatan}</div>}
                         </div>
                         <div style={{display:'flex',gap:8,alignItems:'center',flexShrink:0}}>
