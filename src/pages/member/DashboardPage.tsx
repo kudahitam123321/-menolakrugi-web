@@ -13,7 +13,7 @@ import {
   Lock, FlaskConical, CircleDot, DollarSign, Briefcase,
   Paperclip, Check, Clock, Play, Circle, RotateCcw, FileText, Presentation, FileSpreadsheet, File, Download,
   Package, Receipt, BarChart3, Ticket, MessageSquare,
-  Gift,
+  Gift, AlertTriangle,
 } from 'lucide-react';
 
 const G = { gold: 'var(--mr-gold)', gold2: 'var(--mr-gold2)' };
@@ -2149,18 +2149,18 @@ export default function DashboardPage() {
 
           {/* ══ STATUS TRADING ══ */}
           {active === 'funded' && (
-            <div style={{ padding: 24 }}>
+            <div style={{ padding: 24, background: LP.bg, minHeight: '100%' }}>
               <div style={{ marginBottom: 24 }}>
-                <div style={{ fontFamily: C.mono, color: G.gold, fontSize: 10, letterSpacing: 1, marginBottom: 6 }}>// STATUS TRADING</div>
-                <h2 style={{ fontSize: 22, fontWeight: 700, margin: '0 0 6px' }}>Status Trading Kamu</h2>
-                <p style={{ color: C.dim, fontSize: 13, margin: 0 }}>Pilih status trading kamu. Nickname Discord otomatis diupdate sesuai status yang dipilih.</p>
+                <div style={{ fontFamily: LP.mono, color: LP.primary, fontSize: 10, letterSpacing: 1, marginBottom: 6 }}>STATUS TRADING</div>
+                <h2 style={{ fontSize: 22, fontWeight: 700, margin: '0 0 6px', color: LP.text }}>Status Trading Kamu</h2>
+                <p style={{ color: LP.muted, fontSize: 13, margin: 0 }}>Pilih status trading kamu. Nickname Discord otomatis diupdate sesuai status yang dipilih.</p>
               </div>
 
               {/* Current status banner */}
-              <div style={{ background: C.panel, border: `1px solid ${C.border}`, borderRadius: 12, padding: '18px 20px', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 16 }}>
+              <div style={{ background: LP.surface, border: `1px solid ${LP.border}`, borderRadius: 12, padding: '18px 20px', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 16 }}>
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontFamily: C.mono, color: C.dim, fontSize: 10, marginBottom: 4 }}>STATUS SAAT INI</div>
-                  <div style={{ fontSize: 20, fontWeight: 700, color: selectedStatus ? G.gold : C.dim }}>
+                  <div style={{ fontFamily: LP.mono, color: LP.muted, fontSize: 10, marginBottom: 4 }}>STATUS SAAT INI</div>
+                  <div style={{ fontSize: 20, fontWeight: 700, color: selectedStatus ? LP.primary : LP.muted }}>
                     {selectedStatus ? `${selectedStatus} — ${
                       selectedStatus === 'DA' ? 'Demo Account' :
                       selectedStatus === 'P1' ? 'Phase 1' :
@@ -2170,8 +2170,8 @@ export default function DashboardPage() {
                       selectedStatus === 'Ap' ? 'Akun Pribadi' : selectedStatus
                     }` : 'Belum diset'}
                   </div>
-                  <div style={{ fontFamily: C.mono, fontSize: 11, color: C.dim, marginTop: 4 }}>
-                    Nickname Discord: <span style={{ color: C.text }}>[{
+                  <div style={{ fontFamily: LP.mono, fontSize: 11, color: LP.muted, marginTop: 4 }}>
+                    Nickname Discord: <span style={{ color: LP.text }}>[{
                       member.tier === 'SMC Platinum 1 on 1' ? '💎' :
                       member.tier === 'SMC Gold Mentorship' ? '🥇' :
                       member.tier === 'SMC Silver' ? '🥈' :
@@ -2187,8 +2187,8 @@ export default function DashboardPage() {
                   </div>
                 </div>
                 {!member.discord_username && (
-                  <div style={{ fontFamily: C.mono, fontSize: 11, color: '#f97316', background: '#1a0f00', border: '1px solid #3a2000', padding: '8px 12px', borderRadius: 6 }}>
-                    ⚠ Discord belum<br/>terhubung
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontFamily: LP.mono, fontSize: 11, color: '#f97316', background: '#fff7ed', border: '1px solid #f9731633', padding: '8px 12px', borderRadius: 6 }}>
+                    <AlertTriangle size={13}/> Discord belum<br/>terhubung
                   </div>
                 )}
               </div>
@@ -2206,13 +2206,13 @@ export default function DashboardPage() {
                   const isSelected = selectedStatus === s.key;
                   return (
                     <button key={s.key} onClick={() => setSelectedStatus(s.key)}
-                      style={{ background: isSelected ? `${s.color}18` : C.panel,
-                        border: `${isSelected ? '2px' : '1px'} solid ${isSelected ? s.color : C.border}`,
+                      style={{ background: isSelected ? `${s.color}18` : LP.surface,
+                        border: `${isSelected ? '2px' : '1px'} solid ${isSelected ? s.color : LP.border}`,
                         borderRadius: 12, padding: '16px', textAlign: 'left' as const, cursor: 'pointer', transition: 'all 0.15s' }}>
-                      <div style={{ fontFamily: C.mono, fontSize: 13, fontWeight: 700, color: isSelected ? s.color : C.text, marginBottom: 4 }}>{s.key}</div>
-                      <div style={{ fontSize: 13, fontWeight: 600, color: isSelected ? s.color : C.text, marginBottom: 4 }}>{s.label}</div>
-                      <div style={{ fontSize: 11, color: C.dim, lineHeight: 1.4 }}>{s.desc}</div>
-                      {isSelected && <div style={{ fontFamily: C.mono, fontSize: 9, color: s.color, marginTop: 6 }}>● DIPILIH</div>}
+                      <div style={{ fontFamily: LP.mono, fontSize: 13, fontWeight: 700, color: isSelected ? s.color : LP.text, marginBottom: 4 }}>{s.key}</div>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: isSelected ? s.color : LP.text, marginBottom: 4 }}>{s.label}</div>
+                      <div style={{ fontSize: 11, color: LP.muted, lineHeight: 1.4 }}>{s.desc}</div>
+                      {isSelected && <div style={{ fontFamily: LP.mono, fontSize: 9, color: s.color, marginTop: 6 }}>● DIPILIH</div>}
                     </button>
                   );
                 })}
@@ -2220,24 +2220,24 @@ export default function DashboardPage() {
 
               {/* Clear button */}
               <button onClick={() => setSelectedStatus(null)}
-                style={{ fontFamily: C.mono, fontSize: 11, color: C.dim, background: 'transparent', border: `1px solid ${C.border}`, padding: '6px 14px', cursor: 'pointer', borderRadius: 6, marginBottom: 16 }}>
+                style={{ fontFamily: LP.mono, fontSize: 11, color: LP.muted, background: 'transparent', border: `1px solid ${LP.border}`, padding: '6px 14px', cursor: 'pointer', borderRadius: 6, marginBottom: 16 }}>
                 × Hapus Status
               </button>
 
               {/* Save button */}
               {statusMsg && (
-                <div style={{ fontFamily: C.mono, fontSize: 12, color: statusMsg.includes('Gagal') || statusMsg.includes('Tidak') ? C.down : C.up, marginBottom: 12, padding: '8px 14px', background: C.bg, borderRadius: 6 }}>
+                <div style={{ fontFamily: LP.mono, fontSize: 12, color: statusMsg.includes('Gagal') || statusMsg.includes('Tidak') ? LP.danger : LP.primary, marginBottom: 12, padding: '8px 14px', background: LP.bg, borderRadius: 6 }}>
                   {statusMsg}
                 </div>
               )}
               <button onClick={() => handleUpdateStatus(selectedStatus)} disabled={statusSaving}
-                style={{ background: statusSaving ? 'var(--mr-border2)' : G.gold, color: statusSaving ? 'var(--mr-dim)' : '#000', fontFamily: C.mono, fontSize: 13, fontWeight: 700, padding: '12px 28px', border: 'none', cursor: statusSaving ? 'not-allowed' : 'pointer', borderRadius: 8 }}>
+                style={{ background: statusSaving ? LP.border : LP.primary, color: statusSaving ? LP.muted : '#fff', fontFamily: LP.mono, fontSize: 13, fontWeight: 700, padding: '12px 28px', border: 'none', cursor: statusSaving ? 'not-allowed' : 'pointer', borderRadius: 8 }}>
                 {statusSaving ? 'MENYIMPAN...' : '▸ SIMPAN & UPDATE DISCORD'}
               </button>
 
               {!member.discord_username && (
-                <p style={{ color: C.dim, fontSize: 12, marginTop: 12, fontFamily: C.mono }}>
-                  ⚠ Discord belum terhubung — status tersimpan tapi nickname tidak berubah. Hubungkan di menu Pengaturan.
+                <p style={{ display: 'flex', alignItems: 'center', gap: 6, color: LP.muted, fontSize: 12, marginTop: 12, fontFamily: LP.mono }}>
+                  <AlertTriangle size={13}/> Discord belum terhubung — status tersimpan tapi nickname tidak berubah. Hubungkan di menu Pengaturan.
                 </p>
               )}
             </div>
