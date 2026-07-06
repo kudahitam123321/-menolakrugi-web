@@ -188,14 +188,15 @@ function Curriculum() {
 }
 
 const FEATURE_ROWS: { label: string; included: Record<string, boolean> }[] = [
-  { label: 'Materi Dasar SMC (struktur, candle, baca chart)', included: { trial: true, bronze: true, gold: true, platinum: true } },
-  { label: 'Materi SMC Lengkap (BOS, IDM, Order Block, Daily Bias)', included: { trial: false, bronze: true, gold: true, platinum: true } },
-  { label: 'Live Session Q&A Mingguan', included: { trial: false, bronze: true, gold: true, platinum: true } },
-  { label: 'Live Mentoring 2×/Minggu', included: { trial: false, bronze: false, gold: true, platinum: true } },
-  { label: 'Evaluasi Trading Mingguan', included: { trial: false, bronze: false, gold: true, platinum: true } },
-  { label: 'Channel Funded Trader (Prop Firm)', included: { trial: false, bronze: false, gold: true, platinum: true } },
-  { label: 'Sesi 1-on-1 Privat dengan Mentor', included: { trial: false, bronze: false, gold: false, platinum: true } },
-  { label: 'Kurikulum Personal', included: { trial: false, bronze: false, gold: false, platinum: true } },
+  { label: 'Materi SMC Basic Modul', included: { trial: true, bronze: true, gold: true, platinum: true } },
+  { label: 'Private Discord', included: { trial: true, bronze: true, gold: true, platinum: true } },
+  { label: 'Mentor Outlook', included: { trial: true, bronze: true, gold: true, platinum: true } },
+  { label: 'Live Diskusi Via Discord', included: { trial: true, bronze: true, gold: true, platinum: true } },
+  { label: 'Materi SMC Advanced Modul', included: { trial: false, bronze: false, gold: true, platinum: true } },
+  { label: 'Koreksi Jurnal Trading', included: { trial: false, bronze: false, gold: true, platinum: true } },
+  { label: 'Claim 1 on 1 Live dengan Mentor (Seminggu Sekali)', included: { trial: false, bronze: false, gold: true, platinum: true } },
+  { label: 'Claim 1 on 1 Live Lebih dari Seminggu Sekali', included: { trial: false, bronze: false, gold: false, platinum: true } },
+  { label: 'Gratis Akses Indikator SMC 3 Bulan', included: { trial: false, bronze: false, gold: false, platinum: true } },
 ];
 
 function TierPricing() {
