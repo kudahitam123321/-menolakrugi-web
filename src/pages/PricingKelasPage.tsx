@@ -2,6 +2,7 @@
 // URL: /pricing-kelas (anchor #kurikulum untuk section kurikulum)
 
 import React from 'react';
+import { Check } from 'lucide-react';
 import { usePricing } from '../hooks';
 
 const LP = {
@@ -186,6 +187,17 @@ function Curriculum() {
   );
 }
 
+const FEATURE_ROWS: { label: string; included: Record<string, boolean> }[] = [
+  { label: 'Materi Dasar SMC (struktur, candle, baca chart)', included: { trial: true, bronze: true, gold: true, platinum: true } },
+  { label: 'Materi SMC Lengkap (BOS, IDM, Order Block, Daily Bias)', included: { trial: false, bronze: true, gold: true, platinum: true } },
+  { label: 'Live Session Q&A Mingguan', included: { trial: false, bronze: true, gold: true, platinum: true } },
+  { label: 'Live Mentoring 2×/Minggu', included: { trial: false, bronze: false, gold: true, platinum: true } },
+  { label: 'Evaluasi Trading Mingguan', included: { trial: false, bronze: false, gold: true, platinum: true } },
+  { label: 'Channel Funded Trader (Prop Firm)', included: { trial: false, bronze: false, gold: true, platinum: true } },
+  { label: 'Sesi 1-on-1 Privat dengan Mentor', included: { trial: false, bronze: false, gold: false, platinum: true } },
+  { label: 'Kurikulum Personal', included: { trial: false, bronze: false, gold: false, platinum: true } },
+];
+
 function TierPricing() {
   const { tiers, loading } = usePricing();
   const [isMobile, setIsMobile] = React.useState(() => window.matchMedia('(max-width: 767px)').matches);
@@ -211,53 +223,122 @@ function TierPricing() {
           </p>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(4, 1fr)', gap: 16 }}>
-          {tiers.map(tier => (
-            <div key={tier.id} style={{
-              borderRadius: LP.radius, padding: '26px 22px', background: LP.surface,
-              border: tier.is_featured ? `2px solid ${LP.primary}` : `1px solid ${LP.border}`,
-              boxShadow: tier.is_featured ? LP.shadowMd : LP.shadowSm,
-              display: 'flex', flexDirection: 'column' as const, position: 'relative' as const,
-            }}>
-              {tier.badge && (
-                <div style={{ position: 'absolute', top: -12, left: 20, background: tier.is_featured ? LP.primary : LP.text, color: '#fff', padding: '4px 12px', fontSize: 10, letterSpacing: 0.6, fontWeight: 700, borderRadius: 20, whiteSpace: 'nowrap' as const }}>
-                  {tier.badge.toUpperCase()}
-                </div>
-              )}
-              <div style={{ fontFamily: LP.mono, fontSize: 10, color: LP.muted, letterSpacing: 1, marginTop: tier.badge ? 8 : 0 }}>{tier.tag.toUpperCase()}</div>
-              <div style={{ fontWeight: 700, fontSize: 18, margin: '4px 0 14px', color: LP.text }}>{tier.name}</div>
-              <p style={{ color: LP.muted, fontSize: 13, lineHeight: 1.5, marginBottom: 16, minHeight: 40 }}>{tier.pitch}</p>
-              <div style={{ marginBottom: 4 }}>
-                {tier.original_price && (
-                  <div style={{ fontFamily: LP.mono, fontSize: 12, color: LP.muted, marginBottom: 4 }}><s>Rp {fmt(tier.original_price)}</s></div>
-                )}
-                <div style={{ display: 'flex', alignItems: 'baseline', gap: 4 }}>
-                  <span style={{ fontFamily: LP.mono, color: LP.primary, fontSize: 14 }}>Rp</span>
-                  <span style={{ fontSize: 30, fontWeight: 800, letterSpacing: -1, lineHeight: 1, color: LP.text }}>{fmt(tier.price)}</span>
-                </div>
-                <div style={{ fontFamily: LP.mono, color: LP.muted, fontSize: 11, marginTop: 4 }}>{tier.period}</div>
-              </div>
-              <div style={{ flex: 1, marginTop: 12, display: 'grid', gap: 8 }}>
-                {tier.perks.slice(0, 5).map(perk => (
-                  <div key={perk} style={{ display: 'flex', gap: 8, fontSize: 12.5, color: LP.muted, lineHeight: 1.45 }}>
-                    <span style={{ color: LP.primary, flexShrink: 0, fontFamily: LP.mono }}>▸</span>
-                    <span>{perk}</span>
+        {isMobile ? (
+          <div style={{ display: 'grid', gap: 16 }}>
+            {tiers.map(tier => (
+              <div key={tier.id} style={{
+                borderRadius: LP.radius, padding: '24px 20px',
+                background: tier.is_featured ? LP.text : LP.surface,
+                border: tier.is_featured ? 'none' : `1px solid ${LP.border}`,
+                boxShadow: tier.is_featured ? LP.shadowMd : LP.shadowSm,
+                position: 'relative' as const,
+              }}>
+                {tier.badge && (
+                  <div style={{ display: 'inline-block', background: LP.primary, color: '#fff', padding: '4px 12px', fontSize: 10, letterSpacing: 0.6, fontWeight: 700, borderRadius: 20, marginBottom: 12 }}>
+                    {tier.is_featured ? 'POPULER' : tier.badge.toUpperCase()}
                   </div>
-                ))}
+                )}
+                <div style={{ fontFamily: LP.mono, fontSize: 11, letterSpacing: 1, fontWeight: 700, color: tier.is_featured ? 'rgba(255,255,255,0.8)' : LP.muted }}>{tier.tag.toUpperCase()}</div>
+                <div style={{ fontWeight: 700, fontSize: 18, margin: '4px 0 12px', color: tier.is_featured ? '#fff' : LP.text }}>{tier.name}</div>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, marginBottom: 4 }}>
+                  <span style={{ fontFamily: LP.mono, fontSize: 14, color: tier.is_featured ? '#fff' : LP.primary }}>Rp</span>
+                  <span style={{ fontSize: 28, fontWeight: 800, letterSpacing: -1, color: tier.is_featured ? '#fff' : LP.text }}>{fmt(tier.price)}</span>
+                </div>
+                <div style={{ fontFamily: LP.mono, fontSize: 11, marginBottom: 16, color: tier.is_featured ? 'rgba(255,255,255,0.7)' : LP.muted }}>{tier.period}</div>
+                <div style={{ display: 'grid', gap: 8, marginBottom: 20 }}>
+                  {FEATURE_ROWS.map(row => (
+                    <div key={row.label} style={{ display: 'flex', gap: 8, alignItems: 'flex-start', fontSize: 12.5, color: tier.is_featured ? 'rgba(255,255,255,0.85)' : LP.muted }}>
+                      {row.included[tier.id] ? (
+                        <Check size={14} color={LP.primary} style={{ flexShrink: 0, marginTop: 1 }} />
+                      ) : (
+                        <span style={{ flexShrink: 0, width: 14, textAlign: 'center' as const, color: tier.is_featured ? 'rgba(255,255,255,0.35)' : LP.border, fontFamily: LP.mono }}>–</span>
+                      )}
+                      <span>{row.label}</span>
+                    </div>
+                  ))}
+                </div>
+                <button
+                  onClick={() => { window.location.href = `/signup?tier=${tier.id}`; }}
+                  style={{
+                    fontFamily: LP.sans, padding: '13px 0', fontSize: 13, fontWeight: 700, width: '100%', cursor: 'pointer', borderRadius: 8,
+                    background: tier.is_featured ? LP.primary : 'transparent',
+                    color: tier.is_featured ? '#fff' : LP.primary,
+                    border: tier.is_featured ? 'none' : `1px solid ${LP.primary}`,
+                  }}>
+                  Pilih {tier.tag} →
+                </button>
               </div>
-              <button
-                onClick={() => { window.location.href = `/signup?tier=${tier.id}`; }}
-                style={{
-                  marginTop: 20, fontFamily: LP.sans, padding: '13px 0', fontSize: 13, fontWeight: 700, width: '100%', cursor: 'pointer', borderRadius: 8,
-                  background: tier.is_featured ? LP.primary : 'transparent',
-                  color: tier.is_featured ? '#fff' : LP.primary,
-                  border: tier.is_featured ? 'none' : `1px solid ${LP.primary}`,
-                }}>
-                Pilih {tier.tag} →
-              </button>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        ) : (
+          <table style={{ width: '100%', borderCollapse: 'collapse' as const }}>
+            <thead>
+              <tr>
+                <th style={{ padding: '16px 12px' }}></th>
+                {tiers.map(tier => (
+                  <th key={tier.id} style={{
+                    padding: '24px 16px', textAlign: 'center' as const, verticalAlign: 'top' as const,
+                    background: tier.is_featured ? LP.text : 'transparent',
+                    borderRadius: tier.is_featured ? `${LP.radius}px ${LP.radius}px 0 0` : 0,
+                  }}>
+                    {tier.badge && (
+                      <div style={{ display: 'inline-block', background: LP.primary, color: '#fff', padding: '4px 12px', fontSize: 10, letterSpacing: 0.6, fontWeight: 700, borderRadius: 20, marginBottom: 10 }}>
+                        {tier.is_featured ? 'POPULER' : tier.badge.toUpperCase()}
+                      </div>
+                    )}
+                    <div style={{ fontFamily: LP.mono, fontSize: 11, letterSpacing: 1, fontWeight: 700, color: tier.is_featured ? '#fff' : LP.muted }}>{tier.tag.toUpperCase()}</div>
+                    <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'center', gap: 4, marginTop: 10 }}>
+                      <span style={{ fontFamily: LP.mono, fontSize: 16, color: tier.is_featured ? '#fff' : LP.primary }}>Rp</span>
+                      <span style={{ fontSize: 32, fontWeight: 800, letterSpacing: -1, color: tier.is_featured ? '#fff' : LP.text }}>{fmt(tier.price)}</span>
+                    </div>
+                    <div style={{ fontFamily: LP.mono, fontSize: 11, marginTop: 4, color: tier.is_featured ? 'rgba(255,255,255,0.7)' : LP.muted }}>{tier.period}</div>
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {FEATURE_ROWS.map(row => (
+                <tr key={row.label}>
+                  <td style={{ padding: '14px 12px', fontWeight: 600, fontSize: 13, color: LP.text, borderBottom: `1px solid ${LP.border}` }}>{row.label}</td>
+                  {tiers.map(tier => (
+                    <td key={tier.id} style={{
+                      padding: '14px 16px', textAlign: 'center' as const,
+                      background: tier.is_featured ? LP.text : 'transparent',
+                      borderBottom: tier.is_featured ? '1px solid rgba(255,255,255,0.12)' : `1px solid ${LP.border}`,
+                    }}>
+                      {row.included[tier.id] ? (
+                        <Check size={16} color={LP.primary} style={{ margin: '0 auto', display: 'block' }} />
+                      ) : (
+                        <span style={{ color: tier.is_featured ? 'rgba(255,255,255,0.35)' : LP.border, fontFamily: LP.mono }}>–</span>
+                      )}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+              <tr>
+                <td style={{ padding: '20px 12px' }}></td>
+                {tiers.map(tier => (
+                  <td key={tier.id} style={{
+                    padding: '20px 16px', textAlign: 'center' as const,
+                    background: tier.is_featured ? LP.text : 'transparent',
+                    borderRadius: tier.is_featured ? `0 0 ${LP.radius}px ${LP.radius}px` : 0,
+                  }}>
+                    <button
+                      onClick={() => { window.location.href = `/signup?tier=${tier.id}`; }}
+                      style={{
+                        fontFamily: LP.sans, padding: '12px 20px', fontSize: 13, fontWeight: 700, width: '100%', cursor: 'pointer', borderRadius: 8,
+                        background: tier.is_featured ? LP.primary : 'transparent',
+                        color: tier.is_featured ? '#fff' : LP.primary,
+                        border: tier.is_featured ? 'none' : `1px solid ${LP.primary}`,
+                      }}>
+                      Pilih {tier.tag} →
+                    </button>
+                  </td>
+                ))}
+              </tr>
+            </tbody>
+          </table>
+        )}
       </div>
     </section>
   );
