@@ -3297,6 +3297,7 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
                             <span style={{fontWeight:700,fontSize:13}}>{o.nama_member}</span>
                             <span style={{fontFamily:'monospace',fontSize:10,color:'#555'}}>· {o.tier_member}</span>
                           </div>
+                          {o.email_member && <div style={{fontFamily:'monospace',fontSize:10,color:'#666',marginBottom:2}}>✉ {o.email_member}</div>}
                           <div style={{fontFamily:'monospace',fontSize:11,color:'#888',marginBottom:2}}>📦 {(o as any).products?.nama||'—'}{o.plan_type ? <span style={{marginLeft:6,color:'#16a34a',fontSize:9,border:'1px solid #16a34a33',padding:'1px 6px'}}>{o.plan_type.toUpperCase()}</span> : ''}{o.kode_diskon ? <span style={{marginLeft:6,color:'#eab308',fontSize:9,border:'1px solid #eab30833',padding:'1px 6px'}}>🎟️ {o.kode_diskon} -{o.diskon_applied}%</span> : ''}</div>
                           <div style={{fontFamily:'monospace',fontSize:10,color:'#444'}}>{new Date(o.created_at).toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'})}</div>
                           {(() => {
