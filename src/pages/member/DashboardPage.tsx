@@ -1317,7 +1317,7 @@ export default function DashboardPage() {
         </aside>
 
         {/* ── Main Content ── */}
-        <main className='mr-main' style={{ flex: 1, overflowY: 'auto', minWidth: 0, background: ['dashboard','kelas','materi','news','produk'].includes(active) ? LP.bg : C.bg, color: ['dashboard','kelas','materi','news','produk'].includes(active) ? LP.text : C.text }}>
+        <main className='mr-main' style={{ flex: 1, overflowY: 'auto', minWidth: 0, background: ['dashboard','kelas','materi','news','produk','tools','funded','peringkat'].includes(active) ? LP.bg : C.bg, color: ['dashboard','kelas','materi','news','produk','tools','funded','peringkat'].includes(active) ? LP.text : C.text }}>
 
           {/* ══ DASHBOARD ══ */}
           {active === 'dashboard' && (
