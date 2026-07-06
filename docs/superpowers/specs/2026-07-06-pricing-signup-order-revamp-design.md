@@ -17,28 +17,34 @@ Spec ini menyelesaikan **dua bagian independen**:
 
 ## Bagian A — Halaman Pricing Terpisah
 
+### Koreksi Penting terhadap Asumsi Awal
+
+Setelah membaca ulang `LandingPage.tsx` secara lengkap: **tidak ada kartu pricing tier (Trial/Bronze/Gold/Platinum) yang dirender di landing page saat ini.** `id="kelas"` bukan section pricing — itu section `<Hero />` (headline utama + 2 tombol CTA). Tidak ada `usePricing()` ataupun `PricingSection` di file ini sama sekali (catatan lama `CLAUDE.md` yang menyebut `PricingSection` sudah usang). Satu-satunya tempat kartu pricing tier dengan data asli dirender sekarang adalah komponen `TierSelector` di dalam `SignupPage.tsx` (kolom kanan wizard checkout).
+
+Jadi `/pricing-kelas` **bukan** memindahkan kartu yang sudah ada, melainkan **membangun UI kartu pricing baru**, diadaptasi dari pola `TierSelector` (`src/pages/SignupPage.tsx`, fungsi ini menerima `tiers: PricingTier[]` dan me-render list button per tier + rincian harga — lihat kode itu sebagai referensi struktur data, bukan dicopy persis karena konteksnya beda: di sini bukan panel checkout, tapi grid kartu pricing pilih-lalu-lanjut seperti pola kartu tier di `CheckoutPage.tsx` yang sudah ada, walau `CheckoutPage.tsx` sendiri di luar scope/hardcoded jadi cuma dipakai sebagai referensi visual, bukan sumber data).
+
 ### Keputusan Kunci
 
 - 2 halaman baru, pola file flat mengikuti konvensi `src/pages/*.tsx` yang sudah ada:
   - `src/pages/PricingKelasPage.tsx` → route `/pricing-kelas`
   - `src/pages/PricingIndikatorPage.tsx` → route `/pricing-indikator`
 - Kedua halaman baru mendefinisikan token lokal `LP` sendiri (copy shape dari `LandingPage.tsx`'s `LP` object) — **bukan** import dari `theme.ts` maupun dari `LandingPage.tsx`. Ini konsisten dengan konvensi codebase (file besar mendefinisikan alias token lokal sendiri) dan juga memperbaiki catatan lama di `CLAUDE.md` yang bilang `LandingPage.tsx` masih pakai `MR` dari `theme.ts` — itu sudah tidak akurat sejak revisi visual landing page terakhir (`LandingPage.tsx` sekarang sudah pakai `LP` lokal juga).
-- Sumber data **tidak berubah**, cuma pindah lokasi kode:
-  - `/pricing-kelas` pakai `usePricing()` (tabel `pricing_tiers`) — sama seperti section `id="kelas"` yang lama.
-  - `/pricing-indikator` pakai `useLandingPreview()` (tabel `landing_preview_config`) — sama seperti komponen `ProductPreview` yang lama.
-- `/pricing-kelas` berisi **2 bagian**: kartu pricing (Trial/Bronze/Gold/Platinum) di atas, lalu section **Kurikulum** (dipindah utuh dari `id="kurikulum"` di landing page) di bawahnya, dengan anchor `id="kurikulum"` dipertahankan di halaman baru ini.
-- `/pricing-indikator` cuma berisi kartu pricing indikator (Bulanan/Tahunan/Lifetime) — tidak ada section tambahan.
-- Tombol "Pilih"/"Pilih Bulanan" dst. di kedua halaman baru **tidak berubah tujuannya**: tier → `/signup?tier=<id>`, plan indikator → `/bayar?plan=<key>`.
+- `/pricing-kelas` pakai `usePricing()` (tabel `pricing_tiers`, hook sudah ada di `src/hooks/index.ts`) untuk data tier — **kartu baru**, bukan pindahan.
+- `/pricing-indikator` pakai `useLandingPreview()` (tabel `landing_preview_config`) — ini **memindahkan** markup kartu yang sudah ada persis di komponen `ProductPreview` (baris ~579-... di `LandingPage.tsx`), sumber data & struktur data sama persis, cuma pindah file.
+- `/pricing-kelas` berisi **2 bagian**: kartu pricing tier (baru, lihat di atas) di atas, lalu **seluruh komponen `Curriculum`** (dipindah utuh dari `LandingPage.tsx`, termasuk section `id="kurikulum"` beserta 2 sub-komponen `ModCard` dan state togglenya) di bawahnya.
+- `/pricing-indikator` cuma berisi kartu pricing indikator (Bulanan/Tahunan/Lifetime, dari `ProductPreview`) — tidak ada section tambahan.
+- Tombol tier di `/pricing-kelas` → `/signup?tier=<id>`. Tombol plan di `/pricing-indikator` **tidak berubah tujuannya** (tetap `/bayar?plan=<key>`, sama persis seperti perilaku `ProductPreview` sekarang).
 
 ### Perubahan di `LandingPage.tsx`
 
-- Section `id="kelas"` (kartu pricing tier), section `id="kurikulum"`, dan komponen `ProductPreview` (section "Preview Platform") **dihapus seluruhnya** dari file ini.
-- Tombol hero diganti dari `Pilih Kelas →` / `Lihat Kurikulum` menjadi:
-  - **`Beli Kelas →`** → `window.location.href = '/pricing-kelas'`
-  - **`Beli Indikator →`** → `window.location.href = '/pricing-indikator'`
-- `NAV_ITEMS` (nav bar atas): entry `{ l: 'Kelas', href: '#kelas' }` → `{ l: 'Kelas', href: '/pricing-kelas' }`. Entry `{ l: 'Kurikulum', href: '#kurikulum' }` → `{ l: 'Kurikulum', href: '/pricing-kelas#kurikulum' }`.
-- Footer: link `{ l: 'Kurikulum', href: '/#kurikulum' }` (di kolom BELAJAR) → `/pricing-kelas#kurikulum`. Link 4 tier di kolom KELAS (`/signup?tier=trial` dst.) **tidak berubah** — itu sudah langsung ke signup tanpa lewat halaman pricing, tetap dipertahankan sebagai pintasan cepat.
-- Import `ProductPreview` component dan pemanggilannya di JSX utama dihapus. Fungsi lokal untuk section `kelas`/`kurikulum` (kalau berbentuk fungsi terpisah seperti pola `PricingSection`) ikut dihapus dari file ini setelah dipindah isinya ke halaman baru.
+- **`<Hero />` (section `id="kelas"`) TETAP ADA** di landing page — ini headline utama, bukan section pricing, jadi tidak dipindah/dihapus. Yang berubah cuma:
+  - Atribut `id="kelas"` pada `<section>` dihapus (sudah tidak jadi target anchor apapun).
+  - Tombol `Pilih Kelas →` (redirect `/signup`) diganti jadi **`Beli Kelas →`** → `/pricing-kelas`.
+  - Tombol `Lihat Kurikulum` (scroll ke `#kurikulum`) diganti jadi **`Beli Indikator →`** → `/pricing-indikator`.
+- **`<Curriculum />` dihapus seluruhnya** dari `LandingPage.tsx` — baik definisi fungsinya maupun call site `<Curriculum />` di render utama (`export default function LandingPage()`). Isinya dipindah ke `PricingKelasPage.tsx`.
+- **`<ProductPreview config={preview} />` dihapus** dari render utama, beserta definisi fungsi `ProductPreview`-nya — dipindah ke `PricingIndikatorPage.tsx`. Panggilan `{preview && <ProductPreview config={preview} />}` (baris ~969) dihapus, tapi **`const { preview } = useLandingPreview()`** (baris ~925) di komponen utama **tetap dipertahankan** karena `preview?.yt_url` masih dipakai untuk `heroVideoId` yang dikonsumsi `<HeroPreview videoId={heroVideoId} />` (section video/chart di bawah hero, ini TIDAK dipindah/dihapus).
+- `NAV_ITEMS` (nav bar atas): entry `{ l: 'Kelas', key: 'KELAS', href: '#kelas' }` → `href: '/pricing-kelas'`. Entry `{ l: 'Kurikulum', key: 'KURIKULUM', href: '#kurikulum' }` → `href: '/pricing-kelas#kurikulum'`.
+- Footer: link `{ l: 'Kurikulum', href: '/#kurikulum' }` (kolom BELAJAR) → `/pricing-kelas#kurikulum`. Link 4 tier di kolom KELAS (`/signup?tier=trial` dst.) **tidak berubah**.
 
 ### Routing (`App.tsx`)
 
@@ -118,8 +124,8 @@ Tidak ada test suite di proyek ini (lihat `CLAUDE.md`). Verifikasi manual via de
 
 | File | Perubahan |
 |---|---|
-| `src/pages/LandingPage.tsx` | Hapus section `kelas`/`kurikulum`/`ProductPreview`, ubah tombol hero, update `NAV_ITEMS` & footer links |
-| `src/pages/PricingKelasPage.tsx` | **Baru** — kartu pricing tier + section kurikulum |
+| `src/pages/LandingPage.tsx` | `<Hero/>` tetap ada (cuma ganti 2 tombol CTA + hapus `id="kelas"`), hapus `<Curriculum/>` & `<ProductPreview/>` (definisi + call site), update `NAV_ITEMS` & footer links |
+| `src/pages/PricingKelasPage.tsx` | **Baru** — kartu pricing tier (baru, diadaptasi dari pola `TierSelector`) + komponen `Curriculum` (dipindah utuh) |
 | `src/pages/PricingIndikatorPage.tsx` | **Baru** — kartu pricing indikator |
 | `src/App.tsx` | Tambah routing `/pricing-kelas`, `/pricing-indikator` |
 | `src/pages/SignupPage.tsx` | Tambah field Email, hapus preview metode bayar dummy, sederhanakan stepper, insert `orders` setelah insert `members`, redirect pakai `order.id` |
