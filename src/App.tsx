@@ -28,6 +28,7 @@ import CompetitionPage from './pages/CompetitionPage';
 import BayarPage from './pages/BayarPage';
 import BayarAkunPage from './pages/BayarAkunPage';
 import PricingIndikatorPage from './pages/PricingIndikatorPage';
+import PricingKelasPage from './pages/PricingKelasPage';
 
 function getPage() {
   const path = window.location.pathname;
@@ -45,6 +46,7 @@ function getPage() {
   if (path === '/bayar')                  return 'bayar';
   if (path === '/bayar/akun')             return 'bayar-akun';
   if (path === '/pricing-indikator')      return 'pricing-indikator';
+  if (path === '/pricing-kelas')          return 'pricing-kelas';
 
   // Member area
   if (path === '/trading-plan')           return 'trading-plan';
@@ -74,6 +76,7 @@ function App() {
   if (page === 'bayar')             return <BayarPage />;
   if (page === 'bayar-akun')        return <BayarAkunPage />;
   if (page === 'pricing-indikator') return <PricingIndikatorPage />;
+  if (page === 'pricing-kelas')     return <PricingKelasPage />;
   if (page === 'partnership')         return <PartnershipPage step="intro" />;
   if (page === 'partnership-broker')    return <PartnershipPage step="broker" />;
   if (page === 'partnership-confirm')   return <PartnershipPage step="confirm" />;
