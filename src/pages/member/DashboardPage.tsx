@@ -981,6 +981,7 @@ export default function DashboardPage() {
   const daysLeft   = expiryDate
     ? Math.max(0, Math.ceil((expiryDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
     : null;
+  const isIndikatorMember = normalizeTier(member.tier) === 'indikator';
 
   const inProgressVideos = videos.filter(v => progress[v.id] === 'mulai');
   const lastVideos       = inProgressVideos.length > 0 ? inProgressVideos.slice(0, 4)
@@ -1624,7 +1625,25 @@ export default function DashboardPage() {
           )}
 
           {/* ══ KELAS SAYA ══ */}
-          {active === 'kelas' && (
+          {isIndikatorMember && ['kelas','materi','jurnal','trading-plan','komunitas','tools','funded','peringkat','competition','sertifikat','ulasan','referral'].includes(active) && (() => {
+            const label = SIDEBAR.find(s => s.id === active)?.label || 'Fitur ini';
+            return (
+              <div className='mr-content-pad' style={{ padding: 24 }}>
+                <div style={{ background: LP.surface, border: `1px solid ${LP.border}`, borderRadius: 14, padding: '48px 24px', textAlign: 'center' as const }}>
+                  <div style={{ fontSize: 56, marginBottom: 16 }}>🔒</div>
+                  <div style={{ fontSize: 18, fontWeight: 700, marginBottom: 10, color: LP.text }}>Fitur Khusus Member Kelas</div>
+                  <div style={{ color: LP.muted, fontSize: 14, marginBottom: 24, lineHeight: 1.7, maxWidth: 480, margin: '0 auto' }}>
+                    {label} hanya tersedia untuk member kelas SMC (Trial, Bronze, Gold, atau Platinum).
+                  </div>
+                  <a href="/pricing-kelas" style={{ display: 'inline-block', fontFamily: LP.mono, fontSize: 12, fontWeight: 700, color: '#fff', background: LP.primary, padding: '11px 28px', textDecoration: 'none', borderRadius: 8 }}>
+                    GABUNG KELAS →
+                  </a>
+                </div>
+              </div>
+            );
+          })()}
+
+          {active === 'kelas' && !isIndikatorMember && (
             <div style={{ padding: 24, background: LP.bg, minHeight: '100%' }}>
               <div style={{ marginBottom: 20 }}>
                 <div style={{ fontFamily: LP.mono, color: LP.primary, fontSize: 10, letterSpacing: 1, marginBottom: 6 }}>KELAS SAYA</div>
@@ -1832,7 +1851,7 @@ export default function DashboardPage() {
           )}
 
           {/* ══ MATERI (File) ══ */}
-          {active === 'materi' && (() => {
+          {active === 'materi' && !isIndikatorMember && (() => {
             async function downloadFile(url: string, name: string) {
               try {
                 const res = await fetch(url);
@@ -1976,7 +1995,7 @@ export default function DashboardPage() {
           )}
 
           {/* ══ TOOLS ══ */}
-          {active === 'tools' && (
+          {active === 'tools' && !isIndikatorMember && (
             <div className='mr-content-pad' style={{ padding: 24, background: LP.bg, minHeight: '100%' }}>
               {/* Header */}
               <div style={{ marginBottom: 24 }}>
@@ -2157,7 +2176,7 @@ export default function DashboardPage() {
           )}
 
           {/* ══ STATUS TRADING ══ */}
-          {active === 'funded' && (
+          {active === 'funded' && !isIndikatorMember && (
             <div style={{ padding: 24, background: LP.bg, minHeight: '100%' }}>
               <div style={{ marginBottom: 24 }}>
                 <div style={{ fontFamily: LP.mono, color: LP.primary, fontSize: 10, letterSpacing: 1, marginBottom: 6 }}>STATUS TRADING</div>
@@ -2254,27 +2273,27 @@ export default function DashboardPage() {
 
           {/* ══ SERTIFIKAT ══ */}
           {/* ══ PERINGKAT ══ */}
-        {active === 'peringkat' && member && (
+        {active === 'peringkat' && member && !isIndikatorMember && (
           <div style={{ padding: 24 }}>
             <LeaderboardPage memberId={member.id} onViewJurnal={viewMemberJurnal} />
           </div>
         )}
 
         {/* ══ JURNAL TRADING ══ */}
-        {active === 'jurnal' && member && (
+        {active === 'jurnal' && member && !isIndikatorMember && (
           <JurnalPage memberId={member.id} />
         )}
 
-        {active === 'trading-plan' && (
+        {active === 'trading-plan' && !isIndikatorMember && (
           <MemberTradingPlan />
         )}
 
-        {active === 'competition' && (
+        {active === 'competition' && !isIndikatorMember && (
           <CompetitionPage embedded onGoToJurnal={() => setActive('jurnal')} />
         )}
 
 
-        {active === 'sertifikat' && (() => {
+        {active === 'sertifikat' && !isIndikatorMember && (() => {
             const isAdvanced = member.is_advance;
             const certDate = advanceReq?.updated_at
               ? new Date(advanceReq.updated_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })
@@ -2798,7 +2817,7 @@ export default function DashboardPage() {
           )}
 
           {/* ══ KOMUNITAS ══ */}
-          {active === 'komunitas' && (
+          {active === 'komunitas' && !isIndikatorMember && (
             <div className='mr-content-pad' style={{ padding: 24 }}>
               <div style={{ fontFamily: C.mono, color: G.gold, fontSize: 10, letterSpacing: 1, marginBottom: 6 }}>// KOMUNITAS</div>
               <h2 style={{ fontSize: 22, fontWeight: 700, margin: '0 0 6px' }}>Komunitas Menolak Rugi</h2>
@@ -2833,7 +2852,7 @@ export default function DashboardPage() {
           )}
 
           {/* ══ ULASAN ══ */}
-          {active === 'ulasan' && (() => {
+          {active === 'ulasan' && !isIndikatorMember && (() => {
             const STATUS_LABEL: Record<string,string> = { pending:'⏳ Menunggu review admin', disetujui:'✅ Ditampilkan di halaman utama', ditolak:'❌ Ditolak — silakan edit ulang' };
             const STATUS_COLOR: Record<string,string> = { pending:G.gold, disetujui:C.up, ditolak:C.down };
             async function submitTesti() {
@@ -2896,7 +2915,7 @@ export default function DashboardPage() {
           })()}
 
           {/* ══ REFERRAL ══ */}
-          {active === 'referral' && (
+          {active === 'referral' && !isIndikatorMember && (
             <div className='mr-content-pad' style={{ padding:24 }}>
               <div style={{ fontFamily:C.mono, color:C.up, fontSize:10, letterSpacing:1, marginBottom:6 }}>// REFERRAL</div>
               <h2 style={{ fontSize:22, fontWeight:700, margin:'0 0 6px' }}>Program Referral</h2>
