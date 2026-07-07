@@ -43,6 +43,7 @@ const LP = {
 const DISCORD  = 'https://discord.gg/d2Tpf6sGMr';
 const TELEGRAM = 'https://t.me/+_azyX2h9oFhmNjNl';
 const WA_ADMIN = 'https://wa.me/6281242224939';
+const KURS_USD = 18000; // Rp per 1 USD — dipakai buat estimasi harga USD di produk indikator
 function extractYtId(url: string): string | null {
   if (!url) return null;
   const m = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([A-Za-z0-9_-]{11})/);
@@ -2644,10 +2645,13 @@ export default function DashboardPage() {
                             )}
 
                             {activePlan && (
-                              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                {activePlan.d ? <span style={{ fontFamily: LP.mono, fontSize: 12, color: LP.muted, textDecoration: 'line-through' }}>Rp{Number(activePlan.h).toLocaleString('id-ID')}</span> : null}
-                                <span style={{ fontFamily: LP.mono, fontSize: 20, fontWeight: 700, color: LP.text }}>Rp{Number(finalH).toLocaleString('id-ID')}</span>
-                                {activePlan.d ? <span style={{ fontFamily: LP.mono, fontSize: 10, color: LP.danger, border: `1px solid ${LP.danger}44`, padding: '2px 6px', borderRadius: 4 }}>-{activePlan.d}%</span> : null}
+                              <div>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                  {activePlan.d ? <span style={{ fontFamily: LP.mono, fontSize: 12, color: LP.muted, textDecoration: 'line-through' }}>Rp{Number(activePlan.h).toLocaleString('id-ID')}</span> : null}
+                                  <span style={{ fontFamily: LP.mono, fontSize: 20, fontWeight: 700, color: LP.text }}>Rp{Number(finalH).toLocaleString('id-ID')}</span>
+                                  {activePlan.d ? <span style={{ fontFamily: LP.mono, fontSize: 10, color: LP.danger, border: `1px solid ${LP.danger}44`, padding: '2px 6px', borderRadius: 4 }}>-{activePlan.d}%</span> : null}
+                                </div>
+                                <div style={{ fontFamily: LP.mono, fontSize: 11, color: LP.muted, marginTop: 2 }}>≈ ${(finalH / KURS_USD).toFixed(2)}</div>
                               </div>
                             )}
 
@@ -2751,6 +2755,7 @@ export default function DashboardPage() {
                           <div style={{ textAlign: 'right' as const }}>
                             {kodeAktif && <div style={{ fontFamily: LP.mono, fontSize: 10, color: LP.muted, textDecoration: 'line-through' }}>Rp{Number(orderModal._selectedHarga).toLocaleString('id-ID')}</div>}
                             <div style={{ fontFamily: LP.mono, fontSize: 22, fontWeight: 700, color: LP.primary }}>Rp{Number(finalHarga).toLocaleString('id-ID')}</div>
+                            <div style={{ fontFamily: LP.mono, fontSize: 11, color: LP.muted }}>≈ ${(finalHarga / KURS_USD).toFixed(2)}</div>
                             {kodeAktif && <div style={{ fontFamily: LP.mono, fontSize: 10, color: '#16a34a' }}>Hemat {kodeDiskonData.diskon}% dengan kode</div>}
                           </div>
                         </div>
@@ -2802,6 +2807,7 @@ export default function DashboardPage() {
                         <div style={{ textAlign: 'right' as const }}>
                           <div style={{ fontFamily: LP.mono, fontSize: 11, color: LP.muted }}>Paket {pendingOrder._labelPlan}</div>
                           <div style={{ fontFamily: LP.mono, fontSize: 20, fontWeight: 700, color: LP.primary }}>Rp{Number(pendingOrder._harga).toLocaleString('id-ID')}</div>
+                          <div style={{ fontFamily: LP.mono, fontSize: 11, color: LP.muted }}>≈ ${(pendingOrder._harga / KURS_USD).toFixed(2)}</div>
                         </div>
                       </div>
                       {pendingOrder._appliedCode && (
@@ -2856,7 +2862,10 @@ export default function DashboardPage() {
                           })}
                           <div style={{ background: LP.bg, border: `1px solid ${LP.border}`, borderRadius: 8, padding: '10px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                             <span style={{ fontFamily: LP.mono, fontSize: 11, color: LP.muted }}>Nominal yang ditransfer</span>
-                            <span style={{ fontFamily: LP.mono, fontSize: 16, fontWeight: 700, color: LP.primary }}>Rp{Number(pendingOrder._harga).toLocaleString('id-ID')}</span>
+                            <span style={{ textAlign: 'right' as const }}>
+                              <span style={{ display: 'block', fontFamily: LP.mono, fontSize: 16, fontWeight: 700, color: LP.primary }}>Rp{Number(pendingOrder._harga).toLocaleString('id-ID')}</span>
+                              <span style={{ display: 'block', fontFamily: LP.mono, fontSize: 10, color: LP.muted }}>≈ ${(pendingOrder._harga / KURS_USD).toFixed(2)}</span>
+                            </span>
                           </div>
                         </div>
                       )}
