@@ -28,6 +28,13 @@ function getPlanFromConfig(config: any, planKey: string): PlanInfo | null {
   return null;
 }
 
+function tierFromPlan(planKey: string): string {
+  if (planKey === 'bulanan')  return 'Indikator Bulanan';
+  if (planKey === 'tahunan')  return 'Indikator Tahunan';
+  if (planKey === 'lifetime') return 'Indikator Lifetime';
+  return 'Indikator Bulanan';
+}
+
 function generateMemberPassword() {
   const chars = 'ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
   return Array.from({ length: 8 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
@@ -104,7 +111,7 @@ export default function BayarPage() {
     const memberPassword = generateMemberPassword();
     const { data: newMember, error: memberErr } = await supabase.from('members').insert({
       nama:      nama.trim(),
-      tier:      'SMC Trial',
+      tier:      tierFromPlan(plan.key),
       password:  memberPassword,
       role:      'member',
       is_active: false,
@@ -119,7 +126,7 @@ export default function BayarPage() {
     // Simpan order, dikaitkan ke member baru
     const { data: newOrder, error } = await supabase.from('orders').insert({
       member_id:      newMember.id,
-      tier_member:    'SMC Trial',
+      tier_member:    tierFromPlan(plan.key),
       nama_member:    nama.trim(),
       email_member:   email.trim(),
       no_hp:          noHp.trim(),
