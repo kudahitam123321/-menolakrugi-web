@@ -815,7 +815,7 @@ export default function DashboardPage() {
 
   function handleConnectDiscordOAuth() {
     const CLIENT_ID = '1497825707173347409';
-    const REDIRECT_URI = encodeURIComponent('https://menolakrugi.pages.dev/discord-callback');
+    const REDIRECT_URI = encodeURIComponent('https://menolakrugi.com/discord-callback');
     const SCOPE = encodeURIComponent('identify guilds.join');
     window.location.href = `https://discord.com/oauth2/authorize?client_id=${CLIENT_ID}&redirect_uri=${REDIRECT_URI}&response_type=code&scope=${SCOPE}`;
   }
