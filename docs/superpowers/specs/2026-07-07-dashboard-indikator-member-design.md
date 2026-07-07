@@ -6,6 +6,8 @@ Pembeli produk indikator (tier `Indikator Bulanan`/`Tahunan`/`Lifetime`, dari fi
 
 Tujuan: mereka tetap login ke website yang sama (satu `DashboardPage.tsx`, tidak ada halaman terpisah), tapi fitur khusus member kelas dikunci dengan ajakan upgrade, dan tab utama (home) diganti jadi ringkas — status pesanan indikator mereka + akses cepat beli lagi + hubungkan Discord.
 
+**Catatan penting soal member kelas yang juga berlangganan indikator**: fitur ini HANYA berdampak pada member yang `tier`-nya murni salah satu dari 3 tier indikator (masuk lewat `/bayar` sebagai pengunjung baru tanpa akun sebelumnya). Member kelas asli (Trial/Bronze/Gold/Platinum) yang membeli produk indikator lewat tab `produk` di dashboard mereka sendiri (`buatOrder()`, `member/DashboardPage.tsx:506-532`) **tidak terpengaruh sama sekali** — fungsi itu hanya insert ke tabel `orders` dengan `tier_member: member.tier` (tier kelas mereka apa adanya) dan tidak pernah mengubah `members.tier`. Jadi `isIndikatorMember` tetap `false` untuk mereka, dashboard tetap penuh seperti biasa. `/bayar` sendiri juga sudah menolak pendaftaran kalau nama sudah terdaftar sebagai member (`BayarPage.tsx:95-101`), jadi tidak ada skenario member kelas asli tercatat ulang sebagai tier indikator lewat jalur itu.
+
 ## Solusi
 
 ### 1. Kunci 12 tab khusus kelas (bukan disembunyikan)
