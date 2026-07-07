@@ -386,6 +386,7 @@ export default function DashboardPage() {
   const [modalStep, setModalStep]       = useState<'konfirmasi'|'pembayaran'>('konfirmasi');
   const [pendingOrder, setPendingOrder] = useState<any|null>(null);
   const [rekCopied, setRekCopied]       = useState('');
+  const [selectedPm, setSelectedPm]     = useState('');
   const [selectedPlanByProduct, setSelectedPlanByProduct] = useState<Record<string,string>>({});
   const [oldPass, setOldPass]         = useState('');
   const [newPass, setNewPass]         = useState('');
@@ -528,6 +529,7 @@ export default function DashboardPage() {
     }
     setMyOrders(prev => [{ ...data, products: produk }, ...prev]);
     setPendingOrder({ ...data, products: produk, _harga: harga, _labelPlan: labelPlan, _appliedCode: appliedCode });
+    setSelectedPm('');
     setModalStep('pembayaran');
   }
 
@@ -2819,31 +2821,39 @@ export default function DashboardPage() {
                         </div>
                       ) : (
                         <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 10 }}>
-                          {paymentMethods.map(pm => (
-                            <div key={pm.id} style={{ background: LP.bg, border: `1px solid ${LP.border}`, borderRadius: 10, padding: '14px 16px' }}>
-                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                                <span style={{ fontFamily: LP.mono, fontSize: 13, fontWeight: 700, color: LP.text }}>{pm.nama_bank}</span>
-                                {pm.jenis !== 'qris' && <span style={{ fontFamily: LP.mono, fontSize: 12, color: LP.muted }}>a.n. {pm.nama_rekening}</span>}
+                          {paymentMethods.map(pm => {
+                            const isSelected = selectedPm === pm.id;
+                            return (
+                              <div key={pm.id} onClick={() => setSelectedPm(pm.id)}
+                                style={{ background: isSelected ? LP.primaryTint : LP.bg, border: `1.5px solid ${isSelected ? LP.primary : LP.border}`, borderRadius: 10, padding: '14px 16px', cursor: 'pointer', transition: 'all 0.15s' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                                  <span style={{ fontFamily: LP.mono, fontSize: 13, fontWeight: 700, color: LP.text }}>{pm.nama_bank}</span>
+                                  {pm.jenis !== 'qris' && <span style={{ fontFamily: LP.mono, fontSize: 12, color: LP.muted }}>a.n. {pm.nama_rekening}</span>}
+                                </div>
+                                {pm.jenis === 'qris' ? (
+                                  isSelected && pm.qris_image_url ? (
+                                    <img src={pm.qris_image_url} alt={`QRIS ${pm.nama_bank}`}
+                                      style={{ width: '100%', maxWidth: 280, height: 280, objectFit: 'contain', background: '#fff', borderRadius: 8, border: `1px solid ${LP.border}` }} />
+                                  ) : (
+                                    <div style={{ fontFamily: LP.mono, fontSize: 11, color: LP.muted }}>Klik untuk lihat QR code</div>
+                                  )
+                                ) : (
+                                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                    <span style={{ fontFamily: LP.mono, fontSize: 17, fontWeight: 700, letterSpacing: 2, color: LP.text }}>{pm.nomor_rekening}</span>
+                                    <button onClick={(e) => { e.stopPropagation(); navigator.clipboard.writeText(pm.nomor_rekening); setRekCopied(pm.id); setTimeout(() => setRekCopied(''), 2000); }}
+                                      style={{ display: 'flex', alignItems: 'center', gap: 4, fontFamily: LP.mono, fontSize: 11, padding: '4px 12px', background: rekCopied === pm.id ? LP.primary : 'transparent', color: rekCopied === pm.id ? '#fff' : LP.primary, border: `1px solid ${LP.primary}`, borderRadius: 6, cursor: 'pointer', transition: 'all 0.15s' }}>
+                                      {rekCopied === pm.id ? <Check size={12}/> : null} {rekCopied === pm.id ? 'Disalin' : 'Salin'}
+                                    </button>
+                                  </div>
+                                )}
+                                {pm.catatan && (
+                                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: 5, marginTop: 8, paddingTop: 8, borderTop: `1px solid ${LP.border}`, fontFamily: LP.mono, fontSize: 10, color: LP.muted, lineHeight: 1.6 }}>
+                                    <ClipboardList size={12}/> {pm.catatan}
+                                  </div>
+                                )}
                               </div>
-                              {pm.jenis === 'qris' ? (
-                                <img src={pm.qris_image_url} alt={`QRIS ${pm.nama_bank}`}
-                                  style={{ width: '100%', maxWidth: 280, height: 280, objectFit: 'contain', background: '#fff', borderRadius: 8, border: `1px solid ${LP.border}` }} />
-                              ) : (
-                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                                  <span style={{ fontFamily: LP.mono, fontSize: 17, fontWeight: 700, letterSpacing: 2, color: LP.text }}>{pm.nomor_rekening}</span>
-                                  <button onClick={() => { navigator.clipboard.writeText(pm.nomor_rekening); setRekCopied(pm.id); setTimeout(() => setRekCopied(''), 2000); }}
-                                    style={{ display: 'flex', alignItems: 'center', gap: 4, fontFamily: LP.mono, fontSize: 11, padding: '4px 12px', background: rekCopied === pm.id ? LP.primary : 'transparent', color: rekCopied === pm.id ? '#fff' : LP.primary, border: `1px solid ${LP.primary}`, borderRadius: 6, cursor: 'pointer', transition: 'all 0.15s' }}>
-                                    {rekCopied === pm.id ? <Check size={12}/> : null} {rekCopied === pm.id ? 'Disalin' : 'Salin'}
-                                  </button>
-                                </div>
-                              )}
-                              {pm.catatan && (
-                                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 5, marginTop: 8, paddingTop: 8, borderTop: `1px solid ${LP.border}`, fontFamily: LP.mono, fontSize: 10, color: LP.muted, lineHeight: 1.6 }}>
-                                  <ClipboardList size={12}/> {pm.catatan}
-                                </div>
-                              )}
-                            </div>
-                          ))}
+                            );
+                          })}
                           <div style={{ background: LP.bg, border: `1px solid ${LP.border}`, borderRadius: 8, padding: '10px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                             <span style={{ fontFamily: LP.mono, fontSize: 11, color: LP.muted }}>Nominal yang ditransfer</span>
                             <span style={{ fontFamily: LP.mono, fontSize: 16, fontWeight: 700, color: LP.primary }}>Rp{Number(pendingOrder._harga).toLocaleString('id-ID')}</span>
