@@ -2594,7 +2594,7 @@ export default function DashboardPage() {
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(420px, 1fr))', gap: 24 }}>
                     {products.map(p => {
                       const tierMember = normalizeTier(member?.tier || '');
-                      const bisaOrder  = (p.tier_access || []).includes(tierMember);
+                      const bisaOrder  = isIndikatorMember || (p.tier_access || []).includes(tierMember);
                       const tglRilis   = p.tanggal_rilis ? new Date(p.tanggal_rilis).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) : null;
                       const plans = ([
                         { plan: 'bulanan'  as const, label: 'Bulanan',  h: p.harga_bulanan,  d: p.diskon_bulanan  },
