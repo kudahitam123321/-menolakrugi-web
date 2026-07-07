@@ -784,10 +784,11 @@ function JurnalAdminTab({ members }: { members: any[] }) {
 
   const selectedData = selectedMember ? jurnalStats.find(s=>s.id===selectedMember) : null;
   const tierColor = (tier:string) => {
-    if(tier?.includes('Platinum')) return '#a855f7';
-    if(tier?.includes('Gold'))     return '#f59e0b';
-    if(tier?.includes('Silver'))   return '#94a3b8';
-    if(tier?.includes('Trial'))    return '#22ab94';
+    if(tier?.includes('Indikator')) return '#3b82f6';
+    if(tier?.includes('Platinum'))  return '#a855f7';
+    if(tier?.includes('Gold'))      return '#f59e0b';
+    if(tier?.includes('Silver'))    return '#94a3b8';
+    if(tier?.includes('Trial'))     return '#22ab94';
     return '#888';
   };
   const tabBtn = (t:string,label:string): React.CSSProperties => ({
@@ -2280,7 +2281,7 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
                     <select value={mTier} onChange={e=>setMTier(e.target.value)}
                       style={{background:'#111',border:'1px solid #2a2a2a',color:mTier?'#e7e5e4':'#555',padding:'10px 14px',fontSize:13,fontFamily:'monospace',outline:'none',appearance:'none' as const,cursor:'pointer'}}>
                       <option value="">Pilih Tier</option>
-                      {['SMC Trial','SMC Bronze','SMC Silver','SMC Gold Mentorship','SMC Platinum 1-on-1'].map(t=><option key={t} value={t}>{t}</option>)}
+                      {['SMC Trial','SMC Bronze','SMC Silver','SMC Gold Mentorship','SMC Platinum 1-on-1','Indikator Bulanan','Indikator Tahunan','Indikator Lifetime'].map(t=><option key={t} value={t}>{t}</option>)}
                     </select>
                     <div style={{position:'relative' as const}}>
                       <input type={showMPass?'text':'password'} value={mPassword} onChange={e=>setMPassword(e.target.value)} placeholder="Password"
