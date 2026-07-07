@@ -102,9 +102,11 @@ Admin operations are logged via the module-level `logActivity(action, detail, ad
 
 ### Cloudflare Pages Functions
 
-`functions/api/discord/[[path]].js` is a Cloudflare Pages Function that proxies requests from the browser to the Discord bot running at `http://93.115.101.152:12772` (Wispbyte), forwarding both path and query string. The proxy path is `/api/discord/*`. This resolves the mixed-content CORS issue of calling an HTTP bot from an HTTPS page. When browser → bot calls fail (e.g., bot is down), the code falls back to inserting into the `discord_messages` queue table instead.
+`functions/api/mrbot/[[path]].js` is a Cloudflare Pages Function that proxies requests from the browser to the Discord bot, forwarding both path and query string. The proxy path is `/api/mrbot/*`. This resolves the mixed-content CORS issue of calling an HTTP bot from an HTTPS page. When browser → bot calls fail (e.g., bot is down), the code falls back to inserting into the `discord_messages` queue table instead.
 
-The member dashboard's `pengaturan` tab has a "Hubungkan via Discord OAuth" button (`DashboardPage.tsx`) that starts the OAuth flow; `DiscordCallbackPage.tsx` (`/discord-callback`) completes it by reading the member id from `mr_member`, calling the bot via the proxy to link the account and assign the Discord auto-role, then updating trading status through the same proxy (never the old Railway URL, which is decommissioned).
+**Bot hosting**: the bot is deployed on **Railway** (`https://menolakrugi-bot-production.up.railway.app`, repo `kudahitam123321/menolakrugi-bot`), not Wispbyte. Wispbyte was tried first but doesn't work with this proxy: Wispbyte assigns an arbitrary high port (e.g. `12772`) via `SERVER_PORT`, and Cloudflare Pages Functions/Workers block outbound `fetch()` to non-standard ports at the edge (returns a `403`/`error code: 1003` — easy to misdiagnose as a path-naming or anti-phishing block instead of a port restriction). Railway serves over standard HTTPS (443), which Cloudflare allows. If the bot is ever redeployed elsewhere, the host must serve HTTPS on a standard port (443/80) for the proxy to work — do not use a raw IP:high-port origin.
+
+The member dashboard's `pengaturan` tab has a "Hubungkan via Discord OAuth" button (`DashboardPage.tsx`) that starts the OAuth flow — note the `REDIRECT_URI` is hardcoded there and must exactly match both the bot's `REDIRECT_URI` env var and a registered redirect in the Discord Developer Portal (OAuth2 → General). `DiscordCallbackPage.tsx` (`/discord-callback`) completes it by reading the member id from `mr_member`, calling the bot via the proxy to link the account and assign the Discord auto-role, then updating trading status through the same proxy.
 
 The `xlsx` package is available for data exports (e.g., exporting member lists or journal data from the admin panel).
 
@@ -247,7 +249,7 @@ Config is stored per `plan_type` (`'basic'` | `'advanced'`) in the `trading_plan
 | `supabase-landing-preview-migration.sql` | Schema for `landing_preview_config` table (single-row upsert, id=1) |
 | `supabase-announcements-migration.sql` | Schema for `announcements` table (admin broadcast messages) |
 | `supabase-discord-queue-migration.sql` | Schema for `discord_messages` queue table (bot message delivery fallback) |
-| `functions/api/discord/[[path]].js` | Cloudflare Pages Function proxy — routes `/api/discord/*` to the Discord bot, bypassing CORS/mixed-content |
+| `functions/api/mrbot/[[path]].js` | Cloudflare Pages Function proxy — routes `/api/mrbot/*` to the Discord bot (Railway), bypassing CORS/mixed-content |
 | `src/pages/BayarPage.tsx` | Visitor payment page reached from landing page CTA; creates the member row and order |
 | `src/pages/BayarAkunPage.tsx` | Post-submit page (`/bayar/akun`) showing generated login credentials |
 | `src/pages/CompetitionPage.tsx` | Member-facing competition + live leaderboard |
