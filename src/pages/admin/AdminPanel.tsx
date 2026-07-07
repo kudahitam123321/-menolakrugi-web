@@ -109,6 +109,7 @@ function DonutSmall({ segments, size = 100 }: { segments: any[]; size?: number }
 const TIER_COLORS: Record<string,string> = {
   'SMC Trial':'#22ab94','SMC Bronze':'#f97316','SMC Silver':'#94a3b8',
   'SMC Gold Mentorship':'#eab308','SMC Platinum 1-on-1':'#a855f7',
+  'Indikator Bulanan':'#3b82f6','Indikator Tahunan':'#3b82f6','Indikator Lifetime':'#3b82f6',
 };
 
 // ── APPROVALS TAB (Ulasan + Advance Request + Klaim Partnership) ──────────────
