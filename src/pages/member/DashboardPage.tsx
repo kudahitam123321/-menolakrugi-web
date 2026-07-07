@@ -476,9 +476,10 @@ export default function DashboardPage() {
 
   function normalizeTier(tier: string): string {
     const t = (tier || '').toLowerCase();
-    if (t.includes('platinum')) return 'platinum';
-    if (t.includes('gold'))     return 'gold';
-    if (t.includes('bronze'))   return 'bronze';
+    if (t.includes('indikator')) return 'indikator';
+    if (t.includes('platinum'))  return 'platinum';
+    if (t.includes('gold'))      return 'gold';
+    if (t.includes('bronze'))    return 'bronze';
     return 'trial';
   }
 
@@ -972,7 +973,7 @@ export default function DashboardPage() {
   const totalVideos     = videos.length;
   const progressPct     = totalVideos > 0 ? Math.round(completedVideos / totalVideos * 100) : 0;
   // Trial expiry
-  const isTrial   = member.tier?.toLowerCase().includes('trial');
+  const isTrial   = member.tier === 'SMC Trial';
   const expiryDate = isTrial && member.created_at
     ? new Date(new Date(member.created_at).getTime() + 30 * 24 * 60 * 60 * 1000)
     : null;
