@@ -21,7 +21,7 @@ export default function DiscordCallbackPage() {
 
       try {
         const res = await fetch(
-          `/api/discord/callback?code=${code}&member_id=${member.id}`
+          `/api/mrbot/callback?code=${code}&member_id=${member.id}`
         );
         const data = await res.json();
 

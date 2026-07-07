@@ -845,7 +845,7 @@ export default function DashboardPage() {
 
       // Coba update Discord nickname via bot (opsional, tidak gagalkan proses)
       try {
-        const res = await fetch('/api/discord/update-trading-status', {
+        const res = await fetch('/api/mrbot/update-trading-status', {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ member_id: member.id, funded_status: newStatus }),
           signal: AbortSignal.timeout(8000),

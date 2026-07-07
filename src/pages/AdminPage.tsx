@@ -2030,7 +2030,7 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
 
     // Auto sync Discord role
     try {
-      await fetch('/api/discord/sync', {
+      await fetch('/api/mrbot/sync', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ member_id: req.member_id }),
       });
@@ -2039,7 +2039,7 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
     // Kirim ucapan selamat ke Discord
     if (member?.discord_id && congratsChannelId) {
       try {
-        const res = await fetch('/api/discord/congrats-advanced', {
+        const res = await fetch('/api/mrbot/congrats-advanced', {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ discord_id: member.discord_id, discord_username: member.discord_username, nama: req.member_nama, channel_id: congratsChannelId }),
         });
@@ -2063,7 +2063,7 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
     if (!confirm('Kirim ucapan selamat ke SEMUA member advanced yang sudah hubungkan Discord?')) return;
     setSendingBulk(true);
     try {
-      const res = await fetch('/api/discord/congrats-all-advanced', {
+      const res = await fetch('/api/mrbot/congrats-all-advanced', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ channel_id: congratsChannelId }),
       });
