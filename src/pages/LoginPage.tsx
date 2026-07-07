@@ -4,7 +4,7 @@ import { supabase } from '../lib/supabase';
 import { CANDLE_GRID_STYLE } from '../components/mr';
 
 type View = 'member' | 'admin' | 'forgot';
-const TIERS = ['SMC Trial','SMC Bronze','SMC Silver','SMC Gold Mentorship','SMC Platinum 1-on-1'];
+const TIERS = ['SMC Trial','SMC Bronze','SMC Silver','SMC Gold Mentorship','SMC Platinum 1-on-1','Indikator Bulanan','Indikator Tahunan','Indikator Lifetime'];
 
 function Field({ label, type='text', value, onChange, placeholder, icon }: {
   label:string; type?:string; value:string; onChange:(v:string)=>void; placeholder?:string; icon?:React.ReactNode;
