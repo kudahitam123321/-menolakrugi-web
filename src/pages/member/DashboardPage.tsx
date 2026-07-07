@@ -1331,6 +1331,58 @@ export default function DashboardPage() {
 
           {/* ══ DASHBOARD ══ */}
           {active === 'dashboard' && (
+            isIndikatorMember ? (() => {
+              const order = myOrders[0];
+              const statusColor = (s: string) => s === 'aktif' ? LP.primary : s === 'dibayar' ? '#3b82f6' : '#eab308';
+              const statusLabel = (s: string) => s === 'aktif' ? 'Aktif' : s === 'dibayar' ? 'Dibayar' : 'Pending';
+              return (
+                <div className='mr-content-pad' style={{ padding: isMobile ? 16 : 24, display: 'flex', flexDirection: 'column', gap: 16 }}>
+                  <div>
+                    <div style={{ fontFamily: LP.mono, color: LP.muted, fontSize: 9, letterSpacing: 1.5, marginBottom: 3 }}>SELAMAT DATANG KEMBALI</div>
+                    <h1 style={{ fontSize: 22, fontWeight: 700, letterSpacing: -0.5, margin: 0, color: LP.text }}>{member.nama}</h1>
+                  </div>
+
+                  <div style={{ background: LP.surface, border: `1px solid ${LP.border}`, borderRadius: 14, padding: 20 }}>
+                    <div style={{ fontFamily: LP.mono, color: LP.primary, fontSize: 10, letterSpacing: 1, marginBottom: 12 }}>STATUS PESANAN</div>
+                    {!order ? (
+                      <div style={{ color: LP.muted, fontFamily: LP.mono, fontSize: 13 }}>Belum ada pesanan.</div>
+                    ) : (
+                      <div style={{ display: 'flex', gap: 16, alignItems: 'center', flexWrap: 'wrap' as const }}>
+                        <div style={{ flex: 1, minWidth: 160 }}>
+                          <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 4, color: LP.text }}>{(order as any).products?.nama || '—'}</div>
+                          {order.plan_type && <span style={{ display: 'inline-block', fontFamily: LP.mono, fontSize: 10, color: LP.primary, border: `1px solid ${LP.primary}44`, padding: '2px 8px', borderRadius: 4, marginBottom: 4 }}>{order.plan_type.toUpperCase()}</span>}
+                          {(() => {
+                            if (order.plan_type === 'lifetime') return <div style={{ fontFamily: LP.mono, fontSize: 11, color: LP.muted, marginTop: 4 }}>Jatuh tempo: Seumur Hidup</div>;
+                            const jt = hitungJatuhTempo(order.activated_at, order.plan_type);
+                            if (!jt) return <div style={{ fontFamily: LP.mono, fontSize: 11, color: LP.muted, marginTop: 4 }}>Jatuh tempo: —</div>;
+                            const lewat = jt < new Date();
+                            return <div style={{ fontFamily: LP.mono, fontSize: 11, color: lewat ? LP.danger : LP.muted, marginTop: 4 }}>Jatuh tempo: {jt.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}</div>;
+                          })()}
+                        </div>
+                        <span style={{ fontFamily: LP.mono, fontSize: 11, fontWeight: 700, color: statusColor(order.status), border: `1px solid ${statusColor(order.status)}44`, padding: '4px 12px', borderRadius: 20, flexShrink: 0 }}>
+                          {statusLabel(order.status)}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+
+                  <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' as const }}>
+                    <button onClick={() => setActive('produk')} style={{ fontFamily: LP.mono, fontSize: 12, fontWeight: 700, color: '#fff', background: LP.primary, border: 'none', padding: '11px 24px', borderRadius: 8, cursor: 'pointer' }}>
+                      Beli/Perpanjang Indikator →
+                    </button>
+                    {member.discord_username ? (
+                      <div style={{ display: 'flex', alignItems: 'center', fontFamily: LP.mono, fontSize: 12, fontWeight: 700, color: '#16a34a' }}>
+                        ✓ Terhubung sebagai @{member.discord_username}
+                      </div>
+                    ) : (
+                      <button onClick={handleConnectDiscordOAuth} style={{ fontFamily: LP.mono, fontSize: 12, fontWeight: 700, color: '#fff', background: '#5865F2', border: 'none', padding: '11px 24px', borderRadius: 8, cursor: 'pointer' }}>
+                        Hubungkan via Discord OAuth
+                      </button>
+                    )}
+                  </div>
+                </div>
+              );
+            })() :
             <div className='mr-content-pad' style={{ padding: isMobile ? 16 : 24, display: 'flex', flexDirection: 'column', gap: 12 }}>
 
               {/* ── Top bar: Welcome + quick stats ── */}
