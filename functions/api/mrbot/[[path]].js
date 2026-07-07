@@ -1,4 +1,4 @@
-const BOT_URL = 'http://93.115.101.152:12772';
+const BOT_URL = 'https://menolakrugi-bot-production.up.railway.app';
 
 export async function onRequest(context) {
   const { request, params } = context;
