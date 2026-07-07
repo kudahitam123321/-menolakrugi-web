@@ -28,6 +28,7 @@ interface OrderRow {
 interface MemberRow {
   nama: string;
   password: string;
+  tier: string;
 }
 
 export default function BayarAkunPage() {
@@ -52,7 +53,7 @@ export default function BayarAkunPage() {
 
       const { data: m } = await supabase
         .from('members')
-        .select('nama, password')
+        .select('nama, password, tier')
         .eq('id', o.member_id)
         .single();
       if (!m) { setNotFound(true); setLoading(false); return; }
@@ -144,7 +145,7 @@ export default function BayarAkunPage() {
 
           <div>
             <div style={{ fontFamily: '"Geist Mono",monospace', fontSize: 10, color: C.dim, marginBottom: 4 }}>TIER</div>
-            <div style={{ fontSize: 14, fontWeight: 600 }}>SMC Trial</div>
+            <div style={{ fontSize: 14, fontWeight: 600 }}>{member.tier}</div>
           </div>
         </div>
 
