@@ -1741,7 +1741,19 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
     if (newStatus === 'aktif') payload.activated_at = new Date().toISOString();
     const { error } = await supabase.from('orders').update(payload).eq('id', orderId);
     if (error) notify('Error: ' + error.message, 'err');
-    else { notify('Status pesanan diperbarui!'); loadData(); }
+    else {
+      notify('Status pesanan diperbarui!');
+      const order = prodOrders.find(o => o.id === orderId);
+      if (order?.plan_type && order?.member_id) {
+        try {
+          await fetch('/api/mrbot/sync-indicator', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ member_id: order.member_id }),
+          });
+        } catch {}
+      }
+      loadData();
+    }
   }
 
   async function deleteOrder(orderId: string) {
