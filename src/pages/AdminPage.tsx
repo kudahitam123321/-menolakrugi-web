@@ -3,7 +3,7 @@ import { Plus, Trash2, Users, Video, ArrowLeft, Eye, EyeOff, Upload, RefreshCw, 
 import * as XLSX from 'xlsx';
 import { supabase } from '../lib/supabase';
 
-const TIERS = ['SMC Trial', 'SMC Bronze', 'SMC Gold Mentorship', 'SMC Platinum 1 on 1'];
+const ALL_TIERS = ['SMC Trial','SMC Bronze','SMC Silver','SMC Gold Mentorship','SMC Platinum 1-on-1','Indikator Bulanan','Indikator Tahunan','Indikator Lifetime'];
 const RANK_IMGS: Record<string, string> = {
   '1': '/rank_1.png', '2': '/rank_2.png', '3': '/rank_3.png',
   '4-10': '/rank_4-10.png', '11-20': '/rank_11-20.png', '21+': '/rank_21-sampai_seterusnya.png',
@@ -563,7 +563,7 @@ function MemberTable({ members, loadData }: { members: any[]; loadData: () => vo
                       <input value={editNama} onChange={e=>setEditNama(e.target.value)} placeholder="Nama" style={inp}
                         onFocus={e=>e.target.style.borderColor='#16a34a'} onBlur={e=>e.target.style.borderColor='#2a2a2a'}/>
                       <select value={editTier} onChange={e=>setEditTier(e.target.value)} style={{...inp,cursor:'pointer'}}>
-                        {uniqueTiers.map(t=><option key={t} value={t}>{t}</option>)}
+                        {ALL_TIERS.map(t=><option key={t} value={t}>{t}</option>)}
                       </select>
                       <input value={editPass} onChange={e=>setEditPass(e.target.value)} placeholder="Password baru (kosong=tidak ganti)" style={inp}
                         onFocus={e=>e.target.style.borderColor='#16a34a'} onBlur={e=>e.target.style.borderColor='#2a2a2a'}/>
@@ -2293,7 +2293,7 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
                     <select value={mTier} onChange={e=>setMTier(e.target.value)}
                       style={{background:'#111',border:'1px solid #2a2a2a',color:mTier?'#e7e5e4':'#555',padding:'10px 14px',fontSize:13,fontFamily:'monospace',outline:'none',appearance:'none' as const,cursor:'pointer'}}>
                       <option value="">Pilih Tier</option>
-                      {['SMC Trial','SMC Bronze','SMC Silver','SMC Gold Mentorship','SMC Platinum 1-on-1','Indikator Bulanan','Indikator Tahunan','Indikator Lifetime'].map(t=><option key={t} value={t}>{t}</option>)}
+                      {ALL_TIERS.map(t=><option key={t} value={t}>{t}</option>)}
                     </select>
                     <div style={{position:'relative' as const}}>
                       <input type={showMPass?'text':'password'} value={mPassword} onChange={e=>setMPassword(e.target.value)} placeholder="Password"
