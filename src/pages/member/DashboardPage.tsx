@@ -1394,27 +1394,55 @@ export default function DashboardPage() {
                     <h1 style={{ fontSize: 22, fontWeight: 700, letterSpacing: -0.5, margin: 0, color: LP.text }}>{member.nama}</h1>
                   </div>
 
-                  <div style={{ background: LP.surface, border: `1px solid ${LP.border}`, borderRadius: 14, padding: 20 }}>
-                    <div style={{ fontFamily: LP.mono, color: LP.primary, fontSize: 10, letterSpacing: 1, marginBottom: 12 }}>STATUS PESANAN</div>
-                    {!order ? (
-                      <div style={{ color: LP.muted, fontFamily: LP.mono, fontSize: 13 }}>Belum ada pesanan.</div>
-                    ) : (
-                      <div style={{ display: 'flex', gap: 16, alignItems: 'center', flexWrap: 'wrap' as const }}>
-                        <div style={{ flex: 1, minWidth: 160 }}>
-                          <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 4, color: LP.text }}>{(order as any).products?.nama || '—'}</div>
-                          {order.plan_type && <span style={{ display: 'inline-block', fontFamily: LP.mono, fontSize: 10, color: LP.primary, border: `1px solid ${LP.primary}44`, padding: '2px 8px', borderRadius: 4, marginBottom: 4 }}>{order.plan_type.toUpperCase()}</span>}
-                          {(() => {
-                            if (order.plan_type === 'lifetime') return <div style={{ fontFamily: LP.mono, fontSize: 11, color: LP.muted, marginTop: 4 }}>Jatuh tempo: Seumur Hidup</div>;
-                            const jt = hitungJatuhTempo(order.activated_at, order.plan_type);
-                            if (!jt) return <div style={{ fontFamily: LP.mono, fontSize: 11, color: LP.muted, marginTop: 4 }}>Jatuh tempo: —</div>;
-                            const lewat = jt < new Date();
-                            return <div style={{ fontFamily: LP.mono, fontSize: 11, color: lewat ? LP.danger : LP.muted, marginTop: 4 }}>Jatuh tempo: {jt.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}</div>;
-                          })()}
+                  <div style={{ background: LP.surface, border: `1px solid ${LP.border}`, borderRadius: 16, padding: 24, position: 'relative' as const, overflow: 'hidden' }}>
+                    <div style={{ position: 'absolute' as const, top: 0, left: 0, right: 0, height: 4, background: order ? statusColor(order.status) : LP.border }} />
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18, flexWrap: 'wrap' as const, gap: 10 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                        <div style={{ width: 32, height: 32, borderRadius: 8, background: LP.primaryTint, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                          <Package size={16} color={LP.primary} />
                         </div>
-                        <span style={{ fontFamily: LP.mono, fontSize: 11, fontWeight: 700, color: statusColor(order.status), border: `1px solid ${statusColor(order.status)}44`, padding: '4px 12px', borderRadius: 20, flexShrink: 0 }}>
+                        <div style={{ fontFamily: LP.mono, color: LP.muted, fontSize: 10, letterSpacing: 1.5, fontWeight: 700 }}>LANGGANAN INDIKATOR</div>
+                      </div>
+                      {order && (
+                        <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontFamily: LP.mono, fontSize: 11, fontWeight: 700, color: statusColor(order.status), background: `${statusColor(order.status)}14`, border: `1px solid ${statusColor(order.status)}44`, padding: '5px 14px', borderRadius: 20 }}>
+                          <span style={{ width: 6, height: 6, borderRadius: '50%', background: statusColor(order.status) }} />
                           {statusLabel(order.status)}
                         </span>
-                      </div>
+                      )}
+                    </div>
+
+                    {!order ? (
+                      <div style={{ color: LP.muted, fontFamily: LP.mono, fontSize: 13, textAlign: 'center' as const, padding: '20px 0' }}>Belum ada pesanan.</div>
+                    ) : (
+                      <>
+                        <div style={{ fontSize: 20, fontWeight: 700, color: LP.text, marginBottom: 12 }}>{(order as any).products?.nama || 'Produk Indikator'}</div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' as const, paddingTop: 14, borderTop: `1px solid ${LP.border}` }}>
+                          {order.plan_type && (
+                            <span style={{ fontFamily: LP.mono, fontSize: 10, fontWeight: 700, color: LP.primary, background: LP.primaryTint, border: `1px solid ${LP.primary}44`, padding: '4px 10px', borderRadius: 6, letterSpacing: 0.5 }}>
+                              {order.plan_type.toUpperCase()}
+                            </span>
+                          )}
+                          <span style={{ width: 1, height: 14, background: LP.border }} />
+                          {(() => {
+                            if (order.plan_type === 'lifetime') return (
+                              <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontFamily: LP.mono, fontSize: 11, color: LP.muted }}>
+                                <Clock size={12} /> Berlaku Seumur Hidup
+                              </span>
+                            );
+                            const jt = hitungJatuhTempo(order.activated_at, order.plan_type);
+                            if (!jt) return <span style={{ fontFamily: LP.mono, fontSize: 11, color: LP.muted }}>Jatuh tempo: —</span>;
+                            const lewat = jt < new Date();
+                            const daysLeft = Math.ceil((jt.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+                            return (
+                              <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontFamily: LP.mono, fontSize: 11, color: lewat ? LP.danger : LP.muted }}>
+                                <Clock size={12} />
+                                Jatuh tempo {jt.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
+                                {!lewat && daysLeft <= 7 && <span style={{ color: '#eab308', fontWeight: 700 }}> · {daysLeft} hari lagi</span>}
+                              </span>
+                            );
+                          })()}
+                        </div>
+                      </>
                     )}
                   </div>
 

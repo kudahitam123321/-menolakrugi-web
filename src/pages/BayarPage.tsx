@@ -46,6 +46,7 @@ export default function BayarPage() {
 
   const [config,         setConfig]         = useState<any>(null);
   const [paymentMethods, setPaymentMethods] = useState<any[]>([]);
+  const [productId,      setProductId]      = useState<string | null>(null);
   const [loading,        setLoading]        = useState(true);
 
   const [nama,       setNama]       = useState('');
@@ -65,12 +66,14 @@ export default function BayarPage() {
 
   useEffect(() => {
     async function load() {
-      const [{ data: cfg }, { data: pm }] = await Promise.all([
+      const [{ data: cfg }, { data: pm }, { data: prod }] = await Promise.all([
         supabase.from('landing_preview_config').select('*').eq('id', 1).single(),
         supabase.from('payment_methods').select('*').neq('aktif', false).order('urutan', { ascending: true }),
+        supabase.from('products').select('id').eq('aktif', true).order('urutan', { ascending: true }).limit(1),
       ]);
       if (cfg) setConfig(cfg);
       if (pm)  setPaymentMethods(pm);
+      if (prod && prod[0]) setProductId(prod[0].id);
       setLoading(false);
     }
     load();
@@ -126,6 +129,7 @@ export default function BayarPage() {
     // Simpan order, dikaitkan ke member baru
     const { data: newOrder, error } = await supabase.from('orders').insert({
       member_id:      newMember.id,
+      product_id:     productId,
       tier_member:    tierFromPlan(plan.key),
       nama_member:    nama.trim(),
       email_member:   email.trim(),
