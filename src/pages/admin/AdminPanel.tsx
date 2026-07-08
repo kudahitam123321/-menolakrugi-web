@@ -766,6 +766,10 @@ export default function AdminPanel() {
         addToast('Request 1-on-1 masuk', '1on1', payload.new?.member_name || 'Member');
         loadNotifications();
       })
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'orders' }, (payload: any) => {
+        addToast('Pesanan baru masuk', 'pesanan', payload.new?.nama_member || 'Member');
+        loadNotifications();
+      })
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
@@ -777,11 +781,13 @@ export default function AdminPanel() {
       { data: advanceData },
       { data: ulasanData },
       { data: oonData },
+      { data: pesananData },
     ] = await Promise.all([
       supabase.from('partnership_claims').select('id,nama_lengkap,nama,broker,created_at').eq('status','pending').order('created_at',{ascending:false}).limit(10),
       supabase.from('advance_requests').select('id,member_nama,member_tier,created_at').eq('status','pending').order('created_at',{ascending:false}).limit(10),
       supabase.from('testimonials').select('id,nama,member_name,kelas,created_at').eq('status','pending').order('created_at',{ascending:false}).limit(10),
       supabase.from('oneonone_requests').select('id,member_name,member_tier,created_at').eq('status','pending').order('created_at',{ascending:false}).limit(10),
+      supabase.from('orders').select('id,nama_member,tier_member,created_at').eq('status','pending').order('created_at',{ascending:false}).limit(10),
     ]);
     const fmt = (iso: string) => {
       const diff = Date.now() - new Date(iso).getTime();
@@ -804,6 +810,10 @@ export default function AdminPanel() {
       ...(oonData||[]).map((x:any) => ({
         id: 'o_'+x.id, type:'1on1', label: x.member_name||'—',
         sub: `Request 1-on-1 · ${x.member_tier||''}`, tab:'approvals', subtab:'1on1', time: fmt(x.created_at),
+      })),
+      ...(pesananData||[]).map((x:any) => ({
+        id: 'p_'+x.id, type:'pesanan', label: x.nama_member||'—',
+        sub: `Pesanan baru · ${x.tier_member||''}`, tab:'produk', time: fmt(x.created_at),
       })),
     ].sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime());
     setNotifications(notifs);
@@ -1081,8 +1091,8 @@ export default function AdminPanel() {
                         ✅ Tidak ada notifikasi pending
                       </div>
                     ) : notifications.map(n => {
-                      const TYPE_COLOR: Record<string,string> = { klaim:'#3b82f6', advance:'#a855f7', ulasan:G.gold, '1on1':'#eab308' };
-                      const TYPE_ICON:  Record<string,string> = { klaim:'🤝', advance:'⬆', ulasan:'✍', '1on1':'🎯' };
+                      const TYPE_COLOR: Record<string,string> = { klaim:'#3b82f6', advance:'#a855f7', ulasan:G.gold, '1on1':'#eab308', pesanan:'#16a34a' };
+                      const TYPE_ICON:  Record<string,string> = { klaim:'🤝', advance:'⬆', ulasan:'✍', '1on1':'🎯', pesanan:'🛍️' };
                       const col = TYPE_COLOR[n.type] || C.muted;
                       return (
                         <div key={n.id} onClick={() => { setActive(n.tab); setShowNotif(false); }}
@@ -1129,8 +1139,8 @@ export default function AdminPanel() {
       {toasts.length > 0 && (
         <div style={{ position: 'fixed', bottom: 24, right: 24, zIndex: 200, display: 'flex', flexDirection: 'column' as const, gap: 8, pointerEvents: 'none' }}>
           {toasts.map(t => {
-            const TOAST_COLOR: Record<string,string> = { klaim:'#3b82f6', advance:'#a855f7', ulasan:'#eab308', '1on1':'#eab308' };
-            const TOAST_ICON:  Record<string,string> = { klaim:'🤝', advance:'⬆', ulasan:'✍', '1on1':'🎯' };
+            const TOAST_COLOR: Record<string,string> = { klaim:'#3b82f6', advance:'#a855f7', ulasan:'#eab308', '1on1':'#eab308', pesanan:'#16a34a' };
+            const TOAST_ICON:  Record<string,string> = { klaim:'🤝', advance:'⬆', ulasan:'✍', '1on1':'🎯', pesanan:'🛍️' };
             const col = TOAST_COLOR[t.type] || G.gold;
             return (
               <div key={t.id} style={{ background: 'var(--mr-sidebar)', border: `1px solid ${col}44`, borderLeft: `3px solid ${col}`, borderRadius: 10, padding: '13px 18px', boxShadow: `0 8px 32px rgba(0,0,0,0.6), 0 0 0 1px ${col}11`, minWidth: 280, maxWidth: 340, animation: 'ap-glow-in 0.3s ease both', pointerEvents: 'all' as const }}>
@@ -1163,9 +1173,14 @@ export default function AdminPanel() {
                     className={`ap-sidebar-item${isA ? ' ap-active' : ''}`} style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '9px 16px', border: 'none', borderLeft: isA ? `2px solid ${G.gold}` : '2px solid transparent', background: isA ? 'linear-gradient(90deg,#1a150022,transparent)' : 'transparent', color: isA ? G.gold : '#9999bb', cursor: 'pointer', fontSize: 12, fontFamily: isA ? C.mono : 'inherit', textAlign: 'left' as const, letterSpacing: isA ? 0.3 : 0 }}>
                     <span>{item.icon}</span>
                     <span style={{ flex: 1 }}>{item.label}</span>
-                    {item.id === 'approvals' && notifications.length > 0 && (
+                    {item.id === 'approvals' && notifications.filter(n => n.type !== 'pesanan').length > 0 && (
                       <span style={{ fontFamily: C.mono, fontSize: 9, fontWeight: 800, background: C.down, color: '#fff', borderRadius: 10, minWidth: 18, height: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 4px' }}>
-                        {notifications.length > 9 ? '9+' : notifications.length}
+                        {(() => { const n = notifications.filter(n => n.type !== 'pesanan').length; return n > 9 ? '9+' : n; })()}
+                      </span>
+                    )}
+                    {item.id === 'produk' && notifications.filter(n => n.type === 'pesanan').length > 0 && (
+                      <span style={{ fontFamily: C.mono, fontSize: 9, fontWeight: 800, background: C.down, color: '#fff', borderRadius: 10, minWidth: 18, height: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 4px' }}>
+                        {(() => { const n = notifications.filter(n => n.type === 'pesanan').length; return n > 9 ? '9+' : n; })()}
                       </span>
                     )}
                   </button>
