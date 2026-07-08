@@ -44,6 +44,46 @@ const DISCORD  = 'https://discord.gg/d2Tpf6sGMr';
 const TELEGRAM = 'https://t.me/+_azyX2h9oFhmNjNl';
 const WA_ADMIN = 'https://wa.me/6281242224939';
 const KURS_USD = 18000; // Rp per 1 USD — dipakai buat estimasi harga USD di produk indikator
+function TradingViewLinkBox({ member, tvLink, setTvLink, tvEditing, setTvEditing, onSave }: {
+  member: { tradingview_url?: string };
+  tvLink: string;
+  setTvLink: (v: string) => void;
+  tvEditing: boolean;
+  setTvEditing: (v: boolean) => void;
+  onSave: () => void;
+}) {
+  if (!tvEditing && member.tradingview_url) {
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' as const }}>
+        <a href={member.tradingview_url} target="_blank" rel="noopener noreferrer" style={{ fontFamily: LP.mono, fontSize: 12, fontWeight: 700, color: '#16a34a', textDecoration: 'underline' }}>
+          ✓ Terhubung: {member.tradingview_url}
+        </a>
+        <button onClick={() => { setTvLink(member.tradingview_url || ''); setTvEditing(true); }}
+          style={{ fontFamily: LP.mono, fontSize: 11, color: LP.muted, background: 'none', border: `1px solid ${LP.border}`, borderRadius: 6, padding: '4px 10px', cursor: 'pointer' }}>
+          Ubah
+        </button>
+      </div>
+    );
+  }
+  if (tvEditing) {
+    return (
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' as const }}>
+        <input value={tvLink} onChange={e => setTvLink(e.target.value)} placeholder="https://www.tradingview.com/u/username/"
+          style={{ flex: 1, minWidth: 220, fontFamily: LP.mono, fontSize: 12, padding: '10px 14px', border: `1px solid ${LP.border}`, borderRadius: 8, background: LP.bg, color: LP.text }} />
+        <button onClick={onSave}
+          style={{ fontFamily: LP.mono, fontSize: 12, fontWeight: 700, color: '#fff', background: LP.primary, border: 'none', padding: '10px 20px', borderRadius: 8, cursor: 'pointer' }}>
+          Simpan
+        </button>
+      </div>
+    );
+  }
+  return (
+    <button onClick={() => setTvEditing(true)}
+      style={{ fontFamily: LP.mono, fontSize: 12, fontWeight: 700, color: '#fff', background: '#1e40af', border: 'none', padding: '11px 24px', borderRadius: 8, cursor: 'pointer' }}>
+      Hubungkan TradingView
+    </button>
+  );
+}
 function extractYtId(url: string): string | null {
   if (!url) return null;
   const m = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([A-Za-z0-9_-]{11})/);
@@ -301,7 +341,7 @@ function LotCalculator() {
 }
 
 // ── Halaman utama ──────────────────────────────────────────────────────────
-interface Member { id: string; nama: string; tier: string; is_advance: boolean; discord_username?: string; created_at?: string; funded_status?: string | null; discord_id?: string; }
+interface Member { id: string; nama: string; tier: string; is_advance: boolean; discord_username?: string; created_at?: string; funded_status?: string | null; discord_id?: string; tradingview_url?: string; }
 
 // ── Certificate Canvas Component — Premium Gold Design ──────────────
 // ── Certificate Canvas Component ──────────────────────────────────────
@@ -388,6 +428,8 @@ export default function DashboardPage() {
   const [pendingOrder, setPendingOrder] = useState<any|null>(null);
   const [rekCopied, setRekCopied]       = useState('');
   const [selectedPm, setSelectedPm]     = useState('');
+  const [tvLink, setTvLink]             = useState('');
+  const [tvEditing, setTvEditing]       = useState(false);
   const [selectedPlanByProduct, setSelectedPlanByProduct] = useState<Record<string,string>>({});
   const [oldPass, setOldPass]         = useState('');
   const [newPass, setNewPass]         = useState('');
@@ -822,6 +864,13 @@ export default function DashboardPage() {
     const REDIRECT_URI = encodeURIComponent('https://menolakrugi.com/discord-callback');
     const SCOPE = encodeURIComponent('identify guilds.join');
     window.location.href = `https://discord.com/oauth2/authorize?client_id=${CLIENT_ID}&redirect_uri=${REDIRECT_URI}&response_type=code&scope=${SCOPE}`;
+  }
+
+  async function saveTradingviewLink() {
+    if (!member || !tvLink.trim()) return;
+    await supabase.from('members').update({ tradingview_url: tvLink.trim() }).eq('id', member.id);
+    setMember({ ...member, tradingview_url: tvLink.trim() });
+    setTvEditing(false);
   }
 
   async function rateVideo(videoId: string, star: number) {
@@ -1382,6 +1431,7 @@ export default function DashboardPage() {
                         Hubungkan via Discord OAuth
                       </button>
                     )}
+                    <TradingViewLinkBox member={member} tvLink={tvLink} setTvLink={setTvLink} tvEditing={tvEditing} setTvEditing={setTvEditing} onSave={saveTradingviewLink} />
                   </div>
                 </div>
               );
@@ -2692,6 +2742,11 @@ export default function DashboardPage() {
 
               {/* ── Pesanan Saya ── */}
               {prodView === 'pesanan' && (
+                <>
+                <div style={{ background: LP.surface, border: `1px solid ${LP.border}`, borderRadius: 14, padding: '16px 20px', marginBottom: 16 }}>
+                  <div style={{ fontFamily: LP.mono, color: LP.primary, fontSize: 10, letterSpacing: 1, marginBottom: 10 }}>LINK PROFIL TRADINGVIEW</div>
+                  <TradingViewLinkBox member={member} tvLink={tvLink} setTvLink={setTvLink} tvEditing={tvEditing} setTvEditing={setTvEditing} onSave={saveTradingviewLink} />
+                </div>
                 <div style={{ background: LP.surface, border: `1px solid ${LP.border}`, borderRadius: 14, overflow: 'hidden' }}>
                   {!myOrders.length
                     ? <div style={{ textAlign: 'center' as const, padding: '60px 20px', color: LP.muted, fontFamily: LP.mono, fontSize: 13 }}>Belum ada pesanan.</div>
@@ -2724,6 +2779,7 @@ export default function DashboardPage() {
                       })
                   }
                 </div>
+                </>
               )}
 
               {/* ── Modal konfirmasi order ── */}
