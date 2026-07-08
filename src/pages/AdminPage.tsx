@@ -22,7 +22,7 @@ function hitungJatuhTempo(activatedAt: string | null, planType: string | null): 
 }
 
 interface Admin { id: string; username: string; password: string; role: string; }
-interface Member { id: string; nama: string; tier: string; password: string; is_active: boolean; is_advance: boolean; last_seen?: string; discord_id?: string; discord_username?: string; }
+interface Member { id: string; nama: string; tier: string; password: string; is_active: boolean; is_advance: boolean; last_seen?: string; discord_id?: string; discord_username?: string; tradingview_url?: string; }
 interface VideoItem { id: string; judul: string; deskripsi: string; youtube_url: string; tier_akses: string[]; level: string; urutan: number; }
 interface AdvanceRequest { id: string; member_id: string; member_nama: string; member_tier: string; status: string; alasan_tolak: string | null; created_at: string; }
 
@@ -3312,6 +3312,12 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
                           </div>
                           {o.email_member && <div style={{fontFamily:'monospace',fontSize:10,color:'#666',marginBottom:2}}>✉ {o.email_member}</div>}
                           {o.no_hp && <div style={{fontFamily:'monospace',fontSize:10,color:'#666',marginBottom:2}}>☎ {o.no_hp}</div>}
+                          {o.plan_type && (() => {
+                            const m = members.find(mm => mm.id === o.member_id);
+                            return m?.tradingview_url
+                              ? <div style={{fontFamily:'monospace',fontSize:10,color:'#666',marginBottom:2}}>📈 <a href={m.tradingview_url} target="_blank" rel="noopener noreferrer" style={{color:'#3b82f6'}}>{m.tradingview_url}</a></div>
+                              : <div style={{fontFamily:'monospace',fontSize:10,color:'#444',marginBottom:2}}>📈 TradingView: — belum diisi</div>;
+                          })()}
                           <div style={{fontFamily:'monospace',fontSize:11,color:'#888',marginBottom:2}}>📦 {(o as any).products?.nama||'—'}{o.plan_type ? <span style={{marginLeft:6,color:'#16a34a',fontSize:9,border:'1px solid #16a34a33',padding:'1px 6px'}}>{o.plan_type.toUpperCase()}</span> : ''}{o.kode_diskon ? <span style={{marginLeft:6,color:'#eab308',fontSize:9,border:'1px solid #eab30833',padding:'1px 6px'}}>🎟️ {o.kode_diskon} -{o.diskon_applied}%</span> : ''}</div>
                           <div style={{fontFamily:'monospace',fontSize:10,color:'#444'}}>{new Date(o.created_at).toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'})}</div>
                           {(() => {
