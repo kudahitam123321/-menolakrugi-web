@@ -29,6 +29,7 @@ import BayarPage from './pages/BayarPage';
 import BayarAkunPage from './pages/BayarAkunPage';
 import PricingIndikatorPage from './pages/PricingIndikatorPage';
 import PricingKelasPage from './pages/PricingKelasPage';
+import PromoBanner from './components/PromoBanner';
 
 function getPage() {
   const path = window.location.pathname;
@@ -68,15 +69,15 @@ function App() {
   // ── Halaman lama (tetap jalan) ──────────────────────────────────────────
   if (page === 'checkout')          return <CheckoutPage />;
   if (page === 'payment')           return <PaymentPage />;
-  if (page === 'login')             return <LoginPage />;
+  if (page === 'login')             return <><PromoBanner /><LoginPage /></>;
   if (page === 'discord-callback')  return <DiscordCallbackPage />;
 
   // ── Halaman baru ────────────────────────────────────────────────────────
-  if (page === 'signup')            return <SignupPage />;
-  if (page === 'bayar')             return <BayarPage />;
+  if (page === 'signup')            return <><PromoBanner /><SignupPage /></>;
+  if (page === 'bayar')             return <><PromoBanner /><BayarPage /></>;
   if (page === 'bayar-akun')        return <BayarAkunPage />;
-  if (page === 'pricing-indikator') return <PricingIndikatorPage />;
-  if (page === 'pricing-kelas')     return <PricingKelasPage />;
+  if (page === 'pricing-indikator') return <><PromoBanner /><PricingIndikatorPage /></>;
+  if (page === 'pricing-kelas')     return <><PromoBanner /><PricingKelasPage /></>;
   if (page === 'partnership')         return <PartnershipPage step="intro" />;
   if (page === 'partnership-broker')    return <PartnershipPage step="broker" />;
   if (page === 'partnership-confirm')   return <PartnershipPage step="confirm" />;
@@ -99,7 +100,7 @@ function App() {
 
   // ── Home / Landing page ─────────────────────────────────────────────────
   // Ganti ke LandingPage baru, atau tetap pakai yang lama (komponen di bawah)
-  return <LandingPage />;
+  return <><PromoBanner /><LandingPage /></>;
 }
 
 export default App;
