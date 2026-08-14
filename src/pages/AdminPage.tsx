@@ -1316,6 +1316,8 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
   const [dcAktif, setDcAktif]                 = useState(true);
   const [dcMaxPenggunaan, setDcMaxPenggunaan] = useState('');
   const [dcBerlakuHingga, setDcBerlakuHingga] = useState('');
+  const [dcTampilBanner, setDcTampilBanner] = useState(false);
+  const [dcBannerTeks, setDcBannerTeks]     = useState('');
   const [pNama, setPNama]                     = useState('');
   const [pDesc, setPDesc]                     = useState('');
   const [pHargaBulanan, setPHargaBulanan]     = useState('');
@@ -1767,15 +1769,23 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
     if (!dcKode.trim() || !dcDiskon) { notify('Kode dan besaran diskon wajib diisi.', 'err'); return; }
     const d = parseInt(dcDiskon);
     if (d < 1 || d > 100) { notify('Diskon harus antara 1–100%.', 'err'); return; }
+    if (dcTampilBanner && !dcBannerTeks.trim()) { notify('Teks banner wajib diisi kalau kode ini mau ditampilkan di banner.', 'err'); return; }
     const { error } = await supabase.from('discount_codes').insert({
       kode: dcKode.toUpperCase().trim(),
       diskon: d,
       aktif: dcAktif,
       max_penggunaan: dcMaxPenggunaan ? parseInt(dcMaxPenggunaan) : null,
       berlaku_hingga: dcBerlakuHingga || null,
+      tampil_banner: dcTampilBanner,
+      banner_teks: dcTampilBanner ? dcBannerTeks.trim() : null,
     });
     if (error) notify(error.message.includes('unique') ? 'Kode sudah terdaftar.' : 'Error: ' + error.message, 'err');
-    else { notify('Kode diskon berhasil ditambahkan!'); setDcKode(''); setDcDiskon(''); setDcAktif(true); setDcMaxPenggunaan(''); setDcBerlakuHingga(''); loadData(); }
+    else {
+      notify('Kode diskon berhasil ditambahkan!');
+      setDcKode(''); setDcDiskon(''); setDcAktif(true); setDcMaxPenggunaan(''); setDcBerlakuHingga('');
+      setDcTampilBanner(false); setDcBannerTeks('');
+      loadData();
+    }
   }
 
   async function deleteDiscountCode(id: string) {
@@ -3233,6 +3243,20 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
                     </button>
                     <span style={{fontFamily:'monospace',fontSize:10,color:'#333'}}>Status kode saat dibuat</span>
                   </div>
+                  <div style={{marginBottom:14}}>
+                    <div style={{display:'flex',alignItems:'center',gap:12,marginBottom:8}}>
+                      <button onClick={()=>setDcTampilBanner(v=>!v)}
+                        style={{fontFamily:'monospace',fontSize:10,fontWeight:700,padding:'5px 16px',border:`1px solid ${dcTampilBanner?'#16a34a':'#2a2a2a'}`,background:dcTampilBanner?'#0a1a0e':'transparent',color:dcTampilBanner?'#16a34a':'#555',cursor:'pointer'}}>
+                        {dcTampilBanner?'📢 TAMPIL DI BANNER':'⛔ TIDAK TAMPIL DI BANNER'}
+                      </button>
+                      <span style={{fontFamily:'monospace',fontSize:10,color:'#333'}}>Broadcast ke bar promo di halaman publik</span>
+                    </div>
+                    {dcTampilBanner && (
+                      <input value={dcBannerTeks} onChange={e=>setDcBannerTeks(e.target.value)} placeholder="Teks banner, mis: Diskon 20% pembelian pertama, pakai kode HELLO"
+                        style={{width:'100%',background:'#111',border:'1px solid #2a2a2a',color:'#e7e5e4',padding:'10px 14px',fontSize:13,fontFamily:'monospace',outline:'none',boxSizing:'border-box' as const}}
+                        onFocus={e=>e.target.style.borderColor='#16a34a'} onBlur={e=>e.target.style.borderColor='#2a2a2a'}/>
+                    )}
+                  </div>
                   <button onClick={addDiscountCode} disabled={loading}
                     style={{background:loading?'#1a1a1a':'#16a34a',color:loading?'#444':'#000',fontFamily:'monospace',fontSize:12,fontWeight:700,padding:'10px 20px',border:'none',cursor:loading?'not-allowed':'pointer'}}>
                     + BUAT KODE DISKON
@@ -3257,6 +3281,9 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
                             <span style={{fontFamily:'monospace',fontSize:9,color:sc,border:`1px solid ${sc}44`,padding:'2px 7px'}}>
                               {!dc.aktif?'NON-AKTIF':expired?'KADALUARSA':habis?'HABIS':'AKTIF'}
                             </span>
+                            {(dc.tampil_banner && dc.aktif && !expired && !habis) && (
+                              <span style={{fontFamily:'monospace',fontSize:9,color:'#16a34a',border:'1px solid #16a34a44',padding:'2px 7px'}}>📢 BANNER</span>
+                            )}
                           </div>
                           <div style={{display:'flex',gap:14,flexWrap:'wrap' as const}}>
                             <span style={{fontFamily:'monospace',fontSize:10,color:'#666'}}>Terpakai: <span style={{color:'#aaa'}}>{dc.terpakai}{dc.max_penggunaan?`/${dc.max_penggunaan}`:''}</span></span>
