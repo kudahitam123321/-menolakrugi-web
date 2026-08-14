@@ -86,7 +86,7 @@ export default function BayarPage() {
   const plan = getPlanFromConfig(config, planKey);
   const fmt  = (n: number) => new Intl.NumberFormat('id-ID').format(n);
 
-  const diskonAktif = kodeDiskonData ? kodeDiskonData.diskon : (plan?.diskon || 0);
+  const diskonAktif = Math.max(kodeDiskonData ? kodeDiskonData.diskon : 0, plan?.diskon || 0);
   const hargaDiskon = plan
     ? (diskonAktif > 0 ? Math.round(plan.harga_asli * (1 - diskonAktif / 100)) : plan.harga_asli)
     : 0;
@@ -112,6 +112,24 @@ export default function BayarPage() {
     if (!plan) { setErrMsg('Plan tidak valid.'); return; }
 
     setSubmitting(true);
+
+    // Validasi ulang kode diskon (bisa saja kadaluarsa/kuota habis sejak "Terapkan" diklik)
+    let appliedKode = kodeDiskonData;
+    if (appliedKode) {
+      const { data: freshKode } = await supabase.from('discount_codes')
+        .select('*').eq('id', appliedKode.id).eq('aktif', true).single();
+      const stillValid = !!freshKode
+        && !(freshKode.berlaku_hingga && new Date(freshKode.berlaku_hingga) < new Date())
+        && !(freshKode.max_penggunaan && freshKode.terpakai >= freshKode.max_penggunaan);
+      if (!stillValid) {
+        setErrMsg('Kode diskon sudah tidak berlaku lagi. Hapus kode dan coba lagi.');
+        setKodeDiskonData(null);
+        setSubmitting(false);
+        return;
+      }
+      appliedKode = freshKode;
+    }
+    const effectiveDiskon = Math.max(appliedKode ? appliedKode.diskon : 0, plan.diskon || 0);
 
     const pm = paymentMethods.find(p => p.id === metodePm);
     const metodeInfo = pm?.jenis === 'qris'
@@ -153,8 +171,8 @@ export default function BayarPage() {
       no_hp:          noHp.trim(),
       catatan:        `WA: ${noHp.trim()} | ${metodeInfo}`,
       plan_type:      plan.key,
-      kode_diskon:    kodeDiskonData?.kode || null,
-      diskon_applied: diskonAktif || null,
+      kode_diskon:    appliedKode?.kode || null,
+      diskon_applied: effectiveDiskon || null,
       status:         'pending',
     }).select('id').single();
     if (error || !newOrder) {
@@ -162,8 +180,16 @@ export default function BayarPage() {
       setSubmitting(false);
       return;
     }
-    if (kodeDiskonData) {
-      await supabase.from('discount_codes').update({ terpakai: kodeDiskonData.terpakai + 1 }).eq('id', kodeDiskonData.id);
+    if (appliedKode) {
+      // Update bersyarat (compare-and-swap sederhana): hanya berhasil kalau
+      // terpakai belum berubah sejak kita baca ulang di atas. Mengurangi risiko
+      // dua submit bersamaan menaikkan angka yang sama. Bukan jaminan atomik
+      // penuh (itu perlu RPC Postgres) — cukup untuk mengurangi overcounting
+      // tanpa menambah migrasi skema baru.
+      await supabase.from('discount_codes')
+        .update({ terpakai: appliedKode.terpakai + 1 })
+        .eq('id', appliedKode.id)
+        .eq('terpakai', appliedKode.terpakai);
     }
 
     window.location.href = `/bayar/akun?order=${newOrder.id}`;
