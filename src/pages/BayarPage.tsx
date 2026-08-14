@@ -55,6 +55,10 @@ export default function BayarPage() {
   const [metodePm,   setMetodePm]   = useState<string>('');
   const [errMsg, setErrMsg] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [kodeDiskon, setKodeDiskon]         = useState('');
+  const [kodeDiskonData, setKodeDiskonData] = useState<any | null>(null);
+  const [kodeErr, setKodeErr]               = useState('');
+  const [kodeLoading, setKodeLoading]       = useState(false);
 
   const [isMobile, setIsMobile] = useState(() => window.matchMedia('(max-width: 767px)').matches);
   useEffect(() => {
@@ -82,10 +86,23 @@ export default function BayarPage() {
   const plan = getPlanFromConfig(config, planKey);
   const fmt  = (n: number) => new Intl.NumberFormat('id-ID').format(n);
 
+  const diskonAktif = kodeDiskonData ? kodeDiskonData.diskon : (plan?.diskon || 0);
   const hargaDiskon = plan
-    ? (plan.diskon > 0 ? Math.round(plan.harga_asli * (1 - plan.diskon / 100)) : plan.harga_asli)
+    ? (diskonAktif > 0 ? Math.round(plan.harga_asli * (1 - diskonAktif / 100)) : plan.harga_asli)
     : 0;
   const hemat = plan ? plan.harga_asli - hargaDiskon : 0;
+
+  async function cekKodeDiskon() {
+    if (!kodeDiskon.trim()) return;
+    setKodeLoading(true); setKodeErr(''); setKodeDiskonData(null);
+    const { data, error } = await supabase.from('discount_codes')
+      .select('*').eq('kode', kodeDiskon.toUpperCase().trim()).eq('aktif', true).single();
+    setKodeLoading(false);
+    if (error || !data) { setKodeErr('Kode tidak valid atau sudah tidak aktif.'); return; }
+    if (data.berlaku_hingga && new Date(data.berlaku_hingga) < new Date()) { setKodeErr('Kode sudah kadaluarsa.'); return; }
+    if (data.max_penggunaan && data.terpakai >= data.max_penggunaan) { setKodeErr('Kode sudah mencapai batas penggunaan.'); return; }
+    setKodeDiskonData(data);
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -136,13 +153,17 @@ export default function BayarPage() {
       no_hp:          noHp.trim(),
       catatan:        `WA: ${noHp.trim()} | ${metodeInfo}`,
       plan_type:      plan.key,
-      diskon_applied: plan.diskon || null,
+      kode_diskon:    kodeDiskonData?.kode || null,
+      diskon_applied: diskonAktif || null,
       status:         'pending',
     }).select('id').single();
     if (error || !newOrder) {
       setErrMsg('Gagal menyimpan pesanan: ' + (error?.message || 'unknown error'));
       setSubmitting(false);
       return;
+    }
+    if (kodeDiskonData) {
+      await supabase.from('discount_codes').update({ terpakai: kodeDiskonData.terpakai + 1 }).eq('id', kodeDiskonData.id);
     }
 
     window.location.href = `/bayar/akun?order=${newOrder.id}`;
@@ -181,21 +202,48 @@ export default function BayarPage() {
               <>
                 <div style={{ fontFamily: '"Geist Mono",monospace', color: G.gold, fontSize: 10, letterSpacing: 1, marginBottom: 8 }}>INDIKATOR SMC · {plan.nama.toUpperCase()}</div>
                 <div style={{ fontWeight: 700, fontSize: 20, marginBottom: 16, letterSpacing: -0.5 }}>Plan {plan.nama}</div>
-                {plan.diskon > 0 && (
+                {diskonAktif > 0 && (
                   <div style={{ fontFamily: '"Geist Mono",monospace', fontSize: 12, color: C.dimmer, marginBottom: 6 }}>
                     <s>Rp {fmt(plan.harga_asli)}</s>
-                    <span style={{ marginLeft: 8, color: G.up, background: G.up + '15', padding: '1px 7px', borderRadius: 4, fontSize: 10, fontWeight: 700 }}>-{plan.diskon}%</span>
+                    <span style={{ marginLeft: 8, color: G.up, background: G.up + '15', padding: '1px 7px', borderRadius: 4, fontSize: 10, fontWeight: 700 }}>-{diskonAktif}%</span>
                   </div>
                 )}
-                <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: plan.diskon > 0 ? 8 : 0 }}>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: diskonAktif > 0 ? 8 : 0 }}>
                   <span style={{ fontFamily: '"Geist Mono",monospace', color: G.gold, fontSize: 15 }}>Rp</span>
                   <span style={{ fontSize: 38, fontWeight: 700, letterSpacing: -2, lineHeight: 1, color: C.text }}>{fmt(hargaDiskon)}</span>
                 </div>
-                {plan.diskon > 0 && (
+                {diskonAktif > 0 && (
                   <div style={{ fontFamily: '"Geist Mono",monospace', color: G.up, fontSize: 11 }}>
                     Hemat Rp {fmt(hemat)}
                   </div>
                 )}
+                <div style={{ marginTop: 16, paddingTop: 16, borderTop: `1px solid ${C.border}` }}>
+                  <div style={{ fontFamily: '"Geist Mono",monospace', color: C.dim, fontSize: 10, letterSpacing: 0.6, marginBottom: 8 }}>PUNYA KODE KUPON? (OPSIONAL)</div>
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <input
+                      value={kodeDiskon}
+                      onChange={e => { setKodeDiskon(e.target.value.toUpperCase()); setKodeDiskonData(null); setKodeErr(''); }}
+                      onKeyDown={e => { if (e.key === 'Enter') cekKodeDiskon(); }}
+                      placeholder="MASUKKAN KODE"
+                      style={{ flex: 1, background: C.bg, border: `1.5px solid ${kodeDiskonData ? G.up : kodeErr ? G.down : C.border}`, color: C.text, padding: '10px 14px', fontSize: 13, fontFamily: '"Geist Mono",monospace', outline: 'none', borderRadius: 8, letterSpacing: 1 }} />
+                    <button
+                      onClick={cekKodeDiskon}
+                      disabled={kodeLoading || !kodeDiskon.trim()}
+                      style={{ padding: '10px 18px', fontFamily: '"Geist Mono",monospace', fontSize: 12, fontWeight: 700, background: 'transparent', color: G.gold, border: `1px solid ${G.gold}`, borderRadius: 8, cursor: kodeLoading || !kodeDiskon.trim() ? 'not-allowed' : 'pointer', opacity: !kodeDiskon.trim() ? 0.4 : 1, whiteSpace: 'nowrap' as const }}>
+                      {kodeLoading ? '...' : 'Terapkan'}
+                    </button>
+                  </div>
+                  {kodeDiskonData && (
+                    <div style={{ fontFamily: '"Geist Mono",monospace', fontSize: 11, color: G.up, marginTop: 6 }}>
+                      ✓ Kode valid — diskon {kodeDiskonData.diskon}% diterapkan
+                    </div>
+                  )}
+                  {kodeErr && (
+                    <div style={{ fontFamily: '"Geist Mono",monospace', fontSize: 11, color: G.down, marginTop: 6 }}>
+                      {kodeErr}
+                    </div>
+                  )}
+                </div>
               </>
             ) : (
               <div style={{ color: C.dim, fontSize: 13 }}>Plan tidak ditemukan.</div>
