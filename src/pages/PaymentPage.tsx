@@ -44,6 +44,10 @@ export default function PaymentPage() {
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethodRow[]>([]);
   const [selectedPm, setSelectedPm] = useState<string>('');
   const [copied, setCopied] = useState(false);
+  const [kodeDiskon, setKodeDiskon]         = useState('');
+  const [kodeDiskonData, setKodeDiskonData] = useState<any | null>(null);
+  const [kodeErr, setKodeErr]               = useState('');
+  const [kodeLoading, setKodeLoading]       = useState(false);
 
   useEffect(() => {
     async function load() {
@@ -66,14 +70,50 @@ export default function PaymentPage() {
   const fmt  = (n: number) => new Intl.NumberFormat('id-ID').format(n);
   const selected = paymentMethods.find(pm => pm.id === selectedPm);
 
+  const hargaAsli       = tier?.original_price ?? tier?.price ?? 0;
+  const hargaDenganKode = kodeDiskonData ? Math.round(hargaAsli * (1 - kodeDiskonData.diskon / 100)) : null;
+  const hargaFinal       = hargaDenganKode !== null ? Math.min(tier?.price ?? hargaAsli, hargaDenganKode) : (tier?.price ?? 0);
+  const diskonAktifPct   = hargaAsli > 0 ? Math.round((1 - hargaFinal / hargaAsli) * 100) : 0;
+
   function copyAccNo(nomor: string) {
     navigator.clipboard.writeText(nomor.replace(/\s/g, ''));
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   }
 
+  async function cekKodeDiskon() {
+    if (!kodeDiskon.trim()) return;
+    setKodeLoading(true); setKodeErr(''); setKodeDiskonData(null);
+    const { data, error } = await supabase.from('discount_codes')
+      .select('*').eq('kode', kodeDiskon.toUpperCase().trim()).eq('aktif', true).single();
+    setKodeLoading(false);
+    if (error || !data) { setKodeErr('Kode tidak valid atau sudah tidak aktif.'); return; }
+    if (data.berlaku_hingga && new Date(data.berlaku_hingga) < new Date()) { setKodeErr('Kode sudah kadaluarsa.'); return; }
+    if (data.max_penggunaan && data.terpakai >= data.max_penggunaan) { setKodeErr('Kode sudah mencapai batas penggunaan.'); return; }
+    setKodeDiskonData(data);
+  }
+
   async function konfirmasiWA() {
     if (!order) return;
+
+    if (kodeDiskonData) {
+      const { data: freshKode } = await supabase.from('discount_codes')
+        .select('*').eq('id', kodeDiskonData.id).eq('aktif', true).single();
+      const stillValid = !!freshKode
+        && !(freshKode.berlaku_hingga && new Date(freshKode.berlaku_hingga) < new Date())
+        && !(freshKode.max_penggunaan && freshKode.terpakai >= freshKode.max_penggunaan);
+      if (!stillValid) {
+        setKodeErr('Kode diskon sudah tidak berlaku lagi. Hapus kode dan coba lagi.');
+        setKodeDiskonData(null);
+        return;
+      }
+      await supabase.from('orders').update({ kode_diskon: freshKode.kode, diskon_applied: diskonAktifPct }).eq('id', order.id);
+      await supabase.from('discount_codes')
+        .update({ terpakai: freshKode.terpakai + 1 })
+        .eq('id', freshKode.id)
+        .eq('terpakai', freshKode.terpakai);
+    }
+
     if (selected) {
       const metodeInfo = selected.jenis === 'qris'
         ? `QRIS (${selected.nama_bank})`
@@ -178,10 +218,44 @@ export default function PaymentPage() {
             <div style={{ fontSize: 22, fontWeight: 700, letterSpacing: -0.5 }}>{tier?.name ?? order.tier_member}</div>
           </div>
 
+          <div>
+            <div style={{ fontFamily: MR.mono, color: MR.dimmer, fontSize: 10, letterSpacing: 0.8, marginBottom: 8 }}>PUNYA KODE KUPON? (OPSIONAL)</div>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <input
+                value={kodeDiskon}
+                onChange={e => { setKodeDiskon(e.target.value.toUpperCase()); setKodeDiskonData(null); setKodeErr(''); }}
+                onKeyDown={e => { if (e.key === 'Enter') cekKodeDiskon(); }}
+                placeholder="MASUKKAN KODE"
+                style={{ flex: 1, background: MR.panel, border: `1.5px solid ${kodeDiskonData ? MR.up : kodeErr ? MR.down : MR.border}`, color: MR.text, padding: '10px 14px', fontSize: 13, fontFamily: MR.mono, outline: 'none', letterSpacing: 1 }} />
+              <button
+                onClick={cekKodeDiskon}
+                disabled={kodeLoading || !kodeDiskon.trim()}
+                style={{ padding: '10px 18px', fontFamily: MR.mono, fontSize: 12, fontWeight: 700, background: 'transparent', color: MR.gold, border: `1px solid ${MR.gold}`, cursor: kodeLoading || !kodeDiskon.trim() ? 'not-allowed' : 'pointer', opacity: !kodeDiskon.trim() ? 0.4 : 1, whiteSpace: 'nowrap' as const }}>
+                {kodeLoading ? '...' : 'Terapkan'}
+              </button>
+            </div>
+            {kodeDiskonData && (
+              <div style={{ fontFamily: MR.mono, fontSize: 11, color: MR.up, marginTop: 6 }}>
+                ✓ Kode valid — diskon {kodeDiskonData.diskon}% diterapkan
+              </div>
+            )}
+            {kodeErr && (
+              <div style={{ fontFamily: MR.mono, fontSize: 11, color: MR.down, marginTop: 6 }}>
+                {kodeErr}
+              </div>
+            )}
+          </div>
+
           <div style={{ borderTop: `1px solid ${MR.border}`, paddingTop: 16, display: 'grid', gap: 10, fontSize: 13, fontFamily: MR.mono }}>
+            {hargaFinal < (tier?.price ?? 0) && (
+              <div style={{ display: 'flex', justifyContent: 'space-between', color: MR.dim }}>
+                <span>Harga normal</span>
+                <span style={{ textDecoration: 'line-through' }}>Rp {fmt(tier?.price ?? 0)}</span>
+              </div>
+            )}
             <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: 12, fontSize: 18 }}>
               <span>TOTAL TRANSFER</span>
-              <span style={{ color: MR.gold, fontWeight: 700 }}>Rp {fmt(tier?.price ?? 0)}</span>
+              <span style={{ color: MR.gold, fontWeight: 700 }}>Rp {fmt(hargaFinal)}</span>
             </div>
           </div>
 
