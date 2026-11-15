@@ -21,6 +21,21 @@ function hitungJatuhTempo(activatedAt: string | null, planType: string | null): 
   return null;
 }
 
+type OrderFilter = 'all' | 'pending' | 'dibayar' | 'aktif' | 'jatuh_tempo';
+
+// Order "jatuh tempo" = sudah bukan pending, dan tanggal jatuh temponya sudah lewat.
+function orderLewatJatuhTempo(o: any): boolean {
+  if (o.status === 'pending') return false;
+  const jt = hitungJatuhTempo(o.activated_at, o.plan_type);
+  return !!jt && jt < new Date();
+}
+
+function orderCocokFilter(o: any, filter: OrderFilter): boolean {
+  if (filter === 'all') return true;
+  if (filter === 'jatuh_tempo') return orderLewatJatuhTempo(o);
+  return o.status === filter;
+}
+
 interface Admin { id: string; username: string; password: string; role: string; }
 interface Member { id: string; nama: string; tier: string; password: string; is_active: boolean; is_advance: boolean; last_seen?: string; discord_id?: string; discord_username?: string; tradingview_url?: string; }
 interface VideoItem { id: string; judul: string; deskripsi: string; youtube_url: string; tier_akses: string[]; level: string; urutan: number; }
@@ -1359,7 +1374,8 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
   const editPPanduanRef = useRef<HTMLInputElement>(null);
   // Orders states
   const [prodOrders, setProdOrders]           = useState<any[]>([]);
-  const [orderFilter, setOrderFilter]         = useState<'all'|'pending'|'dibayar'|'aktif'>('all');
+  const [orderFilter, setOrderFilter]         = useState<OrderFilter>('all');
+  const [hapusMassalLoading, setHapusMassalLoading] = useState(false);
   const [orderSearch, setOrderSearch]         = useState('');
   const [orderCatatanMap, setOrderCatatanMap] = useState<Record<string,string>>({});
   const [announceChannel, setAnnounceChannel] = useState('');
@@ -1756,6 +1772,26 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
       }
       loadData();
     }
+  }
+
+  // Hapus semua order yang sedang tampil (filter status + pencarian nama).
+  async function deleteOrdersMassal(orders: any[], labelFilter: string) {
+    if (!orders.length) return;
+    const pesan = `Hapus SEMUA ${orders.length} pesanan di filter "${labelFilter}"`
+      + (orderSearch ? ` dengan pencarian "${orderSearch}"` : '')
+      + `?\n\nPesanan di filter lain tidak ikut terhapus.\nTindakan ini permanen dan tidak bisa dibatalkan.`;
+    if (!confirm(pesan)) return;
+    setHapusMassalLoading(true);
+    const ids = orders.map(o => o.id);
+    let gagal = '';
+    for (let i = 0; i < ids.length; i += 100) {
+      const { error } = await supabase.from('orders').delete().in('id', ids.slice(i, i + 100));
+      if (error) { gagal = error.message; break; }
+    }
+    setHapusMassalLoading(false);
+    if (gagal) notify('Error: ' + gagal, 'err');
+    else notify(`${ids.length} pesanan dihapus!`);
+    loadData();
   }
 
   async function deleteOrder(orderId: string) {
@@ -3310,13 +3346,17 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
               <div style={{background:'#0d0d0d',border:'1px solid #1f1f1f'}}>
                 <div style={{padding:'12px 20px',borderBottom:'1px solid #1a1a1a',display:'flex',gap:10,alignItems:'center',flexWrap:'wrap' as const}}>
                   <span style={{fontFamily:'monospace',color:'#555',fontSize:11,letterSpacing:1}}>// PESANAN MASUK ({prodOrders.length})</span>
-                  <div style={{display:'flex',gap:4,marginLeft:'auto'}}>
-                    {(['all','pending','dibayar','aktif'] as const).map(f=>(
-                      <button key={f} onClick={()=>setOrderFilter(f)}
-                        style={{fontFamily:'monospace',fontSize:10,fontWeight:700,padding:'4px 10px',border:`1px solid ${orderFilter===f?'#16a34a':'#2a2a2a'}`,background:orderFilter===f?'#0a1a0e':'transparent',color:orderFilter===f?'#16a34a':'#555',cursor:'pointer'}}>
-                        {f.toUpperCase()}
-                      </button>
-                    ))}
+                  <div style={{display:'flex',gap:4,marginLeft:'auto',flexWrap:'wrap' as const}}>
+                    {([['all','ALL'],['pending','PENDING'],['dibayar','DIBAYAR'],['aktif','AKTIF'],['jatuh_tempo','JATUH TEMPO']] as const).map(([f,label])=>{
+                      const n = prodOrders.filter(o=>orderCocokFilter(o,f)).length;
+                      const warna = f==='jatuh_tempo' ? '#ef4444' : '#16a34a';
+                      return (
+                        <button key={f} onClick={()=>setOrderFilter(f)}
+                          style={{fontFamily:'monospace',fontSize:10,fontWeight:700,padding:'4px 10px',border:`1px solid ${orderFilter===f?warna:'#2a2a2a'}`,background:orderFilter===f?(f==='jatuh_tempo'?'#1a0a0a':'#0a1a0e'):'transparent',color:orderFilter===f?warna:'#555',cursor:'pointer'}}>
+                          {label} ({n})
+                        </button>
+                      );
+                    })}
                   </div>
                   <input value={orderSearch} onChange={e=>setOrderSearch(e.target.value)} placeholder="🔍 Cari nama member..."
                     style={{background:'#111',border:'1px solid #2a2a2a',color:'#e7e5e4',padding:'6px 12px',fontSize:12,fontFamily:'monospace',outline:'none',width:180}}
@@ -3324,10 +3364,22 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
                 </div>
                 {(()=>{
                   const filtered = prodOrders
-                    .filter(o=>orderFilter==='all'||o.status===orderFilter)
+                    .filter(o=>orderCocokFilter(o,orderFilter))
                     .filter(o=>!orderSearch||o.nama_member?.toLowerCase().includes(orderSearch.toLowerCase()));
+                  const labelFilter = orderFilter==='jatuh_tempo' ? 'JATUH TEMPO' : orderFilter.toUpperCase();
+                  const barHapus = orderFilter!=='all' && filtered.length>0 && (
+                    <div style={{padding:'10px 20px',borderBottom:'1px solid #1a1a1a',display:'flex',alignItems:'center',gap:12,flexWrap:'wrap' as const,background:'#0a0a0a'}}>
+                      <span style={{fontFamily:'monospace',fontSize:10,color:'#666'}}>
+                        {filtered.length} pesanan tampil di filter {labelFilter}{orderSearch?` · pencarian "${orderSearch}"`:''}
+                      </span>
+                      <button onClick={()=>deleteOrdersMassal(filtered,labelFilter)} disabled={hapusMassalLoading}
+                        style={{marginLeft:'auto',fontFamily:'monospace',fontSize:10,fontWeight:700,padding:'6px 12px',background:'transparent',color:'#ef4444',border:'1px solid #ef444466',cursor:hapusMassalLoading?'wait':'pointer',opacity:hapusMassalLoading?0.5:1}}>
+                        {hapusMassalLoading ? 'MENGHAPUS...' : `🗑 HAPUS SEMUA (${filtered.length})`}
+                      </button>
+                    </div>
+                  );
                   if (!filtered.length) return <div style={{padding:'32px',textAlign:'center' as const,fontFamily:'monospace',color:'#333',fontSize:13}}>— BELUM ADA PESANAN —</div>;
-                  return filtered.map(o=>{
+                  return <>{barHapus}{filtered.map(o=>{
                     const sc = o.status==='aktif'?'#16a34a':o.status==='dibayar'?'#3b82f6':'#eab308';
                     return (
                       <div key={o.id} style={{borderBottom:'1px solid #111',padding:'14px 20px',display:'flex',gap:16,alignItems:'flex-start',flexWrap:'wrap' as const}}>
@@ -3370,7 +3422,7 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
                         </div>
                       </div>
                     );
-                  });
+                  })}</>;
                 })()}
               </div>
             )}
