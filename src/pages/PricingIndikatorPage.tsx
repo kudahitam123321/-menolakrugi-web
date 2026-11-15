@@ -3,7 +3,7 @@
 // Dipindah dari komponen ProductPreview ("Preview Platform") di LandingPage.tsx
 
 import React from 'react';
-import { useLandingPreview } from '../hooks';
+import { useLandingPreview, useBacktestConfig } from '../hooks';
 import type { LandingPreviewConfig } from '../hooks';
 
 const LP = {
@@ -160,6 +160,44 @@ function LangkahPembelian() {
   );
 }
 
+function RiwayatDataCard() {
+  const { config } = useBacktestConfig();
+  const [isMobile, setIsMobile] = React.useState(() => window.matchMedia('(max-width: 767px)').matches);
+  React.useEffect(() => {
+    const mq = window.matchMedia('(max-width: 767px)');
+    const h = (e: MediaQueryListEvent) => setIsMobile(e.matches);
+    mq.addEventListener('change', h);
+    return () => mq.removeEventListener('change', h);
+  }, []);
+  if (!config) return null;
+
+  return (
+    <section style={{ background: LP.bg, padding: isMobile ? '0 20px 48px' : '0 40px 72px' }}>
+      <div style={{
+        maxWidth: 900, margin: '0 auto', display: 'flex', flexDirection: isMobile ? 'column' as const : 'row' as const,
+        alignItems: isMobile ? 'flex-start' : 'center', gap: 18, borderRadius: LP.radius, padding: '20px 22px',
+        background: 'linear-gradient(90deg,#0B1220,#13203a)', color: '#fff', boxShadow: LP.shadowMd,
+      }}>
+        <div style={{ width: 44, height: 44, borderRadius: 12, background: 'rgba(74,222,128,.15)', color: '#4ade80', display: 'grid', placeItems: 'center', flexShrink: 0 }}>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 3v18h18" /><rect x="7" y="12" width="3" height="6" /><rect x="12" y="8" width="3" height="10" /><rect x="17" y="5" width="3" height="13" /></svg>
+        </div>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontWeight: 700, fontSize: 16 }}>Riwayat Data Jelas</div>
+          <div style={{ fontSize: 13, color: '#94A3B8', marginTop: 4, lineHeight: 1.5 }}>
+            Setiap parameter dikunci dari riset backtest XAUUSD M5 — lihat sendiri daftar trade, win rate, dan hasilnya.
+          </div>
+        </div>
+        <a href="/backtest-indikator" style={{
+          background: '#4ade80', color: '#052e16', fontWeight: 700, fontSize: 14, padding: '12px 18px', borderRadius: 10,
+          textDecoration: 'none', whiteSpace: 'nowrap' as const, alignSelf: isMobile ? 'stretch' : 'auto', textAlign: 'center' as const,
+        }}>
+          Lihat Data Backtest →
+        </a>
+      </div>
+    </section>
+  );
+}
+
 export default function PricingIndikatorPage() {
   const { preview } = useLandingPreview();
 
@@ -174,6 +212,7 @@ export default function PricingIndikatorPage() {
       {preview ? (
         <>
           <ProductPreview config={preview} />
+          <RiwayatDataCard />
           <LangkahPembelian />
         </>
       ) : (

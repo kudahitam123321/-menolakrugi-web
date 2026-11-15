@@ -41,6 +41,7 @@ No routing library. `App.tsx` inspects `window.location.pathname` in a `getPage(
 /competition           → CompetitionPage (standalone, or embedded as a DashboardPage tab)
 /bayar                 → BayarPage (visitor payment page from landing page CTA)
 /bayar/akun            → BayarAkunPage (post-submit account credentials, ?order=<uuid>)
+/backtest-indikator    → public/backtest-indikator.html (static file, NOT a React page — see "Backtest Page")
 /trading-plan          → DashboardPage (member, opens trading-plan tab)
 /member                → DashboardPage (requires session)
 /member/kurikulum      → CurriculumPage
@@ -219,6 +220,12 @@ A decision-tree-based trading plan tool added in a recent release.
 
 Config is stored per `plan_type` (`'basic'` | `'advanced'`) in the `trading_plan_config` Supabase table.
 
+### Backtest Page
+
+`/backtest-indikator` serves `public/backtest-indikator.html` via a rule in `public/_redirects` placed **before** the SPA fallback. The file is the user's own dashboard (`D:/backtest/BACKTEST FIX.html`, d3 inline) transformed by `node scripts/make-backtest-page.mjs "D:/backtest/BACKTEST FIX.html" public/backtest-indikator.html src/lib/supabase.ts`: Script menu and password locks removed, "Data & Simulasi" reduced to capital + risk-per-trade simulation, embedded data replaced by a loader that reads `backtest_config` from Supabase REST and then boots the deferred scripts. Re-run that script instead of hand-editing the HTML when the user updates their dashboard.
+
+Data lives in `backtest_config` (single row id=1): `data` jsonb = `{ trades, settings }` in the dashboard's own format, `risk_asli` (risk % per trade used in the backtest — NOT the lot-calculator "Risk per Trade (%)" setting), `tampil`, `judul`. Admin updates it in Admin → Produk → Preview Landing → "// DATA BACKTEST" (`src/components/admin/BacktestUploadSection.tsx`). The pricing page shows a "Riwayat Data Jelas" card linking to it only while `tampil = true`. Check the reader with `node scripts/check-backtest.mjs <xlsx> "D:/backtest/BACKTEST FIX.html"`.
+
 ### Key Files
 
 | File | Purpose |
@@ -247,6 +254,10 @@ Config is stored per `plan_type` (`'basic'` | `'advanced'`) in the `trading_plan
 | `supabase-products-rls-fix.sql` | Fixes `products` RLS — same pattern: splits `for all with check (true)` into per-operation policies so UPDATE actually works |
 | `supabase-products-panduan-migration.sql` | Adds `panduan_url` and `panduan_name` columns to `products` table — run once in Supabase SQL editor |
 | `supabase-landing-preview-migration.sql` | Schema for `landing_preview_config` table (single-row upsert, id=1) |
+| `supabase-backtest-config-migration.sql` | `backtest_config` table (single row id=1) for the public backtest page |
+| `supabase-backtest-seed.sql` | Generated seed (SMC PTMR v5, 303 trades) — regenerate with `node scripts/generate-backtest-seed.mjs <xlsx>` |
+| `src/lib/backtest.ts` | TradingView Strategy Tester export reader (port of the user's dashboard `btToTrades`) |
+| `public/backtest-indikator.html` | Public backtest dashboard (built from `D:/backtest/BACKTEST FIX.html`) |
 | `supabase-announcements-migration.sql` | Schema for `announcements` table (admin broadcast messages) |
 | `supabase-discord-queue-migration.sql` | Schema for `discord_messages` queue table (bot message delivery fallback) |
 | `functions/api/mrbot/[[path]].js` | Cloudflare Pages Function proxy — routes `/api/mrbot/*` to the Discord bot (Railway), bypassing CORS/mixed-content |
