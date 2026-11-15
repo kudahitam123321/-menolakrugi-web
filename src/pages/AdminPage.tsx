@@ -1836,6 +1836,18 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
     loadData();
   }
 
+  // Pasang/lepas kode dari banner promo publik. Hanya satu kode yang dipasang di banner.
+  async function toggleBannerKode(id: string, tampil: boolean) {
+    if (!tampil) {
+      const { error: e1 } = await supabase.from('discount_codes').update({ tampil_banner: false }).neq('id', id);
+      if (e1) { notify('Error: ' + e1.message, 'err'); return; }
+    }
+    const { error } = await supabase.from('discount_codes').update({ tampil_banner: !tampil }).eq('id', id);
+    if (error) notify('Error: ' + error.message, 'err');
+    else notify(tampil ? 'Kode dilepas dari banner.' : 'Kode dipasang di banner.');
+    loadData();
+  }
+
   async function uploadQrisImage(file: File): Promise<string|null> {
     const ext = file.name.split('.').pop();
     const fileName = `qris_${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
@@ -3328,6 +3340,10 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
                           </div>
                         </div>
                         <div style={{display:'flex',gap:6,flexShrink:0}}>
+                          <button onClick={()=>toggleBannerKode(dc.id, !!dc.tampil_banner)}
+                            style={{background:'transparent',border:`1px solid ${dc.tampil_banner?'#16a34a':'#2a2a2a'}`,color:dc.tampil_banner?'#16a34a':'#666',fontFamily:'monospace',fontSize:10,padding:'5px 12px',cursor:'pointer'}}>
+                            {dc.tampil_banner?'📢 LEPAS BANNER':'📢 PASANG BANNER'}
+                          </button>
                           <button onClick={()=>toggleDiscountCode(dc.id, dc.aktif)}
                             style={{background:'transparent',border:`1px solid ${dc.aktif?'#2a2a2a':'#16a34a'}`,color:dc.aktif?'#666':'#16a34a',fontFamily:'monospace',fontSize:10,padding:'5px 12px',cursor:'pointer'}}>
                             {dc.aktif?'NONAKTIFKAN':'AKTIFKAN'}

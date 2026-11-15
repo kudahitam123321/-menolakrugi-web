@@ -3,8 +3,10 @@ import { supabase } from '../lib/supabase';
 import { useProdukIndikator } from '../hooks';
 import { fmtTanggalRilis } from '../lib/indikatorV5';
 
+interface KodeBanner { kode: string; diskon: number; teks: string | null }
+
 export default function PromoBanner() {
-  const [teks, setTeks] = useState<string | null>(null);
+  const [kode, setKode] = useState<KodeBanner | null>(null);
   const { preorder, tanggalRilis } = useProdukIndikator();
 
   useEffect(() => {
@@ -16,41 +18,39 @@ export default function PromoBanner() {
         .order('created_at', { ascending: false })
         .limit(1);
       const dc = data?.[0];
-      if (!dc || !dc.banner_teks) return;
+      if (!dc) return;
       const expired = dc.berlaku_hingga && new Date(dc.berlaku_hingga) < new Date();
       const habis = dc.max_penggunaan && dc.terpakai >= dc.max_penggunaan;
       if (expired || habis) return;
-      setTeks(dc.banner_teks);
+      setKode({ kode: dc.kode, diskon: dc.diskon, teks: dc.banner_teks || null });
     }
     load();
   }, []);
 
-  // Selama indikator v5 pre-order, banner dipakai untuk pengumuman v5 (menggantikan promo kode diskon).
+  const gaya = {
+    display: 'block', background: 'var(--mr-gold)', color: '#fff', textAlign: 'center' as const, padding: '10px 16px',
+    fontSize: 13, fontWeight: 600, fontFamily: '"Geist",system-ui,sans-serif', lineHeight: 1.4, textDecoration: 'none',
+  };
+  const pil = (k: KodeBanner) => (
+    <b style={{ background: '#fff', color: 'var(--mr-gold)', padding: '1px 8px', borderRadius: 6, letterSpacing: 0.6, fontFamily: '"Geist Mono",monospace' }}>{k.kode}</b>
+  );
+
+  // Selama indikator v5 pre-order: pengumuman v5, plus kode diskon yang sedang dipasang di banner (kalau ada).
   if (preorder) {
     return (
-      <a href="/pricing-indikator" style={{
-        display: 'block', background: 'var(--mr-gold)', color: '#fff', textAlign: 'center' as const, padding: '10px 16px',
-        fontSize: 13, fontWeight: 600, fontFamily: '"Geist",system-ui,sans-serif', lineHeight: 1.4, textDecoration: 'none',
-      }}>
-        ⏳ SMC Indikator v5 rilis {fmtTanggalRilis(tanggalRilis)} — <u style={{ textUnderlineOffset: 3 }}>pre-order harga early-bird</u> sekarang, langsung dapat v4.2 →
+      <a href="/pricing-indikator" style={gaya}>
+        ⏳ SMC Indikator v5 rilis {fmtTanggalRilis(tanggalRilis)} —{' '}
+        {kode ? <>pre-order pakai kode {pil(kode)} hemat {kode.diskon}%</> : <u style={{ textUnderlineOffset: 3 }}>pre-order harga early-bird</u>}
+        {' '}sekarang, langsung dapat v4.2 →
       </a>
     );
   }
 
-  if (!teks) return null;
+  if (!kode) return null;
 
   return (
-    <div style={{
-      background: 'var(--mr-gold)',
-      color: '#fff',
-      textAlign: 'center' as const,
-      padding: '10px 16px',
-      fontSize: 13,
-      fontWeight: 600,
-      fontFamily: '"Geist",system-ui,sans-serif',
-      lineHeight: 1.4,
-    }}>
-      {teks}
+    <div style={gaya}>
+      {kode.teks || <>Pakai kode {pil(kode)} hemat {kode.diskon}%</>}
     </div>
   );
 }
