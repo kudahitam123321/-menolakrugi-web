@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import type { Member, Journal, Testimonial, PricingTier, LandingStats } from '../types/mr.types';
+import type { BtData } from '../lib/backtest';
 
 // ─── Landing Stats (member count, funded count, rating) ──────────────────────
 
@@ -218,4 +219,33 @@ export function useLandingPreview() {
   }, []);
 
   return { preview };
+}
+
+// ─── Backtest indikator (tabel backtest_config, satu baris id=1) ───
+export interface BacktestConfig {
+  id: 1; judul: string; data: BtData; risk_asli: number;
+  tampil: boolean; sumber_file: string; updated_at: string;
+}
+
+/** config = null bila tabel/baris belum ada, atau tampil=false (kecuali opts.semua untuk admin). */
+export function useBacktestConfig(opts?: { semua?: boolean }) {
+  const semua = !!opts?.semua;
+  const [config, setConfig] = useState<BacktestConfig | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [versi, setVersi] = useState(0);
+
+  useEffect(() => {
+    let batal = false;
+    setLoading(true);
+    supabase.from('backtest_config').select('*').eq('id', 1).maybeSingle()
+      .then(({ data, error }) => {
+        if (batal) return;
+        const row = !error && data ? (data as BacktestConfig) : null;
+        setConfig(row && (semua || row.tampil) ? row : null);
+        setLoading(false);
+      });
+    return () => { batal = true; };
+  }, [semua, versi]);
+
+  return { config, loading, reload: () => setVersi((v) => v + 1) };
 }
