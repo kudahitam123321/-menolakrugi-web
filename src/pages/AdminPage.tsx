@@ -3935,7 +3935,19 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
     </div>
   );
 
-  if (embedded) return tabContent;
+  // Saat tertanam di AdminPanel, pesan notify() tampil sebagai toast tetap di pojok kanan bawah
+  // (sebelumnya tidak dirender sama sekali, sehingga error validasi tidak terlihat).
+  if (embedded) return (
+    <>
+      {tabContent}
+      {msg && (
+        <div role="status" style={{ position: 'fixed', right: 20, bottom: 20, zIndex: 1000, maxWidth: 380, padding: '12px 16px', borderRadius: 10, fontSize: 13, fontFamily: 'monospace', lineHeight: 1.5, boxShadow: '0 8px 24px rgba(0,0,0,.4)',
+          background: msgType === 'err' ? '#1a0a0a' : '#0a1a0e', border: `1px solid ${msgType === 'err' ? '#ef4444' : '#16a34a'}`, color: msgType === 'err' ? '#f87171' : '#4ade80' }}>
+          {msg}
+        </div>
+      )}
+    </>
+  );
 
   return (
     <div className="min-h-screen bg-[#0a0f1e]">
