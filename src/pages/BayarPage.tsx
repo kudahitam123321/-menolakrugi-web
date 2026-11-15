@@ -216,7 +216,7 @@ export default function BayarPage() {
         <span style={{ fontFamily: '"Geist Mono",monospace', color: C.dimmer, fontSize: 11, letterSpacing: 0.8 }}>// PEMBAYARAN INDIKATOR</span>
       </div>
 
-      <div style={{ maxWidth: 880, margin: '0 auto', padding: isMobile ? '28px 16px 48px' : '48px 24px 64px', display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: isMobile ? 24 : 40, alignItems: 'start' }}>
+      <div style={{ maxWidth: 880, margin: '0 auto', padding: isMobile ? '28px 16px 48px' : '48px 24px 64px', display: 'grid', gridTemplateColumns: isMobile ? 'minmax(0, 1fr)' : 'minmax(0, 1fr) minmax(0, 1fr)', gap: isMobile ? 24 : 40, alignItems: 'start' }}>
 
         {/* ── Kolom kiri: ringkasan + metode ── */}
         <div>
@@ -251,7 +251,7 @@ export default function BayarPage() {
                       onChange={e => { setKodeDiskon(e.target.value.toUpperCase()); setKodeDiskonData(null); setKodeErr(''); }}
                       onKeyDown={e => { if (e.key === 'Enter') cekKodeDiskon(); }}
                       placeholder="MASUKKAN KODE"
-                      style={{ flex: 1, background: C.bg, border: `1.5px solid ${kodeDiskonData ? G.up : kodeErr ? G.down : C.border}`, color: C.text, padding: '10px 14px', fontSize: 13, fontFamily: '"Geist Mono",monospace', outline: 'none', borderRadius: 8, letterSpacing: 1 }} />
+                      style={{ flex: 1, minWidth: 0, background: C.bg, border: `1.5px solid ${kodeDiskonData ? G.up : kodeErr ? G.down : C.border}`, color: C.text, padding: '10px 14px', fontSize: 13, fontFamily: '"Geist Mono",monospace', outline: 'none', borderRadius: 8, letterSpacing: 1 }} />
                     <button
                       onClick={cekKodeDiskon}
                       disabled={kodeLoading || !kodeDiskon.trim()}
@@ -305,7 +305,7 @@ export default function BayarPage() {
                     {selected && <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#fff' }} />}
                   </div>
                   {/* Info */}
-                  <div style={{ flex: 1 }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 4 }}>{pm.nama_bank}</div>
                     {pm.jenis === 'qris' ? (
                       <>
@@ -314,7 +314,7 @@ export default function BayarPage() {
                       </>
                     ) : (
                       <>
-                        <div style={{ fontFamily: '"Geist Mono",monospace', fontSize: 18, fontWeight: 700, letterSpacing: 1.5, color: selected ? G.gold : C.text, marginBottom: 4 }}>
+                        <div style={{ fontFamily: '"Geist Mono",monospace', fontSize: 18, fontWeight: 700, letterSpacing: 1.5, color: selected ? G.gold : C.text, marginBottom: 4, overflowWrap: 'anywhere' as const }}>
                           {pm.nomor_rekening}
                         </div>
                         <div style={{ fontFamily: '"Geist Mono",monospace', fontSize: 11, color: C.dim }}>a.n. {pm.nama_rekening}</div>
@@ -348,8 +348,8 @@ export default function BayarPage() {
                     onClick={() => navigator.clipboard?.writeText(selectedPm.nomor_rekening)}
                     title="Klik untuk salin"
                     style={{ fontFamily: '"Geist Mono",monospace', fontSize: 22, fontWeight: 700, letterSpacing: 2, color: G.gold, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 10 }}>
-                    {selectedPm.nomor_rekening}
-                    <span style={{ fontSize: 12, color: C.dim }}>⎘</span>
+                    <span style={{ minWidth: 0, overflowWrap: 'anywhere' as const }}>{selectedPm.nomor_rekening}</span>
+                    <span style={{ fontSize: 12, color: C.dim, flexShrink: 0 }}>⎘</span>
                   </div>
                   <div style={{ fontFamily: '"Geist Mono",monospace', fontSize: 11, color: C.dim, marginTop: 4 }}>a.n. {selectedPm.nama_rekening}</div>
                 </>
