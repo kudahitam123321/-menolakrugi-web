@@ -6,6 +6,7 @@ import LeaderboardPage from './LeaderboardPage';
 import MemberTradingPlan from './MemberTradingPlan';
 import CompetitionPage from '../CompetitionPage';
 import { trackVideoWatch } from '../../hooks/useWatchHistory';
+import IndikatorV5Info from '../../components/IndikatorV5Info';
 import {
   Search, LayoutGrid, PlayCircle, BookOpen, LineChart, NotebookPen, ClipboardList,
   MessageCircle, Landmark, ShoppingBag, Rocket, Trophy, Medal, Award, Target, Star,
@@ -120,6 +121,17 @@ const SIDEBAR = [
   { id: 'pengaturan',   label: 'Pengaturan',      Icon: Settings },
   { id: 'bantuan',      label: 'Bantuan',         Icon: HelpCircle },
   { id: 'logout',       label: 'Logout',          Icon: LogOut },
+];
+
+// Sidebar pembeli indikator (bukan member kelas): menu yang bisa dipakai di atas,
+// menu khusus member kelas dikelompokkan di bawah dengan gembok.
+const SIDEBAR_INDIKATOR_TERKUNCI = ['kelas', 'materi', 'jurnal', 'trading-plan', 'komunitas', 'tools', 'funded', 'peringkat', 'competition', 'sertifikat', '1on1', 'ulasan', 'referral'];
+const sidebarById = (id: string) => SIDEBAR.find((s) => s.id === id)!;
+const SIDEBAR_INDIKATOR: typeof SIDEBAR = [
+  sidebarById('dashboard'), sidebarById('produk'), sidebarById('news'),
+  sidebarById('sep2'), sidebarById('pengaturan'), sidebarById('bantuan'), sidebarById('logout'),
+  { id: 'sep-kelas', label: 'KHUSUS MEMBER KELAS', separator: true } as typeof SIDEBAR[number],
+  ...SIDEBAR_INDIKATOR_TERKUNCI.map((id) => ({ ...sidebarById(id), locked: true })),
 ];
 
 function filterSidebar(items: typeof SIDEBAR, query: string) {
@@ -1258,7 +1270,7 @@ export default function DashboardPage() {
               </div>
             </div>
             <div style={{ flex: 1, paddingTop: 8 }}>
-              {filterSidebar(SIDEBAR, sidebarQuery).map(item => {
+              {filterSidebar(isIndikatorMember ? SIDEBAR_INDIKATOR : SIDEBAR, sidebarQuery).map(item => {
                 if ((item as any).separator) {
                   return (
                     <div key={item.id} style={{ padding: '14px 20px 5px', display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -1277,9 +1289,10 @@ export default function DashboardPage() {
                       else if (item.id === 'logout') { logout(); }
                       else { setActive(item.id); setMobileMenuOpen(false); }
                     }}
-                    style={{ display: 'flex', alignItems: 'center', gap: 12, width: '100%', padding: '12px 20px', border: 'none', background: isA ? LP.primaryTint : 'transparent', borderLeft: isA ? `3px solid ${LP.primary}` : '3px solid transparent', color: isA ? LP.primary : LP.muted, cursor: 'pointer', fontSize: 14, textAlign: 'left' as const }}>
+                    style={{ display: 'flex', alignItems: 'center', gap: 12, width: '100%', padding: '12px 20px', border: 'none', background: isA ? LP.primaryTint : 'transparent', borderLeft: isA ? `3px solid ${LP.primary}` : '3px solid transparent', color: isA ? LP.primary : LP.muted, cursor: 'pointer', fontSize: 14, textAlign: 'left' as const, opacity: (item as any).locked && !isA ? 0.55 : 1 }}>
                     <ItemIcon size={18} />
                     <span style={{ flex: 1 }}>{item.label}</span>
+                    {(item as any).locked && <Lock size={12} />}
                     {(item as any).badge && <span style={{ fontFamily: LP.mono, fontSize: 8, background: LP.danger, color: '#fff', padding: '1px 5px', borderRadius: 3, fontWeight: 700 }}>{(item as any).badge}</span>}
                   </button>
                 );
@@ -1316,7 +1329,7 @@ export default function DashboardPage() {
                 </div>
               </div>
             )}
-            {filterSidebar(SIDEBAR, sidebarQuery).map(item => {
+            {filterSidebar(isIndikatorMember ? SIDEBAR_INDIKATOR : SIDEBAR, sidebarQuery).map(item => {
               if ((item as any).separator) {
                 return !sidebarCollapsed ? (
                   <div key={item.id} style={{ padding: '16px 18px 6px', display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -1336,9 +1349,10 @@ export default function DashboardPage() {
                     else { setActive(item.id); }
                   }}
                   title={sidebarCollapsed ? item.label : undefined}
-                  style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: sidebarCollapsed ? '11px 0' : '10px 18px', justifyContent: sidebarCollapsed ? 'center' : 'flex-start', border: 'none', background: isA ? LP.primaryTint : 'transparent', borderLeft: isA ? `3px solid ${LP.primary}` : '3px solid transparent', color: isA ? LP.primary : LP.muted, cursor: 'pointer', fontSize: 13, textAlign: 'left' as const, transition: 'padding 0.2s' }}>
+                  style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: sidebarCollapsed ? '11px 0' : '10px 18px', justifyContent: sidebarCollapsed ? 'center' : 'flex-start', border: 'none', background: isA ? LP.primaryTint : 'transparent', borderLeft: isA ? `3px solid ${LP.primary}` : '3px solid transparent', color: isA ? LP.primary : LP.muted, cursor: 'pointer', fontSize: 13, textAlign: 'left' as const, transition: 'padding 0.2s', opacity: (item as any).locked && !isA ? 0.55 : 1 }}>
                   <ItemIcon size={17} style={{ flexShrink: 0 }} />
                   {!sidebarCollapsed && <span style={{ flex: 1, whiteSpace: 'nowrap' as const }}>{item.label}</span>}
+                  {!sidebarCollapsed && (item as any).locked && <Lock size={11} style={{ flexShrink: 0 }} />}
                   {!sidebarCollapsed && (item as any).badge && <span style={{ fontFamily: LP.mono, fontSize: 8, background: LP.danger, color: '#fff', padding: '1px 5px', borderRadius: 3, fontWeight: 700 }}>{(item as any).badge}</span>}
                 </button>
               );
@@ -1445,6 +1459,8 @@ export default function DashboardPage() {
                       </>
                     )}
                   </div>
+
+                  <IndikatorV5Info orders={myOrders} onBeli={() => setActive('produk')} />
 
                   <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' as const }}>
                     <button onClick={() => setActive('produk')} style={{ fontFamily: LP.mono, fontSize: 12, fontWeight: 700, color: '#fff', background: LP.primary, border: 'none', padding: '11px 24px', borderRadius: 8, cursor: 'pointer' }}>
@@ -2663,6 +2679,12 @@ export default function DashboardPage() {
                   ))}
                 </div>
               </div>
+
+              {myOrders.some((o: any) => o.plan_type) && (
+                <div style={{ marginBottom: 20 }}>
+                  <IndikatorV5Info orders={myOrders} onBeli={() => setProdView('katalog')} />
+                </div>
+              )}
 
               {/* ── Katalog ── */}
               {prodView === 'katalog' && (
