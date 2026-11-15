@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Plus, Trash2, Users, Video, ArrowLeft, Eye, EyeOff, Upload, RefreshCw, ChevronUp, ChevronDown, CheckCircle, XCircle, KeyRound, Shield } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { supabase } from '../lib/supabase';
+import BacktestUploadSection from '../components/admin/BacktestUploadSection';
 
 const ALL_TIERS = ['SMC Trial','SMC Bronze','SMC Silver','SMC Gold Mentorship','SMC Platinum 1-on-1','Indikator Bulanan','Indikator Tahunan','Indikator Lifetime'];
 const RANK_IMGS: Record<string, string> = {
@@ -3484,6 +3485,7 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
                 </button>
               </div>
             )}
+            {prodSubTab === 'preview' && <BacktestUploadSection notify={notify} />}
           </div>
         )}
 
