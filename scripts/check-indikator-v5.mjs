@@ -1,0 +1,52 @@
+// Cek logika tahap pre-order indikator v5 (src/lib/indikatorV5.ts).
+// Pakai: node scripts/check-indikator-v5.mjs
+import { execSync } from 'node:child_process';
+import { join, resolve } from 'node:path';
+import { pathToFileURL } from 'node:url';
+import assert from 'node:assert/strict';
+
+const out = join('node_modules', '.cache', 'bt-check', `v5-${Date.now()}.mjs`);
+execSync(`npx esbuild src/lib/indikatorV5.ts --bundle --format=esm --platform=node --log-level=error --outfile="${out}"`, { stdio: 'inherit' });
+const L = await import(pathToFileURL(resolve(out)).href);
+
+const rilis = new Date('2026-12-01T00:00:00+07:00');
+const now = new Date('2026-11-15T12:00:00+07:00');
+const o = (plan_type, status, activated_at, created_at = '2026-01-01') => ({ plan_type, status, activated_at, created_at });
+
+// statusPreorder
+assert.equal(L.statusPreorder([o('lifetime', 'aktif', null)], rilis, now), 'aman', 'lifetime');
+assert.equal(L.statusPreorder([o('bulanan', 'aktif', '2026-11-20T10:00:00+07:00')], rilis, now), 'aman', 'JT 20 Des');
+assert.equal(L.statusPreorder([o('bulanan', 'aktif', '2026-10-20T10:00:00+07:00')], rilis, now), 'perpanjang', 'JT 20 Nov');
+assert.equal(L.statusPreorder([o('bulanan', 'aktif', '2026-09-01T10:00:00+07:00')], rilis, now), 'habis', 'JT 1 Okt');
+assert.equal(L.statusPreorder([o('bulanan', 'aktif', null)], rilis, now), 'tidak-diketahui', 'tanpa activated_at');
+assert.equal(L.statusPreorder([o('lifetime', 'pending', null)], rilis, now), 'tidak-ada', 'hanya pending');
+assert.equal(L.statusPreorder([], rilis, now), 'tidak-ada', 'kosong');
+assert.equal(L.statusPreorder([o(null, 'aktif', '2026-11-01')], rilis, now), 'tidak-ada', 'produk non-indikator');
+assert.equal(L.statusPreorder([o('bulanan', 'aktif', '2026-10-20T10:00:00+07:00')], null, now), 'aman', 'tanpa tanggal rilis');
+assert.equal(L.statusPreorder([o('bulanan', 'dibayar', '2026-09-01T10:00:00+07:00')], rilis, now), 'habis', 'dibayar lama');
+
+// pilihOrderIndikator
+const campur = [
+  o('lifetime', 'pending', null, '2026-11-10'),
+  o('bulanan', 'aktif', '2026-10-20T10:00:00+07:00', '2026-10-20'),
+  o('tahunan', 'aktif', '2026-03-01T10:00:00+07:00', '2026-03-01'),
+];
+assert.equal(L.pilihOrderIndikator(campur).plan_type, 'tahunan', 'pilih JT terjauh');
+assert.equal(L.statusPreorder(campur, rilis, now), 'aman', 'campuran aman');
+assert.equal(L.pilihOrderIndikator([o('lifetime', 'aktif', null), o('tahunan', 'aktif', '2026-11-01')]).plan_type, 'lifetime', 'lifetime menang');
+assert.equal(L.pilihOrderIndikator([o(null, 'aktif', '2026-11-01')]), null, 'non-indikator diabaikan');
+
+// hitungJatuhTempo = versi DashboardPage
+assert.equal(L.hitungJatuhTempo('2026-10-20T10:00:00+07:00', 'bulanan').getMonth(), 10);
+assert.equal(L.hitungJatuhTempo(null, 'bulanan'), null);
+assert.equal(L.hitungJatuhTempo('2026-10-20', 'lifetime'), null);
+
+// sisaWaktu
+assert.deepEqual(L.sisaWaktu(rilis, now), { hari: 15, jam: 12, menit: 0, detik: 0 });
+assert.equal(L.sisaWaktu(rilis, new Date('2026-12-02T00:00:00+07:00')), null);
+
+// fmtTanggalRilis
+assert.equal(L.fmtTanggalRilis(new Date('2026-12-01T00:00:00')), '1 Desember 2026');
+assert.equal(L.fmtTanggalRilis(null), 'segera');
+
+console.log('OK — status pre-order');

@@ -1,0 +1,71 @@
+// lib/indikatorV5.ts — Logika tahap pre-order indikator v5 (murni, tanpa React/Supabase).
+// Spec: docs/superpowers/specs/2026-11-15-indikator-v5-preorder-upgrade-design.md
+
+export interface OrderIndikator {
+  status: string;
+  plan_type: string | null;
+  activated_at: string | null;
+  created_at: string;
+}
+
+/** Sama persis dengan hitungJatuhTempo di DashboardPage/AdminPage. */
+export function hitungJatuhTempo(activatedAt: string | null, planType: string | null): Date | null {
+  if (!activatedAt || !planType || planType === 'lifetime') return null;
+  const d = new Date(activatedAt);
+  if (planType === 'bulanan') { d.setMonth(d.getMonth() + 1); return d; }
+  if (planType === 'tahunan') { d.setFullYear(d.getFullYear() + 1); return d; }
+  return null;
+}
+
+const isIndikator = (o: OrderIndikator) => !!o.plan_type;
+
+/** Order indikator aktif yang paling "kuat": lifetime dulu, lalu jatuh tempo terjauh. */
+export function pilihOrderIndikator<T extends OrderIndikator>(orders: T[]): T | null {
+  const aktif = orders.filter((o) => isIndikator(o) && o.status === 'aktif');
+  if (!aktif.length) return null;
+  const life = aktif.find((o) => o.plan_type === 'lifetime');
+  if (life) return life;
+  const jt = (o: T) => hitungJatuhTempo(o.activated_at, o.plan_type)?.getTime() ?? -Infinity;
+  return aktif.reduce((a, b) => (jt(b) > jt(a) ? b : a));
+}
+
+export type StatusPreorder = 'aman' | 'perpanjang' | 'habis' | 'tidak-diketahui' | 'tidak-ada';
+
+/**
+ * aman            = lifetime aktif, atau jatuh tempo >= tanggal rilis (tanpa tanggal rilis: >= sekarang)
+ * perpanjang      = masih aktif sekarang tapi habis sebelum rilis
+ * tidak-diketahui = order aktif non-lifetime tanpa activated_at
+ * habis           = pernah punya order indikator, semua sudah lewat jatuh tempo
+ * tidak-ada       = tidak punya order indikator yang relevan
+ */
+export function statusPreorder(orders: OrderIndikator[], tanggalRilis: Date | null, now: Date): StatusPreorder {
+  const ind = orders.filter(isIndikator);
+  const aktif = ind.filter((o) => o.status === 'aktif');
+  if (aktif.some((o) => o.plan_type === 'lifetime')) return 'aman';
+  const batas = (tanggalRilis ?? now).getTime();
+  const jts = aktif.map((o) => hitungJatuhTempo(o.activated_at, o.plan_type)).filter((d): d is Date => !!d);
+  if (jts.some((d) => d.getTime() >= batas)) return 'aman';
+  if (jts.some((d) => d.getTime() >= now.getTime())) return 'perpanjang';
+  if (aktif.some((o) => !o.activated_at)) return 'tidak-diketahui';
+  const pernah = ind.some((o) => {
+    if (o.status !== 'aktif' && o.status !== 'dibayar') return false;
+    const d = hitungJatuhTempo(o.activated_at, o.plan_type);
+    return !!d && d.getTime() < now.getTime();
+  });
+  return pernah ? 'habis' : 'tidak-ada';
+}
+
+/** Sisa waktu ke target; null bila sudah lewat. */
+export function sisaWaktu(target: Date, now: Date): { hari: number; jam: number; menit: number; detik: number } | null {
+  let s = Math.floor((target.getTime() - now.getTime()) / 1000);
+  if (s <= 0) return null;
+  const hari = Math.floor(s / 86400); s -= hari * 86400;
+  const jam = Math.floor(s / 3600); s -= jam * 3600;
+  const menit = Math.floor(s / 60);
+  return { hari, jam, menit, detik: s - menit * 60 };
+}
+
+/** '1 Desember 2026', atau 'segera' bila tanggal belum ada. */
+export function fmtTanggalRilis(d: Date | null): string {
+  return d ? d.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) : 'segera';
+}
