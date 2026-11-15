@@ -249,3 +249,28 @@ export function useBacktestConfig(opts?: { semua?: boolean }) {
 
   return { config, loading, reload: () => setVersi((v) => v + 1) };
 }
+
+// ─── Produk indikator utama (produk aktif pertama menurut urutan) ───
+// status 'preorder' = tahap pre-order v5 menyala di seluruh website.
+export interface ProdukIndikator { id: string; nama: string; status: string; tanggal_rilis: string | null; }
+
+export function useProdukIndikator() {
+  const [produk, setProduk] = useState<ProdukIndikator | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let batal = false;
+    supabase.from('products').select('id,nama,status,tanggal_rilis').eq('aktif', true)
+      .order('urutan', { ascending: true }).limit(1)
+      .then(({ data, error }) => {
+        if (batal) return;
+        setProduk(!error && data && data[0] ? (data[0] as ProdukIndikator) : null);
+        setLoading(false);
+      });
+    return () => { batal = true; };
+  }, []);
+
+  const preorder = produk?.status === 'preorder';
+  const tanggalRilis = preorder && produk?.tanggal_rilis ? new Date(produk.tanggal_rilis + 'T00:00:00+07:00') : null;
+  return { produk, preorder, tanggalRilis, loading };
+}

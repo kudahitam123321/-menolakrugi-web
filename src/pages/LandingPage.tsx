@@ -6,7 +6,7 @@ import React, { useState } from 'react';
 import { Menu, X, Star, ChevronDown, MessageCircle, Send, Music2, Youtube, Phone } from 'lucide-react';
 
 import { MRLogo, CandleChart } from '../components/mr';
-import { useApprovedTestimonials, useLandingPreview } from '../hooks';
+import { useApprovedTestimonials, useLandingPreview, useProdukIndikator } from '../hooks';
 import type { Testimonial } from '../types/mr.types';
 import { supabase } from '../lib/supabase';
 
@@ -62,13 +62,18 @@ function NavBar() {
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
-  const NAV_ITEMS = [
+  const { preorder } = useProdukIndikator();
+  const NAV_ITEMS: { l: string; key: string; href: string; badge?: string }[] = [
     { l: 'Kelas',       key: 'KELAS',       href: '/pricing-kelas' },
     { l: 'Kurikulum',   key: 'KURIKULUM',   href: '/pricing-kelas#kurikulum' },
     { l: 'Komunitas',   key: 'KOMUNITAS',   href: '/komunitas' },
+    ...(preorder ? [{ l: 'Indikator v5', key: 'INDIKATOR', href: '/pricing-indikator', badge: 'SEGERA' }] : []),
     { l: 'Partnership', key: 'PARTNERSHIP', href: '/partnership' },
     { l: 'Kalender',    key: 'KALENDER',    href: '/calendar' },
   ];
+  const badgeEl = (t?: string) => t ? (
+    <span style={{ marginLeft: 6, background: '#d97706', color: '#fff', fontSize: 9, fontWeight: 700, letterSpacing: 0.4, padding: '2px 6px', borderRadius: 10, verticalAlign: 'middle' }}>{t}</span>
+  ) : null;
 
   return (
     <>
@@ -97,8 +102,8 @@ function NavBar() {
           return (
             <a key={item.key} href={item.href} onClick={() => setActive(item.key)}
               style={{ padding: '8px 14px', borderRadius: 8, textDecoration: 'none', fontSize: 14, fontWeight: 500,
-                color: isActive ? LP.primary : LP.muted, background: isActive ? LP.primaryTint : 'transparent', transition: 'all .15s' }}>
-              {item.l}
+                color: isActive ? LP.primary : item.badge ? LP.text : LP.muted, background: isActive ? LP.primaryTint : 'transparent', transition: 'all .15s', whiteSpace: 'nowrap' as const }}>
+              {item.l}{badgeEl(item.badge)}
             </a>
           );
         })}
@@ -150,7 +155,7 @@ function NavBar() {
             {NAV_ITEMS.map(item => (
               <a key={item.key} href={item.href} onClick={() => setMenuOpen(false)}
                 style={{ padding: '14px 16px', background: LP.bg, borderRadius: 10, textDecoration: 'none', color: LP.text, fontSize: 15, fontWeight: 600, border: `1px solid ${LP.border}` }}>
-                {item.l}
+                {item.l}{badgeEl(item.badge)}
               </a>
             ))}
           </div>
@@ -198,6 +203,7 @@ function useFadeUp(delay = 0) {
 }
 
 function Hero() {
+  const { preorder } = useProdukIndikator();
   const [isMobile, setIsMobile] = React.useState(() => window.matchMedia('(max-width: 767px)').matches);
   React.useEffect(() => { const mq = window.matchMedia('(max-width: 767px)'); const h = (e: MediaQueryListEvent) => setIsMobile(e.matches); mq.addEventListener('change',h); return ()=>mq.removeEventListener('change',h); }, []);
 
@@ -225,8 +231,11 @@ function Hero() {
               Beli Kelas →
             </button>
             <button onClick={() => window.location.href = '/pricing-indikator'}
-              style={{ fontFamily: LP.sans, border: `1px solid ${LP.border}`, padding: '15px 24px', fontSize: 14, fontWeight: 600, borderRadius: 10, background: LP.surface, color: LP.text, cursor: 'pointer' }}>
-              Beli Indikator →
+              style={{ fontFamily: LP.sans, border: `1px solid ${LP.border}`, padding: '15px 24px', fontSize: 14, fontWeight: 600, borderRadius: 10, background: LP.surface, color: LP.text, cursor: 'pointer', position: 'relative' as const }}>
+              {preorder ? 'Pre-order Indikator v5 →' : 'Beli Indikator →'}
+              {preorder && (
+                <span style={{ position: 'absolute' as const, top: -9, right: -8, background: '#d97706', color: '#fff', fontSize: 9, fontWeight: 700, letterSpacing: 0.4, padding: '2px 7px', borderRadius: 10 }}>EARLY-BIRD</span>
+              )}
             </button>
           </div>
           <p style={{ fontFamily: LP.mono, fontSize: 12, color: LP.muted, marginTop: 24 }}>
