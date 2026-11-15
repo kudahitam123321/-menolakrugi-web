@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
+import { useProdukIndikator } from '../hooks';
+import { fmtTanggalRilis } from '../lib/indikatorV5';
 
 const C = {
   bg:      'var(--mr-bg)',
@@ -41,6 +43,7 @@ function generateMemberPassword() {
 }
 
 export default function BayarPage() {
+  const { preorder, tanggalRilis } = useProdukIndikator();
   const params  = new URLSearchParams(window.location.search);
   const planKey = params.get('plan') || 'bulanan';
 
@@ -226,6 +229,11 @@ export default function BayarPage() {
           <div style={{ background: C.panel, border: `1px solid ${C.border}`, borderRadius: 10, padding: '22px 24px', marginBottom: 28 }}>
             {plan ? (
               <>
+                {preorder && (
+                  <div style={{ display: 'inline-block', fontFamily: '"Geist Mono",monospace', fontSize: 10, fontWeight: 700, letterSpacing: 0.8, color: '#d97706', border: '1px solid #d9770666', background: '#d977061a', padding: '3px 9px', borderRadius: 4, marginBottom: 10 }}>
+                    PRE-ORDER · RILIS {fmtTanggalRilis(tanggalRilis).toUpperCase()}
+                  </div>
+                )}
                 <div style={{ fontFamily: '"Geist Mono",monospace', color: G.gold, fontSize: 10, letterSpacing: 1, marginBottom: 8 }}>INDIKATOR SMC · {plan.nama.toUpperCase()}</div>
                 <div style={{ fontWeight: 700, fontSize: 20, marginBottom: 16, letterSpacing: -0.5 }}>Plan {plan.nama}</div>
                 {diskonAktif > 0 && (
@@ -241,6 +249,11 @@ export default function BayarPage() {
                 {diskonAktif > 0 && (
                   <div style={{ fontFamily: '"Geist Mono",monospace', color: G.up, fontSize: 11 }}>
                     Hemat Rp {fmt(hemat)}
+                  </div>
+                )}
+                {preorder && (
+                  <div style={{ fontSize: 12, color: C.dim, marginTop: 10, lineHeight: 1.5 }}>
+                    Link v4.2 dikirim setelah verifikasi, link v5 saat rilis.
                   </div>
                 )}
                 <div style={{ marginTop: 16, paddingTop: 16, borderTop: `1px solid ${C.border}` }}>

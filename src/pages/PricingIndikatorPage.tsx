@@ -3,7 +3,8 @@
 // Dipindah dari komponen ProductPreview ("Preview Platform") di LandingPage.tsx
 
 import React from 'react';
-import { useLandingPreview, useBacktestConfig } from '../hooks';
+import { useLandingPreview, useBacktestConfig, useProdukIndikator } from '../hooks';
+import { fmtTanggalRilis, sisaWaktu } from '../lib/indikatorV5';
 import type { LandingPreviewConfig } from '../hooks';
 
 const LP = {
@@ -26,7 +27,7 @@ const LP = {
 
 const KURS_USD = 18000; // Rp per 1 USD — dipakai buat estimasi harga USD di kartu pricing
 
-function ProductPreview({ config }: { config: LandingPreviewConfig }) {
+function ProductPreview({ config, preorder }: { config: LandingPreviewConfig; preorder: boolean }) {
   const [isMobile, setIsMobile] = React.useState(() => window.matchMedia('(max-width: 767px)').matches);
   React.useEffect(() => {
     const mq = window.matchMedia('(max-width: 767px)');
@@ -44,8 +45,11 @@ function ProductPreview({ config }: { config: LandingPreviewConfig }) {
   ];
 
   return (
-    <section style={{ background: LP.bg, padding: isMobile ? '48px 20px' : '72px 40px' }}>
+    <section style={{ background: LP.bg, padding: preorder ? (isMobile ? '8px 20px 48px' : '8px 40px 72px') : (isMobile ? '48px 20px' : '72px 40px') }}>
       <div style={{ maxWidth: 900, margin: '0 auto' }}>
+        {preorder ? (
+          <div style={{ textAlign: 'center' as const, marginBottom: 28, fontFamily: LP.mono, color: LP.primary, fontSize: 11, letterSpacing: 1 }}>// PRE-ORDER · HARGA EARLY-BIRD</div>
+        ) : (
         <div style={{ textAlign: 'center' as const, marginBottom: 32 }}>
           <div style={{ fontFamily: LP.mono, color: LP.muted, fontSize: 11, letterSpacing: 0.8 }}>// PREVIEW PLATFORM</div>
           <h2 style={{ fontSize: isMobile ? 24 : 40, letterSpacing: -1, lineHeight: 1.15, margin: '14px 0 12px', fontWeight: 800, color: LP.text }}>
@@ -56,6 +60,7 @@ function ProductPreview({ config }: { config: LandingPreviewConfig }) {
             <span style={{ color: LP.primary, fontWeight: 600 }}>Benefit untuk langganan tahunan dan lifetime: akses ke Discord private Menolak Rugi.</span>
           </p>
         </div>
+        )}
 
         <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: 16 }}>
           {plans.map((plan) => {
@@ -68,12 +73,17 @@ function ProductPreview({ config }: { config: LandingPreviewConfig }) {
                 boxShadow: plan.featured ? LP.shadowMd : LP.shadowSm,
                 display: 'flex', flexDirection: 'column' as const, position: 'relative',
               }}>
-                {plan.featured && (
-                  <div style={{ position: 'absolute', top: -12, left: 20, background: LP.primary, color: '#fff', padding: '4px 12px', fontSize: 10, letterSpacing: 0.6, fontWeight: 700, borderRadius: 20 }}>
-                    PALING POPULER
+                {(plan.featured || (preorder && plan.diskon > 0)) && (
+                  <div style={{ position: 'absolute', top: -12, left: 20, display: 'flex', gap: 6 }}>
+                    {plan.featured && (
+                      <span style={{ background: LP.primary, color: '#fff', padding: '4px 12px', fontSize: 10, letterSpacing: 0.6, fontWeight: 700, borderRadius: 20 }}>PALING POPULER</span>
+                    )}
+                    {preorder && plan.diskon > 0 && (
+                      <span style={{ background: '#FEF3C7', color: '#92400e', border: '1px solid #FDE68A', padding: '3px 10px', fontSize: 10, letterSpacing: 0.6, fontWeight: 700, borderRadius: 20 }}>EARLY-BIRD -{plan.diskon}%</span>
+                    )}
                   </div>
                 )}
-                <div style={{ fontWeight: 700, fontSize: 18, marginBottom: 16, marginTop: plan.featured ? 8 : 0, color: LP.text }}>{plan.nama}</div>
+                <div style={{ fontWeight: 700, fontSize: 18, marginBottom: 16, marginTop: (plan.featured || (preorder && plan.diskon > 0)) ? 8 : 0, color: LP.text }}>{plan.nama}</div>
                 <div style={{ marginBottom: 4 }}>
                   {plan.diskon > 0 && (
                     <div style={{ fontFamily: LP.mono, fontSize: 12, color: LP.muted, marginBottom: 4 }}><s>Rp {fmt(plan.harga_asli)}</s></div>
@@ -89,6 +99,13 @@ function ProductPreview({ config }: { config: LandingPreviewConfig }) {
                     </div>
                   )}
                 </div>
+                {preorder && (
+                  <ul style={{ listStyle: 'none', padding: 0, margin: '16px 0 0', fontSize: 13, color: LP.muted, lineHeight: 1.9 }}>
+                    {['v4.2 langsung hari ini', 'v5 otomatis saat rilis', ...(plan.key !== 'bulanan' ? ['Discord private Menolak Rugi'] : [])].map((t) => (
+                      <li key={t}><span style={{ color: LP.primary, fontWeight: 700 }}>✓</span> {t}</li>
+                    ))}
+                  </ul>
+                )}
                 <div style={{ flex: 1 }} />
                 <button
                   onClick={() => { window.location.href = `/bayar?plan=${plan.key}`; }}
@@ -98,7 +115,7 @@ function ProductPreview({ config }: { config: LandingPreviewConfig }) {
                     color: plan.featured ? '#fff' : LP.primary,
                     border: plan.featured ? 'none' : `1px solid ${LP.primary}`,
                   }}>
-                  Pilih {plan.nama} →
+                  {preorder ? 'Pre-order' : 'Pilih'} {plan.nama} →
                 </button>
               </div>
             );
@@ -114,11 +131,11 @@ const LANGKAH_PEMBELIAN = [
   { judul: 'Isi Data Diri & Bayar', desc: 'Isi nama, email, nomor WhatsApp, lalu pilih metode pembayaran dan transfer sesuai nominal yang tertera.' },
   { judul: 'Konfirmasi via WhatsApp', desc: 'Setelah submit, kirim bukti transfer ke admin lewat tombol konfirmasi WhatsApp yang muncul.' },
   { judul: 'Verifikasi Admin', desc: 'Admin memeriksa dan memverifikasi pembayaranmu.' },
-  { judul: 'Siapkan & Join Akun Discord', desc: 'Wajib sudah punya akun Discord, lalu join server Discord Menolak Rugi.' },
-  { judul: 'Masuk Channel Privat Indikator', desc: 'Admin menambahkanmu ke channel privat khusus indikator — di sana ada file indikatornya, tutorial pasang, dan tutorial setting-nya.' },
+  { judul: 'Terima Link Indikator', desc: 'Admin mengirim link indikator ke WhatsApp kamu setelah pembayaran terverifikasi.' },
+  { judul: 'Pasang & Mulai Pakai', desc: 'Buka link di TradingView, lalu tambahkan indikator ke chart XAUUSD M5.' },
 ];
 
-function LangkahPembelian() {
+function LangkahPembelian({ preorder }: { preorder: boolean }) {
   const [isMobile, setIsMobile] = React.useState(() => window.matchMedia('(max-width: 767px)').matches);
   React.useEffect(() => {
     const mq = window.matchMedia('(max-width: 767px)');
@@ -147,8 +164,8 @@ function LangkahPembelian() {
                 <div style={{ fontWeight: 700, fontSize: 15, color: LP.text, marginBottom: 4 }}>{step.judul}</div>
                 <div style={{ color: LP.muted, fontSize: 13, lineHeight: 1.6 }}>
                   {step.desc}
-                  {i === 4 && (
-                    <>{' '}<a href="https://discord.gg/d2Tpf6sGMr" target="_blank" rel="noreferrer" style={{ color: LP.primary, fontWeight: 700, textDecoration: 'none' }}>Join Discord →</a></>
+                  {i === 4 && preorder && (
+                    <>{' '}<b style={{ color: LP.text }}>Pre-order: link v4.2 dikirim sekarang, link v5 dikirim saat rilis.</b></>
                   )}
                 </div>
               </div>
@@ -198,8 +215,121 @@ function RiwayatDataCard() {
   );
 }
 
+function useIsMobile() {
+  const [isMobile, setIsMobile] = React.useState(() => window.matchMedia('(max-width: 767px)').matches);
+  React.useEffect(() => {
+    const mq = window.matchMedia('(max-width: 767px)');
+    const h = (e: MediaQueryListEvent) => setIsMobile(e.matches);
+    mq.addEventListener('change', h);
+    return () => mq.removeEventListener('change', h);
+  }, []);
+  return isMobile;
+}
+
+const ORANYE = '#d97706';
+
+function StripPemilikLama({ tanggalRilis }: { tanggalRilis: Date | null }) {
+  const isMobile = useIsMobile();
+  return (
+    <div style={{ padding: isMobile ? '20px 20px 0' : '24px 40px 0' }}>
+      <div style={{
+        maxWidth: 900, margin: '0 auto', padding: '14px 18px', borderRadius: 14, fontSize: 14, lineHeight: 1.5, color: LP.text,
+        background: 'linear-gradient(90deg,rgba(22,163,74,.10),rgba(22,163,74,.04))', border: '1px solid rgba(22,163,74,.35)',
+      }}>
+        ✅ <b style={{ color: 'var(--lp-primary-hover)' }}>Sudah pakai v4.2 &amp; masih aktif?</b> Kamu otomatis dapat v5 <b style={{ color: 'var(--lp-primary-hover)' }}>gratis</b> saat rilis {fmtTanggalRilis(tanggalRilis)} — tidak perlu beli lagi.
+      </div>
+    </div>
+  );
+}
+
+function HitungMundur({ tanggalRilis }: { tanggalRilis: Date | null }) {
+  const [now, setNow] = React.useState(() => new Date());
+  React.useEffect(() => {
+    const t = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(t);
+  }, []);
+  const sisa = tanggalRilis ? sisaWaktu(tanggalRilis, now) : null;
+  if (!sisa) {
+    return <div style={{ marginTop: 18, fontFamily: LP.mono, fontSize: 13, fontWeight: 700, color: ORANYE }}>Segera rilis</div>;
+  }
+  const kotak: [number, string][] = [[sisa.hari, 'HARI'], [sisa.jam, 'JAM'], [sisa.menit, 'MENIT'], [sisa.detik, 'DETIK']];
+  return (
+    <>
+      <div style={{ display: 'inline-flex', gap: 8, marginTop: 18 }}>
+        {kotak.map(([v, l]) => (
+          <div key={l} style={{ background: LP.text, color: '#fff', borderRadius: 10, padding: '8px 10px', minWidth: 58, textAlign: 'center' as const }}>
+            <b data-cd={l} style={{ display: 'block', fontSize: 20, letterSpacing: -0.5 }}>{String(v).padStart(2, '0')}</b>
+            <span style={{ fontFamily: LP.mono, fontSize: 9, opacity: 0.7 }}>{l}</span>
+          </div>
+        ))}
+      </div>
+      <div style={{ fontFamily: LP.mono, fontSize: 11, color: LP.muted, marginTop: 8 }}>
+        Harga early-bird berakhir saat rilis · {fmtTanggalRilis(tanggalRilis)}
+      </div>
+    </>
+  );
+}
+
+function HeroV5({ preorder, tanggalRilis }: { preorder: boolean; tanggalRilis: Date | null }) {
+  const isMobile = useIsMobile();
+  return (
+    <section style={{ textAlign: 'center' as const, padding: isMobile ? '36px 20px 8px' : '48px 40px 12px' }}>
+      <div style={{ fontFamily: LP.mono, color: LP.primary, fontSize: 11, letterSpacing: 1 }}>
+        // SMC BY MENOLAKRUGI · VERSI 5{preorder && <> · <span style={{ color: ORANYE }}>COMING SOON</span></>}
+      </div>
+      <h1 style={{ fontSize: isMobile ? 26 : 40, letterSpacing: -1, lineHeight: 1.15, margin: '12px auto 0', fontWeight: 800, color: LP.text, maxWidth: 760 }}>
+        Bukan cuma baca struktur — langsung tahu kapan entry.
+      </h1>
+      {preorder && (
+        <>
+          <p style={{ color: LP.muted, fontSize: isMobile ? 14 : 16, lineHeight: 1.6, margin: '12px auto 0', maxWidth: 560 }}>
+            Pre-order sekarang dengan harga early-bird. <b style={{ color: LP.text }}>Langsung dapat v4.2 hari ini</b>, lalu otomatis upgrade ke v5 saat rilis.
+          </p>
+          <HitungMundur tanggalRilis={tanggalRilis} />
+        </>
+      )}
+    </section>
+  );
+}
+
+const IKON = {
+  setup: <path d="M3 17l6-6 4 4 8-8M14 7h7v7" />,
+  label: <><path d="M20 12l-8 8-9-9V3h8z" /><circle cx="7.5" cy="7.5" r="1.5" /></>,
+  lot: <><rect x="4" y="2" width="16" height="20" rx="2" /><path d="M8 6h8M8 11h2M14 11h2M8 15h2M14 15h2M8 19h8" /></>,
+  alarm: <><path d="M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9" /><path d="M13.7 21a2 2 0 01-3.4 0" /></>,
+};
+const FITUR_V5: { ikon: keyof typeof IKON; judul: string; desc: React.ReactNode }[] = [
+  { ikon: 'setup', judul: '3 Setup Otomatis', desc: 'Follow Trend, Counter Trend, dan SCOB POI — entry, SL & TP langsung tergambar di chart.' },
+  { ikon: 'label', judul: 'Label Order Siap Pasang', desc: <><span style={{ fontFamily: LP.mono, fontSize: 11, color: LP.text }}>📌 SELL LIMIT · SL · TP 3R</span> lengkap jam WITA, otomatis ✅ Terisi / ✖ Batal.</> },
+  { ikon: 'lot', judul: 'Kalkulator Lot Otomatis', desc: 'Isi saldo, leverage & risk % — lot muncul di label dan alarm, ada peringatan margin.' },
+  { ikon: 'alarm', judul: 'Alarm Lengkap ke HP', desc: 'Saat limit dipasang, terisi, digeser, atau dibatalkan — lengkap dengan alasannya.' },
+];
+
+function FiturV5() {
+  const isMobile = useIsMobile();
+  return (
+    <section style={{ padding: isMobile ? '24px 20px 20px' : '28px 40px 24px' }}>
+      <div style={{ maxWidth: 900, margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 14 }}>
+        {FITUR_V5.map((f) => (
+          <div key={f.judul} style={{ border: `1px solid ${LP.border}`, borderRadius: 14, padding: 18, background: LP.surface, boxShadow: LP.shadowSm }}>
+            <div style={{ width: 34, height: 34, borderRadius: 10, background: LP.primaryTint, color: LP.primary, display: 'grid', placeItems: 'center', marginBottom: 12 }}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">{IKON[f.ikon]}</svg>
+            </div>
+            <div style={{ fontWeight: 700, fontSize: 14, color: LP.text, marginBottom: 6 }}>{f.judul}</div>
+            <div style={{ fontSize: 12, color: LP.muted, lineHeight: 1.5 }}>{f.desc}</div>
+          </div>
+        ))}
+      </div>
+      <div style={{ maxWidth: 900, margin: '12px auto 0', fontFamily: LP.mono, fontSize: 11, color: LP.muted, textAlign: 'center' as const }}>
+        Dioptimalkan untuk XAUUSD timeframe M5.
+      </div>
+    </section>
+  );
+}
+
 export default function PricingIndikatorPage() {
   const { preview } = useLandingPreview();
+  const { preorder, tanggalRilis } = useProdukIndikator();
 
   return (
     <div className="mr-light-v2" style={{ fontFamily: LP.sans, color: LP.text, background: LP.bg, minHeight: '100vh', WebkitFontSmoothing: 'antialiased' }}>
@@ -210,11 +340,23 @@ export default function PricingIndikatorPage() {
         </a>
       </div>
       {preview ? (
-        <>
-          <ProductPreview config={preview} />
-          <RiwayatDataCard />
-          <LangkahPembelian />
-        </>
+        preorder ? (
+          <>
+            <StripPemilikLama tanggalRilis={tanggalRilis} />
+            <HeroV5 preorder tanggalRilis={tanggalRilis} />
+            <FiturV5 />
+            <RiwayatDataCard />
+            <ProductPreview config={preview} preorder />
+            <LangkahPembelian preorder />
+          </>
+        ) : (
+          <>
+            <ProductPreview config={preview} preorder={false} />
+            <FiturV5 />
+            <RiwayatDataCard />
+            <LangkahPembelian preorder={false} />
+          </>
+        )
       ) : (
         <div style={{ padding: 60, textAlign: 'center' as const, color: LP.muted, fontFamily: LP.mono, fontSize: 13 }}>Memuat...</div>
       )}
