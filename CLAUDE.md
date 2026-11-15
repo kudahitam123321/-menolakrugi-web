@@ -220,6 +220,14 @@ A decision-tree-based trading plan tool added in a recent release.
 
 Config is stored per `plan_type` (`'basic'` | `'advanced'`) in the `trading_plan_config` Supabase table.
 
+### Indicator v5 Pre-order Phase
+
+The whole site switches into "pre-order" mode when the **first active product** (`products.aktif = true`, lowest `urutan`) has `status = 'preorder'`. Source of truth: `useProdukIndikator()` in `src/hooks/index.ts` (`preorder`, `tanggalRilis` = `products.tanggal_rilis` at 00:00 WIB). No product in pre-order → every page behaves as before.
+
+What pre-order mode changes: `PromoBanner` shows the v5 launch banner instead of the discount-code banner; `LandingPage` adds a "Indikator v5 · SEGERA" nav item and the hero button becomes "Pre-order Indikator v5"; `PricingIndikatorPage` uses layout A (owner strip, hero with countdown, 4 feature cards, early-bird badges from `landing_preview_config.planN_diskon`); `BayarPage` shows a PRE-ORDER label; `member/DashboardPage` shows `<IndikatorV5Info>` (status from `statusPreorder()` in `src/lib/indikatorV5.ts`, checked by `node scripts/check-indikator-v5.mjs`). Indicator buyers (tier "Indikator …") always get the regrouped sidebar `SIDEBAR_INDIKATOR` (usable items first, member-class items locked under "KHUSUS MEMBER KELAS").
+
+**Admin checklist to start pre-order:** Katalog Produk → add "SMC by MenolakRugi v5" with status Pre-order, tanggal rilis 2026-12-01, lowest urutan; deactivate the v4.2 product (existing orders keep pointing at it); Preview Landing → set early-bird discount per plan. **On release day:** set v5 status to Tersedia and set the plan discounts back to 0. Spec: `docs/superpowers/specs/2026-11-15-indikator-v5-preorder-upgrade-design.md`.
+
 ### Backtest Page
 
 `/backtest-indikator` serves `public/backtest-indikator.html` through Cloudflare Pages pretty URLs (static assets win over the `/* /index.html 200` SPA rewrite). Do NOT add a `/backtest-indikator /backtest-indikator.html 200` rule to `_redirects`: Pages canonicalises `.html` back to the bare path (308), causing an infinite redirect loop. The file is the user's own dashboard (`D:/backtest/BACKTEST FIX.html`, d3 inline) transformed by `node scripts/make-backtest-page.mjs "D:/backtest/BACKTEST FIX.html" public/backtest-indikator.html src/lib/supabase.ts`: Script menu and password locks removed, "Data & Simulasi" reduced to capital + risk-per-trade simulation, embedded data replaced by a loader that reads `backtest_config` from Supabase REST and then boots the deferred scripts. Re-run that script instead of hand-editing the HTML when the user updates their dashboard.
