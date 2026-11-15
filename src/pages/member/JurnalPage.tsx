@@ -321,7 +321,7 @@ export default function JurnalPage({ memberId }: { memberId: string }) {
     try {
       const [{ data: jData }, { data: sData }] = await Promise.all([
         supabase.from('trading_journals').select('*').eq('member_id', memberId).order('tanggal', { ascending: false }),
-        supabase.from('journal_settings').select('*').eq('member_id', memberId).single(),
+        supabase.from('journal_settings').select('*').eq('member_id', memberId).maybeSingle(),
       ]);
       if (jData) setEntries(jData.map((e: any) => ({ ...e, hasil: normalizeHasil(e.hasil || '') })));
       if (sData) setSettings(sData);

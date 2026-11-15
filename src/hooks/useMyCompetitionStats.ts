@@ -50,7 +50,7 @@ export function useMyCompetitionStats({ memberId, startsAt, endsAt }: Params) {
             .from('journal_settings')
             .select('equity_awal')
             .eq('member_id', memberId)
-            .single(),
+            .maybeSingle(),
         ]);
 
         console.log('[MyStats] journals:', journals?.length, 'error:', jErr?.message);

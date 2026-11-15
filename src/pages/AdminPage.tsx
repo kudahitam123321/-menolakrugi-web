@@ -673,7 +673,7 @@ function JurnalAdminTab({ members }: { members: any[] }) {
     setSelectedMember(memberId);
     const [{ data: entries }, { data: sett }] = await Promise.all([
       supabase.from('trading_journals').select('*').eq('member_id', memberId).order('tanggal', { ascending: false }),
-      supabase.from('journal_settings').select('*').eq('member_id', memberId).single(),
+      supabase.from('journal_settings').select('*').eq('member_id', memberId).maybeSingle(),
     ]);
     setMemberEntries(entries||[]);
     setSettings(sett||{ equity_awal:10000 });
@@ -3658,7 +3658,7 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
             )}
             <div style={{background:'#0a0c00',border:'1px solid #1a3020',borderRadius:8,padding:'14px 18px'}}>
               <div style={{fontFamily:'monospace',color:'#16a34a',fontSize:10,marginBottom:6}}>// CARA KERJA</div>
-              <div style={{fontSize:12,color:'#666',lineHeight:1.7}}>1. Member dapat link: <span style={{color:'#22ab94',fontFamily:'monospace'}}>menolakrugi.pages.dev/signup?ref=KODE</span><br/>2. Member baru daftar → otomatis tercatat PENDING<br/>3. Admin VERIFIKASI setelah member baru aktif & bayar<br/>4. Admin BERI REWARD ke referrer (manual)</div>
+              <div style={{fontSize:12,color:'#666',lineHeight:1.7}}>1. Member dapat link: <span style={{color:'#22ab94',fontFamily:'monospace'}}>menolakrugi.com/signup?ref=KODE</span><br/>2. Member baru daftar → otomatis tercatat PENDING<br/>3. Admin VERIFIKASI setelah member baru aktif & bayar<br/>4. Admin BERI REWARD ke referrer (manual)</div>
             </div>
           </div>
         )}

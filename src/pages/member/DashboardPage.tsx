@@ -478,7 +478,7 @@ export default function DashboardPage() {
     try {
       const [{ data: entries }, { data: sett }] = await Promise.all([
         supabase.from('trading_journals').select('*').eq('member_id', memberData.id).order('tanggal', { ascending: false }),
-        supabase.from('journal_settings').select('equity_awal').eq('member_id', memberData.id).single(),
+        supabase.from('journal_settings').select('equity_awal').eq('member_id', memberData.id).maybeSingle(),
       ]);
       setViewJurnalEntries(entries || []);
       setViewJurnalMember({ ...memberData, equityAwal: sett?.equity_awal || memberData.equityAwal || 10000 });
@@ -772,7 +772,7 @@ export default function DashboardPage() {
     try {
       const [{ data: myJurnals }, { data: mySettings }] = await Promise.all([
         supabase.from('trading_journals').select('pair,hasil,pnl').eq('member_id', m.id),
-        supabase.from('journal_settings').select('equity_awal').eq('member_id', m.id).single(),
+        supabase.from('journal_settings').select('equity_awal').eq('member_id', m.id).maybeSingle(),
       ]);
       if (myJurnals && myJurnals.length > 0) {
         const equityAwal = mySettings?.equity_awal || 10000;
@@ -3079,17 +3079,17 @@ export default function DashboardPage() {
                 <div style={{ fontFamily:C.mono, color:C.up, fontSize:10, letterSpacing:1, marginBottom:12 }}>// LINK REFERRAL KAMU</div>
                 <div style={{ display:'flex', gap:10, alignItems:'center', marginBottom:12 }}>
                   <div style={{ flex:1, background:C.bg, border:`1px solid ${C.border}`, borderRadius:8, padding:'12px 14px', fontFamily:C.mono, fontSize:12, color:C.up, overflowX:'auto' as const, whiteSpace:'nowrap' as const }}>
-                    menolakrugi.pages.dev/signup?ref={referralCode}
+                    menolakrugi.com/signup?ref={referralCode}
                   </div>
-                  <button onClick={()=>{ navigator.clipboard.writeText(`https://menolakrugi.pages.dev/signup?ref=${referralCode}`); setReferralCopied(true); setTimeout(()=>setReferralCopied(false),2000); }}
+                  <button onClick={()=>{ navigator.clipboard.writeText(`https://menolakrugi.com/signup?ref=${referralCode}`); setReferralCopied(true); setTimeout(()=>setReferralCopied(false),2000); }}
                     style={{ fontFamily:C.mono, fontSize:11, fontWeight:700, color:'#000', background:referralCopied?C.up:G.gold, padding:'12px 18px', border:'none', cursor:'pointer', borderRadius:8, flexShrink:0, transition:'all 0.2s' }}>
                     {referralCopied?'✓ TERSALIN':'⎘ SALIN'}
                   </button>
                 </div>
                 <div style={{ display:'flex', gap:8 }}>
-                  <a href={`https://wa.me/?text=${encodeURIComponent('Hei! Belajar trading SMC bareng aku di Menolak Rugi: https://menolakrugi.pages.dev/signup?ref='+referralCode)}`} target="_blank" rel="noopener noreferrer"
+                  <a href={`https://wa.me/?text=${encodeURIComponent('Hei! Belajar trading SMC bareng aku di Menolak Rugi: https://menolakrugi.com/signup?ref='+referralCode)}`} target="_blank" rel="noopener noreferrer"
                     style={{ fontFamily:C.mono, fontSize:10, color:'#25D366', border:'1px solid #25D36644', padding:'6px 12px', borderRadius:6, textDecoration:'none', background:'#25D36611' }}>Share WhatsApp ▸</a>
-                  <a href={`https://t.me/share/url?url=${encodeURIComponent('https://menolakrugi.pages.dev/signup?ref='+referralCode)}&text=${encodeURIComponent('Belajar trading SMC di Menolak Rugi!')}`} target="_blank" rel="noopener noreferrer"
+                  <a href={`https://t.me/share/url?url=${encodeURIComponent('https://menolakrugi.com/signup?ref='+referralCode)}&text=${encodeURIComponent('Belajar trading SMC di Menolak Rugi!')}`} target="_blank" rel="noopener noreferrer"
                     style={{ fontFamily:C.mono, fontSize:10, color:'#229ED9', border:'1px solid #229ED944', padding:'6px 12px', borderRadius:6, textDecoration:'none', background:'#229ED911' }}>Share Telegram ▸</a>
                 </div>
               </div>
