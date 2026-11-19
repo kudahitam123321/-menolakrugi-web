@@ -345,12 +345,68 @@ function FiturV5() {
   );
 }
 
+// Perbandingan indikator lama vs v5 — tampil di antara blok v5 dan blok v4.2.
+const PERBANDINGAN: { fitur: string; lama: string | boolean; baru: string | boolean }[] = [
+  { fitur: 'Pair & timeframe', lama: 'Bebas pair & timeframe', baru: 'Khusus XAUUSD M5' },
+  { fitur: 'Cara pakai', lama: 'Manual — top-down analysis sendiri, lalu tentukan entry', baru: 'Sederhana — tinggal ikuti label entry yang muncul' },
+  { fitur: 'Market structure (VH/VL, BOS/CHoCH) + Fibonacci', lama: true, baru: true },
+  { fitur: 'Internal structure (IS01 / IS02)', lama: true, baru: false },
+  { fitur: 'POI Order Block & FVG di chart', lama: true, baru: false },
+  { fitur: 'Zona entry Fibonacci + kotak TP/SL', lama: true, baru: true },
+  { fitur: '3 setup otomatis (Follow Trend, Counter Trend, SCOB POI)', lama: false, baru: true },
+  { fitur: 'Label order siap pasang (LIMIT · SL · TP, jam WITA)', lama: false, baru: true },
+  { fitur: 'Kalkulator lot otomatis', lama: false, baru: true },
+  { fitur: 'Alarm ke HP (limit dipasang, terisi, digeser, batal)', lama: false, baru: true },
+  { fitur: 'Data backtest bisa dilihat', lama: false, baru: true },
+  { fitur: 'Cocok untuk', lama: 'Yang mau belajar membaca SMC & analisa sendiri', baru: 'Yang mau eksekusi disiplin tanpa analisa panjang' },
+];
+
+function TabelPerbandingan({ namaLama, namaBaru }: { namaLama: string; namaBaru: string }) {
+  const isMobile = useIsMobile();
+  const sel = (v: string | boolean, baru: boolean) =>
+    typeof v === 'string'
+      ? <span style={{ color: baru ? LP.text : LP.muted, fontWeight: baru ? 600 : 400 }}>{v}</span>
+      : v
+        ? <span style={{ color: LP.primary, fontWeight: 800, fontSize: 16 }}>✓</span>
+        : <span style={{ color: LP.border, fontWeight: 700 }}>—</span>;
+  const kolom = isMobile ? 'minmax(0,1.3fr) minmax(0,1fr) minmax(0,1fr)' : 'minmax(0,1.6fr) minmax(0,1fr) minmax(0,1fr)';
+  return (
+    <section style={{ background: LP.bg, padding: isMobile ? '8px 20px 40px' : '8px 40px 56px' }}>
+      <div style={{ maxWidth: 900, margin: '0 auto' }}>
+        <div style={{ textAlign: 'center' as const, marginBottom: 20 }}>
+          <div style={{ fontFamily: LP.mono, color: LP.muted, fontSize: 11, letterSpacing: 0.8 }}>// PERBANDINGAN</div>
+          <h2 style={{ fontSize: isMobile ? 22 : 30, letterSpacing: -0.8, fontWeight: 800, color: LP.text, margin: '10px 0 0' }}>Pilih yang Cocok Buatmu</h2>
+        </div>
+        <div style={{ background: LP.surface, border: `1px solid ${LP.border}`, borderRadius: LP.radius, overflow: 'hidden', boxShadow: LP.shadowSm, fontSize: isMobile ? 12 : 14 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: kolom, background: LP.bg, borderBottom: `1px solid ${LP.border}` }}>
+            <div style={{ padding: isMobile ? '12px 10px' : '14px 18px' }} />
+            <div style={{ padding: isMobile ? '12px 10px' : '14px 18px', fontWeight: 700, color: LP.muted, textAlign: 'center' as const }}>{namaLama}</div>
+            <div style={{ padding: isMobile ? '12px 10px' : '14px 18px', fontWeight: 800, color: LP.primary, textAlign: 'center' as const, background: LP.primaryTint }}>{namaBaru}</div>
+          </div>
+          {PERBANDINGAN.map((r, i) => (
+            <div key={r.fitur} style={{ display: 'grid', gridTemplateColumns: kolom, borderTop: i ? `1px solid ${LP.border}` : 'none', alignItems: 'stretch' }}>
+              <div style={{ padding: isMobile ? '11px 10px' : '13px 18px', color: LP.text, fontWeight: 600, lineHeight: 1.4 }}>{r.fitur}</div>
+              <div style={{ padding: isMobile ? '11px 10px' : '13px 18px', textAlign: 'center' as const, lineHeight: 1.4, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{sel(r.lama, false)}</div>
+              <div style={{ padding: isMobile ? '11px 10px' : '13px 18px', textAlign: 'center' as const, lineHeight: 1.4, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(22,163,74,.05)' }}>{sel(r.baru, true)}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
 /** "PROMO -50% · S/D 1 DESEMBER 2026" selama diskon produk berbatas waktu masih berlaku. */
 function labelPromo(p: ProdukJual): string | undefined {
   const akhir = akhirDiskon(p);
   const maks = Math.max(0, ...paketDariProduk(p).map((x) => x.diskon));
   if (!akhir || maks <= 0) return undefined;
   return `PROMO -${maks}% · S/D ${fmtTanggalRilis(new Date(p.diskon_hingga + 'T00:00:00+07:00')).toUpperCase()}`;
+}
+
+/** 'SMC by MenolakRugi v4.2' → 'v4.2'; tanpa nomor versi → nama apa adanya. */
+function versiDari(nama: string): string {
+  return nama.match(/v\d+(\.\d+)*/i)?.[0] ?? nama;
 }
 
 /** Produk dengan tanggal_rilis terbaru = produk terbaru (dapat badge TERBARU). */
@@ -392,7 +448,13 @@ export default function PricingIndikatorPage() {
               <React.Fragment key={p.id}>
                 <ProductPreview paket={paketDariProduk(p)} preorder={false} produkId={p.id} judul={p.nama}
                   badge={p.id === terbaru ? 'TERBARU' : undefined} promo={labelPromo(p)} intro={false} />
-                {(p.id === terbaru || (!terbaru && p === blokProduk[0])) && <><FiturV5 /><RiwayatDataCard /></>}
+                {(p.id === terbaru || (!terbaru && p === blokProduk[0])) && <>
+                  <FiturV5 />
+                  <RiwayatDataCard />
+                  {blokProduk.length > 1 && (
+                    <TabelPerbandingan namaLama={versiDari(blokProduk.find((x) => x.id !== p.id)!.nama)} namaBaru={versiDari(p.nama)} />
+                  )}
+                </>}
               </React.Fragment>
             ))}
             <LangkahPembelian preorder={false} />
