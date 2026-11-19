@@ -1460,7 +1460,7 @@ export default function DashboardPage() {
                     )}
                   </div>
 
-                  <IndikatorV5Info orders={myOrders} onBeli={() => setActive('produk')} />
+                  <IndikatorV5Info orders={myOrders} onBeli={() => setActive('produk')} member={member as any} />
 
                   <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' as const }}>
                     <button onClick={() => setActive('produk')} style={{ fontFamily: LP.mono, fontSize: 12, fontWeight: 700, color: '#fff', background: LP.primary, border: 'none', padding: '11px 24px', borderRadius: 8, cursor: 'pointer' }}>
@@ -2682,7 +2682,7 @@ export default function DashboardPage() {
 
               {myOrders.some((o: any) => o.plan_type) && (
                 <div style={{ marginBottom: 20 }}>
-                  <IndikatorV5Info orders={myOrders} onBeli={() => setProdView('katalog')} />
+                  <IndikatorV5Info orders={myOrders} onBeli={() => setProdView('katalog')} member={member as any} />
                 </div>
               )}
 

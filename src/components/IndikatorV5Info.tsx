@@ -1,7 +1,7 @@
 // components/IndikatorV5Info.tsx — Kotak info "v5 rilis …" di dashboard selama tahap pre-order.
 // Isi menyesuaikan status langganan indikator member (lihat statusPreorder di lib/indikatorV5).
-import { useProdukIndikator } from '../hooks';
-import { fmtTanggalRilis, sisaWaktu, statusPreorder, type OrderIndikator } from '../lib/indikatorV5';
+import { useProdukIndikator, useProdukRilis } from '../hooks';
+import { berhakKlaimV5, fmtTanggalRilis, sisaWaktu, statusPreorder, type OrderIndikator } from '../lib/indikatorV5';
 
 const LP = {
   surface: 'var(--lp-surface)', text: 'var(--lp-text)', muted: 'var(--lp-muted)', border: 'var(--lp-border)',
@@ -10,9 +10,14 @@ const LP = {
 };
 const WA_ADMIN = 'https://wa.me/6281242224939';
 
-export default function IndikatorV5Info({ orders, onBeli }: { orders: OrderIndikator[]; onBeli: () => void }) {
+const LABEL_PAKET: Record<string, string> = { bulanan: 'Bulanan', tahunan: 'Tahunan', lifetime: 'Lifetime' };
+
+export default function IndikatorV5Info({ orders, onBeli, member }: {
+  orders: OrderIndikator[]; onBeli: () => void; member?: { nama?: string; email?: string } | null;
+}) {
   const { preorder, tanggalRilis } = useProdukIndikator();
-  if (!preorder) return null;
+  const rilis = useProdukRilis();
+  if (!preorder) return <KlaimV5 orders={orders} produk={rilis.produk} batas={rilis.batas} member={member} />;
   const status = statusPreorder(orders, tanggalRilis, new Date());
   if (status === 'tidak-ada') return null;
 
@@ -60,6 +65,34 @@ export default function IndikatorV5Info({ orders, onBeli }: { orders: OrderIndik
         <div style={{ fontSize: 12, color: LP.muted, marginTop: 2, lineHeight: 1.5 }}>{k.teks}</div>
       </div>
       {k.aksi}
+    </div>
+  );
+}
+
+/** Setelah rilis: pemilik indikator lama (sebelum tanggal rilis) klaim v5 gratis lewat WhatsApp admin. */
+function KlaimV5({ orders, produk, batas, member }: {
+  orders: OrderIndikator[]; produk: { id: string; nama: string } | null; batas: Date | null; member?: { nama?: string; email?: string } | null;
+}) {
+  const dasar = berhakKlaimV5(orders, produk?.id ?? null, batas);
+  if (!dasar || !produk) return null;
+  const pesan = [
+    `Halo admin, saya mau klaim ${produk.nama} gratis.`,
+    `Nama: ${member?.nama || '-'}`,
+    `Email: ${member?.email || '-'}`,
+    `Paket lama: ${LABEL_PAKET[dasar.plan_type || ''] || dasar.plan_type}`,
+  ].join('\n');
+  const klaim = () => window.open(`${WA_ADMIN}?text=${encodeURIComponent(pesan)}`, '_blank');
+
+  return (
+    <div data-v5-status="klaim" style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' as const, background: LP.surface, border: '1px solid rgba(22,163,74,.35)', borderRadius: 14, padding: 16, boxShadow: '0 1px 3px rgba(0,0,0,0.06)', fontFamily: LP.sans }}>
+      <div style={{ width: 42, height: 42, borderRadius: 12, background: LP.primaryTint, display: 'grid', placeItems: 'center', fontSize: 20, flexShrink: 0 }}>🎁</div>
+      <div style={{ flex: '1 1 200px', minWidth: 0 }}>
+        <div style={{ fontWeight: 700, fontSize: 14, color: LP.text }}>Kamu dapat {produk.nama} gratis</div>
+        <div style={{ fontSize: 12, color: LP.muted, marginTop: 2, lineHeight: 1.5 }}>Kamu pemilik indikator sebelum rilis. Klaim lalu admin kirim link-nya lewat WhatsApp.</div>
+      </div>
+      <button onClick={klaim} style={{ marginLeft: 'auto', fontFamily: LP.sans, fontSize: 13, fontWeight: 700, color: '#fff', background: LP.primary, border: 'none', padding: '9px 14px', borderRadius: 8, cursor: 'pointer', whiteSpace: 'nowrap' as const }}>
+        Klaim v5 Gratis →
+      </button>
     </div>
   );
 }

@@ -274,3 +274,21 @@ export function useProdukIndikator() {
   const tanggalRilis = preorder && produk?.tanggal_rilis ? new Date(produk.tanggal_rilis + 'T00:00:00+07:00') : null;
   return { produk, preorder, tanggalRilis, loading };
 }
+
+export interface ProdukRilis { id: string; nama: string; tanggal_rilis: string; }
+
+/** Produk indikator terbaru yang sudah rilis (tersedia + punya tanggal_rilis). Tanggal rilis = batas klaim v5 gratis. */
+export function useProdukRilis() {
+  const [produk, setProduk] = useState<ProdukRilis | null>(null);
+  useEffect(() => {
+    let batal = false;
+    supabase.from('products').select('id,nama,tanggal_rilis').eq('aktif', true).eq('status', 'tersedia')
+      .not('tanggal_rilis', 'is', null).order('tanggal_rilis', { ascending: false }).limit(1)
+      .then(({ data, error }) => {
+        if (!batal) setProduk(!error && data && data[0] ? (data[0] as ProdukRilis) : null);
+      });
+    return () => { batal = true; };
+  }, []);
+  const batas = produk ? new Date(produk.tanggal_rilis + 'T00:00:00+07:00') : null;
+  return { produk, batas };
+}
