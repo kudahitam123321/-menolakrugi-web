@@ -1342,6 +1342,7 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
   const [pDiskonTahunan, setPDiskonTahunan]   = useState('');
   const [pHargaLifetime, setPHargaLifetime]   = useState('');
   const [pDiskonLifetime, setPDiskonLifetime] = useState('');
+  const [pDiskonHingga, setPDiskonHingga] = useState('');
   const [pStatus, setPStatus]                 = useState<'tersedia'|'preorder'>('tersedia');
   const [pTanggalRilis, setPTanggalRilis]     = useState('');
   const [pTierAccess, setPTierAccess]         = useState<string[]>(['trial','bronze','gold','platinum']);
@@ -1361,6 +1362,7 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
   const [editPDiskonTahunan, setEditPDiskonTahunan]   = useState('');
   const [editPHargaLifetime, setEditPHargaLifetime]   = useState('');
   const [editPDiskonLifetime, setEditPDiskonLifetime] = useState('');
+  const [editPDiskonHingga, setEditPDiskonHingga] = useState('');
   const [editPStatus, setEditPStatus]         = useState<'tersedia'|'preorder'>('tersedia');
   const [editPTanggalRilis, setEditPTanggalRilis] = useState('');
   const [editPTierAccess, setEditPTierAccess] = useState<string[]>(['trial','bronze','gold','platinum']);
@@ -1660,6 +1662,7 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
       diskon_tahunan:  pDiskonTahunan ? parseInt(pDiskonTahunan) : null,
       harga_lifetime:  pHargaLifetime ? parseInt(pHargaLifetime) : null,
       diskon_lifetime: pDiskonLifetime? parseInt(pDiskonLifetime): null,
+      diskon_hingga:   pDiskonHingga || null,
       gambar_url: gambarUrl,
       video_url: pVideoUrl.trim() || null,
       panduan_url: panduanUrl,
@@ -1676,7 +1679,7 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
       setPNama(''); setPDesc('');
       setPHargaBulanan(''); setPDiskonBulanan('');
       setPHargaTahunan(''); setPDiskonTahunan('');
-      setPHargaLifetime(''); setPDiskonLifetime('');
+      setPHargaLifetime(''); setPDiskonLifetime(''); setPDiskonHingga('');
       setPStatus('tersedia'); setPTanggalRilis(''); setPTierAccess(['trial','bronze','gold','platinum']);
       setPUrutan(''); setPAktif(true); setPGambarFile(null); setPGambarPreview(''); setPVideoUrl('');
       setPPanduanFile(null); if (pPanduanRef.current) pPanduanRef.current.value = '';
@@ -1699,6 +1702,7 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
     setEditPDiskonTahunan(p.diskon_tahunan ? String(p.diskon_tahunan) : '');
     setEditPHargaLifetime(p.harga_lifetime ? String(p.harga_lifetime) : '');
     setEditPDiskonLifetime(p.diskon_lifetime ? String(p.diskon_lifetime) : '');
+    setEditPDiskonHingga(p.diskon_hingga || '');
     setEditPStatus(p.status || 'tersedia'); setEditPTanggalRilis(p.tanggal_rilis || '');
     setEditPTierAccess(p.tier_access || ['trial','bronze','gold','platinum']);
     setEditPUrutan(String(p.urutan || 0)); setEditPAktif(p.aktif !== false);
@@ -1737,6 +1741,7 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
       diskon_tahunan:  editPDiskonTahunan ? parseInt(editPDiskonTahunan) : null,
       harga_lifetime:  editPHargaLifetime ? parseInt(editPHargaLifetime) : null,
       diskon_lifetime: editPDiskonLifetime? parseInt(editPDiskonLifetime): null,
+      diskon_hingga:   editPDiskonHingga || null,
       gambar_url: gambarUrl || null,
       video_url: editPVideoUrl.trim() || null,
       panduan_url: panduanUrl || null,
@@ -3025,6 +3030,11 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
                         </div>
                       );
                     })}
+                    <div style={{display:'grid',gridTemplateColumns:'72px 1fr',gap:8,alignItems:'center',marginTop:4}}>
+                      <span style={{fontFamily:'monospace',fontSize:10,fontWeight:700,color:'#555'}}>DISKON S/D</span>
+                      <input type="date" value={pDiskonHingga} onChange={e=>setPDiskonHingga(e.target.value)} title="Diskon berlaku sampai akhir tanggal ini (WIB). Kosong = tanpa batas."
+                        style={{background:'#111',border:'1px solid #2a2a2a',color:'#e7e5e4',padding:'9px 12px',fontSize:12,fontFamily:'monospace',outline:'none'}}/>
+                    </div>
                   </div>
                   <textarea value={pDesc} onChange={e=>setPDesc(e.target.value)} placeholder="Deskripsi produk" rows={3}
                     style={{width:'100%',background:'#111',border:'1px solid #2a2a2a',color:'#e7e5e4',padding:'10px 14px',fontSize:13,fontFamily:'monospace',outline:'none',resize:'vertical' as const,boxSizing:'border-box' as const,marginBottom:10}}
@@ -3191,6 +3201,11 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
                                 </div>
                               );
                             })}
+                            <div style={{display:'grid',gridTemplateColumns:'68px 1fr',gap:6,alignItems:'center',marginTop:2}}>
+                              <span style={{fontFamily:'monospace',fontSize:9,fontWeight:700,color:'#555'}}>DISKON S/D</span>
+                              <input type="date" value={editPDiskonHingga} onChange={e=>setEditPDiskonHingga(e.target.value)} title="Diskon berlaku sampai akhir tanggal ini (WIB). Kosong = tanpa batas."
+                                style={{background:'#111',border:'1px solid #2a2a2a',color:'#e7e5e4',padding:'7px 10px',fontSize:11,fontFamily:'monospace',outline:'none'}}/>
+                            </div>
                           </div>
                           <div style={{marginBottom:8}}>
                             <div style={{fontFamily:'monospace',color:'#444',fontSize:10,marginBottom:4}}>// TIER YANG BISA ORDER</div>

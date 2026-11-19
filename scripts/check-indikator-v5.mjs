@@ -72,4 +72,10 @@ assert.deepEqual(L.paketDariProduk(pr([200000, 10, 2000000, null, 3000000, 0])),
 ], 'tiga paket');
 assert.deepEqual(L.paketDariProduk(pr([null, null, 0, null, 5000000, 20])).map((x) => x.key), ['lifetime'], 'hanya lifetime');
 
+// diskon_hingga: diskon berlaku sampai akhir hari itu (WIB), lalu hilang
+const promo = { ...pr([300000, 50, 3000000, 50, 5000000, 50]), diskon_hingga: '2026-12-01' };
+assert.equal(L.paketDariProduk(promo, new Date('2026-12-01T23:00:00+07:00'))[0].diskon, 50, 'masih promo 1 Des malam');
+assert.equal(L.paketDariProduk(promo, new Date('2026-12-02T00:00:01+07:00'))[0].diskon, 0, 'promo selesai 2 Des');
+assert.equal(L.paketDariProduk(pr([300000, 50, null, null, null, null]), new Date('2030-01-01'))[0].diskon, 50, 'tanpa batas = tetap');
+
 console.log('OK — status pre-order');

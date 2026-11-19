@@ -7,6 +7,7 @@ import MemberTradingPlan from './MemberTradingPlan';
 import CompetitionPage from '../CompetitionPage';
 import { trackVideoWatch } from '../../hooks/useWatchHistory';
 import IndikatorV5Info from '../../components/IndikatorV5Info';
+import { akhirDiskon } from '../../lib/indikatorV5';
 import {
   Search, LayoutGrid, PlayCircle, BookOpen, LineChart, NotebookPen, ClipboardList,
   MessageCircle, Landmark, ShoppingBag, Rocket, Trophy, Medal, Award, Target, Star,
@@ -563,7 +564,8 @@ export default function DashboardPage() {
     if (!member) return;
     setOrderLoading(true);
     const hargaBase = produk[`harga_${planType}`];
-    const diskonPct = appliedCode ? appliedCode.diskon : (produk[`diskon_${planType}`] || 0);
+    const promoProduk = (!akhirDiskon(produk) || Date.now() <= akhirDiskon(produk)!.getTime()) ? (produk[`diskon_${planType}`] || 0) : 0;
+    const diskonPct = appliedCode ? appliedCode.diskon : promoProduk;
     const harga     = diskonPct ? Math.round(hargaBase * (1 - diskonPct / 100)) : hargaBase;
     const labelPlan = planType.charAt(0).toUpperCase() + planType.slice(1);
     const { data, error } = await supabase.from('orders').insert({
@@ -2699,10 +2701,11 @@ export default function DashboardPage() {
                       const tierMember = normalizeTier(member?.tier || '');
                       const bisaOrder  = isIndikatorMember || (p.tier_access || []).includes(tierMember);
                       const tglRilis   = p.tanggal_rilis ? new Date(p.tanggal_rilis).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) : null;
+                      const promoAktif = !akhirDiskon(p) || Date.now() <= akhirDiskon(p)!.getTime();
                       const plans = ([
-                        { plan: 'bulanan'  as const, label: 'Bulanan',  h: p.harga_bulanan,  d: p.diskon_bulanan  },
-                        { plan: 'tahunan'  as const, label: 'Tahunan',  h: p.harga_tahunan,  d: p.diskon_tahunan  },
-                        { plan: 'lifetime' as const, label: 'Lifetime', h: p.harga_lifetime, d: p.diskon_lifetime },
+                        { plan: 'bulanan'  as const, label: 'Bulanan',  h: p.harga_bulanan,  d: promoAktif ? p.diskon_bulanan  : null },
+                        { plan: 'tahunan'  as const, label: 'Tahunan',  h: p.harga_tahunan,  d: promoAktif ? p.diskon_tahunan  : null },
+                        { plan: 'lifetime' as const, label: 'Lifetime', h: p.harga_lifetime, d: promoAktif ? p.diskon_lifetime : null },
                       ]).filter(r => r.h);
                       const activePlanKey = selectedPlanByProduct[p.id] ?? plans[0]?.plan;
                       const activePlan    = plans.find(r => r.plan === activePlanKey) ?? plans[0];

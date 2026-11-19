@@ -4,7 +4,7 @@
 
 import React from 'react';
 import { useLandingPreview, useBacktestConfig, useProdukIndikator, useProdukDijual } from '../hooks';
-import { fmtTanggalRilis, sisaWaktu, paketDariProduk, type PaketProduk, type ProdukJual } from '../lib/indikatorV5';
+import { fmtTanggalRilis, sisaWaktu, paketDariProduk, akhirDiskon, type PaketProduk, type ProdukJual } from '../lib/indikatorV5';
 import type { LandingPreviewConfig } from '../hooks';
 
 const LP = {
@@ -35,8 +35,8 @@ function paketDariConfig(config: LandingPreviewConfig): PaketProduk[] {
   ];
 }
 
-function ProductPreview({ paket, preorder, produkId, judul, badge, intro = true }: {
-  paket: PaketProduk[]; preorder: boolean; produkId?: string; judul?: string; badge?: string; intro?: boolean;
+function ProductPreview({ paket, preorder, produkId, judul, badge, promo, intro = true }: {
+  paket: PaketProduk[]; preorder: boolean; produkId?: string; judul?: string; badge?: string; promo?: string; intro?: boolean;
 }) {
   const [isMobile, setIsMobile] = React.useState(() => window.matchMedia('(max-width: 767px)').matches);
   React.useEffect(() => {
@@ -59,6 +59,9 @@ function ProductPreview({ paket, preorder, produkId, judul, badge, intro = true 
             <h2 style={{ fontSize: isMobile ? 20 : 26, letterSpacing: -0.5, fontWeight: 800, color: LP.text, margin: '16px 0 0' }}>{judul}</h2>
             {badge && (
               <span style={{ marginTop: 16, background: LP.primary, color: '#fff', padding: '4px 10px', fontSize: 10, letterSpacing: 0.8, fontWeight: 700, borderRadius: 20, fontFamily: LP.mono }}>{badge}</span>
+            )}
+            {promo && (
+              <span style={{ marginTop: 16, background: '#FEF3C7', color: '#92400e', border: '1px solid #FDE68A', padding: '3px 10px', fontSize: 10, letterSpacing: 0.8, fontWeight: 700, borderRadius: 20, fontFamily: LP.mono }}>{promo}</span>
             )}
           </div>
         )}
@@ -342,6 +345,14 @@ function FiturV5() {
   );
 }
 
+/** "PROMO -50% · S/D 1 DESEMBER 2026" selama diskon produk berbatas waktu masih berlaku. */
+function labelPromo(p: ProdukJual): string | undefined {
+  const akhir = akhirDiskon(p);
+  const maks = Math.max(0, ...paketDariProduk(p).map((x) => x.diskon));
+  if (!akhir || maks <= 0) return undefined;
+  return `PROMO -${maks}% · S/D ${fmtTanggalRilis(new Date(p.diskon_hingga + 'T00:00:00+07:00')).toUpperCase()}`;
+}
+
 /** Produk dengan tanggal_rilis terbaru = produk terbaru (dapat badge TERBARU). */
 function terbaruDari(produk: ProdukJual[]): string | null {
   const ber = produk.filter((p) => p.tanggal_rilis).sort((a, b) => (b.tanggal_rilis! > a.tanggal_rilis! ? 1 : -1));
@@ -380,7 +391,7 @@ export default function PricingIndikatorPage() {
             {blokProduk.map((p) => (
               <React.Fragment key={p.id}>
                 <ProductPreview paket={paketDariProduk(p)} preorder={false} produkId={p.id} judul={p.nama}
-                  badge={p.id === terbaru ? 'TERBARU' : undefined} intro={false} />
+                  badge={p.id === terbaru ? 'TERBARU' : undefined} promo={labelPromo(p)} intro={false} />
                 {(p.id === terbaru || (!terbaru && p === blokProduk[0])) && <><FiturV5 /><RiwayatDataCard /></>}
               </React.Fragment>
             ))}

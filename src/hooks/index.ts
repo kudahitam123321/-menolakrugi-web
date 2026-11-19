@@ -283,7 +283,7 @@ export function useProdukDijual() {
   useEffect(() => {
     let batal = false;
     supabase.from('products')
-      .select('id,nama,deskripsi,status,tanggal_rilis,harga_bulanan,diskon_bulanan,harga_tahunan,diskon_tahunan,harga_lifetime,diskon_lifetime')
+      .select('*')
       .eq('aktif', true).order('urutan', { ascending: true })
       .then(({ data, error }) => {
         if (batal) return;

@@ -98,17 +98,27 @@ export interface ProdukJual {
   harga_bulanan?: number | null; diskon_bulanan?: number | null;
   harga_tahunan?: number | null; diskon_tahunan?: number | null;
   harga_lifetime?: number | null; diskon_lifetime?: number | null;
+  /** Diskon paket berlaku sampai akhir tanggal ini (WIB); null = tanpa batas. */
+  diskon_hingga?: string | null;
 }
 
 export type KeyPaket = 'bulanan' | 'tahunan' | 'lifetime';
 export interface PaketProduk { key: KeyPaket; nama: string; harga_asli: number; diskon: number }
 
-/** Paket yang dijual dari satu baris products; paket tanpa harga (null/0) dibuang. */
-export function paketDariProduk(p: ProdukJual): PaketProduk[] {
+/** Akhir masa diskon (23:59:59 WIB pada diskon_hingga), atau null bila tanpa batas. */
+export function akhirDiskon(p: ProdukJual): Date | null {
+  return p.diskon_hingga ? new Date(p.diskon_hingga + 'T23:59:59+07:00') : null;
+}
+
+/** Paket yang dijual dari satu baris products; paket tanpa harga (null/0) dibuang. Diskon hilang setelah diskon_hingga. */
+export function paketDariProduk(p: ProdukJual, now: Date = new Date()): PaketProduk[] {
+  const akhir = akhirDiskon(p);
+  const aktif = !akhir || now.getTime() <= akhir.getTime();
+  const d = (x?: number | null) => (aktif ? x || 0 : 0);
   const semua: PaketProduk[] = [
-    { key: 'bulanan', nama: 'Bulanan', harga_asli: p.harga_bulanan || 0, diskon: p.diskon_bulanan || 0 },
-    { key: 'tahunan', nama: 'Tahunan', harga_asli: p.harga_tahunan || 0, diskon: p.diskon_tahunan || 0 },
-    { key: 'lifetime', nama: 'Lifetime', harga_asli: p.harga_lifetime || 0, diskon: p.diskon_lifetime || 0 },
+    { key: 'bulanan', nama: 'Bulanan', harga_asli: p.harga_bulanan || 0, diskon: d(p.diskon_bulanan) },
+    { key: 'tahunan', nama: 'Tahunan', harga_asli: p.harga_tahunan || 0, diskon: d(p.diskon_tahunan) },
+    { key: 'lifetime', nama: 'Lifetime', harga_asli: p.harga_lifetime || 0, diskon: d(p.diskon_lifetime) },
   ];
   return semua.filter((x) => x.harga_asli > 0);
 }
