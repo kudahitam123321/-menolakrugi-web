@@ -63,4 +63,13 @@ assert.equal(L.berhakKlaimV5([ok('lifetime', 'aktif', '2026-05-01', 'v4')], null
 assert.equal(L.berhakKlaimV5([ok('lifetime', 'aktif', '2026-05-01', 'v4')], 'v5', null), null, 'tanpa batas');
 assert.equal(L.berhakKlaimV5([ok('tahunan', 'aktif', '2026-03-01T10:00:00+07:00', 'v4'), ok('bulanan', 'aktif', '2026-11-01T10:00:00+07:00', 'v4')], 'v5', batas).plan_type, 'tahunan', 'pilih terkuat');
 
+// paketDariProduk
+const pr = (h) => ({ id: 'p', nama: 'P', harga_bulanan: h[0], diskon_bulanan: h[1], harga_tahunan: h[2], diskon_tahunan: h[3], harga_lifetime: h[4], diskon_lifetime: h[5] });
+assert.deepEqual(L.paketDariProduk(pr([200000, 10, 2000000, null, 3000000, 0])), [
+  { key: 'bulanan', nama: 'Bulanan', harga_asli: 200000, diskon: 10 },
+  { key: 'tahunan', nama: 'Tahunan', harga_asli: 2000000, diskon: 0 },
+  { key: 'lifetime', nama: 'Lifetime', harga_asli: 3000000, diskon: 0 },
+], 'tiga paket');
+assert.deepEqual(L.paketDariProduk(pr([null, null, 0, null, 5000000, 20])).map((x) => x.key), ['lifetime'], 'hanya lifetime');
+
 console.log('OK — status pre-order');

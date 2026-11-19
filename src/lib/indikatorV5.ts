@@ -88,3 +88,27 @@ export function berhakKlaimV5<T extends OrderIndikator>(orders: T[], v5Id: strin
   });
   return pilihOrderIndikator(layak);
 }
+
+export interface ProdukJual {
+  id: string;
+  nama: string;
+  deskripsi?: string | null;
+  status?: string | null;
+  tanggal_rilis?: string | null;
+  harga_bulanan?: number | null; diskon_bulanan?: number | null;
+  harga_tahunan?: number | null; diskon_tahunan?: number | null;
+  harga_lifetime?: number | null; diskon_lifetime?: number | null;
+}
+
+export type KeyPaket = 'bulanan' | 'tahunan' | 'lifetime';
+export interface PaketProduk { key: KeyPaket; nama: string; harga_asli: number; diskon: number }
+
+/** Paket yang dijual dari satu baris products; paket tanpa harga (null/0) dibuang. */
+export function paketDariProduk(p: ProdukJual): PaketProduk[] {
+  const semua: PaketProduk[] = [
+    { key: 'bulanan', nama: 'Bulanan', harga_asli: p.harga_bulanan || 0, diskon: p.diskon_bulanan || 0 },
+    { key: 'tahunan', nama: 'Tahunan', harga_asli: p.harga_tahunan || 0, diskon: p.diskon_tahunan || 0 },
+    { key: 'lifetime', nama: 'Lifetime', harga_asli: p.harga_lifetime || 0, diskon: p.diskon_lifetime || 0 },
+  ];
+  return semua.filter((x) => x.harga_asli > 0);
+}

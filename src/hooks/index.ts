@@ -1,6 +1,7 @@
 // hooks/index.ts — Semua custom hooks (Supabase queries)
 
 import { useEffect, useState } from 'react';
+import type { ProdukJual } from '../lib/indikatorV5';
 import { supabase } from '../lib/supabase';
 import type { Member, Journal, Testimonial, PricingTier, LandingStats } from '../types/mr.types';
 import type { BtData } from '../lib/backtest';
@@ -273,6 +274,25 @@ export function useProdukIndikator() {
   const preorder = produk?.status === 'preorder';
   const tanggalRilis = preorder && produk?.tanggal_rilis ? new Date(produk.tanggal_rilis + 'T00:00:00+07:00') : null;
   return { produk, preorder, tanggalRilis, loading };
+}
+
+/** Semua produk indikator aktif yang dijual (urut urutan), untuk halaman pricing. */
+export function useProdukDijual() {
+  const [produk, setProduk] = useState<ProdukJual[]>([]);
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    let batal = false;
+    supabase.from('products')
+      .select('id,nama,deskripsi,status,tanggal_rilis,harga_bulanan,diskon_bulanan,harga_tahunan,diskon_tahunan,harga_lifetime,diskon_lifetime')
+      .eq('aktif', true).order('urutan', { ascending: true })
+      .then(({ data, error }) => {
+        if (batal) return;
+        setProduk(!error && data ? (data as ProdukJual[]) : []);
+        setLoading(false);
+      });
+    return () => { batal = true; };
+  }, []);
+  return { produk, loading };
 }
 
 export interface ProdukRilis { id: string; nama: string; tanggal_rilis: string; }

@@ -3,8 +3,8 @@
 // Dipindah dari komponen ProductPreview ("Preview Platform") di LandingPage.tsx
 
 import React from 'react';
-import { useLandingPreview, useBacktestConfig, useProdukIndikator } from '../hooks';
-import { fmtTanggalRilis, sisaWaktu } from '../lib/indikatorV5';
+import { useLandingPreview, useBacktestConfig, useProdukIndikator, useProdukDijual } from '../hooks';
+import { fmtTanggalRilis, sisaWaktu, paketDariProduk, type PaketProduk, type ProdukJual } from '../lib/indikatorV5';
 import type { LandingPreviewConfig } from '../hooks';
 
 const LP = {
@@ -27,7 +27,17 @@ const LP = {
 
 const KURS_USD = 18000; // Rp per 1 USD — dipakai buat estimasi harga USD di kartu pricing
 
-function ProductPreview({ config, preorder }: { config: LandingPreviewConfig; preorder: boolean }) {
+function paketDariConfig(config: LandingPreviewConfig): PaketProduk[] {
+  return [
+    { nama: config.plan1_nama, harga_asli: config.plan1_harga_asli, diskon: config.plan1_diskon, key: 'bulanan' },
+    { nama: config.plan2_nama, harga_asli: config.plan2_harga_asli, diskon: config.plan2_diskon, key: 'tahunan' },
+    { nama: config.plan3_nama, harga_asli: config.plan3_harga_asli, diskon: config.plan3_diskon, key: 'lifetime' },
+  ];
+}
+
+function ProductPreview({ paket, preorder, produkId, judul, badge, intro = true }: {
+  paket: PaketProduk[]; preorder: boolean; produkId?: string; judul?: string; badge?: string; intro?: boolean;
+}) {
   const [isMobile, setIsMobile] = React.useState(() => window.matchMedia('(max-width: 767px)').matches);
   React.useEffect(() => {
     const mq = window.matchMedia('(max-width: 767px)');
@@ -38,16 +48,21 @@ function ProductPreview({ config, preorder }: { config: LandingPreviewConfig; pr
 
   const fmt = (n: number) => new Intl.NumberFormat('id-ID').format(n);
 
-  const plans = [
-    { nama: config.plan1_nama, harga_asli: config.plan1_harga_asli, diskon: config.plan1_diskon, key: 'bulanan',  featured: false },
-    { nama: config.plan2_nama, harga_asli: config.plan2_harga_asli, diskon: config.plan2_diskon, key: 'tahunan',  featured: true },
-    { nama: config.plan3_nama, harga_asli: config.plan3_harga_asli, diskon: config.plan3_diskon, key: 'lifetime', featured: false },
-  ];
+  const plans = paket.map((p) => ({ ...p, featured: p.key === 'tahunan' }));
+  const kolom = Math.min(Math.max(plans.length, 1), 3);
 
   return (
-    <section style={{ background: LP.bg, padding: preorder ? (isMobile ? '8px 20px 48px' : '8px 40px 72px') : (isMobile ? '48px 20px' : '72px 40px') }}>
+    <section style={{ background: LP.bg, padding: preorder || !intro ? (isMobile ? '8px 20px 40px' : '8px 40px 56px') : (isMobile ? '48px 20px' : '72px 40px') }}>
       <div style={{ maxWidth: 900, margin: '0 auto' }}>
-        {preorder ? (
+        {judul && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' as const, marginBottom: 24, paddingTop: 8, borderTop: `1px solid ${LP.border}` }}>
+            <h2 style={{ fontSize: isMobile ? 20 : 26, letterSpacing: -0.5, fontWeight: 800, color: LP.text, margin: '16px 0 0' }}>{judul}</h2>
+            {badge && (
+              <span style={{ marginTop: 16, background: LP.primary, color: '#fff', padding: '4px 10px', fontSize: 10, letterSpacing: 0.8, fontWeight: 700, borderRadius: 20, fontFamily: LP.mono }}>{badge}</span>
+            )}
+          </div>
+        )}
+        {!intro ? null : preorder ? (
           <div style={{ textAlign: 'center' as const, marginBottom: 28, fontFamily: LP.mono, color: LP.primary, fontSize: 11, letterSpacing: 1 }}>// PRE-ORDER · HARGA EARLY-BIRD</div>
         ) : (
         <div style={{ textAlign: 'center' as const, marginBottom: 32 }}>
@@ -62,7 +77,7 @@ function ProductPreview({ config, preorder }: { config: LandingPreviewConfig; pr
         </div>
         )}
 
-        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: 16 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : `repeat(${kolom}, 1fr)`, gap: 16 }}>
           {plans.map((plan) => {
             const hargaDiskon = plan.diskon > 0 ? Math.round(plan.harga_asli * (1 - plan.diskon / 100)) : plan.harga_asli;
             const hemat = plan.harga_asli - hargaDiskon;
@@ -108,7 +123,7 @@ function ProductPreview({ config, preorder }: { config: LandingPreviewConfig; pr
                 )}
                 <div style={{ flex: 1 }} />
                 <button
-                  onClick={() => { window.location.href = `/bayar?plan=${plan.key}`; }}
+                  onClick={() => { window.location.href = produkId ? `/bayar?produk=${produkId}&plan=${plan.key}` : `/bayar?plan=${plan.key}`; }}
                   style={{
                     marginTop: 24, fontFamily: LP.sans, padding: '13px 0', fontSize: 13, fontWeight: 700, width: '100%', cursor: 'pointer', borderRadius: 8,
                     background: plan.featured ? LP.primary : 'transparent',
@@ -327,9 +342,18 @@ function FiturV5() {
   );
 }
 
+/** Produk dengan tanggal_rilis terbaru = produk terbaru (dapat badge TERBARU). */
+function terbaruDari(produk: ProdukJual[]): string | null {
+  const ber = produk.filter((p) => p.tanggal_rilis).sort((a, b) => (b.tanggal_rilis! > a.tanggal_rilis! ? 1 : -1));
+  return ber[0]?.id ?? null;
+}
+
 export default function PricingIndikatorPage() {
   const { preview } = useLandingPreview();
   const { preorder, tanggalRilis } = useProdukIndikator();
+  const { produk: dijual } = useProdukDijual();
+  const terbaru = terbaruDari(dijual);
+  const blokProduk = dijual.filter((p) => paketDariProduk(p).length > 0);
 
   return (
     <div className="mr-light-v2" style={{ fontFamily: LP.sans, color: LP.text, background: LP.bg, minHeight: '100vh', WebkitFontSmoothing: 'antialiased' }}>
@@ -346,16 +370,30 @@ export default function PricingIndikatorPage() {
             <HeroV5 preorder tanggalRilis={tanggalRilis} />
             <FiturV5 />
             <RiwayatDataCard />
-            <ProductPreview config={preview} preorder />
+            <ProductPreview paket={paketDariConfig(preview)} preorder />
             <LangkahPembelian preorder />
           </>
         ) : (
+          blokProduk.length > 0 ? (
           <>
-            <ProductPreview config={preview} preorder={false} />
+            <HeroV5 preorder={false} tanggalRilis={null} />
+            {blokProduk.map((p) => (
+              <React.Fragment key={p.id}>
+                <ProductPreview paket={paketDariProduk(p)} preorder={false} produkId={p.id} judul={p.nama}
+                  badge={p.id === terbaru ? 'TERBARU' : undefined} intro={false} />
+                {(p.id === terbaru || (!terbaru && p === blokProduk[0])) && <><FiturV5 /><RiwayatDataCard /></>}
+              </React.Fragment>
+            ))}
+            <LangkahPembelian preorder={false} />
+          </>
+          ) : (
+          <>
+            <ProductPreview paket={paketDariConfig(preview)} preorder={false} />
             <FiturV5 />
             <RiwayatDataCard />
             <LangkahPembelian preorder={false} />
           </>
+          )
         )
       ) : (
         <div style={{ padding: 60, textAlign: 'center' as const, color: LP.muted, fontFamily: LP.mono, fontSize: 13 }}>Memuat...</div>
