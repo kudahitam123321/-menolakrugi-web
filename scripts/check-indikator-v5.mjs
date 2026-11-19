@@ -49,4 +49,18 @@ assert.equal(L.sisaWaktu(rilis, new Date('2026-12-02T00:00:00+07:00')), null);
 assert.equal(L.fmtTanggalRilis(new Date('2026-12-01T00:00:00')), '1 Desember 2026');
 assert.equal(L.fmtTanggalRilis(null), 'segera');
 
+// berhakKlaimV5
+const batas = new Date('2026-11-20T00:00:00+07:00');
+const ok = (plan_type, status, activated_at, product_id) => ({ plan_type, status, activated_at, product_id, created_at: '2026-01-01' });
+assert.notEqual(L.berhakKlaimV5([ok('lifetime', 'aktif', '2026-05-01', 'v4')], 'v5', batas), null, 'lifetime v4');
+assert.notEqual(L.berhakKlaimV5([ok('bulanan', 'aktif', '2026-11-01T10:00:00+07:00', 'v4')], 'v5', batas), null, 'bulanan JT 1 Des');
+assert.equal(L.berhakKlaimV5([ok('bulanan', 'aktif', '2026-10-01T10:00:00+07:00', 'v4')], 'v5', batas), null, 'bulanan JT 1 Nov');
+assert.equal(L.berhakKlaimV5([ok('lifetime', 'aktif', '2026-11-21T10:00:00+07:00', 'v4')], 'v5', batas), null, 'beli setelah rilis');
+assert.equal(L.berhakKlaimV5([ok('lifetime', 'aktif', null, 'v4')], 'v5', batas), null, 'tanpa activated_at');
+assert.equal(L.berhakKlaimV5([ok('lifetime', 'aktif', '2026-05-01', 'v4'), ok('bulanan', 'aktif', '2026-11-25', 'v5')], 'v5', batas), null, 'sudah punya v5');
+assert.equal(L.berhakKlaimV5([ok('lifetime', 'pending', '2026-05-01', 'v4')], 'v5', batas), null, 'pending');
+assert.equal(L.berhakKlaimV5([ok('lifetime', 'aktif', '2026-05-01', 'v4')], null, batas), null, 'tanpa v5');
+assert.equal(L.berhakKlaimV5([ok('lifetime', 'aktif', '2026-05-01', 'v4')], 'v5', null), null, 'tanpa batas');
+assert.equal(L.berhakKlaimV5([ok('tahunan', 'aktif', '2026-03-01T10:00:00+07:00', 'v4'), ok('bulanan', 'aktif', '2026-11-01T10:00:00+07:00', 'v4')], 'v5', batas).plan_type, 'tahunan', 'pilih terkuat');
+
 console.log('OK — status pre-order');

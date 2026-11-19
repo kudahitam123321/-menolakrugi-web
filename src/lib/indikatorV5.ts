@@ -6,6 +6,7 @@ export interface OrderIndikator {
   plan_type: string | null;
   activated_at: string | null;
   created_at: string;
+  product_id?: string | null;
 }
 
 /** Sama persis dengan hitungJatuhTempo di DashboardPage/AdminPage. */
@@ -68,4 +69,22 @@ export function sisaWaktu(target: Date, now: Date): { hari: number; jam: number;
 /** '1 Desember 2026', atau 'segera' bila tanggal belum ada. */
 export function fmtTanggalRilis(d: Date | null): string {
   return d ? d.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) : 'segera';
+}
+
+/**
+ * Klaim v5 gratis (spec 2026-11-20): order indikator aktif untuk produk selain v5,
+ * aktif sebelum batas, dan lifetime atau jatuh tempo >= batas. Sudah punya v5 aktif → null.
+ * Mengembalikan order dasar klaim (yang terkuat), atau null.
+ */
+export function berhakKlaimV5<T extends OrderIndikator>(orders: T[], v5Id: string | null, batas: Date | null): T | null {
+  if (!v5Id || !batas) return null;
+  const aktif = orders.filter((o) => isIndikator(o) && o.status === 'aktif');
+  if (aktif.some((o) => o.product_id === v5Id)) return null;
+  const layak = aktif.filter((o) => {
+    if (!o.activated_at || new Date(o.activated_at).getTime() >= batas.getTime()) return false;
+    if (o.plan_type === 'lifetime') return true;
+    const jt = hitungJatuhTempo(o.activated_at, o.plan_type);
+    return !!jt && jt.getTime() >= batas.getTime();
+  });
+  return pilihOrderIndikator(layak);
 }
