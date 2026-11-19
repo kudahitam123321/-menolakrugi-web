@@ -49,7 +49,8 @@ function ProductPreview({ paket, preorder, produkId, judul, badge, promo, intro 
 
   const fmt = (n: number) => new Intl.NumberFormat('id-ID').format(n);
 
-  const plans = paket.map((p) => ({ ...p, featured: p.key === 'tahunan' }));
+  // Satu paket saja (mis. v5 hanya Lifetime) → kartu itu yang ditonjolkan.
+  const plans = paket.map((p) => ({ ...p, featured: paket.length === 1 || p.key === 'tahunan' }));
   const kolom = Math.min(Math.max(plans.length, 1), 3);
 
   return (
@@ -81,7 +82,7 @@ function ProductPreview({ paket, preorder, produkId, judul, badge, promo, intro 
         </div>
         )}
 
-        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : `repeat(${kolom}, 1fr)`, gap: 16 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : `repeat(${kolom}, 1fr)`, ...(kolom === 1 ? { maxWidth: 380, margin: '0 auto' } : {}), gap: 16 }}>
           {plans.map((plan) => {
             const hargaDiskon = plan.diskon > 0 ? Math.round(plan.harga_asli * (1 - plan.diskon / 100)) : plan.harga_asli;
             const hemat = plan.harga_asli - hargaDiskon;
@@ -95,7 +96,7 @@ function ProductPreview({ paket, preorder, produkId, judul, badge, promo, intro 
                 {(plan.featured || (preorder && plan.diskon > 0)) && (
                   <div style={{ position: 'absolute', top: -12, left: 20, display: 'flex', gap: 6 }}>
                     {plan.featured && (
-                      <span style={{ background: LP.primary, color: '#fff', padding: '4px 12px', fontSize: 10, letterSpacing: 0.6, fontWeight: 700, borderRadius: 20 }}>PALING POPULER</span>
+                      <span style={{ background: LP.primary, color: '#fff', padding: '4px 12px', fontSize: 10, letterSpacing: 0.6, fontWeight: 700, borderRadius: 20 }}>{paket.length === 1 ? 'SEKALI BAYAR, SELAMANYA' : 'PALING POPULER'}</span>
                     )}
                     {preorder && plan.diskon > 0 && (
                       <span style={{ background: '#FEF3C7', color: '#92400e', border: '1px solid #FDE68A', padding: '3px 10px', fontSize: 10, letterSpacing: 0.6, fontWeight: 700, borderRadius: 20 }}>EARLY-BIRD -{plan.diskon}%</span>
