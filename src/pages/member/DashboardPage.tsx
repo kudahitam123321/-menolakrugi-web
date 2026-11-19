@@ -7,6 +7,7 @@ import MemberTradingPlan from './MemberTradingPlan';
 import CompetitionPage from '../CompetitionPage';
 import { trackVideoWatch } from '../../hooks/useWatchHistory';
 import IndikatorV5Info from '../../components/IndikatorV5Info';
+import { RiwayatDataCard, TabelPerbandingan, versiDari } from '../../components/IndikatorPerbandingan';
 import { akhirDiskon, labelPromo, terbaruDari } from '../../lib/indikatorV5';
 import {
   Search, LayoutGrid, PlayCircle, BookOpen, LineChart, NotebookPen, ClipboardList,
@@ -2798,6 +2799,16 @@ export default function DashboardPage() {
                       );
                     })}
                   </div>
+                  {products.length > 1 && terbaruDari(products) && (() => {
+                    const baru = products.find((x: any) => x.id === terbaruDari(products))!;
+                    const lama = products.find((x: any) => x.id !== baru.id)!;
+                    return (
+                      <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 24, marginTop: 28 }}>
+                        <RiwayatDataCard embedded />
+                        <TabelPerbandingan embedded namaLama={versiDari(lama.nama)} namaBaru={versiDari(baru.nama)} />
+                      </div>
+                    );
+                  })()}
                 </>
               )}
 
