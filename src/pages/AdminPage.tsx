@@ -1665,7 +1665,7 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
       panduan_url: panduanUrl,
       panduan_name: pPanduanFile?.name || null,
       status: pStatus,
-      tanggal_rilis: pStatus === 'preorder' ? pTanggalRilis : null,
+      tanggal_rilis: pTanggalRilis || null,
       tier_access: pTierAccess,
       urutan: parseInt(pUrutan) || 0,
       aktif: pAktif,
@@ -1742,7 +1742,7 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
       panduan_url: panduanUrl || null,
       panduan_name: editPPanduanFile ? panduanName : undefined,
       status: editPStatus,
-      tanggal_rilis: editPStatus === 'preorder' ? editPTanggalRilis : null,
+      tanggal_rilis: editPTanggalRilis || null,
       tier_access: editPTierAccess,
       urutan: parseInt(editPUrutan) || 0,
       aktif: editPAktif,
@@ -2990,13 +2990,13 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
                       style={{background:'#111',border:'1px solid #2a2a2a',color:'#e7e5e4',padding:'10px 14px',fontSize:13,fontFamily:'monospace',outline:'none'}}
                       onFocus={e=>e.target.style.borderColor='#16a34a'} onBlur={e=>e.target.style.borderColor='#2a2a2a'}/>
                     <div style={{display:'flex',gap:8,gridColumn:'1/-1'}}>
-                      <select value={pStatus} onChange={e=>{setPStatus(e.target.value as any);if(e.target.value==='tersedia')setPTanggalRilis('');}}
+                      <select value={pStatus} onChange={e=>setPStatus(e.target.value as any)}
                         style={{flex:1,background:'#111',border:'1px solid #2a2a2a',color:'#e7e5e4',padding:'10px 14px',fontSize:13,fontFamily:'monospace',outline:'none',cursor:'pointer'}}>
                         <option value="tersedia">✅ Tersedia</option>
                         <option value="preorder">⏳ Pre-order</option>
                       </select>
-                      {pStatus==='preorder' && (
-                        <input type="date" value={pTanggalRilis} onChange={e=>setPTanggalRilis(e.target.value)}
+                      {(
+                        <input type="date" value={pTanggalRilis} onChange={e=>setPTanggalRilis(e.target.value)} title="Tanggal rilis (wajib untuk pre-order; untuk produk baru = batas klaim gratis)"
                           style={{flex:1,background:'#111',border:'1px solid #2a2a2a',color:'#e7e5e4',padding:'10px 14px',fontSize:13,fontFamily:'monospace',outline:'none'}}
                           onFocus={e=>e.target.style.borderColor='#16a34a'} onBlur={e=>e.target.style.borderColor='#2a2a2a'}/>
                       )}
@@ -3153,13 +3153,13 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
                                 onFocus={e=>e.target.style.borderColor='#16a34a'} onBlur={e=>e.target.style.borderColor='#2a2a2a'}/>
                             ))}
                             <div style={{display:'flex',gap:6,gridColumn:'1/-1'}}>
-                              <select value={editPStatus} onChange={e=>{setEditPStatus(e.target.value as any);if(e.target.value==='tersedia')setEditPTanggalRilis('');}}
+                              <select value={editPStatus} onChange={e=>setEditPStatus(e.target.value as any)}
                                 style={{flex:1,background:'#0d0d0d',border:'1px solid #2a2a2a',color:'#e7e5e4',padding:'9px 12px',fontSize:12,fontFamily:'monospace',outline:'none',cursor:'pointer'}}>
                                 <option value="tersedia">✅ Tersedia</option>
                                 <option value="preorder">⏳ Pre-order</option>
                               </select>
-                              {editPStatus==='preorder' && (
-                                <input type="date" value={editPTanggalRilis} onChange={e=>setEditPTanggalRilis(e.target.value)}
+                              {(
+                                <input type="date" value={editPTanggalRilis} onChange={e=>setEditPTanggalRilis(e.target.value)} title="Tanggal rilis (wajib untuk pre-order; untuk produk baru = batas klaim gratis)"
                                   style={{flex:1,background:'#0d0d0d',border:'1px solid #2a2a2a',color:'#e7e5e4',padding:'9px 12px',fontSize:12,fontFamily:'monospace',outline:'none'}}
                                   onFocus={e=>e.target.style.borderColor='#16a34a'} onBlur={e=>e.target.style.borderColor='#2a2a2a'}/>
                               )}
