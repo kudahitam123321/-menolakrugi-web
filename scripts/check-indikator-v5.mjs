@@ -85,4 +85,11 @@ assert.equal(L.labelPromo(pr([300000, 50, null, null, null, null])), undefined, 
 assert.equal(L.terbaruDari([{ id: 'a', nama: 'a', tanggal_rilis: null }, { id: 'b', nama: 'b', tanggal_rilis: '2026-11-20' }, { id: 'c', nama: 'c', tanggal_rilis: '2025-01-01' }]), 'b', 'terbaru');
 assert.equal(L.terbaruDari([{ id: 'a', nama: 'a', tanggal_rilis: null }]), null, 'tanpa tanggal');
 
+// promoRilis (banner "v5 sudah rilis, diskon X% s/d tgl")
+const v5p = { ...promo, id: 'v5', nama: 'SMC by MenolakRugi v5', tanggal_rilis: '2026-11-20' };
+const v4p = { ...pr([200000, null, 2000000, null, 3000000, null]), id: 'v4', nama: 'SMC by MenolakRugi v4.2', tanggal_rilis: null };
+assert.deepEqual(L.promoRilis([v5p, v4p], new Date('2026-11-21T10:00:00+07:00')), { nama: 'SMC by MenolakRugi v5', diskon: 50, hingga: '1 Desember 2026' }, 'promo rilis');
+assert.equal(L.promoRilis([v5p, v4p], new Date('2026-12-02T10:00:00+07:00')), null, 'promo rilis selesai');
+assert.equal(L.promoRilis([v4p], new Date('2026-11-21T10:00:00+07:00')), null, 'tanpa produk rilis');
+
 console.log('OK — status pre-order');

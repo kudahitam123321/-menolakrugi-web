@@ -136,3 +136,11 @@ export function terbaruDari(produk: ProdukJual[]): string | null {
   const ber = produk.filter((p) => p.tanggal_rilis).sort((a, b) => (b.tanggal_rilis! > a.tanggal_rilis! ? 1 : -1));
   return ber[0]?.id ?? null;
 }
+
+/** Produk terbaru yang sudah rilis dan sedang promo berbatas waktu → isi banner; selain itu null. */
+export function promoRilis(produk: ProdukJual[], now: Date = new Date()): { nama: string; diskon: number; hingga: string } | null {
+  const p = produk.find((x) => x.id === terbaruDari(produk));
+  if (!p || p.status === 'preorder' || !p.diskon_hingga || !labelPromo(p, now)) return null;
+  const diskon = Math.max(...paketDariProduk(p, now).map((x) => x.diskon));
+  return { nama: p.nama, diskon, hingga: fmtTanggalRilis(new Date(p.diskon_hingga + 'T00:00:00+07:00')) };
+}

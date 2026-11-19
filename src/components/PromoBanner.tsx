@@ -1,13 +1,15 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
-import { useProdukIndikator } from '../hooks';
-import { fmtTanggalRilis } from '../lib/indikatorV5';
+import { useProdukIndikator, useProdukDijual } from '../hooks';
+import { fmtTanggalRilis, promoRilis } from '../lib/indikatorV5';
 
 interface KodeBanner { kode: string; diskon: number; teks: string | null }
 
 export default function PromoBanner() {
   const [kode, setKode] = useState<KodeBanner | null>(null);
   const { preorder, tanggalRilis } = useProdukIndikator();
+  const { produk: dijual } = useProdukDijual();
+  const rilis = promoRilis(dijual);
 
   useEffect(() => {
     async function load() {
@@ -42,6 +44,17 @@ export default function PromoBanner() {
         ⏳ SMC Indikator v5 rilis {fmtTanggalRilis(tanggalRilis)} —{' '}
         {kode ? <>pre-order pakai kode {pil(kode)} hemat {kode.diskon}%</> : <u style={{ textUnderlineOffset: 3 }}>pre-order harga early-bird</u>}
         {' '}sekarang, langsung dapat v4.2 →
+      </a>
+    );
+  }
+
+  // Setelah rilis, selama promo produk terbaru berlaku: info rilis + diskon.
+  if (rilis) {
+    return (
+      <a href="/pricing-indikator" style={gaya}>
+        🚀 {rilis.nama.replace(/^SMC by MenolakRugi/i, 'SMC Indikator')} sudah rilis — diskon{' '}
+        <b style={{ background: '#fff', color: 'var(--mr-gold)', padding: '1px 8px', borderRadius: 6, fontFamily: '"Geist Mono",monospace' }}>{rilis.diskon}%</b>
+        {' '}sampai {rilis.hingga}. Lihat harganya →
       </a>
     );
   }
