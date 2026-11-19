@@ -78,4 +78,11 @@ assert.equal(L.paketDariProduk(promo, new Date('2026-12-01T23:00:00+07:00'))[0].
 assert.equal(L.paketDariProduk(promo, new Date('2026-12-02T00:00:01+07:00'))[0].diskon, 0, 'promo selesai 2 Des');
 assert.equal(L.paketDariProduk(pr([300000, 50, null, null, null, null]), new Date('2030-01-01'))[0].diskon, 50, 'tanpa batas = tetap');
 
+// labelPromo & terbaruDari (badge di halaman harga dan katalog dashboard)
+assert.equal(L.labelPromo(promo, new Date('2026-11-20T10:00:00+07:00')), 'PROMO -50% · S/D 1 DESEMBER 2026', 'label promo');
+assert.equal(L.labelPromo(promo, new Date('2026-12-02T10:00:00+07:00')), undefined, 'promo lewat');
+assert.equal(L.labelPromo(pr([300000, 50, null, null, null, null])), undefined, 'diskon tanpa batas bukan promo');
+assert.equal(L.terbaruDari([{ id: 'a', nama: 'a', tanggal_rilis: null }, { id: 'b', nama: 'b', tanggal_rilis: '2026-11-20' }, { id: 'c', nama: 'c', tanggal_rilis: '2025-01-01' }]), 'b', 'terbaru');
+assert.equal(L.terbaruDari([{ id: 'a', nama: 'a', tanggal_rilis: null }]), null, 'tanpa tanggal');
+
 console.log('OK — status pre-order');

@@ -122,3 +122,17 @@ export function paketDariProduk(p: ProdukJual, now: Date = new Date()): PaketPro
   ];
   return semua.filter((x) => x.harga_asli > 0);
 }
+
+/** "PROMO -50% · S/D 1 DESEMBER 2026" selama diskon produk berbatas waktu masih berlaku. */
+export function labelPromo(p: ProdukJual, now: Date = new Date()): string | undefined {
+  const akhir = akhirDiskon(p);
+  const maks = Math.max(0, ...paketDariProduk(p, now).map((x) => x.diskon));
+  if (!akhir || maks <= 0) return undefined;
+  return `PROMO -${maks}% · S/D ${fmtTanggalRilis(new Date(p.diskon_hingga + 'T00:00:00+07:00')).toUpperCase()}`;
+}
+
+/** Produk dengan tanggal_rilis terbaru = produk terbaru (dapat badge TERBARU). */
+export function terbaruDari(produk: ProdukJual[]): string | null {
+  const ber = produk.filter((p) => p.tanggal_rilis).sort((a, b) => (b.tanggal_rilis! > a.tanggal_rilis! ? 1 : -1));
+  return ber[0]?.id ?? null;
+}

@@ -4,7 +4,7 @@
 
 import React from 'react';
 import { useLandingPreview, useBacktestConfig, useProdukIndikator, useProdukDijual } from '../hooks';
-import { fmtTanggalRilis, sisaWaktu, paketDariProduk, akhirDiskon, type PaketProduk, type ProdukJual } from '../lib/indikatorV5';
+import { fmtTanggalRilis, sisaWaktu, paketDariProduk, labelPromo, terbaruDari, type PaketProduk } from '../lib/indikatorV5';
 import type { LandingPreviewConfig } from '../hooks';
 
 const LP = {
@@ -396,24 +396,12 @@ function TabelPerbandingan({ namaLama, namaBaru }: { namaLama: string; namaBaru:
   );
 }
 
-/** "PROMO -50% · S/D 1 DESEMBER 2026" selama diskon produk berbatas waktu masih berlaku. */
-function labelPromo(p: ProdukJual): string | undefined {
-  const akhir = akhirDiskon(p);
-  const maks = Math.max(0, ...paketDariProduk(p).map((x) => x.diskon));
-  if (!akhir || maks <= 0) return undefined;
-  return `PROMO -${maks}% · S/D ${fmtTanggalRilis(new Date(p.diskon_hingga + 'T00:00:00+07:00')).toUpperCase()}`;
-}
 
 /** 'SMC by MenolakRugi v4.2' → 'v4.2'; tanpa nomor versi → nama apa adanya. */
 function versiDari(nama: string): string {
   return nama.match(/v\d+(\.\d+)*/i)?.[0] ?? nama;
 }
 
-/** Produk dengan tanggal_rilis terbaru = produk terbaru (dapat badge TERBARU). */
-function terbaruDari(produk: ProdukJual[]): string | null {
-  const ber = produk.filter((p) => p.tanggal_rilis).sort((a, b) => (b.tanggal_rilis! > a.tanggal_rilis! ? 1 : -1));
-  return ber[0]?.id ?? null;
-}
 
 export default function PricingIndikatorPage() {
   const { preview } = useLandingPreview();

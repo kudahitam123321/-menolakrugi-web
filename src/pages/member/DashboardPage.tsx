@@ -7,7 +7,7 @@ import MemberTradingPlan from './MemberTradingPlan';
 import CompetitionPage from '../CompetitionPage';
 import { trackVideoWatch } from '../../hooks/useWatchHistory';
 import IndikatorV5Info from '../../components/IndikatorV5Info';
-import { akhirDiskon } from '../../lib/indikatorV5';
+import { akhirDiskon, labelPromo, terbaruDari } from '../../lib/indikatorV5';
 import {
   Search, LayoutGrid, PlayCircle, BookOpen, LineChart, NotebookPen, ClipboardList,
   MessageCircle, Landmark, ShoppingBag, Rocket, Trophy, Medal, Award, Target, Star,
@@ -2733,7 +2733,15 @@ export default function DashboardPage() {
                             }
                           </div>
                           <div style={{ padding: '20px 22px', display: 'flex', flexDirection: 'column' as const, flex: 1, gap: 12 }}>
-                            <div style={{ fontWeight: 700, fontSize: 19, color: LP.text }}>{p.nama}</div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' as const }}>
+                              <div style={{ fontWeight: 700, fontSize: 19, color: LP.text }}>{p.nama}</div>
+                              {products.length > 1 && p.id === terbaruDari(products) && (
+                                <span style={{ background: LP.primary, color: '#fff', padding: '3px 9px', fontSize: 10, letterSpacing: 0.8, fontWeight: 700, borderRadius: 20, fontFamily: LP.mono }}>TERBARU</span>
+                              )}
+                              {labelPromo(p) && (
+                                <span style={{ background: '#FEF3C7', color: '#92400e', border: '1px solid #FDE68A', padding: '2px 9px', fontSize: 10, letterSpacing: 0.6, fontWeight: 700, borderRadius: 20, fontFamily: LP.mono }}>{labelPromo(p)}</span>
+                              )}
+                            </div>
                             <div style={{ color: LP.muted, fontSize: 14, lineHeight: 1.55, display: '-webkit-box' as any, WebkitLineClamp: 3, WebkitBoxOrient: 'vertical' as any, overflow: 'hidden' }}>{p.deskripsi}</div>
 
                             {plans.length > 1 && (
