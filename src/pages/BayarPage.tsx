@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { useProdukIndikator } from '../hooks';
-import { fmtTanggalRilis } from '../lib/indikatorV5';
+import { fmtTanggalRilis, paketDariProduk, type ProdukJual } from '../lib/indikatorV5';
 
 const C = {
   bg:      'var(--mr-bg)',
@@ -43,9 +43,11 @@ function generateMemberPassword() {
 }
 
 export default function BayarPage() {
-  const { preorder, tanggalRilis } = useProdukIndikator();
+  const produkGlobal = useProdukIndikator();
   const params  = new URLSearchParams(window.location.search);
   const planKey = params.get('plan') || 'bulanan';
+  const produkParam = params.get('produk');
+  const [produkDipilih, setProdukDipilih] = useState<ProdukJual | null>(null);
 
   const [config,         setConfig]         = useState<any>(null);
   const [paymentMethods, setPaymentMethods] = useState<any[]>([]);
@@ -73,20 +75,31 @@ export default function BayarPage() {
 
   useEffect(() => {
     async function load() {
-      const [{ data: cfg }, { data: pm }, { data: prod }] = await Promise.all([
+      const [{ data: cfg }, { data: pm }, { data: prod }, { data: dipilih }] = await Promise.all([
         supabase.from('landing_preview_config').select('*').eq('id', 1).single(),
         supabase.from('payment_methods').select('*').neq('aktif', false).order('urutan', { ascending: true }),
         supabase.from('products').select('id').eq('aktif', true).order('urutan', { ascending: true }).limit(1),
+        produkParam
+          ? supabase.from('products').select('*').eq('id', produkParam).eq('aktif', true).maybeSingle()
+          : Promise.resolve({ data: null }),
       ]);
       if (cfg) setConfig(cfg);
       if (pm)  setPaymentMethods(pm);
-      if (prod && prod[0]) setProductId(prod[0].id);
+      // ?produk= dari halaman pricing (dua produk); tidak dikenal/nonaktif → perilaku lama.
+      if (dipilih) { setProdukDipilih(dipilih as ProdukJual); setProductId((dipilih as ProdukJual).id); }
+      else if (prod && prod[0]) setProductId(prod[0].id);
       setLoading(false);
     }
     load();
   }, []);
 
-  const plan = getPlanFromConfig(config, planKey);
+  const plan: PlanInfo | null = produkDipilih
+    ? (paketDariProduk(produkDipilih).find((x) => x.key === planKey) ?? null)
+    : getPlanFromConfig(config, planKey);
+  const preorder = produkDipilih ? produkDipilih.status === 'preorder' : produkGlobal.preorder;
+  const tanggalRilis = produkDipilih
+    ? (produkDipilih.tanggal_rilis ? new Date(produkDipilih.tanggal_rilis + 'T00:00:00+07:00') : null)
+    : produkGlobal.tanggalRilis;
   const fmt  = (n: number) => new Intl.NumberFormat('id-ID').format(n);
 
   const diskonAktif = Math.max(kodeDiskonData ? kodeDiskonData.diskon : 0, plan?.diskon || 0);
@@ -234,7 +247,7 @@ export default function BayarPage() {
                     PRE-ORDER · RILIS {fmtTanggalRilis(tanggalRilis).toUpperCase()}
                   </div>
                 )}
-                <div style={{ fontFamily: '"Geist Mono",monospace', color: G.gold, fontSize: 10, letterSpacing: 1, marginBottom: 8 }}>INDIKATOR SMC · {plan.nama.toUpperCase()}</div>
+                <div style={{ fontFamily: '"Geist Mono",monospace', color: G.gold, fontSize: 10, letterSpacing: 1, marginBottom: 8 }}>{(produkDipilih?.nama || 'INDIKATOR SMC').toUpperCase()} · {plan.nama.toUpperCase()}</div>
                 <div style={{ fontWeight: 700, fontSize: 20, marginBottom: 16, letterSpacing: -0.5 }}>Plan {plan.nama}</div>
                 {diskonAktif > 0 && (
                   <div style={{ fontFamily: '"Geist Mono",monospace', fontSize: 12, color: C.dimmer, marginBottom: 6 }}>
