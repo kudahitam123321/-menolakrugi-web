@@ -1,5 +1,6 @@
 // components/IndikatorV5Info.tsx — Kotak info "v5 rilis …" di dashboard selama tahap pre-order.
 // Isi menyesuaikan status langganan indikator member (lihat statusPreorder di lib/indikatorV5).
+import { useState } from 'react';
 import { useProdukIndikator, useProdukRilis } from '../hooks';
 import { berhakKlaimV5, fmtTanggalRilis, sisaWaktu, statusPreorder, type OrderIndikator } from '../lib/indikatorV5';
 
@@ -69,12 +70,44 @@ export default function IndikatorV5Info({ orders, onBeli, member }: {
   );
 }
 
-/** Setelah rilis: pemilik indikator lama (sebelum tanggal rilis) klaim v5 gratis lewat WhatsApp admin. */
+/** Setelah rilis: tombol klaim selalu tampil. Pemilik indikator lama (sebelum tanggal rilis) diteruskan ke
+ *  WhatsApp admin; yang tidak memenuhi syarat melihat pesan penolakan beserta daftar syaratnya. */
 function KlaimV5({ orders, produk, batas, member }: {
   orders: OrderIndikator[]; produk: { id: string; nama: string } | null; batas: Date | null; member?: { nama?: string; email?: string } | null;
 }) {
-  const dasar = berhakKlaimV5(orders, produk?.id ?? null, batas);
-  if (!dasar || !produk) return null;
+  const [ditolak, setDitolak] = useState(false);
+  if (!produk || !batas) return null;
+  const dasar = berhakKlaimV5(orders, produk.id, batas);
+  const tgl = fmtTanggalRilis(batas);
+  if (!dasar) {
+    return (
+      <div data-v5-status={ditolak ? 'klaim-ditolak' : 'klaim-cek'} style={{ background: LP.surface, border: '1px solid rgba(22,163,74,.35)', borderRadius: 14, padding: 16, boxShadow: '0 1px 3px rgba(0,0,0,0.06)', fontFamily: LP.sans }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' as const }}>
+          <div style={{ width: 42, height: 42, borderRadius: 12, background: LP.primaryTint, display: 'grid', placeItems: 'center', fontSize: 20, flexShrink: 0 }}>🎁</div>
+          <div style={{ flex: '1 1 200px', minWidth: 0 }}>
+            <div style={{ fontWeight: 700, fontSize: 14, color: LP.text }}>Klaim {produk.nama} gratis</div>
+            <div style={{ fontSize: 12, color: LP.muted, marginTop: 2, lineHeight: 1.5 }}>Khusus pemilik indikator versi sebelumnya yang membeli sebelum v5 rilis.</div>
+          </div>
+          <button onClick={() => setDitolak(true)} style={{ marginLeft: 'auto', fontFamily: LP.sans, fontSize: 13, fontWeight: 700, color: '#fff', background: LP.primary, border: 'none', padding: '9px 14px', borderRadius: 8, cursor: 'pointer', whiteSpace: 'nowrap' as const }}>
+            Klaim v5 Gratis →
+          </button>
+        </div>
+        {ditolak && (
+          <div style={{ marginTop: 14, background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 10, padding: '12px 14px' }}>
+            <div style={{ fontWeight: 700, fontSize: 13, color: '#b91c1c' }}>Anda tidak memenuhi syarat klaim gratis.</div>
+            <div style={{ fontSize: 12, color: '#7f1d1d', marginTop: 6 }}>Syarat klaim {produk.nama} gratis:</div>
+            <ol style={{ fontSize: 12, color: '#7f1d1d', margin: '4px 0 0', paddingLeft: 18, lineHeight: 1.6, listStyle: 'decimal' }}>
+              <li>Memiliki indikator SMC versi sebelumnya (v4.2) dengan status aktif.</li>
+              <li>Indikator tersebut dibeli sebelum v5 rilis ({tgl}).</li>
+              <li>Paket Lifetime, atau paket Bulanan/Tahunan yang masih aktif pada {tgl}.</li>
+              <li>Belum memiliki {produk.nama}.</li>
+            </ol>
+            <div style={{ fontSize: 12, color: '#7f1d1d', marginTop: 8 }}>Merasa memenuhi syarat? Hubungi admin lewat menu Bantuan.</div>
+          </div>
+        )}
+      </div>
+    );
+  }
   const pesan = [
     `Halo admin, saya mau klaim ${produk.nama} gratis.`,
     `Nama: ${member?.nama || '-'}`,

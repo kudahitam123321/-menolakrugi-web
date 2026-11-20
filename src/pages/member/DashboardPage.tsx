@@ -2683,11 +2683,9 @@ export default function DashboardPage() {
                 </div>
               </div>
 
-              {myOrders.some((o: any) => o.plan_type) && (
-                <div style={{ marginBottom: 20 }}>
-                  <IndikatorV5Info orders={myOrders} onBeli={() => setProdView('katalog')} member={member as any} />
-                </div>
-              )}
+              <div style={{ marginBottom: 20 }}>
+                <IndikatorV5Info orders={myOrders} onBeli={() => setProdView('katalog')} member={member as any} />
+              </div>
 
               {/* ── Katalog ── */}
               {prodView === 'katalog' && (
@@ -2720,7 +2718,7 @@ export default function DashboardPage() {
                             </div>
                             {!p.gambar_url && extractYtId(p.video_url)
                               ? <iframe
-                                  src={`https://www.youtube.com/embed/${extractYtId(p.video_url)}?autoplay=1&mute=1&rel=0&modestbranding=1&controls=1`}
+                                  src={`https://www.youtube.com/embed/${extractYtId(p.video_url)}?autoplay=1&mute=1&loop=1&playlist=${extractYtId(p.video_url)}&rel=0&modestbranding=1&controls=1`}
                                   style={{ width: '100%', height: '100%', border: 'none', display: 'block' }}
                                   allow="autoplay; encrypted-media; picture-in-picture"
                                   allowFullScreen
