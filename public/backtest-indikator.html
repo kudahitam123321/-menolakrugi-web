@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>PTMR Backtest — Menolak Rugi</title>
+<title>Data Backtest Indikator SMC v5 — Menolak Rugi</title>
 <link rel="icon" href="/logo.png">
 <style>
 :root {
@@ -164,7 +164,7 @@ html, body { margin: 0; background: #f3efe8; color: #2f2b26; }
 
   <main class="bt-main">
     <header class="bt-head">
-      <h1>PTMR Backtest — <span data-draw="symbol" data-source="settings">—</span></h1>
+      <h1>Data Backtest Indikator SMC v5 — <span data-draw="symbol" data-source="settings">—</span></h1>
     </header>
 
     <div class="bt-filters" id="filter">
@@ -360,7 +360,6 @@ html, body { margin: 0; background: #f3efe8; color: #2f2b26; }
       }
       window.__BT_DATA__ = { trades: row.data.trades, settings: st };
       window.__BT_RISK_ASLI__ = Number(row.risk_asli) || 0.5;
-      if (row.judul) document.title = row.judul + ' — Menolak Rugi';
       boot();
     })
     .catch(kosong);

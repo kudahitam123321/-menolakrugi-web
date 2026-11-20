@@ -15,8 +15,10 @@ const rep = (from, to, label) => {
 };
 
 // <head>: favicon + CSS tambahan
-rep('<title>PTMR Backtest — Menolak Rugi</title>', `<title>PTMR Backtest — Menolak Rugi</title>
+rep('<title>PTMR Backtest — Menolak Rugi</title>', `<title>Data Backtest Indikator SMC v5 — Menolak Rugi</title>
 <link rel="icon" href="/logo.png">`, 'title');
+// Tegaskan bahwa ini data backtest v5
+rep('<h1>PTMR Backtest — ', '<h1>Data Backtest Indikator SMC v5 — ', 'h1');
 rep('</style>', `  .bt-main > *, .bt-page > * { min-width: 0; } /* kartu tabel tidak ikut melebar di HP */
   .bt-page { grid-template-columns: minmax(0, 1fr); }
   .bt-side a.bt-back { display: block; text-align: center; text-decoration: none; opacity: .9; }
@@ -95,7 +97,6 @@ const loader = `
       }
       window.__BT_DATA__ = { trades: row.data.trades, settings: st };
       window.__BT_RISK_ASLI__ = Number(row.risk_asli) || 0.5;
-      if (row.judul) document.title = row.judul + ' — Menolak Rugi';
       boot();
     })
     .catch(kosong);

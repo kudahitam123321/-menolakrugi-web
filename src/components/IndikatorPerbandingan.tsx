@@ -26,7 +26,7 @@ export function versiDari(nama: string): string {
   return nama.match(/v\d+(\.\d+)*/i)?.[0] ?? nama;
 }
 
-/** Kartu "Riwayat Data Jelas" + tombol ke /backtest-indikator; tampil selama backtest_config.tampil = true. */
+/** Kartu "Data Backtest Indikator v5" + tombol ke /backtest-indikator; tampil selama backtest_config.tampil = true. */
 export function RiwayatDataCard({ embedded = false }: { embedded?: boolean }) {
   const { config } = useBacktestConfig();
   const isMobile = useIsMobile();
@@ -43,16 +43,19 @@ export function RiwayatDataCard({ embedded = false }: { embedded?: boolean }) {
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 3v18h18" /><rect x="7" y="12" width="3" height="6" /><rect x="12" y="8" width="3" height="10" /><rect x="17" y="5" width="3" height="13" /></svg>
         </div>
         <div style={{ flex: 1 }}>
-          <div style={{ fontWeight: 700, fontSize: 16 }}>Riwayat Data Jelas</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' as const }}>
+            <span style={{ fontWeight: 700, fontSize: 16 }}>Data Backtest Indikator v5</span>
+            <span style={{ background: '#4ade80', color: '#052e16', fontSize: 10, fontWeight: 700, letterSpacing: 0.6, padding: '2px 8px', borderRadius: 20, fontFamily: LP.mono }}>KHUSUS v5</span>
+          </div>
           <div style={{ fontSize: 13, color: '#94A3B8', marginTop: 4, lineHeight: 1.5 }}>
-            Setiap parameter dikunci dari riset backtest XAUUSD M5 — lihat sendiri daftar trade, win rate, dan hasilnya.
+            Hasil riset backtest <b style={{ color: '#E2E8F0' }}>SMC by MenolakRugi v5</b> di XAUUSD M5 — semua parameter v5 dikunci dari data ini. Lihat sendiri daftar trade, win rate, dan hasilnya.
           </div>
         </div>
         <a href="/backtest-indikator" target={embedded ? '_blank' : undefined} rel="noopener" style={{
           background: '#4ade80', color: '#052e16', fontWeight: 700, fontSize: 14, padding: '12px 18px', borderRadius: 10,
           textDecoration: 'none', whiteSpace: 'nowrap' as const, alignSelf: isMobile ? 'stretch' : 'auto', textAlign: 'center' as const,
         }}>
-          Lihat Data Backtest →
+          Lihat Data Backtest v5 →
         </a>
       </div>
     </section>
