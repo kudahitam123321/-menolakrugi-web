@@ -350,12 +350,14 @@ export default function PricingIndikatorPage() {
                 {(p.id === terbaru || (!terbaru && p === blokProduk[0])) && <>
                   <FiturV5 />
                   <RiwayatDataCard />
-                  {blokProduk.length > 1 && (
-                    <TabelPerbandingan namaLama={versiDari(blokProduk.find((x) => x.id !== p.id)!.nama)} namaBaru={versiDari(p.nama)} />
-                  )}
                 </>}
               </React.Fragment>
             ))}
+            {blokProduk.length > 1 && (() => {
+              const baru = blokProduk.find((x) => x.id === terbaru) ?? blokProduk[0];
+              const lama = blokProduk.find((x) => x.id !== baru.id)!;
+              return <TabelPerbandingan namaLama={versiDari(lama.nama)} namaBaru={versiDari(baru.nama)} />;
+            })()}
             <LangkahPembelian preorder={false} />
           </>
           ) : (
