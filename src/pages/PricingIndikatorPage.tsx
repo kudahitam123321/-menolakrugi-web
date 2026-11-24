@@ -3,7 +3,7 @@
 // Dipindah dari komponen ProductPreview ("Preview Platform") di LandingPage.tsx
 
 import React from 'react';
-import { useLandingPreview, useProdukIndikator, useProdukDijual } from '../hooks';
+import { useLandingPreview, useProdukIndikator, useProdukDijual, usePromoEvent } from '../hooks';
 import { RiwayatDataCard, TabelPerbandingan, versiDari } from '../components/IndikatorPerbandingan';
 import { fmtTanggalRilis, sisaWaktu, paketDariProduk, labelPromo, terbaruDari, type PaketProduk } from '../lib/indikatorV5';
 import type { LandingPreviewConfig } from '../hooks';
@@ -318,8 +318,10 @@ export default function PricingIndikatorPage() {
   const { preview } = useLandingPreview();
   const { preorder, tanggalRilis } = useProdukIndikator();
   const { produk: dijual } = useProdukDijual();
+  const { event } = usePromoEvent();
+  const now = new Date();
   const terbaru = terbaruDari(dijual);
-  const blokProduk = dijual.filter((p) => paketDariProduk(p).length > 0);
+  const blokProduk = dijual.filter((p) => paketDariProduk(p, now, event).length > 0);
 
   return (
     <div className="mr-light-v2" style={{ fontFamily: LP.sans, color: LP.text, background: LP.bg, minHeight: '100vh', WebkitFontSmoothing: 'antialiased' }}>
@@ -345,8 +347,8 @@ export default function PricingIndikatorPage() {
             <HeroV5 preorder={false} tanggalRilis={null} />
             {blokProduk.map((p) => (
               <React.Fragment key={p.id}>
-                <ProductPreview paket={paketDariProduk(p)} preorder={false} produkId={p.id} judul={p.nama}
-                  badge={p.id === terbaru ? 'TERBARU' : undefined} promo={labelPromo(p)} intro={false} />
+                <ProductPreview paket={paketDariProduk(p, now, event)} preorder={false} produkId={p.id} judul={p.nama}
+                  badge={p.id === terbaru ? 'TERBARU' : undefined} promo={labelPromo(p, now, event)} intro={false} />
                 {(p.id === terbaru || (!terbaru && p === blokProduk[0])) && <>
                   <FiturV5 />
                   <RiwayatDataCard />

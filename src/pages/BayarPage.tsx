@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
-import { useProdukIndikator } from '../hooks';
+import { useProdukIndikator, usePromoEvent } from '../hooks';
 import { fmtTanggalRilis, paketDariProduk, type ProdukJual } from '../lib/indikatorV5';
 
 const C = {
@@ -44,6 +44,7 @@ function generateMemberPassword() {
 
 export default function BayarPage() {
   const produkGlobal = useProdukIndikator();
+  const { event: promoEvent } = usePromoEvent();
   const params  = new URLSearchParams(window.location.search);
   const planKey = params.get('plan') || 'bulanan';
   const produkParam = params.get('produk');
@@ -94,7 +95,7 @@ export default function BayarPage() {
   }, []);
 
   const plan: PlanInfo | null = produkDipilih
-    ? (paketDariProduk(produkDipilih).find((x) => x.key === planKey) ?? null)
+    ? (paketDariProduk(produkDipilih, new Date(), promoEvent).find((x) => x.key === planKey) ?? null)
     : getPlanFromConfig(config, planKey);
   const preorder = produkDipilih ? produkDipilih.status === 'preorder' : produkGlobal.preorder;
   const tanggalRilis = produkDipilih

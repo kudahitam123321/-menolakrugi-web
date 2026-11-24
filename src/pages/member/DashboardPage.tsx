@@ -6,9 +6,10 @@ import LeaderboardPage from './LeaderboardPage';
 import MemberTradingPlan from './MemberTradingPlan';
 import CompetitionPage from '../CompetitionPage';
 import { trackVideoWatch } from '../../hooks/useWatchHistory';
+import { usePromoEvent } from '../../hooks';
 import IndikatorV5Info from '../../components/IndikatorV5Info';
 import { RiwayatDataCard, TabelPerbandingan, versiDari } from '../../components/IndikatorPerbandingan';
-import { akhirDiskon, labelPromo, terbaruDari } from '../../lib/indikatorV5';
+import { labelPromo, paketDariProduk, terbaruDari } from '../../lib/indikatorV5';
 import {
   Search, LayoutGrid, PlayCircle, BookOpen, LineChart, NotebookPen, ClipboardList,
   MessageCircle, Landmark, ShoppingBag, Rocket, Trophy, Medal, Award, Target, Star,
@@ -420,6 +421,7 @@ function CertificateCanvas({ nama, tier, tanggal }: { nama: string; tier: string
 }
 
 export default function DashboardPage() {
+  const { event: promoEvent } = usePromoEvent();
   const [member, setMember]           = useState<Member | null>(null);
   const [active, setActive]           = useState(() => window.location.pathname === '/trading-plan' ? 'trading-plan' : 'dashboard');
   const [videos, setVideos]           = useState<any[]>([]);
@@ -565,7 +567,7 @@ export default function DashboardPage() {
     if (!member) return;
     setOrderLoading(true);
     const hargaBase = produk[`harga_${planType}`];
-    const promoProduk = (!akhirDiskon(produk) || Date.now() <= akhirDiskon(produk)!.getTime()) ? (produk[`diskon_${planType}`] || 0) : 0;
+    const promoProduk = paketDariProduk(produk, new Date(), promoEvent).find(r => r.key === planType)?.diskon || 0;
     const diskonPct = appliedCode ? appliedCode.diskon : promoProduk;
     const harga     = diskonPct ? Math.round(hargaBase * (1 - diskonPct / 100)) : hargaBase;
     const labelPlan = planType.charAt(0).toUpperCase() + planType.slice(1);
@@ -2700,12 +2702,8 @@ export default function DashboardPage() {
                       const tierMember = normalizeTier(member?.tier || '');
                       const bisaOrder  = isIndikatorMember || (p.tier_access || []).includes(tierMember);
                       const tglRilis   = p.tanggal_rilis ? new Date(p.tanggal_rilis).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) : null;
-                      const promoAktif = !akhirDiskon(p) || Date.now() <= akhirDiskon(p)!.getTime();
-                      const plans = ([
-                        { plan: 'bulanan'  as const, label: 'Bulanan',  h: p.harga_bulanan,  d: promoAktif ? p.diskon_bulanan  : null },
-                        { plan: 'tahunan'  as const, label: 'Tahunan',  h: p.harga_tahunan,  d: promoAktif ? p.diskon_tahunan  : null },
-                        { plan: 'lifetime' as const, label: 'Lifetime', h: p.harga_lifetime, d: promoAktif ? p.diskon_lifetime : null },
-                      ]).filter(r => r.h);
+                      const plans = paketDariProduk(p, new Date(), promoEvent)
+                        .map(r => ({ plan: r.key, label: r.nama, h: r.harga_asli, d: r.diskon || null }));
                       const activePlanKey = selectedPlanByProduct[p.id] ?? plans[0]?.plan;
                       const activePlan    = plans.find(r => r.plan === activePlanKey) ?? plans[0];
                       const finalH        = activePlan ? (activePlan.d ? Math.round(activePlan.h * (1 - activePlan.d / 100)) : activePlan.h) : 0;
@@ -2737,8 +2735,8 @@ export default function DashboardPage() {
                               {products.length > 1 && p.id === terbaruDari(products) && (
                                 <span style={{ background: LP.primary, color: '#fff', padding: '3px 9px', fontSize: 10, letterSpacing: 0.8, fontWeight: 700, borderRadius: 20, fontFamily: LP.mono }}>TERBARU</span>
                               )}
-                              {labelPromo(p) && (
-                                <span style={{ background: '#FEF3C7', color: '#92400e', border: '1px solid #FDE68A', padding: '2px 9px', fontSize: 10, letterSpacing: 0.6, fontWeight: 700, borderRadius: 20, fontFamily: LP.mono }}>{labelPromo(p)}</span>
+                              {labelPromo(p, new Date(), promoEvent) && (
+                                <span style={{ background: '#FEF3C7', color: '#92400e', border: '1px solid #FDE68A', padding: '2px 9px', fontSize: 10, letterSpacing: 0.6, fontWeight: 700, borderRadius: 20, fontFamily: LP.mono }}>{labelPromo(p, new Date(), promoEvent)}</span>
                               )}
                             </div>
                             <div style={{ color: LP.muted, fontSize: 14, lineHeight: 1.55, display: '-webkit-box' as any, WebkitLineClamp: 3, WebkitBoxOrient: 'vertical' as any, overflow: 'hidden' }}>{p.deskripsi}</div>
