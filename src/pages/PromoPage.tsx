@@ -17,9 +17,15 @@ const FAQ = [
   { q: 'Bagaimana cara membeli selama promo?', a: 'Klik "Beli sekarang" pada paket yang dipilih, isi form, lalu bayar lewat transfer bank atau QRIS. Kirim bukti bayar ke WhatsApp admin, akun dan indikator langsung kami aktifkan.' },
   { q: 'Kapan akun saya aktif?', a: 'Setelah bukti pembayaran kami terima dan cocok. Biasanya di hari yang sama.' },
   { q: 'Apa beda v4.2 dan v5?', a: 'v4.2 bebas pair & timeframe, tapi analisa top-down masih manual. v5 khusus XAUUSD M5: tinggal ikuti label entry yang muncul, lengkap dengan SL, TP, lot, dan alarm ke HP. Lihat tabel perbandingan di atas.' },
+  { q: 'Perlu akun TradingView berbayar?', a: 'Untuk v4.2 wajib TradingView minimal paket Essential (berbayar). Untuk v5, akun TradingView gratis pun sudah bisa dipakai.' },
   { q: 'Saya sudah punya indikator lama, apakah bisa ikut?', a: 'Bisa. Harga promo berlaku untuk semua pembeli. Pemilik indikator sebelum v5 rilis juga bisa klaim v5 gratis dari dashboard (menu Produk) bila memenuhi syarat.' },
   { q: 'Setelah promo selesai harga jadi berapa?', a: 'Harga kembali ke harga normal di halaman Pricing Indikator. Harga promo hanya berlaku untuk pembayaran selama periode event.' },
 ];
+
+/** Syarat akun TradingView: v4.x wajib minimal Essential, v5 cukup akun gratis. */
+function catatanTv(nama: string): string {
+  return /v5/i.test(nama) ? 'Bisa pakai akun TradingView gratis' : 'Wajib TradingView minimal paket Essential'
+}
 
 function useDetik() {
   const [now, setNow] = useState(() => new Date());
@@ -104,6 +110,7 @@ export default function PromoPage() {
                 <div style={{ fontFamily: LP.mono, fontSize: 26, fontWeight: 700 }}>{rp(harga)}</div>
                 <div style={{ fontSize: 13, color: '#16a34a', fontWeight: 600, marginTop: 4 }}>Hemat {rp(k.harga_asli - harga)}</div>
                 {event.bonus && <div style={{ fontSize: 12, color: LP.muted, marginTop: 8 }}>🎁 {event.bonus}</div>}
+                <div style={{ fontSize: 12, color: LP.muted, marginTop: 6 }}>📈 {catatanTv(p.nama)}</div>
                 <div style={{ flex: 1 }} />
                 {belum
                   ? <div style={{ marginTop: 18, textAlign: 'center' as const, padding: '12px', borderRadius: 10, border: `1px solid ${LP.border}`, color: LP.muted, fontWeight: 700, fontSize: 13 }}>Segera hadir</div>

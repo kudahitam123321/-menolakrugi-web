@@ -65,6 +65,7 @@ export function RiwayatDataCard({ embedded = false }: { embedded?: boolean }) {
 // Perbandingan indikator lama vs v5 — tampil di antara blok v5 dan blok v4.2.
 const PERBANDINGAN: { fitur: string; lama: string | boolean; baru: string | boolean }[] = [
   { fitur: 'Pair & timeframe', lama: 'Bebas pair & timeframe', baru: 'Khusus XAUUSD M5' },
+  { fitur: 'Akun TradingView', lama: 'Wajib minimal paket Essential (berbayar)', baru: 'Akun gratis pun bisa' },
   { fitur: 'Cara pakai', lama: 'Manual — top-down analysis sendiri, lalu tentukan entry', baru: 'Sederhana — tinggal ikuti label entry yang muncul' },
   { fitur: 'Market structure (VH/VL, BOS/CHoCH) + Fibonacci', lama: true, baru: true },
   { fitur: 'Internal structure (IS01 / IS02)', lama: true, baru: false },
