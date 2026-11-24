@@ -132,6 +132,16 @@ export function eventBerjalan(ev: PromoEvent | null | undefined, now: Date = new
   return t >= new Date(ev.mulai).getTime() && t <= new Date(ev.selesai).getTime();
 }
 
+/** Event aktif yang belum mulai (untuk banner/menu "mulai tgl X"). */
+export function eventTerjadwal(ev: PromoEvent | null | undefined, now: Date = new Date()): boolean {
+  return !!(ev && ev.aktif && ev.mulai && ev.selesai && now.getTime() < new Date(ev.mulai).getTime());
+}
+
+/** Event perlu ditampilkan (banner/menu): terjadwal atau sedang berjalan. */
+export function eventTampil(ev: PromoEvent | null | undefined, now: Date = new Date()): boolean {
+  return eventTerjadwal(ev, now) || eventBerjalan(ev, now);
+}
+
 /** Diskon terbesar di seluruh event (untuk "diskon hingga X%"). Dengan `produk`, hanya paket produk aktif yang
  *  punya harga yang dihitung, supaya angka di banner/hero sama dengan kartu yang benar-benar dijual. */
 export function diskonMaksEvent(ev: PromoEvent | null | undefined, produk?: ProdukJual[]): number {

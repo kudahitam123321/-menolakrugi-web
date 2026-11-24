@@ -125,4 +125,13 @@ assert.equal(L.diskonEfektif(60, 10), 60, 'kode lebih kecil dari event');
 assert.equal(L.diskonEfektif(20, 30), 30, 'kode lebih besar');
 assert.equal(L.diskonEfektif(0, null), 0, 'tanpa diskon');
 
+// Event terjadwal / tampil (banner & menu sebelum event mulai)
+assert.equal(L.eventTerjadwal(ev, WIB('2026-11-24T10:00:00')), true, 'terjadwal sebelum mulai');
+assert.equal(L.eventTerjadwal(ev, WIB('2026-11-28T10:00:00')), false, 'bukan terjadwal saat berjalan');
+assert.equal(L.eventTerjadwal({ ...ev, aktif: false }, WIB('2026-11-24T10:00:00')), false, 'nonaktif tidak terjadwal');
+assert.equal(L.eventTampil(ev, WIB('2026-11-24T10:00:00')), true, 'tampil sebelum mulai');
+assert.equal(L.eventTampil(ev, WIB('2026-11-28T10:00:00')), true, 'tampil saat berjalan');
+assert.equal(L.eventTampil(ev, WIB('2026-12-01T00:00:00')), false, 'tidak tampil setelah selesai');
+assert.equal(L.eventTampil(null), false, 'tanpa event');
+
 console.log('OK — status pre-order');

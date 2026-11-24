@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { useProdukIndikator, useProdukDijual, usePromoEvent } from '../hooks';
-import { diskonMaksEvent, eventBerjalan, fmtTanggalRilis, promoRilis } from '../lib/indikatorV5';
+import { diskonMaksEvent, eventBerjalan, eventTerjadwal, fmtTanggalRilis, promoRilis } from '../lib/indikatorV5';
 
 interface KodeBanner { kode: string; diskon: number; teks: string | null }
 
@@ -45,6 +45,17 @@ export default function PromoBanner() {
         🖤 {event!.nama} — diskon hingga{' '}
         <b style={{ background: '#4ade80', color: '#052e16', padding: '1px 8px', borderRadius: 6, fontFamily: '"Geist Mono",monospace' }}>{diskonMaksEvent(event, dijual)}%</b>
         {' '}· berakhir {fmtTanggalRilis(new Date(event!.selesai))}. Lihat promo →
+      </a>
+    );
+  }
+
+  // Event promo terjadwal (belum mulai): umumkan lebih dulu supaya pengunjung bisa siap-siap.
+  if (eventTerjadwal(event)) {
+    return (
+      <a href="/promo" data-banner="event-terjadwal" style={{ ...gaya, background: '#020617' }}>
+        🖤 {event!.nama} mulai {fmtTanggalRilis(new Date(event!.mulai))} — diskon hingga{' '}
+        <b style={{ background: '#4ade80', color: '#052e16', padding: '1px 8px', borderRadius: 6, fontFamily: '"Geist Mono",monospace' }}>{diskonMaksEvent(event, dijual)}%</b>
+        . Lihat harganya →
       </a>
     );
   }

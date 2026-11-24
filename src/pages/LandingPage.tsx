@@ -6,7 +6,8 @@ import React, { useState } from 'react';
 import { Menu, X, Star, ChevronDown, MessageCircle, Send, Music2, Youtube, Phone } from 'lucide-react';
 
 import { MRLogo, CandleChart } from '../components/mr';
-import { useApprovedTestimonials, useLandingPreview, useProdukIndikator } from '../hooks';
+import { useApprovedTestimonials, useLandingPreview, useProdukIndikator, usePromoEvent } from '../hooks';
+import { eventBerjalan, eventTampil } from '../lib/indikatorV5';
 import type { Testimonial } from '../types/mr.types';
 import { supabase } from '../lib/supabase';
 
@@ -63,7 +64,9 @@ function NavBar() {
   }, []);
 
   const { preorder } = useProdukIndikator();
+  const { event } = usePromoEvent();
   const NAV_ITEMS: { l: string; key: string; href: string; badge?: string }[] = [
+    ...(eventTampil(event) ? [{ l: event!.nama, key: 'PROMO', href: '/promo', badge: eventBerjalan(event) ? 'LIVE' : 'SEGERA' }] : []),
     { l: 'Kelas',       key: 'KELAS',       href: '/pricing-kelas' },
     { l: 'Kurikulum',   key: 'KURIKULUM',   href: '/pricing-kelas#kurikulum' },
     { l: 'Komunitas',   key: 'KOMUNITAS',   href: '/komunitas' },
