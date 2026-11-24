@@ -3,6 +3,7 @@ import { Plus, Trash2, Users, Video, ArrowLeft, Eye, EyeOff, Upload, RefreshCw, 
 import * as XLSX from 'xlsx';
 import { supabase } from '../lib/supabase';
 import BacktestUploadSection from '../components/admin/BacktestUploadSection';
+import EventPromoSection from '../components/admin/EventPromoSection';
 
 const ALL_TIERS = ['SMC Trial','SMC Bronze','SMC Silver','SMC Gold Mentorship','SMC Platinum 1-on-1','Indikator Bulanan','Indikator Tahunan','Indikator Lifetime'];
 const RANK_IMGS: Record<string, string> = {
@@ -3517,6 +3518,7 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
               </div>
             )}
             {prodSubTab === 'preview' && <BacktestUploadSection notify={notify} />}
+            {prodSubTab === 'preview' && <EventPromoSection notify={notify} />}
           </div>
         )}
 
