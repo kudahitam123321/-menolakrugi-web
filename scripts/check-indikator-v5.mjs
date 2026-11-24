@@ -116,4 +116,13 @@ assert.equal(L.labelPromo(v4e, WIB('2026-11-28T10:00:00'), ev), 'BLACK FRIDAY -2
 assert.equal(L.diskonMaksEvent({ ...ev, diskon: { a: { bulanan: 20 }, b: { lifetime: 60 } } }), 60, 'diskon maks event');
 assert.equal(L.diskonMaksEvent(null), 0, 'diskon maks tanpa event');
 
+// Perbaikan review
+assert.equal(L.paketDariProduk(v5e, WIB('2026-11-28T10:00:00'), { ...ev, diskon: { v5: { lifetime: 40 } } })[0].diskon, 50, 'event lebih kecil tidak menaikkan harga');
+assert.equal(L.labelPromo(v5e, WIB('2026-11-28T10:00:00'), { ...ev, diskon: { v5: { bulanan: 20 } } }), 'PROMO -50% · S/D 1 DESEMBER 2026', 'label event hanya dari paket berdiskon event');
+assert.equal(L.diskonMaksEvent(ev, [v4e]), 20, 'diskon maks hanya produk aktif');
+assert.equal(L.diskonMaksEvent({ ...ev, diskon: { v4: { tahunan: 30 } } }, [{ ...v4e, harga_tahunan: null }]), 0, 'paket tanpa harga tidak dihitung');
+assert.equal(L.diskonEfektif(60, 10), 60, 'kode lebih kecil dari event');
+assert.equal(L.diskonEfektif(20, 30), 30, 'kode lebih besar');
+assert.equal(L.diskonEfektif(0, null), 0, 'tanpa diskon');
+
 console.log('OK — status pre-order');

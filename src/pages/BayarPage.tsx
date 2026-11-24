@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { useProdukIndikator, usePromoEvent } from '../hooks';
-import { fmtTanggalRilis, paketDariProduk, type ProdukJual } from '../lib/indikatorV5';
+import { diskonEfektif, fmtTanggalRilis, paketDariProduk, type ProdukJual } from '../lib/indikatorV5';
 
 const C = {
   bg:      'var(--mr-bg)',
@@ -44,7 +44,7 @@ function generateMemberPassword() {
 
 export default function BayarPage() {
   const produkGlobal = useProdukIndikator();
-  const { event: promoEvent } = usePromoEvent();
+  const { event: promoEvent, loading: loadingEvent } = usePromoEvent();
   const params  = new URLSearchParams(window.location.search);
   const planKey = params.get('plan') || 'bulanan';
   const produkParam = params.get('produk');
@@ -103,7 +103,7 @@ export default function BayarPage() {
     : produkGlobal.tanggalRilis;
   const fmt  = (n: number) => new Intl.NumberFormat('id-ID').format(n);
 
-  const diskonAktif = Math.max(kodeDiskonData ? kodeDiskonData.diskon : 0, plan?.diskon || 0);
+  const diskonAktif = diskonEfektif(plan?.diskon, kodeDiskonData?.diskon);
   const hargaDiskon = plan
     ? (diskonAktif > 0 ? Math.round(plan.harga_asli * (1 - diskonAktif / 100)) : plan.harga_asli)
     : 0;
@@ -146,7 +146,7 @@ export default function BayarPage() {
       }
       appliedKode = freshKode;
     }
-    const effectiveDiskon = Math.max(appliedKode ? appliedKode.diskon : 0, plan.diskon || 0);
+    const effectiveDiskon = diskonEfektif(plan.diskon, appliedKode?.diskon);
 
     const pm = paymentMethods.find(p => p.id === metodePm);
     const metodeInfo = pm?.jenis === 'qris'
@@ -212,7 +212,7 @@ export default function BayarPage() {
     window.location.href = `/bayar/akun?order=${newOrder.id}`;
   }
 
-  if (loading) return (
+  if (loading || loadingEvent) return (
     <div style={{ minHeight: '100vh', background: C.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', color: C.dim, fontFamily: '"Geist Mono",monospace', fontSize: 13 }}>
       Memuat...
     </div>

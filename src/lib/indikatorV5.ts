@@ -132,10 +132,20 @@ export function eventBerjalan(ev: PromoEvent | null | undefined, now: Date = new
   return t >= new Date(ev.mulai).getTime() && t <= new Date(ev.selesai).getTime();
 }
 
-/** Diskon terbesar di seluruh event (untuk "diskon hingga X%"). */
-export function diskonMaksEvent(ev: PromoEvent | null | undefined): number {
+/** Diskon terbesar di seluruh event (untuk "diskon hingga X%"). Dengan `produk`, hanya paket produk aktif yang
+ *  punya harga yang dihitung, supaya angka di banner/hero sama dengan kartu yang benar-benar dijual. */
+export function diskonMaksEvent(ev: PromoEvent | null | undefined, produk?: ProdukJual[]): number {
   if (!ev) return 0;
+  if (produk) {
+    return Math.max(0, ...produk.flatMap((p) => paketDariProduk(p, new Date(0))
+      .map((k) => Number(ev.diskon?.[p.id]?.[k.key]) || 0)));
+  }
   return Math.max(0, ...Object.values(ev.diskon || {}).flatMap((d) => Object.values(d || {}).map((x) => Number(x) || 0)));
+}
+
+/** Diskon yang ditagih: yang terbesar antara diskon paket (produk/event) dan kode diskon. Dipakai /bayar dan dashboard. */
+export function diskonEfektif(diskonPaket: number | null | undefined, diskonKode: number | null | undefined): number {
+  return Math.max(Number(diskonPaket) || 0, Number(diskonKode) || 0);
 }
 
 /** Paket yang dijual dari satu baris products; paket tanpa harga (null/0) dibuang. Diskon hilang setelah diskon_hingga.
@@ -145,8 +155,9 @@ export function paketDariProduk(p: ProdukJual, now: Date = new Date(), ev?: Prom
   const aktif = !akhir || now.getTime() <= akhir.getTime();
   const dEvent = eventBerjalan(ev, now) ? ev!.diskon?.[p.id] : undefined;
   const d = (key: KeyPaket, x?: number | null) => {
-    const e = Number(dEvent?.[key]) || 0;
-    return e > 0 ? e : aktif ? x || 0 : 0;
+    const biasa = aktif ? x || 0 : 0;
+    // Event tidak pernah menaikkan harga: bila diskon event lebih kecil, diskon produk yang berlaku.
+    return Math.max(Number(dEvent?.[key]) || 0, biasa);
   };
   const semua: PaketProduk[] = [
     { key: 'bulanan', nama: 'Bulanan', harga_asli: p.harga_bulanan || 0, diskon: d('bulanan', p.diskon_bulanan) },
@@ -160,8 +171,9 @@ export function paketDariProduk(p: ProdukJual, now: Date = new Date(), ev?: Prom
  *  "BLACK FRIDAY -60% · S/D 30 NOVEMBER 2026" selama event promo memberi diskon ke produk ini. */
 export function labelPromo(p: ProdukJual, now: Date = new Date(), ev?: PromoEvent | null): string | undefined {
   const dEvent = eventBerjalan(ev, now) ? ev!.diskon?.[p.id] : undefined;
-  if (dEvent && Object.values(dEvent).some((x) => Number(x) > 0)) {
-    const maksE = Math.max(0, ...paketDariProduk(p, now, ev).map((x) => x.diskon));
+  const paketEvent = dEvent ? paketDariProduk(p, now, ev).filter((x) => Number(dEvent[x.key]) > 0) : [];
+  if (paketEvent.length) {
+    const maksE = Math.max(...paketEvent.map((x) => x.diskon));
     return `${ev!.nama.toUpperCase()} -${maksE}% · S/D ${fmtTanggalRilis(new Date(ev!.selesai)).toUpperCase()}`;
   }
   const akhir = akhirDiskon(p);

@@ -9,7 +9,7 @@ import { trackVideoWatch } from '../../hooks/useWatchHistory';
 import { usePromoEvent } from '../../hooks';
 import IndikatorV5Info from '../../components/IndikatorV5Info';
 import { RiwayatDataCard, TabelPerbandingan, versiDari } from '../../components/IndikatorPerbandingan';
-import { labelPromo, paketDariProduk, terbaruDari } from '../../lib/indikatorV5';
+import { diskonEfektif, labelPromo, paketDariProduk, terbaruDari } from '../../lib/indikatorV5';
 import {
   Search, LayoutGrid, PlayCircle, BookOpen, LineChart, NotebookPen, ClipboardList,
   MessageCircle, Landmark, ShoppingBag, Rocket, Trophy, Medal, Award, Target, Star,
@@ -568,7 +568,8 @@ export default function DashboardPage() {
     setOrderLoading(true);
     const hargaBase = produk[`harga_${planType}`];
     const promoProduk = paketDariProduk(produk, new Date(), promoEvent).find(r => r.key === planType)?.diskon || 0;
-    const diskonPct = appliedCode ? appliedCode.diskon : promoProduk;
+    // Sama dengan /bayar: yang ditagih diskon terbesar antara diskon paket (produk/event) dan kode.
+    const diskonPct = diskonEfektif(promoProduk, appliedCode?.diskon);
     const harga     = diskonPct ? Math.round(hargaBase * (1 - diskonPct / 100)) : hargaBase;
     const labelPlan = planType.charAt(0).toUpperCase() + planType.slice(1);
     const { data, error } = await supabase.from('orders').insert({
@@ -2854,10 +2855,12 @@ export default function DashboardPage() {
               {/* ── Step 1: Konfirmasi Order ── */}
               {orderModal && modalStep === 'konfirmasi' && (()=>{
                 const hargaBase  = orderModal._hargaBase;
-                const finalHarga = kodeDiskonData
+                const diskonPaket = paketDariProduk(orderModal, new Date(), promoEvent).find(r => r.key === orderModal._selectedPlan)?.diskon || 0;
+                // Kode hanya dipakai bila lebih besar dari diskon paket (produk/event), sama dengan /bayar dan buatOrder.
+                const kodeAktif  = !!kodeDiskonData && kodeDiskonData.diskon > diskonPaket;
+                const finalHarga = kodeAktif
                   ? Math.round(hargaBase * (1 - kodeDiskonData.diskon / 100))
                   : orderModal._selectedHarga;
-                const kodeAktif = !!kodeDiskonData;
                 return (
                   <div style={{ position: 'fixed', inset: 0, background: '#000a', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}
                     onClick={e => { if (e.target === e.currentTarget) closeOrderModal(); }}>

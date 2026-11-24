@@ -43,7 +43,7 @@ export default function PromoBanner() {
     return (
       <a href="/promo" data-banner="event" style={{ ...gaya, background: '#020617' }}>
         🖤 {event!.nama} — diskon hingga{' '}
-        <b style={{ background: '#4ade80', color: '#052e16', padding: '1px 8px', borderRadius: 6, fontFamily: '"Geist Mono",monospace' }}>{diskonMaksEvent(event)}%</b>
+        <b style={{ background: '#4ade80', color: '#052e16', padding: '1px 8px', borderRadius: 6, fontFamily: '"Geist Mono",monospace' }}>{diskonMaksEvent(event, dijual)}%</b>
         {' '}· berakhir {fmtTanggalRilis(new Date(event!.selesai))}. Lihat promo →
       </a>
     );

@@ -39,7 +39,9 @@ function Hitung({ target, now }: { target: Date; now: Date }) {
 }
 
 export default function PromoPage() {
-  const { event, loading } = usePromoEvent();
+  const { event: ev, loading } = usePromoEvent();
+  // Baris tanpa tanggal mulai/selesai dianggap belum ada event.
+  const event = ev && ev.mulai && ev.selesai ? ev : null;
   const { produk, loading: loadingProduk } = useProdukDijual();
   const now = useDetik();
 
@@ -48,7 +50,7 @@ export default function PromoPage() {
   const berjalan = eventBerjalan(event, now);
   const belum = !!(event && mulai && now < mulai);
   const nama = event?.judul || event?.nama || 'Promo';
-  const maks = diskonMaksEvent(event);
+  const maks = diskonMaksEvent(event, produk);
 
   // Kartu: setiap produk × paket yang mendapat diskon event; unggulan di depan.
   const kartu = event ? produk.flatMap((p) =>
