@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
-import { useProdukIndikator, useProdukDijual } from '../hooks';
-import { fmtTanggalRilis, promoRilis } from '../lib/indikatorV5';
+import { useProdukIndikator, useProdukDijual, usePromoEvent } from '../hooks';
+import { diskonMaksEvent, eventBerjalan, fmtTanggalRilis, promoRilis } from '../lib/indikatorV5';
 
 interface KodeBanner { kode: string; diskon: number; teks: string | null }
 
@@ -10,6 +10,7 @@ export default function PromoBanner() {
   const { preorder, tanggalRilis } = useProdukIndikator();
   const { produk: dijual } = useProdukDijual();
   const rilis = promoRilis(dijual);
+  const { event } = usePromoEvent();
 
   useEffect(() => {
     async function load() {
@@ -36,6 +37,17 @@ export default function PromoBanner() {
   const pil = (k: KodeBanner) => (
     <b style={{ background: '#fff', color: 'var(--mr-gold)', padding: '1px 8px', borderRadius: 6, letterSpacing: 0.6, fontFamily: '"Geist Mono",monospace' }}>{k.kode}</b>
   );
+
+  // Event promo (mis. Black Friday) sedang berjalan: banner event menang dari semua banner lain.
+  if (eventBerjalan(event)) {
+    return (
+      <a href="/promo" data-banner="event" style={{ ...gaya, background: '#020617' }}>
+        🖤 {event!.nama} — diskon hingga{' '}
+        <b style={{ background: '#4ade80', color: '#052e16', padding: '1px 8px', borderRadius: 6, fontFamily: '"Geist Mono",monospace' }}>{diskonMaksEvent(event)}%</b>
+        {' '}· berakhir {fmtTanggalRilis(new Date(event!.selesai))}. Lihat promo →
+      </a>
+    );
+  }
 
   // Selama indikator v5 pre-order: pengumuman v5, plus kode diskon yang sedang dipasang di banner (kalau ada).
   if (preorder) {
