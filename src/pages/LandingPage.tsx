@@ -6,8 +6,8 @@ import React, { useState } from 'react';
 import { Menu, X, Star, ChevronDown, MessageCircle, Send, Music2, Youtube, Phone } from 'lucide-react';
 
 import { MRLogo, CandleChart } from '../components/mr';
-import { useApprovedTestimonials, useLandingPreview, useProdukIndikator, usePromoEvent } from '../hooks';
-import { eventBerjalan, eventTampil } from '../lib/indikatorV5';
+import { useApprovedTestimonials, useLandingPreview, useProdukDijual, useProdukIndikator, usePromoEvent } from '../hooks';
+import { diskonMaksEvent, eventBerjalan, eventTampil } from '../lib/indikatorV5';
 import type { Testimonial } from '../types/mr.types';
 import { supabase } from '../lib/supabase';
 
@@ -207,6 +207,10 @@ function useFadeUp(delay = 0) {
 
 function Hero() {
   const { preorder } = useProdukIndikator();
+  const { event } = usePromoEvent();
+  const { produk: dijual } = useProdukDijual();
+  const promo = !preorder && eventTampil(event);
+  const promoLabel = promo ? `${event!.nama.toUpperCase()} -${diskonMaksEvent(event, dijual)}%` : '';
   const [isMobile, setIsMobile] = React.useState(() => window.matchMedia('(max-width: 767px)').matches);
   React.useEffect(() => { const mq = window.matchMedia('(max-width: 767px)'); const h = (e: MediaQueryListEvent) => setIsMobile(e.matches); mq.addEventListener('change',h); return ()=>mq.removeEventListener('change',h); }, []);
 
@@ -233,11 +237,14 @@ function Hero() {
               style={{ fontFamily: LP.sans, background: LP.primary, color: '#fff', fontWeight: 700, padding: '15px 28px', fontSize: 14, borderRadius: 10, border: 'none', cursor: 'pointer', boxShadow: LP.shadowMd }}>
               Beli Kelas →
             </button>
-            <button onClick={() => window.location.href = '/pricing-indikator'}
-              style={{ fontFamily: LP.sans, border: `1px solid ${LP.border}`, padding: '15px 24px', fontSize: 14, fontWeight: 600, borderRadius: 10, background: LP.surface, color: LP.text, cursor: 'pointer', position: 'relative' as const }}>
+            <button onClick={() => window.location.href = promo ? '/promo' : '/pricing-indikator'} data-hero-indikator={promo ? 'promo' : 'biasa'}
+              style={{ fontFamily: LP.sans, border: promo ? '1px solid #020617' : `1px solid ${LP.border}`, padding: '15px 24px', fontSize: 14, fontWeight: promo ? 700 : 600, borderRadius: 10, background: promo ? '#020617' : LP.surface, color: promo ? '#fff' : LP.text, cursor: 'pointer', position: 'relative' as const, boxShadow: promo ? '0 0 0 3px rgba(74,222,128,.35)' : 'none' }}>
               {preorder ? 'Pre-order Indikator v5 →' : 'Beli Indikator →'}
               {preorder && (
                 <span style={{ position: 'absolute' as const, top: -9, right: -8, background: '#d97706', color: '#fff', fontSize: 9, fontWeight: 700, letterSpacing: 0.4, padding: '2px 7px', borderRadius: 10 }}>EARLY-BIRD</span>
+              )}
+              {promo && (
+                <span style={{ position: 'absolute' as const, top: -10, right: -10, background: '#4ade80', color: '#052e16', fontSize: 9, fontWeight: 800, letterSpacing: 0.4, padding: '3px 8px', borderRadius: 10, whiteSpace: 'nowrap' as const, fontFamily: LP.mono }}>🖤 {promoLabel}</span>
               )}
             </button>
           </div>
