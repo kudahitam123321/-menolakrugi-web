@@ -1,7 +1,7 @@
 // hooks/index.ts — Semua custom hooks (Supabase queries)
 
 import { useEffect, useState } from 'react';
-import type { ProdukJual } from '../lib/indikatorV5';
+import type { ProdukJual, PromoEvent } from '../lib/indikatorV5';
 import { supabase } from '../lib/supabase';
 import type { Member, Journal, Testimonial, PricingTier, LandingStats } from '../types/mr.types';
 import type { BtData } from '../lib/backtest';
@@ -249,6 +249,30 @@ export function useBacktestConfig(opts?: { semua?: boolean }) {
   }, [semua, versi]);
 
   return { config, loading, reload: () => setVersi((v) => v + 1) };
+}
+
+// ─── Event promo (tabel promo_event, satu baris id=1), mis. Black Friday ───
+/** event = null bila tabel/baris belum ada, atau aktif=false (kecuali opts.semua untuk admin). */
+export function usePromoEvent(opts?: { semua?: boolean }) {
+  const semua = !!opts?.semua;
+  const [event, setEvent] = useState<PromoEvent | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [versi, setVersi] = useState(0);
+
+  useEffect(() => {
+    let batal = false;
+    setLoading(true);
+    supabase.from('promo_event').select('*').eq('id', 1).maybeSingle()
+      .then(({ data, error }) => {
+        if (batal) return;
+        const row = !error && data ? (data as PromoEvent) : null;
+        setEvent(row && (semua || row.aktif) ? { ...row, diskon: row.diskon || {} } : null);
+        setLoading(false);
+      });
+    return () => { batal = true; };
+  }, [semua, versi]);
+
+  return { event, loading, reload: () => setVersi((v) => v + 1) };
 }
 
 // ─── Produk indikator utama (produk aktif pertama menurut urutan) ───
