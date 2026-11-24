@@ -68,7 +68,7 @@ export function sisaWaktu(target: Date, now: Date): { hari: number; jam: number;
 
 /** '1 Desember 2026', atau 'segera' bila tanggal belum ada. */
 export function fmtTanggalRilis(d: Date | null): string {
-  return d ? d.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) : 'segera';
+  return d ? d.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Asia/Jakarta' }) : 'segera';
 }
 
 /**
@@ -112,21 +112,58 @@ export function akhirDiskon(p: ProdukJual): Date | null {
   return p.diskon_hingga ? new Date(p.diskon_hingga + 'T23:59:59+07:00') : null;
 }
 
-/** Paket yang dijual dari satu baris products; paket tanpa harga (null/0) dibuang. Diskon hilang setelah diskon_hingga. */
-export function paketDariProduk(p: ProdukJual, now: Date = new Date()): PaketProduk[] {
+/** Event promo berbatas waktu (tabel promo_event, satu baris id=1), mis. Black Friday. */
+export interface PromoEvent {
+  aktif: boolean;
+  nama: string;
+  judul: string | null;
+  subjudul: string | null;
+  mulai: string;
+  selesai: string;
+  diskon: Record<string, Partial<Record<KeyPaket, number>>>;
+  bonus: string | null;
+  unggulan: { product_id: string; plan: KeyPaket } | null;
+}
+
+/** Event aktif dan sekarang di antara mulai dan selesai (inklusif). */
+export function eventBerjalan(ev: PromoEvent | null | undefined, now: Date = new Date()): boolean {
+  if (!ev || !ev.aktif || !ev.mulai || !ev.selesai) return false;
+  const t = now.getTime();
+  return t >= new Date(ev.mulai).getTime() && t <= new Date(ev.selesai).getTime();
+}
+
+/** Diskon terbesar di seluruh event (untuk "diskon hingga X%"). */
+export function diskonMaksEvent(ev: PromoEvent | null | undefined): number {
+  if (!ev) return 0;
+  return Math.max(0, ...Object.values(ev.diskon || {}).flatMap((d) => Object.values(d || {}).map((x) => Number(x) || 0)));
+}
+
+/** Paket yang dijual dari satu baris products; paket tanpa harga (null/0) dibuang. Diskon hilang setelah diskon_hingga.
+ *  Selama event promo berjalan, diskon event (bila > 0) menggantikan diskon produk untuk paket itu. */
+export function paketDariProduk(p: ProdukJual, now: Date = new Date(), ev?: PromoEvent | null): PaketProduk[] {
   const akhir = akhirDiskon(p);
   const aktif = !akhir || now.getTime() <= akhir.getTime();
-  const d = (x?: number | null) => (aktif ? x || 0 : 0);
+  const dEvent = eventBerjalan(ev, now) ? ev!.diskon?.[p.id] : undefined;
+  const d = (key: KeyPaket, x?: number | null) => {
+    const e = Number(dEvent?.[key]) || 0;
+    return e > 0 ? e : aktif ? x || 0 : 0;
+  };
   const semua: PaketProduk[] = [
-    { key: 'bulanan', nama: 'Bulanan', harga_asli: p.harga_bulanan || 0, diskon: d(p.diskon_bulanan) },
-    { key: 'tahunan', nama: 'Tahunan', harga_asli: p.harga_tahunan || 0, diskon: d(p.diskon_tahunan) },
-    { key: 'lifetime', nama: 'Lifetime', harga_asli: p.harga_lifetime || 0, diskon: d(p.diskon_lifetime) },
+    { key: 'bulanan', nama: 'Bulanan', harga_asli: p.harga_bulanan || 0, diskon: d('bulanan', p.diskon_bulanan) },
+    { key: 'tahunan', nama: 'Tahunan', harga_asli: p.harga_tahunan || 0, diskon: d('tahunan', p.diskon_tahunan) },
+    { key: 'lifetime', nama: 'Lifetime', harga_asli: p.harga_lifetime || 0, diskon: d('lifetime', p.diskon_lifetime) },
   ];
   return semua.filter((x) => x.harga_asli > 0);
 }
 
-/** "PROMO -50% · S/D 1 DESEMBER 2026" selama diskon produk berbatas waktu masih berlaku. */
-export function labelPromo(p: ProdukJual, now: Date = new Date()): string | undefined {
+/** "PROMO -50% · S/D 1 DESEMBER 2026" selama diskon produk berbatas waktu masih berlaku;
+ *  "BLACK FRIDAY -60% · S/D 30 NOVEMBER 2026" selama event promo memberi diskon ke produk ini. */
+export function labelPromo(p: ProdukJual, now: Date = new Date(), ev?: PromoEvent | null): string | undefined {
+  const dEvent = eventBerjalan(ev, now) ? ev!.diskon?.[p.id] : undefined;
+  if (dEvent && Object.values(dEvent).some((x) => Number(x) > 0)) {
+    const maksE = Math.max(0, ...paketDariProduk(p, now, ev).map((x) => x.diskon));
+    return `${ev!.nama.toUpperCase()} -${maksE}% · S/D ${fmtTanggalRilis(new Date(ev!.selesai)).toUpperCase()}`;
+  }
   const akhir = akhirDiskon(p);
   const maks = Math.max(0, ...paketDariProduk(p, now).map((x) => x.diskon));
   if (!akhir || maks <= 0) return undefined;

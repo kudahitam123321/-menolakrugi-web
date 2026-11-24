@@ -46,7 +46,7 @@ assert.deepEqual(L.sisaWaktu(rilis, now), { hari: 15, jam: 12, menit: 0, detik: 
 assert.equal(L.sisaWaktu(rilis, new Date('2026-12-02T00:00:00+07:00')), null);
 
 // fmtTanggalRilis
-assert.equal(L.fmtTanggalRilis(new Date('2026-12-01T00:00:00')), '1 Desember 2026');
+assert.equal(L.fmtTanggalRilis(new Date('2026-12-01T00:00:00+07:00')), '1 Desember 2026');
 assert.equal(L.fmtTanggalRilis(null), 'segera');
 
 // berhakKlaimV5
@@ -93,5 +93,27 @@ const v4p = { ...pr([200000, null, 2000000, null, 3000000, null]), id: 'v4', nam
 assert.deepEqual(L.promoRilis([v5p, v4p], new Date('2026-11-21T10:00:00+07:00')), { nama: 'SMC by MenolakRugi v5', diskon: 50, hingga: '1 Desember 2026' }, 'promo rilis');
 assert.equal(L.promoRilis([v5p, v4p], new Date('2026-12-02T10:00:00+07:00')), null, 'promo rilis selesai');
 assert.equal(L.promoRilis([v4p], new Date('2026-11-21T10:00:00+07:00')), null, 'tanpa produk rilis');
+
+// Event promo (Black Friday)
+const WIB = (s) => new Date(s + '+07:00');
+const ev = { aktif: true, nama: 'Black Friday', judul: null, subjudul: null, mulai: '2026-11-27T00:00:00+07:00', selesai: '2026-11-30T23:59:59+07:00', diskon: { v5: { lifetime: 60 }, v4: { bulanan: 20 } }, bonus: null, unggulan: null };
+const v5e = { id: 'v5', nama: 'SMC by MenolakRugi v5', harga_lifetime: 3000000, diskon_lifetime: 50, diskon_hingga: '2026-12-01' };
+const v4e = { id: 'v4', nama: 'SMC by MenolakRugi v4.2', harga_bulanan: 200000, harga_tahunan: 2000000, harga_lifetime: 3000000 };
+assert.equal(L.eventBerjalan(ev, WIB('2026-11-26T23:59:00')), false, 'event belum mulai');
+assert.equal(L.eventBerjalan(ev, WIB('2026-11-27T00:00:00')), true, 'event mulai');
+assert.equal(L.eventBerjalan(ev, WIB('2026-11-30T23:59:00')), true, 'event menit terakhir');
+assert.equal(L.eventBerjalan(ev, WIB('2026-12-01T00:00:00')), false, 'event selesai');
+assert.equal(L.eventBerjalan({ ...ev, aktif: false }, WIB('2026-11-28T10:00:00')), false, 'event nonaktif');
+assert.equal(L.eventBerjalan(null, WIB('2026-11-28T10:00:00')), false, 'tanpa event');
+assert.equal(L.paketDariProduk(v5e, WIB('2026-11-28T10:00:00'), ev)[0].diskon, 60, 'v5 ikut event');
+assert.equal(L.paketDariProduk(v5e, WIB('2026-12-01T10:00:00'), ev)[0].diskon, 50, 'setelah event kembali promo rilis');
+assert.equal(L.paketDariProduk(v5e, WIB('2026-11-26T10:00:00'), ev)[0].diskon, 50, 'sebelum event promo rilis');
+const p4 = L.paketDariProduk(v4e, WIB('2026-11-28T10:00:00'), ev);
+assert.deepEqual(p4.map((x) => x.diskon), [20, 0, 0], 'v4 hanya bulanan didiskon event');
+assert.equal(L.labelPromo(v5e, WIB('2026-11-28T10:00:00'), ev), 'BLACK FRIDAY -60% · S/D 30 NOVEMBER 2026', 'label event');
+assert.equal(L.labelPromo(v5e, WIB('2026-12-01T10:00:00'), ev), 'PROMO -50% · S/D 1 DESEMBER 2026', 'label setelah event');
+assert.equal(L.labelPromo(v4e, WIB('2026-11-28T10:00:00'), ev), 'BLACK FRIDAY -20% · S/D 30 NOVEMBER 2026', 'label event v4');
+assert.equal(L.diskonMaksEvent({ ...ev, diskon: { a: { bulanan: 20 }, b: { lifetime: 60 } } }), 60, 'diskon maks event');
+assert.equal(L.diskonMaksEvent(null), 0, 'diskon maks tanpa event');
 
 console.log('OK — status pre-order');
