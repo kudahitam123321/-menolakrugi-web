@@ -9,7 +9,7 @@ import { trackVideoWatch } from '../../hooks/useWatchHistory';
 import { usePromoEvent } from '../../hooks';
 import IndikatorV5Info from '../../components/IndikatorV5Info';
 import { RiwayatDataCard, TabelPerbandingan, versiDari } from '../../components/IndikatorPerbandingan';
-import { diskonEfektif, labelPromo, memberKelasBerbayar, paketDariProduk, punyaIndikator, terbaruDari } from '../../lib/indikatorV5';
+import { diskonEfektif, labelPromo, memberKelasBerbayar, paketDariProduk, terbaruDari } from '../../lib/indikatorV5';
 import {
   Search, LayoutGrid, PlayCircle, BookOpen, LineChart, NotebookPen, ClipboardList,
   MessageCircle, Landmark, ShoppingBag, Rocket, Trophy, Medal, Award, Target, Star,
@@ -432,8 +432,8 @@ export default function DashboardPage() {
   const [propRules, setPropRules]       = useState<any[]>([]);
   const [products, setProducts]         = useState<any[]>([]);
   const [myOrders, setMyOrders]         = useState<any[]>([]);
-  // Diskon khusus Black Friday: member kelas berbayar yang belum punya indikator aktif.
-  const diskonKelas = memberKelasBerbayar((member as any)?.tier) && !punyaIndikator(myOrders);
+  // Diskon khusus Black Friday: semua member kelas berbayar (sudah atau belum punya indikator).
+  const diskonKelas = memberKelasBerbayar((member as any)?.tier);
   const [prodView, setProdView]         = useState<'katalog'|'pesanan'>('katalog');
   const [orderModal, setOrderModal]     = useState<any|null>(null);
   const [orderLoading, setOrderLoading] = useState(false);
