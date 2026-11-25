@@ -134,4 +134,18 @@ assert.equal(L.eventTampil(ev, WIB('2026-11-28T10:00:00')), true, 'tampil saat b
 assert.equal(L.eventTampil(ev, WIB('2026-12-01T00:00:00')), false, 'tidak tampil setelah selesai');
 assert.equal(L.eventTampil(null), false, 'tanpa event');
 
+// Diskon khusus member kelas (Black Friday): disimpan di ev.diskon._kelas
+for (const t of ['SMC Gold Mentorship', 'SMC Bronze', 'gold', 'platinum', 'SMC Platinum 1-on-1', 'SMC Silver']) assert.equal(L.memberKelasBerbayar(t), true, 'kelas ' + t);
+for (const t of ['SMC Trial', 'trial', 'Indikator Lifetime', 'Indikator Bulanan', '', null]) assert.equal(L.memberKelasBerbayar(t), false, 'bukan kelas ' + t);
+assert.equal(L.punyaIndikator([{ status: 'aktif', plan_type: 'bulanan' }]), true, 'punya indikator aktif');
+assert.equal(L.punyaIndikator([{ status: 'pending', plan_type: 'lifetime' }]), false, 'pending tidak dihitung');
+assert.equal(L.punyaIndikator([]), false, 'tanpa pesanan');
+const evK = { ...ev, diskon: { ...ev.diskon, _kelas: { lifetime: 70 } } };
+assert.equal(L.paketDariProduk(v5e, WIB('2026-11-28T10:00:00'), evK, { kelas: true })[0].diskon, 70, 'member kelas v5 lifetime 70');
+assert.equal(L.paketDariProduk(v5e, WIB('2026-11-28T10:00:00'), evK)[0].diskon, 60, 'bukan member kelas tetap 60');
+assert.deepEqual(L.paketDariProduk(v4e, WIB('2026-11-28T10:00:00'), evK, { kelas: true }).map((x) => x.diskon), [20, 0, 70], 'kelas hanya lifetime');
+assert.equal(L.paketDariProduk(v5e, WIB('2026-12-01T10:00:00'), evK, { kelas: true })[0].diskon, 50, 'setelah event kelas hilang');
+assert.equal(L.labelPromo(v5e, WIB('2026-11-28T10:00:00'), evK, { kelas: true }), 'KHUSUS MEMBER KELAS -70% · S/D 30 NOVEMBER 2026', 'label kelas');
+assert.equal(L.diskonMaksEvent(evK, [v5e, v4e]), 60, 'diskon kelas tidak ikut hitungan umum');
+
 console.log('OK — status pre-order');

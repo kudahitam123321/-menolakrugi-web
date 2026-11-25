@@ -153,6 +153,18 @@ export function diskonMaksEvent(ev: PromoEvent | null | undefined, produk?: Prod
   return Math.max(0, ...Object.values(ev.diskon || {}).flatMap((d) => Object.values(d || {}).map((x) => Number(x) || 0)));
 }
 
+/** Member kelas berbayar (Bronze/Silver/Gold/Platinum, termasuk "Gold Mentorship"); Trial & pembeli indikator tidak. */
+export function memberKelasBerbayar(tier: string | null | undefined): boolean {
+  const t = (tier || '').toLowerCase();
+  if (!t || t.includes('indikator') || t.includes('trial')) return false;
+  return /bronze|silver|gold|platinum/.test(t);
+}
+
+/** Pernah/masih punya indikator = ada pesanan indikator berstatus aktif. */
+export function punyaIndikator(orders: { status: string; plan_type: string | null }[]): boolean {
+  return orders.some((o) => !!o.plan_type && o.status === 'aktif');
+}
+
 /** Diskon yang ditagih: yang terbesar antara diskon paket (produk/event) dan kode diskon. Dipakai /bayar dan dashboard. */
 export function diskonEfektif(diskonPaket: number | null | undefined, diskonKode: number | null | undefined): number {
   return Math.max(Number(diskonPaket) || 0, Number(diskonKode) || 0);
@@ -160,14 +172,17 @@ export function diskonEfektif(diskonPaket: number | null | undefined, diskonKode
 
 /** Paket yang dijual dari satu baris products; paket tanpa harga (null/0) dibuang. Diskon hilang setelah diskon_hingga.
  *  Selama event promo berjalan, diskon event (bila > 0) menggantikan diskon produk untuk paket itu. */
-export function paketDariProduk(p: ProdukJual, now: Date = new Date(), ev?: PromoEvent | null): PaketProduk[] {
+export function paketDariProduk(p: ProdukJual, now: Date = new Date(), ev?: PromoEvent | null, opt?: { kelas?: boolean }): PaketProduk[] {
   const akhir = akhirDiskon(p);
   const aktif = !akhir || now.getTime() <= akhir.getTime();
-  const dEvent = eventBerjalan(ev, now) ? ev!.diskon?.[p.id] : undefined;
+  const jalan = eventBerjalan(ev, now);
+  const dEvent = jalan ? ev!.diskon?.[p.id] : undefined;
+  // Diskon khusus member kelas berbayar yang belum punya indikator (ev.diskon._kelas), berlaku untuk semua produk.
+  const dKelas = jalan && opt?.kelas ? ev!.diskon?._kelas : undefined;
   const d = (key: KeyPaket, x?: number | null) => {
     const biasa = aktif ? x || 0 : 0;
     // Event tidak pernah menaikkan harga: bila diskon event lebih kecil, diskon produk yang berlaku.
-    return Math.max(Number(dEvent?.[key]) || 0, biasa);
+    return Math.max(Number(dEvent?.[key]) || 0, Number(dKelas?.[key]) || 0, biasa);
   };
   const semua: PaketProduk[] = [
     { key: 'bulanan', nama: 'Bulanan', harga_asli: p.harga_bulanan || 0, diskon: d('bulanan', p.diskon_bulanan) },
@@ -179,7 +194,12 @@ export function paketDariProduk(p: ProdukJual, now: Date = new Date(), ev?: Prom
 
 /** "PROMO -50% · S/D 1 DESEMBER 2026" selama diskon produk berbatas waktu masih berlaku;
  *  "BLACK FRIDAY -60% · S/D 30 NOVEMBER 2026" selama event promo memberi diskon ke produk ini. */
-export function labelPromo(p: ProdukJual, now: Date = new Date(), ev?: PromoEvent | null): string | undefined {
+export function labelPromo(p: ProdukJual, now: Date = new Date(), ev?: PromoEvent | null, opt?: { kelas?: boolean }): string | undefined {
+  const dKelas = eventBerjalan(ev, now) && opt?.kelas ? ev!.diskon?._kelas : undefined;
+  const paketKelas = dKelas ? paketDariProduk(p, now, ev, opt).filter((x) => Number(dKelas[x.key]) > 0 && x.diskon === Number(dKelas[x.key])) : [];
+  if (paketKelas.length) {
+    return `KHUSUS MEMBER KELAS -${Math.max(...paketKelas.map((x) => x.diskon))}% · S/D ${fmtTanggalRilis(new Date(ev!.selesai)).toUpperCase()}`;
+  }
   const dEvent = eventBerjalan(ev, now) ? ev!.diskon?.[p.id] : undefined;
   const paketEvent = dEvent ? paketDariProduk(p, now, ev).filter((x) => Number(dEvent[x.key]) > 0) : [];
   if (paketEvent.length) {

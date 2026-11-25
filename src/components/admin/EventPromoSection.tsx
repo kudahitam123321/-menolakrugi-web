@@ -108,6 +108,10 @@ export default function EventPromoSection({ notify }: { notify: (text: string, t
         ))}
       </div>
 
+      <div style={{ ...label, marginTop: 4 }}>Diskon khusus member kelas berbayar yang belum punya indikator (%) — hanya paket Lifetime, hanya di dashboard. 0 = mati</div>
+      <input type="number" min="0" max="99" value={diskon._kelas?.lifetime ?? 0}
+        onChange={(e) => ubahDiskon('_kelas', 'lifetime', e.target.value)} style={{ ...inputStyle, width: 120, marginBottom: 14 }} />
+
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12, marginBottom: 14 }}>
         <div>
           <div style={label}>Kartu "PENAWARAN TERBAIK"</div>

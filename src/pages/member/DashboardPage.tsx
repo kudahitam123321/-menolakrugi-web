@@ -9,7 +9,7 @@ import { trackVideoWatch } from '../../hooks/useWatchHistory';
 import { usePromoEvent } from '../../hooks';
 import IndikatorV5Info from '../../components/IndikatorV5Info';
 import { RiwayatDataCard, TabelPerbandingan, versiDari } from '../../components/IndikatorPerbandingan';
-import { diskonEfektif, labelPromo, paketDariProduk, terbaruDari } from '../../lib/indikatorV5';
+import { diskonEfektif, labelPromo, memberKelasBerbayar, paketDariProduk, punyaIndikator, terbaruDari } from '../../lib/indikatorV5';
 import {
   Search, LayoutGrid, PlayCircle, BookOpen, LineChart, NotebookPen, ClipboardList,
   MessageCircle, Landmark, ShoppingBag, Rocket, Trophy, Medal, Award, Target, Star,
@@ -432,6 +432,8 @@ export default function DashboardPage() {
   const [propRules, setPropRules]       = useState<any[]>([]);
   const [products, setProducts]         = useState<any[]>([]);
   const [myOrders, setMyOrders]         = useState<any[]>([]);
+  // Diskon khusus Black Friday: member kelas berbayar yang belum punya indikator aktif.
+  const diskonKelas = memberKelasBerbayar((member as any)?.tier) && !punyaIndikator(myOrders);
   const [prodView, setProdView]         = useState<'katalog'|'pesanan'>('katalog');
   const [orderModal, setOrderModal]     = useState<any|null>(null);
   const [orderLoading, setOrderLoading] = useState(false);
@@ -567,7 +569,7 @@ export default function DashboardPage() {
     if (!member) return;
     setOrderLoading(true);
     const hargaBase = produk[`harga_${planType}`];
-    const promoProduk = paketDariProduk(produk, new Date(), promoEvent).find(r => r.key === planType)?.diskon || 0;
+    const promoProduk = paketDariProduk(produk, new Date(), promoEvent, { kelas: diskonKelas }).find(r => r.key === planType)?.diskon || 0;
     // Sama dengan /bayar: yang ditagih diskon terbesar antara diskon paket (produk/event) dan kode.
     const diskonPct = diskonEfektif(promoProduk, appliedCode?.diskon);
     const harga     = diskonPct ? Math.round(hargaBase * (1 - diskonPct / 100)) : hargaBase;
@@ -2703,7 +2705,7 @@ export default function DashboardPage() {
                       const tierMember = normalizeTier(member?.tier || '');
                       const bisaOrder  = isIndikatorMember || (p.tier_access || []).includes(tierMember);
                       const tglRilis   = p.tanggal_rilis ? new Date(p.tanggal_rilis).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) : null;
-                      const plans = paketDariProduk(p, new Date(), promoEvent)
+                      const plans = paketDariProduk(p, new Date(), promoEvent, { kelas: diskonKelas })
                         .map(r => ({ plan: r.key, label: r.nama, h: r.harga_asli, d: r.diskon || null }));
                       const activePlanKey = selectedPlanByProduct[p.id] ?? plans[0]?.plan;
                       const activePlan    = plans.find(r => r.plan === activePlanKey) ?? plans[0];
@@ -2736,8 +2738,8 @@ export default function DashboardPage() {
                               {products.length > 1 && p.id === terbaruDari(products) && (
                                 <span style={{ background: LP.primary, color: '#fff', padding: '3px 9px', fontSize: 10, letterSpacing: 0.8, fontWeight: 700, borderRadius: 20, fontFamily: LP.mono }}>TERBARU</span>
                               )}
-                              {labelPromo(p, new Date(), promoEvent) && (
-                                <span style={{ background: '#FEF3C7', color: '#92400e', border: '1px solid #FDE68A', padding: '2px 9px', fontSize: 10, letterSpacing: 0.6, fontWeight: 700, borderRadius: 20, fontFamily: LP.mono }}>{labelPromo(p, new Date(), promoEvent)}</span>
+                              {labelPromo(p, new Date(), promoEvent, { kelas: diskonKelas }) && (
+                                <span style={{ background: '#FEF3C7', color: '#92400e', border: '1px solid #FDE68A', padding: '2px 9px', fontSize: 10, letterSpacing: 0.6, fontWeight: 700, borderRadius: 20, fontFamily: LP.mono }}>{labelPromo(p, new Date(), promoEvent, { kelas: diskonKelas })}</span>
                               )}
                             </div>
                             <div style={{ color: LP.muted, fontSize: 14, lineHeight: 1.55, display: '-webkit-box' as any, WebkitLineClamp: 3, WebkitBoxOrient: 'vertical' as any, overflow: 'hidden' }}>{p.deskripsi}</div>
@@ -2855,7 +2857,7 @@ export default function DashboardPage() {
               {/* ── Step 1: Konfirmasi Order ── */}
               {orderModal && modalStep === 'konfirmasi' && (()=>{
                 const hargaBase  = orderModal._hargaBase;
-                const diskonPaket = paketDariProduk(orderModal, new Date(), promoEvent).find(r => r.key === orderModal._selectedPlan)?.diskon || 0;
+                const diskonPaket = paketDariProduk(orderModal, new Date(), promoEvent, { kelas: diskonKelas }).find(r => r.key === orderModal._selectedPlan)?.diskon || 0;
                 // Kode hanya dipakai bila lebih besar dari diskon paket (produk/event), sama dengan /bayar dan buatOrder.
                 const kodeAktif  = !!kodeDiskonData && kodeDiskonData.diskon > diskonPaket;
                 const finalHarga = kodeAktif
