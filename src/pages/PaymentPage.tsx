@@ -5,8 +5,9 @@ import React, { useEffect, useState } from 'react';
 
 import { MR } from '../lib/theme';
 import { MRLogo, Ticker } from '../components/mr';
-import { usePricing } from '../hooks';
+import { usePricingEvent } from '../hooks';
 import { supabase } from '../lib/supabase';
+import { bacaKodeUpgrade, hargaUpgrade } from '../lib/upgradeKelas';
 
 interface OrderRow {
   id: string;
@@ -15,6 +16,7 @@ interface OrderRow {
   email_member: string | null;
   tier_member: string;
   status: string;
+  kode_diskon: string | null;
 }
 interface PaymentMethodRow {
   id: string;
@@ -36,7 +38,7 @@ export default function PaymentPage() {
   }, []);
 
   const orderId = new URLSearchParams(window.location.search).get('order');
-  const { tiers } = usePricing();
+  const { tiers, tiersAsli, loading: loadingHarga } = usePricingEvent();
 
   const [loading, setLoading]   = useState(true);
   const [notFound, setNotFound] = useState(false);
@@ -54,7 +56,7 @@ export default function PaymentPage() {
       if (!orderId) { setNotFound(true); setLoading(false); return; }
 
       const [{ data: o }, { data: pm }] = await Promise.all([
-        supabase.from('orders').select('id, member_id, nama_member, email_member, tier_member, status').eq('id', orderId).single(),
+        supabase.from('orders').select('id, member_id, nama_member, email_member, tier_member, status, kode_diskon').eq('id', orderId).single(),
         supabase.from('payment_methods').select('*').neq('aktif', false).order('urutan', { ascending: true }),
       ]);
       if (!o) { setNotFound(true); setLoading(false); return; }
@@ -72,7 +74,12 @@ export default function PaymentPage() {
 
   const hargaAsli       = tier?.original_price ?? tier?.price ?? 0;
   const hargaDenganKode = kodeDiskonData ? Math.round(hargaAsli * (1 - kodeDiskonData.diskon / 100)) : null;
-  const hargaFinal       = hargaDenganKode !== null ? Math.min(tier?.price ?? hargaAsli, hargaDenganKode) : (tier?.price ?? 0);
+  // Order upgrade (dari /checkout): bayar selisih dengan harga jual kelas lama, tanpa kode kupon.
+  const upgrade   = bacaKodeUpgrade(order?.kode_diskon);
+  const dariKelas = upgrade ? tiersAsli.find(t => t.id === upgrade.dari) ?? null : null;
+  const hasilUpgrade = upgrade && tier ? hargaUpgrade(tier, dariKelas) : null;
+  const hargaFinal       = hasilUpgrade ? hasilUpgrade.harga
+    : hargaDenganKode !== null ? Math.min(tier?.price ?? hargaAsli, hargaDenganKode) : (tier?.price ?? 0);
   const diskonAktifPct   = hargaAsli > 0 ? Math.round((1 - hargaFinal / hargaAsli) * 100) : 0;
 
   function copyAccNo(nomor: string) {
@@ -118,15 +125,16 @@ export default function PaymentPage() {
       const metodeInfo = selected.jenis === 'qris'
         ? `QRIS (${selected.nama_bank})`
         : `Bank: ${selected.nama_bank} | Rek: ${selected.nomor_rekening || ''}`;
-      await supabase.from('orders').update({ catatan: metodeInfo }).eq('id', order.id);
+      const promoInfo = (upgrade ? ` | UPGRADE dari ${dariKelas?.tag ?? '-'}` : '') + (tier?.promo_diskon ? ` | ${tier.badge}` : '') + (upgrade || tier?.promo_diskon ? ` | Total Rp${fmt(hargaFinal)}` : '');
+      await supabase.from('orders').update({ catatan: metodeInfo + promoInfo }).eq('id', order.id);
     }
     const waMsg = encodeURIComponent(
-      `Halo admin, saya sudah transfer untuk ${tier?.name ?? order.tier_member} atas nama ${order.nama_member}. Order: #${order.id}. Berikut bukti transfernya.`
+      `Halo admin, saya sudah transfer untuk ${upgrade ? 'upgrade ke ' : ''}${tier?.name ?? order.tier_member} atas nama ${order.nama_member} sebesar Rp${fmt(hargaFinal)}. Order: #${order.id}. Berikut bukti transfernya.`
     );
     window.open(`https://wa.me/6281242224939?text=${waMsg}`, '_blank');
   }
 
-  if (loading) return (
+  if (loading || loadingHarga) return (
     <div style={{ minHeight: '100vh', background: MR.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', color: MR.dim, fontFamily: MR.mono, fontSize: 13 }}>
       Memuat...
     </div>
@@ -214,11 +222,11 @@ export default function PaymentPage() {
           </div>
 
           <div>
-            <div style={{ fontFamily: MR.mono, color: MR.dimmer, fontSize: 10, letterSpacing: 0.8, marginBottom: 6 }}>KELAS DIPILIH</div>
+            <div style={{ fontFamily: MR.mono, color: MR.dimmer, fontSize: 10, letterSpacing: 0.8, marginBottom: 6 }}>{upgrade ? 'UPGRADE KE' : 'KELAS DIPILIH'}</div>
             <div style={{ fontSize: 22, fontWeight: 700, letterSpacing: -0.5 }}>{tier?.name ?? order.tier_member}</div>
           </div>
 
-          <div>
+          {!upgrade && <div>
             <div style={{ fontFamily: MR.mono, color: MR.dimmer, fontSize: 10, letterSpacing: 0.8, marginBottom: 8 }}>PUNYA KODE KUPON? (OPSIONAL)</div>
             <div style={{ display: 'flex', gap: 8 }}>
               <input
@@ -244,13 +252,27 @@ export default function PaymentPage() {
                 {kodeErr}
               </div>
             )}
-          </div>
+          </div>}
 
           <div style={{ borderTop: `1px solid ${MR.border}`, paddingTop: 16, display: 'grid', gap: 10, fontSize: 13, fontFamily: MR.mono }}>
-            {hargaFinal < (tier?.price ?? 0) && (
+            {hasilUpgrade && (
+              <>
+                <div style={{ display: 'flex', justifyContent: 'space-between', color: MR.dim }}>
+                  <span>Harga {tier?.tag}{tier?.promo_diskon ? ` · ${tier.badge}` : ''}</span>
+                  <span>Rp {fmt(tier?.price ?? 0)}</span>
+                </div>
+                {hasilUpgrade.potongan > 0 && (
+                  <div style={{ display: 'flex', justifyContent: 'space-between', color: MR.up }}>
+                    <span>Potongan kelas {dariKelas?.tag}</span>
+                    <span>− Rp {fmt(hasilUpgrade.potongan)}</span>
+                  </div>
+                )}
+              </>
+            )}
+            {!hasilUpgrade && hargaFinal < hargaAsli && (
               <div style={{ display: 'flex', justifyContent: 'space-between', color: MR.dim }}>
-                <span>Harga normal</span>
-                <span style={{ textDecoration: 'line-through' }}>Rp {fmt(tier?.price ?? 0)}</span>
+                <span>Harga normal{tier?.promo_diskon ? ` · ${tier.badge}` : ''}</span>
+                <span style={{ textDecoration: 'line-through' }}>Rp {fmt(hargaAsli)}</span>
               </div>
             )}
             <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: 12, fontSize: 18 }}>

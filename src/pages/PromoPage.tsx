@@ -2,8 +2,8 @@
 // Data: promo_event (id=1) + produk aktif. Harga lewat paketDariProduk(p, now, event) supaya sama
 // persis dengan /pricing-indikator, /bayar, dan katalog dashboard.
 import { useEffect, useState } from 'react';
-import { usePromoEvent, useProdukDijual } from '../hooks';
-import { diskonMaksEvent, eventBerjalan, fmtTanggalRilis, paketDariProduk, sisaWaktu, terbaruDari, type KeyPaket } from '../lib/indikatorV5';
+import { usePricing, usePromoEvent, useProdukDijual } from '../hooks';
+import { diskonMaksEvent, diskonMaksKelas, eventBerjalan, hargaKelasEvent, fmtTanggalRilis, paketDariProduk, sisaWaktu, terbaruDari, type KeyPaket } from '../lib/indikatorV5';
 import { RiwayatDataCard, TabelPerbandingan, versiDari } from '../components/IndikatorPerbandingan';
 
 const LP = {
@@ -19,7 +19,8 @@ const FAQ = [
   { q: 'Apa beda v4.2 dan v5?', a: 'v4.2 bebas pair & timeframe, tapi analisa top-down masih manual. v5 khusus XAUUSD M5: tinggal ikuti label entry yang muncul, lengkap dengan SL, TP, lot, dan alarm ke HP. Lihat tabel perbandingan di atas.' },
   { q: 'Perlu akun TradingView berbayar?', a: 'Untuk v4.2 wajib TradingView minimal paket Essential (berbayar). Untuk v5, akun TradingView gratis pun sudah bisa dipakai.' },
   { q: 'Saya sudah punya indikator lama, apakah bisa ikut?', a: 'Bisa. Harga promo berlaku untuk semua pembeli. Pemilik indikator sebelum v5 rilis juga bisa klaim v5 gratis dari dashboard (menu Produk) bila memenuhi syarat.' },
-  { q: 'Setelah promo selesai harga jadi berapa?', a: 'Harga kembali ke harga normal di halaman Pricing Indikator. Harga promo hanya berlaku untuk pembayaran selama periode event.' },
+  { q: 'Apakah kelas mentoring juga ikut promo?', a: 'Ikut. Kelas Bronze, Gold, dan Platinum didiskon dari harga normal selama event. Klik "Daftar sekarang" pada kelas yang dipilih, harga promo otomatis terpasang di halaman pendaftaran dan pembayaran.' },
+  { q: 'Setelah promo selesai harga jadi berapa?', a: 'Harga kembali ke harga biasa di halaman Pricing Indikator dan Pricing Kelas. Harga promo hanya berlaku untuk pembayaran selama periode event.' },
 ];
 
 /** Syarat akun TradingView: v4.x wajib minimal Essential, v5 cukup akun gratis. */
@@ -49,6 +50,7 @@ export default function PromoPage() {
   // Baris tanpa tanggal mulai/selesai dianggap belum ada event.
   const event = ev && ev.mulai && ev.selesai ? ev : null;
   const { produk, loading: loadingProduk } = useProdukDijual();
+  const { tiers, loading: loadingKelas } = usePricing();
   const now = useDetik();
 
   const mulai = event?.mulai ? new Date(event.mulai) : null;
@@ -56,7 +58,7 @@ export default function PromoPage() {
   const berjalan = eventBerjalan(event, now);
   const belum = !!(event && mulai && now < mulai);
   const nama = event?.judul || event?.nama || 'Promo';
-  const maks = diskonMaksEvent(event, produk);
+  const maks = Math.max(diskonMaksEvent(event, produk), diskonMaksKelas(event));
 
   // Kartu: setiap produk × paket yang mendapat diskon event; unggulan di depan.
   const kartu = event ? produk.flatMap((p) =>
@@ -64,6 +66,12 @@ export default function PromoPage() {
       .filter((k) => Number(event.diskon?.[p.id]?.[k.key]) > 0)
       .map((k) => ({ p, k, unggulan: event.unggulan?.product_id === p.id && event.unggulan?.plan === k.key })),
   ).sort((a, b) => Number(b.unggulan) - Number(a.unggulan)) : [];
+
+  // Kartu kelas: tier dengan diskon event (% dari harga normal) yang lebih murah dari harga jual biasa.
+  const kartuKelas = event ? tiers.flatMap((t) => {
+    const h = hargaKelasEvent(t, event, berjalan ? now : new Date(event.mulai));
+    return h ? [{ t, h }] : [];
+  }) : [];
 
   const baru = produk.find((x) => x.id === terbaruDari(produk));
   const lama = produk.find((x) => x.id !== baru?.id);
@@ -90,7 +98,7 @@ export default function PromoPage() {
   );
 
   let isi: JSX.Element;
-  if (loading || loadingProduk) isi = <div style={{ padding: 80, textAlign: 'center' as const, color: LP.muted, fontFamily: LP.mono, fontSize: 13 }}>Memuat…</div>;
+  if (loading || loadingProduk || loadingKelas) isi = <div style={{ padding: 80, textAlign: 'center' as const, color: LP.muted, fontFamily: LP.mono, fontSize: 13 }}>Memuat…</div>;
   else if (!event) isi = <>{hero('Promo', 'Belum ada promo yang berjalan', null, '')}{kosong('Belum ada promo saat ini', 'Pantau terus, promo berikutnya akan diumumkan di sini.')}</>;
   else if (selesai && now > selesai) isi = <>{hero(nama, 'Promo sudah berakhir', null, '')}{kosong('Promo sudah berakhir', 'Terima kasih! Harga indikator sekarang kembali normal.')}</>;
   else isi = (
@@ -123,6 +131,36 @@ export default function PromoPage() {
           Berlaku {fmtTanggalRilis(mulai)} – {fmtTanggalRilis(selesai)} (WIB). Harga promo berlaku untuk pembayaran selama periode event.
         </div>
       </section>
+      {kartuKelas.length > 0 && (
+        <section data-promo-kelas style={{ maxWidth: 1080, margin: '0 auto', padding: '0 16px 56px' }}>
+          <div style={{ textAlign: 'center' as const, marginBottom: 22 }}>
+            <div style={{ fontFamily: LP.mono, fontSize: 11, letterSpacing: 2, color: '#16a34a' }}>KELAS MENTORING SMC</div>
+            <h2 style={{ fontSize: 'clamp(24px, 4vw, 32px)', fontWeight: 800, margin: '8px 0 6px', letterSpacing: -0.5 }}>Belajar langsung dengan mentor, diskon hingga {diskonMaksKelas(event)}%</h2>
+            <div style={{ color: LP.muted, fontSize: 14 }}>Sekali bayar, akses materi selamanya. Harga dihitung dari harga normal.</div>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 16 }}>
+            {kartuKelas.map(({ t, h }) => (
+              <div key={t.id} data-promo-kelas-card={t.id} style={{ background: LP.surface, border: t.is_featured ? '2px solid #16a34a' : `1px solid ${LP.border}`, borderRadius: 16, padding: '24px 22px', boxShadow: '0 8px 24px rgba(0,0,0,0.08)', position: 'relative' as const, display: 'flex', flexDirection: 'column' as const }}>
+                {t.is_featured && <div style={{ position: 'absolute' as const, top: -12, left: '50%', transform: 'translateX(-50%)', background: '#16a34a', color: '#fff', fontFamily: LP.mono, fontSize: 10, fontWeight: 700, letterSpacing: 1, padding: '4px 12px', borderRadius: 20, whiteSpace: 'nowrap' as const }}>PALING DIREKOMENDASIKAN</div>}
+                <div style={{ fontWeight: 700, fontSize: 15 }}>{t.name}</div>
+                <div style={{ fontFamily: LP.mono, fontSize: 11, color: LP.muted, marginTop: 2 }}>{t.period}</div>
+                <div style={{ fontSize: 48, fontWeight: 800, color: '#dc2626', margin: '14px 0 4px', letterSpacing: -1 }}>−{h.diskon}%</div>
+                <div style={{ fontFamily: LP.mono, fontSize: 13, color: LP.muted, textDecoration: 'line-through' }}>{rp(h.normal)}</div>
+                <div style={{ fontFamily: LP.mono, fontSize: 26, fontWeight: 700 }}>{rp(h.harga)}</div>
+                <div style={{ fontSize: 13, color: '#16a34a', fontWeight: 600, marginTop: 4 }}>Hemat {rp(h.normal - h.harga)}</div>
+                <div style={{ fontSize: 12, color: LP.muted, marginTop: 8, lineHeight: 1.5 }}>{t.pitch}</div>
+                <div style={{ flex: 1 }} />
+                {belum
+                  ? <div style={{ marginTop: 18, textAlign: 'center' as const, padding: '12px', borderRadius: 10, border: `1px solid ${LP.border}`, color: LP.muted, fontWeight: 700, fontSize: 13 }}>Segera hadir</div>
+                  : <a href={`/signup?tier=${t.id}`} style={{ marginTop: 18, display: 'block', textAlign: 'center' as const, background: t.is_featured ? '#16a34a' : LP.text, color: '#fff', fontWeight: 700, fontSize: 14, padding: '12px', borderRadius: 10, textDecoration: 'none' }}>Daftar sekarang →</a>}
+              </div>
+            ))}
+          </div>
+          <div style={{ fontSize: 12, color: LP.muted, textAlign: 'center' as const, marginTop: 14 }}>
+            Bandingkan isi tiap kelas di <a href="/pricing-kelas" style={{ color: '#16a34a' }}>halaman kelas</a>.
+          </div>
+        </section>
+      )}
       <RiwayatDataCard />
       {baru && lama && <TabelPerbandingan namaLama={versiDari(lama.nama)} namaBaru={versiDari(baru.nama)} />}
       <section style={{ maxWidth: 760, margin: '0 auto', padding: '8px 16px 72px' }}>

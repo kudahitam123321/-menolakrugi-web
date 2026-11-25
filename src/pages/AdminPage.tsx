@@ -4,6 +4,7 @@ import * as XLSX from 'xlsx';
 import { supabase } from '../lib/supabase';
 import BacktestUploadSection from '../components/admin/BacktestUploadSection';
 import EventPromoSection from '../components/admin/EventPromoSection';
+import { bacaKodeUpgrade } from '../lib/upgradeKelas';
 
 const ALL_TIERS = ['SMC Trial','SMC Bronze','SMC Silver','SMC Gold Mentorship','SMC Platinum 1-on-1','Indikator Bulanan','Indikator Tahunan','Indikator Lifetime'];
 const RANK_IMGS: Record<string, string> = {
@@ -1769,6 +1770,14 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
     else {
       notify('Status pesanan diperbarui!');
       const order = prodOrders.find(o => o.id === orderId);
+      // Order upgrade kelas (dari /checkout): aktif → tier member ikut naik ke kelas tujuan.
+      if (newStatus === 'aktif' && order?.member_id && bacaKodeUpgrade(order.kode_diskon)) {
+        const { data: kelas } = await supabase.from('pricing_tiers').select('name').eq('id', order.tier_member).maybeSingle();
+        const tierBaru = kelas?.name || order.tier_member;
+        const { error: errTier } = await supabase.from('members').update({ tier: tierBaru, is_active: true }).eq('id', order.member_id);
+        if (errTier) notify('Order aktif, tapi gagal menaikkan tier: ' + errTier.message, 'err');
+        else notify(`Tier ${order.nama_member} dinaikkan ke ${tierBaru}`);
+      }
       if (order?.plan_type && order?.member_id) {
         try {
           await fetch('/api/mrbot/sync-indicator', {
@@ -3421,6 +3430,7 @@ export default function AdminPage({ initialTab, embedded }: { initialTab?: strin
                             <span style={{fontFamily:'monospace',fontSize:9,color:sc,border:`1px solid ${sc}44`,padding:'2px 8px',fontWeight:700}}>{o.status.toUpperCase()}</span>
                             <span style={{fontWeight:700,fontSize:13}}>{o.nama_member}</span>
                             <span style={{fontFamily:'monospace',fontSize:10,color:'#555'}}>· {o.tier_member}</span>
+                            {bacaKodeUpgrade(o.kode_diskon) && <span style={{fontFamily:'monospace',fontSize:10,color:'#3b82f6',fontWeight:700}}>· UPGRADE dari {bacaKodeUpgrade(o.kode_diskon)!.dari ?? '-'}</span>}
                           </div>
                           {o.email_member && <div style={{fontFamily:'monospace',fontSize:10,color:'#666',marginBottom:2}}>✉ {o.email_member}</div>}
                           {o.no_hp && <div style={{fontFamily:'monospace',fontSize:10,color:'#666',marginBottom:2}}>☎ {o.no_hp}</div>}

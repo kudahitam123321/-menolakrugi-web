@@ -1386,7 +1386,7 @@ export default function DashboardPage() {
                 {isExpired && (
                   <div style={{ fontFamily: LP.mono, fontSize: 9, color: LP.danger, marginTop: 2 }}>AKSES BERAKHIR</div>
                 )}
-                <a href="/checkout" style={{ display: 'block', marginTop: 10, fontFamily: LP.mono, fontSize: 10, fontWeight: 700,
+                <a href={isExpired ? '/checkout?aktifkan=1' : '/checkout'} style={{ display: 'block', marginTop: 10, fontFamily: LP.mono, fontSize: 10, fontWeight: 700,
                   color: '#fff', background: isExpired ? LP.danger : LP.primary,
                   padding: '6px 0', textAlign: 'center' as const, textDecoration: 'none', borderRadius: 5 }}>
                   {isExpired ? 'AKTIFKAN LAGI' : 'NAIK TIER ▸'}

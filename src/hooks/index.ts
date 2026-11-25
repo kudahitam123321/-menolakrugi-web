@@ -1,7 +1,7 @@
 // hooks/index.ts — Semua custom hooks (Supabase queries)
 
 import { useEffect, useState } from 'react';
-import type { ProdukJual, PromoEvent } from '../lib/indikatorV5';
+import { tierDenganEvent, type ProdukJual, type PromoEvent } from '../lib/indikatorV5';
 import { supabase } from '../lib/supabase';
 import type { Member, Journal, Testimonial, PricingTier, LandingStats } from '../types/mr.types';
 import type { BtData } from '../lib/backtest';
@@ -130,6 +130,21 @@ export function usePricing() {
   }, []);
 
   return { tiers, loading };
+}
+
+/** Harga kelas + harga event promo (Black Friday dll.) bila sedang berjalan. Dipakai /pricing-kelas, /signup,
+ *  /payment supaya ketiganya menampilkan harga yang sama. Tier yang didiskon membawa `promo_diskon`. */
+export function usePricingEvent() {
+  const { tiers, loading } = usePricing();
+  const { event, loading: loadingEvent } = usePromoEvent();
+  const now = new Date();
+  return {
+    tiers: tiers.map((t) => tierDenganEvent(t, event, now)) as (PricingTier & { promo_diskon?: number })[],
+    /** Harga jual biasa (tanpa event) — dipakai menghitung potongan upgrade dari kelas lama. */
+    tiersAsli: tiers,
+    event,
+    loading: loading || loadingEvent,
+  };
 }
 
 // ─── Dashboard stats (per member) ────────────────────────────────────────────

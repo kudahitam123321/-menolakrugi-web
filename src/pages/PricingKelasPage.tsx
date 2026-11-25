@@ -3,7 +3,8 @@
 
 import React from 'react';
 import { Check } from 'lucide-react';
-import { usePricing } from '../hooks';
+import { usePricingEvent } from '../hooks';
+import { diskonMaksKelas, fmtTanggalRilis } from '../lib/indikatorV5';
 
 const LP = {
   bg:            'var(--lp-bg)',
@@ -200,7 +201,7 @@ const FEATURE_ROWS: { label: string; included: Record<string, boolean> }[] = [
 ];
 
 function TierPricing() {
-  const { tiers, loading } = usePricing();
+  const { tiers, loading, event } = usePricingEvent();
   const [isMobile, setIsMobile] = React.useState(() => window.matchMedia('(max-width: 767px)').matches);
   React.useEffect(() => { const mq = window.matchMedia('(max-width: 767px)'); const h = (e: MediaQueryListEvent) => setIsMobile(e.matches); mq.addEventListener('change',h); return ()=>mq.removeEventListener('change',h); }, []);
   const fmt = (n: number) => new Intl.NumberFormat('id-ID').format(n);
@@ -224,6 +225,12 @@ function TierPricing() {
           </p>
         </div>
 
+        {event && tiers.some((t) => t.promo_diskon) && (
+          <a href="/black-friday" data-kelas-promo style={{ display: 'block', background: '#020617', color: '#fff', borderRadius: LP.radius, padding: '14px 18px', marginBottom: 24, textDecoration: 'none', textAlign: 'center' as const, fontSize: 14, fontWeight: 600 }}>
+            🖤 {event.nama}: kelas diskon hingga <b style={{ color: '#4ade80' }}>{diskonMaksKelas(event)}%</b> dari harga normal · berakhir {fmtTanggalRilis(new Date(event.selesai))} <span style={{ color: '#4ade80' }}>Lihat promo →</span>
+          </a>
+        )}
+
         {isMobile ? (
           <div style={{ display: 'grid', gap: 16 }}>
             {tiers.map(tier => (
@@ -235,12 +242,15 @@ function TierPricing() {
                 position: 'relative' as const,
               }}>
                 {tier.badge && (
-                  <div style={{ display: 'inline-block', background: LP.primary, color: '#fff', padding: '4px 12px', fontSize: 10, letterSpacing: 0.6, fontWeight: 700, borderRadius: 20, marginBottom: 12 }}>
-                    {tier.is_featured ? 'POPULER' : tier.badge.toUpperCase()}
+                  <div style={{ display: 'inline-block', background: tier.promo_diskon ? '#0f172a' : LP.primary, color: '#fff', padding: '4px 12px', fontSize: 10, letterSpacing: 0.6, fontWeight: 700, borderRadius: 20, marginBottom: 12 }}>
+                    {tier.promo_diskon ? `🖤 ${tier.badge!.toUpperCase()}` : tier.is_featured ? 'POPULER' : tier.badge.toUpperCase()}
                   </div>
                 )}
                 <div style={{ fontFamily: LP.mono, fontSize: 11, letterSpacing: 1, fontWeight: 700, color: tier.is_featured ? 'rgba(255,255,255,0.8)' : LP.muted }}>{tier.tag.toUpperCase()}</div>
                 <div style={{ fontWeight: 700, fontSize: 18, margin: '4px 0 12px', color: tier.is_featured ? '#fff' : LP.text }}>{tier.name}</div>
+                {tier.promo_diskon && tier.original_price && (
+                  <div style={{ fontFamily: LP.mono, fontSize: 13, textDecoration: 'line-through', color: tier.is_featured ? 'rgba(255,255,255,0.6)' : LP.muted }}>Rp {fmt(tier.original_price)}</div>
+                )}
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, marginBottom: 4 }}>
                   <span style={{ fontFamily: LP.mono, fontSize: 14, color: tier.is_featured ? '#fff' : LP.primary }}>Rp</span>
                   <span style={{ fontSize: 28, fontWeight: 800, letterSpacing: -1, color: tier.is_featured ? '#fff' : LP.text }}>{fmt(tier.price)}</span>
@@ -283,12 +293,15 @@ function TierPricing() {
                     borderRadius: tier.is_featured ? `${LP.radius}px ${LP.radius}px 0 0` : 0,
                   }}>
                     {tier.badge && (
-                      <div style={{ display: 'inline-block', background: LP.primary, color: '#fff', padding: '4px 12px', fontSize: 10, letterSpacing: 0.6, fontWeight: 700, borderRadius: 20, marginBottom: 10 }}>
-                        {tier.is_featured ? 'POPULER' : tier.badge.toUpperCase()}
+                      <div style={{ display: 'inline-block', background: tier.promo_diskon ? '#0f172a' : LP.primary, color: '#fff', padding: '4px 12px', fontSize: 10, letterSpacing: 0.6, fontWeight: 700, borderRadius: 20, marginBottom: 10 }}>
+                        {tier.promo_diskon ? `🖤 ${tier.badge!.toUpperCase()}` : tier.is_featured ? 'POPULER' : tier.badge.toUpperCase()}
                       </div>
                     )}
                     <div style={{ fontFamily: LP.mono, fontSize: 11, letterSpacing: 1, fontWeight: 700, color: tier.is_featured ? '#fff' : LP.muted }}>{tier.tag.toUpperCase()}</div>
-                    <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'center', gap: 4, marginTop: 10 }}>
+                    {tier.promo_diskon && tier.original_price && (
+                      <div style={{ fontFamily: LP.mono, fontSize: 13, marginTop: 10, textDecoration: 'line-through', color: tier.is_featured ? 'rgba(255,255,255,0.6)' : LP.muted }}>Rp {fmt(tier.original_price)}</div>
+                    )}
+                    <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'center', gap: 4, marginTop: tier.promo_diskon ? 2 : 10 }}>
                       <span style={{ fontFamily: LP.mono, fontSize: 16, color: tier.is_featured ? '#fff' : LP.primary }}>Rp</span>
                       <span style={{ fontSize: 32, fontWeight: 800, letterSpacing: -1, color: tier.is_featured ? '#fff' : LP.text }}>{fmt(tier.price)}</span>
                     </div>

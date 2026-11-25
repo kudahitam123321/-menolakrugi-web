@@ -4,7 +4,7 @@
 // harga di /pricing-indikator, /bayar, katalog dashboard (lihat paketDariProduk di lib/indikatorV5).
 import { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabase';
-import { usePromoEvent, useProdukDijual } from '../../hooks';
+import { usePricing, usePromoEvent, useProdukDijual } from '../../hooks';
 import { eventBerjalan, paketDariProduk, type KeyPaket, type PromoEvent } from '../../lib/indikatorV5';
 
 const inputStyle = {
@@ -27,6 +27,7 @@ function dariInputWib(v: string, detik = '00'): string | null {
 export default function EventPromoSection({ notify }: { notify: (text: string, type?: 'ok' | 'err') => void }) {
   const { event, loading, reload } = usePromoEvent({ semua: true });
   const { produk } = useProdukDijual();
+  const { tiers } = usePricing();
   const [aktif, setAktif] = useState(false);
   const [nama, setNama] = useState('Black Friday');
   const [judul, setJudul] = useState('');
@@ -48,6 +49,12 @@ export default function EventPromoSection({ notify }: { notify: (text: string, t
   function ubahDiskon(pid: string, key: KeyPaket, v: string) {
     const n = Math.max(0, Math.min(99, Number(v) || 0));
     setDiskon((d) => ({ ...d, [pid]: { ...(d[pid] || {}), [key]: n } }));
+  }
+
+  /** Diskon event per kelas → diskon._tier = { bronze: 50, ... } (% dari harga normal/coret). */
+  function ubahDiskonKelas(tierId: string, v: string) {
+    const n = Math.max(0, Math.min(99, Number(v) || 0));
+    setDiskon((d) => ({ ...d, _tier: { ...((d._tier as Record<string, number>) || {}), [tierId]: n } as PromoEvent['diskon'][string] }));
   }
 
   async function simpan() {
@@ -105,6 +112,17 @@ export default function EventPromoSection({ notify }: { notify: (text: string, t
               </label>
             ))}
           </div>
+        ))}
+      </div>
+
+      <div style={label}>Diskon event per kelas (%) — dihitung dari harga normal (coret). 0 = tidak ikut. Dipakai di /pricing-kelas, signup, pembayaran, dan halaman promo</div>
+      <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' as const, border: '1px solid #1f1f1f', padding: '10px 12px', marginBottom: 14 }}>
+        {tiers.map((t) => (
+          <label key={t.id} style={{ display: 'flex', alignItems: 'center', gap: 6, fontFamily: 'monospace', fontSize: 11, color: '#888' }}>
+            {t.tag} <span style={{ color: '#555' }}>(normal Rp{(t.original_price || t.price).toLocaleString('id-ID')})</span>
+            <input type="number" min="0" max="99" value={(diskon._tier as Record<string, number> | undefined)?.[t.id] ?? 0}
+              onChange={(e) => ubahDiskonKelas(t.id, e.target.value)} style={{ ...inputStyle, width: 64 }} />
+          </label>
         ))}
       </div>
 

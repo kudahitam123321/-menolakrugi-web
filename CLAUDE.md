@@ -30,7 +30,7 @@ No routing library. `App.tsx` inspects `window.location.pathname` in a `getPage(
 /                      → LandingPage
 /login                 → LoginPage
 /signup                → SignupPage
-/checkout              → CheckoutPage (legacy)
+/checkout              → CheckoutPage (member tier upgrade, ?aktifkan=1 to renew — see "Member Upgrade")
 /payment               → PaymentPage
 /partnership           → PartnershipPage step="intro"
 /partnership/broker    → PartnershipPage step="broker"
@@ -232,7 +232,11 @@ What pre-order mode changes: `PromoBanner` shows the v5 launch banner instead of
 
 ### Promo Events (Black Friday etc.)
 
-A time-boxed promo lives in `promo_event` (single row id=1; `supabase-promo-event-migration.sql`): `aktif`, `nama`, `judul`, `subjudul`, `mulai`/`selesai` (timestamptz, WIB), `diskon` jsonb `{ "<product_id>": { bulanan, tahunan, lifetime } }`, `bonus`, `unggulan` `{ product_id, plan }`. While `eventBerjalan(ev)` is true, `paketDariProduk(p, now, ev)` (`src/lib/indikatorV5.ts`) uses the larger of the event and product discount per plan — it is the single price source for `/pricing-indikator`, `/bayar`, the dashboard catalog + order creation, and `/promo`; outside the window prices fall back to `diskon_*`/`diskon_hingga` automatically. Discount codes never stack: `diskonEfektif(paket, kode)` = max of the two (same rule on `/bayar` and dashboard). `/promo` (alias `/black-friday`, `src/pages/PromoPage.tsx`) shows countdown, cards, backtest card, comparison table, FAQ; `PromoBanner` shows the event banner first while it runs. Admin edits it in Admin → Produk → Preview Landing → "// EVENT PROMO" (`src/components/admin/EventPromoSection.tsx`). `fmtTanggalRilis` formats in `Asia/Jakarta` so WITA/WIT viewers see WIB dates. Spec: `docs/superpowers/specs/2026-11-24-event-promo-black-friday-design.md`.
+A time-boxed promo lives in `promo_event` (single row id=1; `supabase-promo-event-migration.sql`): `aktif`, `nama`, `judul`, `subjudul`, `mulai`/`selesai` (timestamptz, WIB), `diskon` jsonb `{ "<product_id>": { bulanan, tahunan, lifetime } }`, `bonus`, `unggulan` `{ product_id, plan }`. While `eventBerjalan(ev)` is true, `paketDariProduk(p, now, ev)` (`src/lib/indikatorV5.ts`) uses the larger of the event and product discount per plan — it is the single price source for `/pricing-indikator`, `/bayar`, the dashboard catalog + order creation, and `/promo`; outside the window prices fall back to `diskon_*`/`diskon_hingga` automatically. Discount codes never stack: `diskonEfektif(paket, kode)` = max of the two (same rule on `/bayar` and dashboard). `/promo` (alias `/black-friday`, `src/pages/PromoPage.tsx`) shows countdown, cards, backtest card, comparison table, FAQ; `PromoBanner` shows the event banner first while it runs. Class tiers join the event via `diskon._tier` `{ bronze, gold, platinum }` (% off the normal/strike price, used only if cheaper than `price`): `usePricingEvent()` applies it through `tierDenganEvent()` for `/pricing-kelas`, `/signup` and `/payment`, and `/promo` shows a "Kelas Mentoring" card section. Admin edits it in Admin → Produk → Preview Landing → "// EVENT PROMO" (`src/components/admin/EventPromoSection.tsx`). `fmtTanggalRilis` formats in `Asia/Jakarta` so WITA/WIT viewers see WIB dates. Spec: `docs/superpowers/specs/2026-11-24-event-promo-black-friday-design.md`.
+
+### Member Upgrade (/checkout)
+
+Logged-in members upgrade from the dashboard ("NAIK TIER", "AKTIFKAN LAGI", "UPGRADE KE GOLD") via `/checkout` (`src/pages/CheckoutPage.tsx`): it lists tiers above the member's current one (same tier only with `?aktifkan=1`), priced by `usePricingEvent()` (so promo events apply), and the member pays the difference `hargaUpgrade()` = target price − the old tier's regular `price` (Trial gives no credit) — `src/lib/upgradeKelas.ts`, checked by `node scripts/check-upgrade-kelas.mjs`. Choosing a tier inserts an `orders` row for the existing member with `kode_diskon = 'UPGRADE:<old tier id>'` (no migration) and goes to `/payment`, which recomputes the same difference and hides the coupon field. When admin sets that order to `aktif`, `AdminPage.updateOrderStatus` sets `members.tier` to the target `pricing_tiers.name` automatically.
 
 ### Backtest Page
 

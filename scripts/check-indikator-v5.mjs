@@ -148,4 +148,24 @@ assert.equal(L.paketDariProduk(v5e, WIB('2026-12-01T10:00:00'), evK, { kelas: tr
 assert.equal(L.labelPromo(v5e, WIB('2026-11-28T10:00:00'), evK, { kelas: true }), 'KHUSUS MEMBER KELAS -70% · S/D 30 NOVEMBER 2026', 'label kelas');
 assert.equal(L.diskonMaksEvent(evK, [v5e, v4e]), 60, 'diskon kelas tidak ikut hitungan umum');
 
+// Diskon event kelas (ev.diskon._tier = { bronze: 50, ... }, % dari harga normal/coret)
+const tGold = { id: 'gold', price: 1000000, original_price: 1500000 };
+const tTrial = { id: 'trial', price: 99000, original_price: null };
+const evT = { ...ev, diskon: { ...ev.diskon, _tier: { bronze: 50, gold: 50, platinum: 40 } } };
+assert.deepEqual(L.hargaKelasEvent(tGold, evT, WIB('2026-11-28T10:00:00')), { normal: 1500000, harga: 750000, diskon: 50 }, 'gold -50% dari harga normal');
+assert.equal(L.hargaKelasEvent(tGold, evT, WIB('2026-12-01T10:00:00')), null, 'setelah event harga biasa');
+assert.equal(L.hargaKelasEvent(tTrial, evT, WIB('2026-11-28T10:00:00')), null, 'trial tanpa diskon event');
+assert.equal(L.hargaKelasEvent(tGold, { ...evT, diskon: { _tier: { gold: 20 } } }, WIB('2026-11-28T10:00:00')), null, 'event tidak lebih murah dari harga jual → abaikan');
+assert.equal(L.hargaKelasEvent({ id: 'gold', price: 1000000 }, evT, WIB('2026-11-28T10:00:00')).harga, 500000, 'tanpa harga coret pakai price');
+assert.equal(L.hargaKelasEvent(tGold, null), null, 'tanpa event');
+assert.equal(L.diskonMaksKelas(evT), 50, 'maks diskon kelas');
+assert.equal(L.diskonMaksKelas(ev), 0, 'tanpa diskon kelas');
+
+// Tier pricing dengan harga event (dipakai pricing kelas, signup, payment)
+const tg = L.tierDenganEvent({ ...tGold, badge: 'Paling Direkomendasikan' }, evT, WIB('2026-11-28T10:00:00'));
+assert.equal(tg.price, 750000, 'harga event jadi price'); assert.equal(tg.original_price, 1500000, 'harga normal jadi coret');
+assert.equal(tg.badge, 'Black Friday -50%', 'badge event'); assert.equal(tg.promo_diskon, 50, 'promo_diskon');
+assert.deepEqual(L.tierDenganEvent(tTrial, evT, WIB('2026-11-28T10:00:00')), tTrial, 'trial tidak berubah');
+assert.deepEqual(L.tierDenganEvent(tGold, evT, WIB('2026-12-01T10:00:00')), tGold, 'setelah event tidak berubah');
+
 console.log('OK — status pre-order');

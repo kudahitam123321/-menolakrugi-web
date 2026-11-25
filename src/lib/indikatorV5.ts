@@ -153,6 +153,40 @@ export function diskonMaksEvent(ev: PromoEvent | null | undefined, produk?: Prod
   return Math.max(0, ...Object.values(ev.diskon || {}).flatMap((d) => Object.values(d || {}).map((x) => Number(x) || 0)));
 }
 
+/** Diskon event per kelas, disimpan di `ev.diskon._tier` = { bronze: 50, gold: 50, ... } (% dari harga normal/coret). */
+function diskonTier(ev: PromoEvent | null | undefined): Record<string, number> {
+  return ((ev?.diskon as Record<string, unknown> | undefined)?._tier as Record<string, number> | undefined) || {};
+}
+
+/** Harga kelas selama event berjalan, atau null bila tidak ada diskon event yang lebih murah dari harga jual. */
+export function hargaKelasEvent(
+  tier: { id: string; price: number; original_price?: number | null },
+  ev: PromoEvent | null | undefined,
+  now: Date = new Date(),
+): { normal: number; harga: number; diskon: number } | null {
+  if (!eventBerjalan(ev, now)) return null;
+  const diskon = Number(diskonTier(ev)[tier.id]) || 0;
+  if (diskon <= 0) return null;
+  const normal = tier.original_price || tier.price;
+  const harga = Math.round(normal * (1 - diskon / 100));
+  return harga < tier.price ? { normal, harga, diskon } : null;
+}
+
+/** Tier kelas dengan harga event diterapkan: price = harga event, original_price = harga normal,
+ *  badge = "{nama event} -X%", promo_diskon = X. Tanpa diskon event, tier dikembalikan apa adanya. */
+export function tierDenganEvent<T extends { id: string; price: number; original_price?: number | null; badge?: string | null }>(
+  tier: T, ev: PromoEvent | null | undefined, now: Date = new Date(),
+): T & { promo_diskon?: number } {
+  const h = hargaKelasEvent(tier, ev, now);
+  if (!h) return tier;
+  return { ...tier, price: h.harga, original_price: h.normal, badge: `${ev!.nama} -${h.diskon}%`, promo_diskon: h.diskon };
+}
+
+/** Diskon kelas terbesar di event (untuk "kelas diskon hingga X%"). */
+export function diskonMaksKelas(ev: PromoEvent | null | undefined): number {
+  return Math.max(0, ...Object.values(diskonTier(ev)).map((x) => Number(x) || 0));
+}
+
 /** Member kelas berbayar (Bronze/Silver/Gold/Platinum, termasuk "Gold Mentorship"); Trial & pembeli indikator tidak. */
 export function memberKelasBerbayar(tier: string | null | undefined): boolean {
   const t = (tier || '').toLowerCase();

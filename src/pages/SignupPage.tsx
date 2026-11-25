@@ -1,4 +1,4 @@
-﻿// pages/SignupPage.tsx — Halaman signup / checkout Menolak Rugi (Direction A)
+// pages/SignupPage.tsx — Halaman signup / checkout Menolak Rugi (Direction A)
 // URL: /signup?tier=gold  (tier optional, default ke gold)
 
 import React, { useState } from 'react';
@@ -6,7 +6,7 @@ import React, { useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { MR, TIER_ACCENT } from '../lib/theme';
 import { MRLogo, Ticker } from '../components/mr';
-import { usePricing } from '../hooks';
+import { usePricingEvent } from '../hooks';
 import type { PricingTier } from '../types/mr.types';
 
 // ─── Input atom ──────────────────────────────────────────────────────────────
@@ -105,7 +105,7 @@ function TierSelector({ tiers, selected, onSelect }: { tiers: PricingTier[]; sel
 export default function SignupPage() {
 
   const params = new URLSearchParams(window.location.search);
-  const { tiers, loading }   = usePricing();
+  const { tiers, loading }   = usePricingEvent();
   const [isMobile, setIsMobile] = React.useState(() => window.matchMedia('(max-width: 767px)').matches);
   React.useEffect(() => {
     const mq = window.matchMedia('(max-width: 767px)');
