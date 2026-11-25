@@ -73,6 +73,7 @@ function NavBar() {
     ...(preorder ? [{ l: 'Indikator v5', key: 'INDIKATOR', href: '/pricing-indikator', badge: 'SEGERA' }] : []),
     { l: 'Partnership', key: 'PARTNERSHIP', href: '/partnership' },
     { l: 'Kalender',    key: 'KALENDER',    href: '/calendar' },
+    { l: 'Panduan',     key: 'PANDUAN',     href: '/panduan' },
   ];
   const badgeEl = (t?: string) => t ? (
     <span style={{ marginLeft: 6, background: '#d97706', color: '#fff', fontSize: 9, fontWeight: 700, letterSpacing: 0.4, padding: '2px 6px', borderRadius: 10, verticalAlign: 'middle' }}>{t}</span>
@@ -103,7 +104,7 @@ function NavBar() {
         {NAV_ITEMS.map(item => {
           const isActive = active === item.key;
           return (
-            <a key={item.key} href={item.href} onClick={() => setActive(item.key)}
+            <a key={item.key} href={item.href} onClick={() => setActive(item.key)} className='mr-nav-item'
               style={{ padding: '8px 14px', borderRadius: 8, textDecoration: 'none', fontSize: 14, fontWeight: 500,
                 color: isActive ? LP.primary : item.badge ? LP.text : LP.muted, background: isActive ? LP.primaryTint : 'transparent', transition: 'all .15s', whiteSpace: 'nowrap' as const }}>
               {item.l}{badgeEl(item.badge)}
@@ -121,11 +122,11 @@ function NavBar() {
         ) : (
           <>
           <button onClick={() => window.location.href = '/login'}
-            style={{ fontFamily: LP.sans, fontSize: 13, fontWeight: 500, color: LP.text, padding: '9px 16px', border: 'none', background: 'transparent', cursor: 'pointer' }}>
+            style={{ fontFamily: LP.sans, fontSize: 13, fontWeight: 500, color: LP.text, padding: '9px 16px', border: 'none', background: 'transparent', cursor: 'pointer', whiteSpace: 'nowrap' as const }}>
             Masuk
           </button>
           <button onClick={() => window.location.href = '/signup'}
-            style={{ fontFamily: LP.sans, fontSize: 13, fontWeight: 600, color: '#fff', padding: '9px 18px', border: 'none', background: LP.primary, cursor: 'pointer', borderRadius: 8 }}>
+            style={{ fontFamily: LP.sans, fontSize: 13, fontWeight: 600, color: '#fff', padding: '9px 18px', border: 'none', background: LP.primary, cursor: 'pointer', borderRadius: 8, whiteSpace: 'nowrap' as const }}>
             Mulai Sekarang
           </button>
           </>
@@ -727,6 +728,13 @@ export default function LandingPage() {
       <style>{`
         .mr-nav-links { display: flex; }
         .mr-curriculum-grid { grid-template-columns: 1fr 1fr; }
+        @media (max-width: 1279px) {
+          .mr-nav-item { padding: 8px 9px !important; font-size: 13.5px !important; }
+        }
+        @media (max-width: 1023px) {
+          .mr-nav-links { display: none !important; }
+          .mr-mobile-nav-right { display: flex !important; }
+        }
         @media (max-width: 767px) {
           .mr-nav-links { display: none !important; }
           .mr-nav-topbar { padding: 10px 16px !important; }
