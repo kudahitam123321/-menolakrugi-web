@@ -3,6 +3,26 @@
   <head>
     <meta charset="UTF-8" />
 
+    <!-- Pengaman deploy: bila file /assets/* gagal dimuat (mis. browser sempat menyimpan index.html sebagai
+         file JS saat deploy berlangsung → layar hitam), unduh ulang file itu tanpa cache lalu muat ulang sekali. -->
+    <script>
+      (function () {
+        var KEY = 'mr_asset_retry';
+        window.addEventListener('error', function (e) {
+          var t = e.target, url = t && (t.src || t.href);
+          if (!url || (t.tagName !== 'SCRIPT' && t.tagName !== 'LINK') || url.indexOf('/assets/') < 0) return;
+          try {
+            var last = +sessionStorage.getItem(KEY) || 0;
+            if (Date.now() - last < 60000) return;
+            sessionStorage.setItem(KEY, String(Date.now()));
+          } catch (_) { return; }
+          var ulang = [].slice.call(document.querySelectorAll('script[src*="/assets/"],link[rel="stylesheet"][href*="/assets/"]'))
+            .map(function (el) { return fetch(el.src || el.href, { cache: 'reload' }).catch(function () {}); });
+          Promise.all(ulang).then(function () { location.reload(); });
+        }, true);
+      })();
+    </script>
+
     <!-- Favicon -->
     <link rel="icon" type="image/png" href="/logo.png" />
     <link rel="apple-touch-icon" href="/logo.png" />
