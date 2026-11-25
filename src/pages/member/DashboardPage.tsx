@@ -3178,6 +3178,11 @@ export default function DashboardPage() {
                 <div style={{ fontFamily: C.mono, color: G.gold, fontSize: 10, letterSpacing: 1, marginBottom: 6 }}>// BANTUAN</div>
                 <h2 style={{ fontSize: 22, fontWeight: 700, margin: 0 }}>Bantuan & FAQ</h2>
               </div>
+              <a href="/panduan" target="_blank" rel="noopener noreferrer" data-link-panduan
+                style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, background: '#020617', color: '#fff', borderRadius: 12, padding: '16px 20px', marginBottom: 16, textDecoration: 'none' }}>
+                <span><b style={{ fontSize: 15 }}>📘 Pusat Panduan</b><br /><span style={{ fontSize: 13, color: '#cbd5e1' }}>Langkah lengkap: login, upgrade, beli & pasang indikator, klaim v5, 1-on-1, dan lainnya.</span></span>
+                <span style={{ background: '#16a34a', fontWeight: 700, fontSize: 13, padding: '9px 14px', borderRadius: 8, whiteSpace: 'nowrap' as const }}>Buka Panduan →</span>
+              </a>
               {/* Kontak */}
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 12, marginBottom: 20 }}>
                 {[
@@ -3201,10 +3206,10 @@ export default function DashboardPage() {
                 <div style={{ fontFamily: C.mono, color: G.gold, fontSize: 11, letterSpacing: 1, marginBottom: 16 }}>// FAQ</div>
                 {[
                   { q: 'Bagaimana cara mengakses materi video?', a: 'Klik menu Kelas Saya di sidebar untuk melihat semua video berdasarkan kategori. Klik TONTON untuk membuka video di YouTube.' },
-                  { q: 'Bagaimana cara menghubungkan akun Discord?', a: 'Masuk ke Pengaturan → isi username Discord kamu → klik Simpan Discord. Admin akan verifikasi dan berikan akses server.' },
-                  { q: 'Kapan jadwal live trading?', a: 'Setiap Senin & Kamis pukul 20.00–22.00 WIB, dan Sabtu 10.00–12.00 WIB. Cek menu Live Trading untuk info lengkap.' },
+                  { q: 'Bagaimana cara menghubungkan akun Discord?', a: 'Masuk ke Pengaturan → klik Hubungkan via Discord OAuth → login ke Discord dan izinkan akses. Role server otomatis terpasang sesuai tier kamu.' },
+                  { q: 'Kapan jadwal live trading?', a: 'Setiap Senin & Kamis pukul 20.00–22.00 WIB, dan Sabtu 10.00–12.00 WIB. Info dan link live diumumkan di Discord.' },
                   { q: 'Bagaimana cara download file materi?', a: 'Masuk ke menu Materi di sidebar. File tersedia untuk di-download atau dibuka langsung sesuai tier membership kamu.' },
-                  { q: 'Bagaimana cara upgrade membership?', a: 'Hubungi admin via WhatsApp atau Discord untuk informasi upgrade. Admin akan membantu proses pembayaran dan aktivasi.' },
+                  { q: 'Bagaimana cara upgrade membership?', a: 'Klik NAIK TIER di kartu membership, pilih kelas tujuan, lalu bayar selisihnya. Tier naik otomatis setelah admin memverifikasi pembayaran.' },
                   { q: 'Apakah ada garansi uang kembali?', a: 'Tidak ada refund setelah akses materi dibuka. Pastikan kamu sudah yakin sebelum melakukan pembayaran.' },
                 ].map((faq, i) => (
                   <div key={i} style={{ borderBottom: `1px solid ${C.border}`, paddingBottom: 14, marginBottom: 14 }}>

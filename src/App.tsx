@@ -30,6 +30,7 @@ import BayarAkunPage from './pages/BayarAkunPage';
 import PricingIndikatorPage from './pages/PricingIndikatorPage';
 import PricingKelasPage from './pages/PricingKelasPage';
 import PromoPage from './pages/PromoPage';
+import PanduanPage from './pages/PanduanPage';
 import PromoBanner from './components/PromoBanner';
 
 function getPage() {
@@ -50,6 +51,7 @@ function getPage() {
   if (path === '/pricing-indikator')      return 'pricing-indikator';
   if (path === '/pricing-kelas')          return 'pricing-kelas';
   if (path === '/promo' || path === '/black-friday') return 'promo';
+  if (path === '/panduan')                return 'panduan';
 
   // Member area
   if (path === '/trading-plan')           return 'trading-plan';
@@ -81,6 +83,7 @@ function App() {
   if (page === 'pricing-indikator') return <><PromoBanner /><PricingIndikatorPage /></>;
   if (page === 'pricing-kelas')     return <><PromoBanner /><PricingKelasPage /></>;
   if (page === 'promo')             return <><PromoBanner /><PromoPage /></>;
+  if (page === 'panduan')           return <PanduanPage />;
   if (page === 'partnership')         return <PartnershipPage step="intro" />;
   if (page === 'partnership-broker')    return <PartnershipPage step="broker" />;
   if (page === 'partnership-confirm')   return <PartnershipPage step="confirm" />;

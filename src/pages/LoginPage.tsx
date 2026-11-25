@@ -98,6 +98,7 @@ function MemberForm({ onForgot }: { onForgot:()=>void }) {
         <button onClick={onForgot} style={{color:'#eab308',background:'none',border:'none',cursor:'pointer',textDecoration:'underline',fontSize:13}}>Lupa Password?</button>
         <a href="https://wa.me/6281242224939" target="_blank" rel="noreferrer" style={{color:'var(--mr-dim)',textDecoration:'none',fontSize:13}}>Hubungi Admin</a>
       </div>
+      <a href="/panduan#login" data-link-panduan style={{textAlign:'center',fontSize:13,color:'var(--mr-dim)'}}>Bingung cara login? Lihat panduan →</a>
       <div style={{textAlign:'center',color:'#444',fontSize:12,fontFamily:'"Geist Mono",monospace',paddingTop:8,borderTop:'1px solid #1a1a1a'}}>
         🔒 Secure Login · Your data is protected
       </div>

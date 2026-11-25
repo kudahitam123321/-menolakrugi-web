@@ -676,6 +676,7 @@ function Footer() {
           ]},
           { h: 'BELAJAR', links: [
             { l: 'Kurikulum',   href: '/pricing-kelas#kurikulum' },
+            { l: 'Panduan',     href: '/panduan' },
             { l: 'Komunitas',   href: 'https://discord.gg/d2Tpf6sGMr' },
             { l: 'Kalender',    href: '/calendar' },
             { l: 'Partnership', href: '/partnership' },

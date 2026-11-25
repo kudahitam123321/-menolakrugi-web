@@ -152,6 +152,7 @@ export default function BayarAkunPage() {
         {/* Warning */}
         <div style={{ background: '#3a2800', border: '1px solid #5a4000', borderRadius: 8, padding: '12px 16px', fontSize: 12, color: '#d4a853', lineHeight: 1.6, marginBottom: 24 }}>
           ⚠ Simpan username & password ini baik-baik. Login baru bisa dipakai setelah admin memverifikasi pembayaran kamu (biasanya dalam beberapa saat setelah konfirmasi WhatsApp).
+          {' '}<a href="/panduan#pasang-indikator" target="_blank" rel="noopener noreferrer" data-link-panduan style={{ color: '#d4a853', fontWeight: 700 }}>Langkah berikutnya: pasang indikator →</a>
         </div>
 
         {/* Ringkasan order */}

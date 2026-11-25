@@ -286,7 +286,8 @@ export default function PaymentPage() {
             KONFIRMASI VIA WHATSAPP ▸
           </button>
           <div style={{ fontFamily: MR.mono, fontSize: 10, color: MR.dimmer, textAlign: 'center' as const, lineHeight: 1.5 }}>
-            Akses dibuka admin setelah verifikasi pembayaran.
+            Akses dibuka admin setelah verifikasi pembayaran.<br />
+            <a href={upgrade ? '/panduan#upgrade-kelas' : '/panduan#beli-kelas'} target="_blank" rel="noopener noreferrer" data-link-panduan style={{ color: MR.gold }}>Cara bayar & konfirmasi →</a>
           </div>
         </div>
       </div>
