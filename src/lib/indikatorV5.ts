@@ -84,9 +84,8 @@ export function berhakKlaimV5<T extends OrderIndikator>(orders: T[], v5Id: strin
     // Pesanan lama (sebelum kolom activated_at ada) tidak punya activated_at → pakai created_at.
     const mulai = o.activated_at || o.created_at;
     if (!mulai || new Date(mulai).getTime() >= batas.getTime()) return false;
-    if (o.plan_type === 'lifetime') return true;
-    const jt = hitungJatuhTempo(mulai, o.plan_type);
-    return !!jt && jt.getTime() >= batas.getTime();
+    // Klaim v5 gratis hanya untuk pemilik paket Lifetime (keputusan pemilik, 25/11/2026).
+    return o.plan_type === 'lifetime';
   });
   return pilihOrderIndikator(layak);
 }

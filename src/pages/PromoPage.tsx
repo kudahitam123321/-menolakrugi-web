@@ -18,7 +18,7 @@ const FAQ = [
   { q: 'Kapan akun saya aktif?', a: 'Setelah bukti pembayaran kami terima dan cocok. Biasanya di hari yang sama.' },
   { q: 'Apa beda v4.2 dan v5?', a: 'v4.2 bebas pair & timeframe, tapi analisa top-down masih manual. v5 khusus XAUUSD M5: tinggal ikuti label entry yang muncul, lengkap dengan SL, TP, lot, dan alarm ke HP. Lihat tabel perbandingan di atas.' },
   { q: 'Perlu akun TradingView berbayar?', a: 'Untuk v4.2 wajib TradingView minimal paket Essential (berbayar). Untuk v5, akun TradingView gratis pun sudah bisa dipakai.' },
-  { q: 'Saya sudah punya indikator lama, apakah bisa ikut?', a: 'Bisa. Harga promo berlaku untuk semua pembeli. Pemilik indikator sebelum v5 rilis juga bisa klaim v5 gratis dari dashboard (menu Produk) bila memenuhi syarat.' },
+  { q: 'Saya sudah punya indikator lama, apakah bisa ikut?', a: 'Bisa. Harga promo berlaku untuk semua pembeli. Pemilik v4.2 paket Lifetime yang dibeli sebelum v5 rilis juga bisa klaim v5 gratis dari dashboard (menu Produk). Paket Bulanan/Tahunan tidak termasuk klaim gratis.' },
   { q: 'Apakah kelas mentoring juga ikut promo?', a: 'Ikut. Kelas Bronze, Gold, dan Platinum didiskon dari harga normal selama event. Klik "Daftar sekarang" pada kelas yang dipilih, harga promo otomatis terpasang di halaman pendaftaran dan pembayaran.' },
   { q: 'Setelah promo selesai harga jadi berapa?', a: 'Harga kembali ke harga biasa di halaman Pricing Indikator dan Pricing Kelas. Harga promo hanya berlaku untuk pembayaran selama periode event.' },
 ];

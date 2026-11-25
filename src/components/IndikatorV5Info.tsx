@@ -99,7 +99,7 @@ function KlaimV5({ orders, produk, batas, member }: {
             <ol style={{ fontSize: 12, color: '#7f1d1d', margin: '4px 0 0', paddingLeft: 18, lineHeight: 1.6, listStyle: 'decimal' }}>
               <li>Memiliki indikator SMC versi sebelumnya (v4.2) dengan status aktif.</li>
               <li>Indikator tersebut dibeli sebelum v5 rilis ({tgl}).</li>
-              <li>Paket Lifetime, atau paket Bulanan/Tahunan yang masih aktif pada {tgl}.</li>
+              <li>Paket Lifetime. Paket Bulanan/Tahunan tidak termasuk klaim gratis.</li>
               <li>Belum memiliki {produk.nama}.</li>
             </ol>
             <div style={{ fontSize: 12, color: '#7f1d1d', marginTop: 8 }}>Merasa memenuhi syarat? Hubungi admin lewat menu Bantuan.</div>

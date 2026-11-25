@@ -53,7 +53,8 @@ assert.equal(L.fmtTanggalRilis(null), 'segera');
 const batas = new Date('2026-11-20T00:00:00+07:00');
 const ok = (plan_type, status, activated_at, product_id) => ({ plan_type, status, activated_at, product_id, created_at: '2026-01-01' });
 assert.notEqual(L.berhakKlaimV5([ok('lifetime', 'aktif', '2026-05-01', 'v4')], 'v5', batas), null, 'lifetime v4');
-assert.notEqual(L.berhakKlaimV5([ok('bulanan', 'aktif', '2026-11-01T10:00:00+07:00', 'v4')], 'v5', batas), null, 'bulanan JT 1 Des');
+assert.equal(L.berhakKlaimV5([ok('bulanan', 'aktif', '2026-11-01T10:00:00+07:00', 'v4')], 'v5', batas), null, 'bulanan masih aktif saat rilis tetap tidak bisa (hanya Lifetime)');
+assert.equal(L.berhakKlaimV5([ok('tahunan', 'aktif', '2026-03-01T10:00:00+07:00', 'v4')], 'v5', batas), null, 'tahunan aktif tidak bisa (hanya Lifetime)');
 assert.equal(L.berhakKlaimV5([ok('bulanan', 'aktif', '2026-10-01T10:00:00+07:00', 'v4')], 'v5', batas), null, 'bulanan JT 1 Nov');
 assert.equal(L.berhakKlaimV5([ok('lifetime', 'aktif', '2026-11-21T10:00:00+07:00', 'v4')], 'v5', batas), null, 'beli setelah rilis');
 assert.notEqual(L.berhakKlaimV5([ok('lifetime', 'aktif', null, 'v4')], 'v5', batas), null, 'lifetime lama tanpa activated_at → pakai created_at');
@@ -63,7 +64,7 @@ assert.equal(L.berhakKlaimV5([ok('lifetime', 'aktif', '2026-05-01', 'v4'), ok('b
 assert.equal(L.berhakKlaimV5([ok('lifetime', 'pending', '2026-05-01', 'v4')], 'v5', batas), null, 'pending');
 assert.equal(L.berhakKlaimV5([ok('lifetime', 'aktif', '2026-05-01', 'v4')], null, batas), null, 'tanpa v5');
 assert.equal(L.berhakKlaimV5([ok('lifetime', 'aktif', '2026-05-01', 'v4')], 'v5', null), null, 'tanpa batas');
-assert.equal(L.berhakKlaimV5([ok('tahunan', 'aktif', '2026-03-01T10:00:00+07:00', 'v4'), ok('bulanan', 'aktif', '2026-11-01T10:00:00+07:00', 'v4')], 'v5', batas).plan_type, 'tahunan', 'pilih terkuat');
+assert.equal(L.berhakKlaimV5([ok('tahunan', 'aktif', '2026-03-01T10:00:00+07:00', 'v4'), ok('lifetime', 'aktif', '2026-05-01', 'v4')], 'v5', batas).plan_type, 'lifetime', 'yang lolos hanya order Lifetime');
 
 // paketDariProduk
 const pr = (h) => ({ id: 'p', nama: 'P', harga_bulanan: h[0], diskon_bulanan: h[1], harga_tahunan: h[2], diskon_tahunan: h[3], harga_lifetime: h[4], diskon_lifetime: h[5] });
