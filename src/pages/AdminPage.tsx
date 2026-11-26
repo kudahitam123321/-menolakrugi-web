@@ -629,6 +629,11 @@ function JurnalAdminTab({ members }: { members: any[] }) {
   const [editNoteId, setEditNoteId]         = useState<string|null>(null);
   const [noteText, setNoteText]             = useState('');
   const [noteSaving, setNoteSaving]         = useState(false);
+  const [review, setReview]                 = useState<{catatan:string;oleh?:string|null;updated_at?:string|null}|null>(null);
+  const [reviewText, setReviewText]         = useState('');
+  const [reviewEdit, setReviewEdit]         = useState(false);
+  const [reviewSaving, setReviewSaving]     = useState(false);
+  const [reviewErr, setReviewErr]           = useState('');
   const [manageMemberId, setManageMemberId] = useState('');
   const [importing, setImporting]           = useState(false);
   const [importMsg, setImportMsg]           = useState('');
@@ -689,12 +694,25 @@ function JurnalAdminTab({ members }: { members: any[] }) {
 
   async function viewDetail(memberId: string) {
     setSelectedMember(memberId);
-    const [{ data: entries }, { data: sett }] = await Promise.all([
+    setReview(null); setReviewText(''); setReviewEdit(false); setReviewErr('');
+    const [{ data: entries }, { data: sett }, { data: rev }] = await Promise.all([
       supabase.from('trading_journals').select('*').eq('member_id', memberId).order('tanggal', { ascending: false }),
       supabase.from('journal_settings').select('*').eq('member_id', memberId).maybeSingle(),
+      supabase.from('journal_reviews').select('*').eq('member_id', memberId).maybeSingle(),
     ]);
     setMemberEntries(entries||[]);
     setSettings(sett||{ equity_awal:10000 });
+    setReview(rev||null);
+  }
+
+  async function saveReview() {
+    if (!selectedMember) return;
+    setReviewSaving(true); setReviewErr('');
+    const row = { member_id: selectedMember, catatan: reviewText.trim(), oleh: 'Admin', updated_at: new Date().toISOString() };
+    const { error } = await supabase.from('journal_reviews').upsert(row);
+    setReviewSaving(false);
+    if (error) { setReviewErr('Gagal menyimpan: ' + error.message + ' (sudah jalankan supabase-journal-reviews-migration.sql?)'); return; }
+    setReview(row); setReviewEdit(false);
   }
 
   async function saveNote(entryId: string) {
@@ -1121,6 +1139,44 @@ function JurnalAdminTab({ members }: { members: any[] }) {
           })()}
 
           {/* Trade list dengan chart links */}
+          {/* Evaluasi keseluruhan jurnal (journal_reviews) */}
+          <div data-evaluasi-admin style={{background:'#0a1a0e',border:'1px solid #16a34a33',borderRadius:8,padding:'14px 16px',marginBottom:16}}>
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',gap:8,flexWrap:'wrap',marginBottom:10}}>
+              <div style={{fontFamily:C.mono,color:G,fontSize:10,letterSpacing:1}}>// EVALUASI KESELURUHAN</div>
+              {review?.updated_at && !reviewEdit && (
+                <div style={{fontFamily:C.mono,fontSize:9,color:C.dim}}>oleh {review.oleh||'Admin'} · {new Date(review.updated_at).toLocaleString('id-ID',{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'})}</div>
+              )}
+            </div>
+            {reviewEdit ? (
+              <div style={{display:'flex',flexDirection:'column',gap:8}}>
+                <textarea value={reviewText} onChange={ev=>setReviewText(ev.target.value)} rows={8}
+                  placeholder="Evaluasi keseluruhan: pola kesalahan, model setup yang berhasil, aturan ke depan..."
+                  style={{width:'100%',background:'#050f08',border:'1px solid #16a34a44',color:C.text,padding:'8px 10px',fontSize:12,lineHeight:1.6,fontFamily:'"Geist",system-ui,sans-serif',resize:'vertical',outline:'none',borderRadius:6,boxSizing:'border-box' as const}}/>
+                {reviewErr && <div style={{fontFamily:C.mono,fontSize:10,color:C.down}}>{reviewErr}</div>}
+                <div style={{display:'flex',gap:6}}>
+                  <button onClick={saveReview} disabled={reviewSaving}
+                    style={{background:'#052e16',border:'1px solid #16a34a',color:'#16a34a',fontFamily:C.mono,fontSize:10,padding:'5px 14px',borderRadius:4,cursor:reviewSaving?'not-allowed':'pointer',opacity:reviewSaving?0.6:1}}>
+                    {reviewSaving?'MENYIMPAN...':'💾 SIMPAN & KIRIM KE MEMBER'}
+                  </button>
+                  <button onClick={()=>{setReviewEdit(false);setReviewErr('');}}
+                    style={{background:'transparent',border:`1px solid ${C.border2}`,color:C.muted,fontFamily:C.mono,fontSize:10,padding:'5px 14px',borderRadius:4,cursor:'pointer'}}>
+                    BATAL
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div>
+                {review?.catatan
+                  ? <div style={{fontSize:12,color:C.text,lineHeight:1.6,whiteSpace:'pre-wrap' as const,marginBottom:10}}>{review.catatan}</div>
+                  : <div style={{fontSize:11,color:C.muted,marginBottom:10}}>Belum ada evaluasi keseluruhan untuk member ini.</div>}
+                <button onClick={()=>{setReviewText(review?.catatan||'');setReviewEdit(true);}}
+                  style={{background:'transparent',border:'1px solid #16a34a44',color:'#16a34a',fontFamily:C.mono,fontSize:10,padding:'4px 12px',borderRadius:4,cursor:'pointer'}}>
+                  {review?.catatan?'✏ EDIT EVALUASI':'+ TULIS EVALUASI'}
+                </button>
+              </div>
+            )}
+          </div>
+
           <div style={{fontFamily:C.mono,color:G,fontSize:10,letterSpacing:1,marginBottom:10}}>// RIWAYAT TRADE ({memberEntries.length})</div>
           {memberEntries.length===0?(
             <div style={{color:C.muted,fontFamily:C.mono,fontSize:11}}>Belum ada data.</div>

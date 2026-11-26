@@ -244,6 +244,10 @@ Logged-in members upgrade from the dashboard ("NAIK TIER", "AKTIFKAN LAGI", "UPG
 
 Data lives in `backtest_config` (single row id=1): `data` jsonb = `{ trades, settings }` in the dashboard's own format, `risk_asli` (risk % per trade used in the backtest — NOT the lot-calculator "Risk per Trade (%)" setting), `tampil`, `judul`. Admin updates it in Admin → Produk → Preview Landing → "// DATA BACKTEST" (`src/components/admin/BacktestUploadSection.tsx`). The pricing page shows a "Riwayat Data Jelas" card linking to it only while `tampil = true`. Check the reader with `node scripts/check-backtest.mjs <xlsx> "D:/backtest/BACKTEST FIX.html"`.
 
+### Journal Corrections & Overall Review
+
+Admin corrects a member's journal in Admin → Peringkat Member → DETAIL (`JurnalAdminTab` in `AdminPage.tsx`): per trade via `trading_journals.admin_note`/`admin_note_at`, and an overall evaluation in `journal_reviews` (one row per member: `catatan`, `oleh`, `updated_at`; `supabase-journal-reviews-migration.sql`, which also adds `journal_reviews` + `trading_journals` to realtime). Members see the "📋 Evaluasi dari Mentor" card, a "trade yang dikoreksi" filter and BARU labels in `JurnalPage`; `DashboardPage` shows a toast on new corrections (realtime) and a count badge on the "Jurnal Trading" menu. "Last seen" lives in `localStorage` `mr_koreksi_seen_<memberId>` (set when the Jurnal tab opens) — logic in `src/lib/koreksiJurnal.ts`, checked by `node scripts/check-koreksi-jurnal.mjs`. Spec: `docs/superpowers/specs/2026-11-26-evaluasi-jurnal-notifikasi-design.md`.
+
 ### Key Files
 
 | File | Purpose |

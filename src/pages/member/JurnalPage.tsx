@@ -1,6 +1,7 @@
 ﻿import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '../../lib/supabase';
 import * as XLSX from 'xlsx';
+import { bacaSeen, isKoreksiBaru, hitungKoreksiBaru, type JournalReview } from '../../lib/koreksiJurnal';
 
 // ── Constants ────────────────────────────────────────────────────────────────
 const C = {
@@ -298,8 +299,12 @@ function EquityChart({ dataPoints, equityAwal }: { dataPoints: { label: string; 
   );
 }
 
-export default function JurnalPage({ memberId }: { memberId: string }) {
+export default function JurnalPage({ memberId, reloadKey = 0 }: { memberId: string; reloadKey?: number }) {
   const [entries, setEntries]       = useState<JurnalEntry[]>([]);
+  const [review, setReview]         = useState<JournalReview | null>(null);
+  // Waktu terakhir member membuka jurnal, dibaca SEBELUM dashboard menandai "sudah dilihat".
+  const [seenAwal]                  = useState(() => bacaSeen(memberId));
+  const [filterKoreksi, setFilterKoreksi] = useState(false);
   const [settings, setSettings]     = useState<JurnalSettings>({ equity_awal: 10000, daily_target: 200, max_daily_loss: 100, monthly_target: 3000 });
   const [loading, setLoading]       = useState(true);
   const [saving, setSaving]         = useState(false);
@@ -319,15 +324,17 @@ export default function JurnalPage({ memberId }: { memberId: string }) {
   const fetchAll = useCallback(async () => {
     setLoading(true);
     try {
-      const [{ data: jData }, { data: sData }] = await Promise.all([
+      const [{ data: jData }, { data: sData }, { data: rData }] = await Promise.all([
         supabase.from('trading_journals').select('*').eq('member_id', memberId).order('tanggal', { ascending: false }),
         supabase.from('journal_settings').select('*').eq('member_id', memberId).maybeSingle(),
+        supabase.from('journal_reviews').select('*').eq('member_id', memberId).maybeSingle(),
       ]);
       if (jData) setEntries(jData.map((e: any) => ({ ...e, hasil: normalizeHasil(e.hasil || '') })));
       if (sData) setSettings(sData);
+      setReview(rData || null);
     } catch (_) {}
     setLoading(false);
-  }, [memberId]);
+  }, [memberId, reloadKey]);
 
   useEffect(() => { fetchAll(); }, [fetchAll]);
 
@@ -639,8 +646,12 @@ export default function JurnalPage({ memberId }: { memberId: string }) {
   // ── Filtered entries ──────────────────────────────────────────────────────────
   const filtered = entriesWithEquity().filter(e =>
     (!filterPair || e.pair === filterPair) &&
-    (!filterHasil || e.hasil === filterHasil)
+    (!filterHasil || e.hasil === filterHasil) &&
+    (!filterKoreksi || !!((e as any).admin_note || '').trim())
   );
+  const jmlKoreksi = entries.filter(e => ((e as any).admin_note || '').trim()).length;
+  const jmlKoreksiBaru = hitungKoreksiBaru(entries as any, null, seenAwal);
+  const evaluasiBaru = !!review?.catatan?.trim() && isKoreksiBaru(review.updated_at, seenAwal);
 
   const s = stats();
   const monthlyData = monthlyStats();
@@ -683,6 +694,38 @@ export default function JurnalPage({ memberId }: { memberId: string }) {
           </button>
         </div>
       </div>
+
+      {/* ── Evaluasi & koreksi dari mentor ── */}
+      {(review?.catatan?.trim() || jmlKoreksi > 0) && (
+        <div data-evaluasi-member style={{ background: '#0a1a0e', border: `1px solid ${evaluasiBaru ? G.gold : '#16a34a44'}`, borderRadius: 10, padding: '16px 18px', marginBottom: 20 }}>
+          {review?.catatan?.trim() && (
+            <>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 8 }}>
+                <div style={{ fontFamily: C.mono, color: G.gold, fontSize: 11, letterSpacing: 1, fontWeight: 700 }}>📋 EVALUASI DARI MENTOR</div>
+                {evaluasiBaru && <span style={{ fontFamily: C.mono, fontSize: 9, background: '#ef4444', color: '#fff', padding: '1px 6px', borderRadius: 3, fontWeight: 700 }}>BARU</span>}
+                {review.updated_at && (
+                  <span style={{ fontFamily: C.mono, fontSize: 9, color: C.muted, marginLeft: 'auto' }}>
+                    {review.oleh || 'Mentor'} · {new Date(review.updated_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
+                  </span>
+                )}
+              </div>
+              <div style={{ fontSize: 13, color: C.text, lineHeight: 1.7, whiteSpace: 'pre-wrap' }}>{review.catatan}</div>
+            </>
+          )}
+          {jmlKoreksi > 0 && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginTop: review?.catatan?.trim() ? 14 : 0, paddingTop: review?.catatan?.trim() ? 12 : 0, borderTop: review?.catatan?.trim() ? '1px solid #16a34a22' : 'none' }}>
+              <span style={{ fontFamily: C.mono, fontSize: 11, color: C.text }}>
+                📝 {jmlKoreksi} trade punya catatan mentor
+                {jmlKoreksiBaru > 0 && <span style={{ color: '#ef4444', fontWeight: 700 }}> · {jmlKoreksiBaru} baru</span>}
+              </span>
+              <button onClick={() => { setTab('tabel'); setFilterKoreksi(true); }}
+                style={{ fontFamily: C.mono, fontSize: 10, background: G.gold, color: '#fff', border: 'none', padding: '6px 12px', borderRadius: 5, cursor: 'pointer', fontWeight: 700 }}>
+                Lihat trade yang dikoreksi ›
+              </button>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* ── Import Panel ── */}
       {showImport && (
@@ -883,6 +926,12 @@ export default function JurnalPage({ memberId }: { memberId: string }) {
               <option value="">Semua Hasil</option>
               {HASILS.map(h => <option key={h} value={h}>{h}</option>)}
             </select>
+            {jmlKoreksi > 0 && (
+              <button onClick={() => setFilterKoreksi(v => !v)}
+                style={{ fontFamily: C.mono, fontSize: 11, background: filterKoreksi ? '#052e16' : C.panel, border: `1px solid ${filterKoreksi ? G.gold : C.border2}`, color: filterKoreksi ? G.gold : C.muted, padding: '6px 12px', borderRadius: 6, cursor: 'pointer' }}>
+                📝 {filterKoreksi ? 'Hanya yang dikoreksi ✓' : 'Hanya yang dikoreksi'}
+              </button>
+            )}
             <span style={{ fontFamily: C.mono, color: C.muted, fontSize: 11, alignSelf: 'center' }}>
               {filtered.length} trade
             </span>
@@ -928,7 +977,10 @@ export default function JurnalPage({ memberId }: { memberId: string }) {
                       <td style={{ padding: '8px 10px', minWidth: 200 }}>
                         {(e as any).admin_note ? (
                           <div style={{ background: '#0a1a0e', border: '1px solid #16a34a44', borderRadius: 6, padding: '6px 10px' }}>
-                            <div style={{ fontFamily: C.mono, fontSize: 8, color: G.gold, letterSpacing: 1, marginBottom: 3 }}>📝 KOREKSI MENTOR</div>
+                            <div style={{ fontFamily: C.mono, fontSize: 8, color: G.gold, letterSpacing: 1, marginBottom: 3 }}>
+                              📝 KOREKSI MENTOR
+                              {isKoreksiBaru((e as any).admin_note_at, seenAwal) && <span style={{ marginLeft: 6, background: '#ef4444', color: '#fff', padding: '0 4px', borderRadius: 3 }}>BARU</span>}
+                            </div>
                             <div style={{ fontSize: 11, color: C.text, lineHeight: 1.5 }}>{(e as any).admin_note}</div>
                             {(e as any).admin_note_at && <div style={{ fontFamily: C.mono, fontSize: 8, color: C.muted, marginTop: 3 }}>{new Date((e as any).admin_note_at).toLocaleDateString('id-ID')}</div>}
                           </div>

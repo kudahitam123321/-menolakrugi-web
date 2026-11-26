@@ -8,6 +8,7 @@ import CompetitionPage from '../CompetitionPage';
 import { trackVideoWatch } from '../../hooks/useWatchHistory';
 import { usePromoEvent } from '../../hooks';
 import IndikatorV5Info from '../../components/IndikatorV5Info';
+import { bacaSeen, tandaiDilihat, hitungKoreksiBaru } from '../../lib/koreksiJurnal';
 import { RiwayatDataCard, TabelPerbandingan, versiDari } from '../../components/IndikatorPerbandingan';
 import { diskonEfektif, labelPromo, memberKelasBerbayar, paketDariProduk, terbaruDari } from '../../lib/indikatorV5';
 import {
@@ -536,6 +537,30 @@ export default function DashboardPage() {
     setTimeout(() => setMemberToasts(prev => prev.filter(t => t.id !== id)), 7000);
   }
 
+  // ── Koreksi & evaluasi jurnal dari mentor (badge + notifikasi) ──
+  const [koreksiBaru, setKoreksiBaru] = useState(0);
+  const [jurnalReload, setJurnalReload] = useState(0);
+  const activeRef = useRef(active);
+  activeRef.current = active;
+  const koreksiDitoast = useRef(new Set<string>());
+
+  async function refreshKoreksi(memberId: string) {
+    if (activeRef.current === 'jurnal') { tandaiDilihat(memberId); setKoreksiBaru(0); return; }
+    const [{ data: j }, { data: r }] = await Promise.all([
+      supabase.from('trading_journals').select('admin_note,admin_note_at').eq('member_id', memberId).not('admin_note', 'is', null),
+      supabase.from('journal_reviews').select('catatan,updated_at').eq('member_id', memberId).maybeSingle(),
+    ]);
+    setKoreksiBaru(hitungKoreksiBaru(j || [], r || null, bacaSeen(memberId)));
+  }
+
+  const badgeOf = (item: any): string | undefined =>
+    item.id === 'jurnal' && koreksiBaru > 0 ? String(koreksiBaru) : item.badge;
+
+  useEffect(() => { if (member?.id) refreshKoreksi(member.id); }, [member?.id]);
+  useEffect(() => {
+    if (member?.id && active === 'jurnal') { tandaiDilihat(member.id); setKoreksiBaru(0); }
+  }, [active, member?.id]);
+
   function normalizeTier(tier: string): string {
     const t = (tier || '').toLowerCase();
     if (t.includes('indikator')) return 'indikator';
@@ -679,6 +704,30 @@ export default function DashboardPage() {
           addMemberToast(`📢 ${judul}: ${content.slice(0, 80)}${content.length > 80 ? '...' : ''}`, 'info');
           supabase.from('announcements').select('*').order('created_at', { ascending: false }).limit(5)
             .then(({ data }) => { if (data) setAnnouncements(data); });
+        }
+      )
+      .on('postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'trading_journals', filter: `member_id=eq.${member.id}` },
+        (payload: any) => {
+          const n = payload.new || {};
+          const kunci = `${n.id}:${n.admin_note_at}`;
+          // Hanya bila koreksi baru saja disimpan (bukan member mengedit trade lama).
+          if (!(n.admin_note || '').trim() || !n.admin_note_at || koreksiDitoast.current.has(kunci)) return;
+          if (Date.now() - Date.parse(n.admin_note_at) > 5 * 60 * 1000) return;
+          koreksiDitoast.current.add(kunci);
+          const tgl = n.tanggal ? new Date(n.tanggal).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' }) : '';
+          addMemberToast(`📝 Mentor memberi koreksi di jurnal trade ${tgl} ${n.pair || ''}. Cek menu Jurnal Trading.`, 'info');
+          refreshKoreksi(member.id);
+          setJurnalReload(k => k + 1);
+        }
+      )
+      .on('postgres_changes',
+        { event: '*', schema: 'public', table: 'journal_reviews', filter: `member_id=eq.${member.id}` },
+        (payload: any) => {
+          if (!(payload.new?.catatan || '').trim()) return;
+          addMemberToast('📋 Mentor memberi evaluasi untuk jurnal trading kamu. Cek menu Jurnal Trading.', 'success');
+          refreshKoreksi(member.id);
+          setJurnalReload(k => k + 1);
         }
       )
       .on('postgres_changes',
@@ -1301,7 +1350,7 @@ export default function DashboardPage() {
                     <ItemIcon size={18} />
                     <span style={{ flex: 1 }}>{item.label}</span>
                     {(item as any).locked && <Lock size={12} />}
-                    {(item as any).badge && <span style={{ fontFamily: LP.mono, fontSize: 8, background: LP.danger, color: '#fff', padding: '1px 5px', borderRadius: 3, fontWeight: 700 }}>{(item as any).badge}</span>}
+                    {badgeOf(item) && <span style={{ fontFamily: LP.mono, fontSize: 8, background: LP.danger, color: '#fff', padding: '1px 5px', borderRadius: 3, fontWeight: 700 }}>{badgeOf(item)}</span>}
                   </button>
                 );
               })}
@@ -1361,7 +1410,7 @@ export default function DashboardPage() {
                   <ItemIcon size={17} style={{ flexShrink: 0 }} />
                   {!sidebarCollapsed && <span style={{ flex: 1, whiteSpace: 'nowrap' as const }}>{item.label}</span>}
                   {!sidebarCollapsed && (item as any).locked && <Lock size={11} style={{ flexShrink: 0 }} />}
-                  {!sidebarCollapsed && (item as any).badge && <span style={{ fontFamily: LP.mono, fontSize: 8, background: LP.danger, color: '#fff', padding: '1px 5px', borderRadius: 3, fontWeight: 700 }}>{(item as any).badge}</span>}
+                  {!sidebarCollapsed && badgeOf(item) && <span style={{ fontFamily: LP.mono, fontSize: 8, background: LP.danger, color: '#fff', padding: '1px 5px', borderRadius: 3, fontWeight: 700 }}>{badgeOf(item)}</span>}
                 </button>
               );
             })}
@@ -2438,7 +2487,7 @@ export default function DashboardPage() {
 
         {/* ══ JURNAL TRADING ══ */}
         {active === 'jurnal' && member && !isIndikatorMember && (
-          <JurnalPage memberId={member.id} />
+          <JurnalPage memberId={member.id} reloadKey={jurnalReload} />
         )}
 
         {active === 'trading-plan' && !isIndikatorMember && (
