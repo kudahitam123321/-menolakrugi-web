@@ -9,6 +9,7 @@ import { trackVideoWatch } from '../../hooks/useWatchHistory';
 import { usePromoEvent } from '../../hooks';
 import IndikatorV5Info from '../../components/IndikatorV5Info';
 import { bacaSeen, tandaiDilihat, hitungKoreksiBaru } from '../../lib/koreksiJurnal';
+import { tabDariHash, simpanTabDiUrl } from '../../lib/tabUrl';
 import { RiwayatDataCard, TabelPerbandingan, versiDari } from '../../components/IndikatorPerbandingan';
 import { diskonEfektif, labelPromo, memberKelasBerbayar, paketDariProduk, terbaruDari } from '../../lib/indikatorV5';
 import {
@@ -137,6 +138,8 @@ const SIDEBAR_INDIKATOR: typeof SIDEBAR = [
   { id: 'sep-kelas', label: 'KHUSUS MEMBER KELAS', separator: true } as typeof SIDEBAR[number],
   ...SIDEBAR_INDIKATOR_TERKUNCI.map((id) => ({ ...sidebarById(id), locked: true })),
 ];
+
+const TAB_MEMBER = SIDEBAR.filter((s) => !(s as any).separator && s.id !== 'logout').map((s) => s.id);
 
 function filterSidebar(items: typeof SIDEBAR, query: string) {
   if (!query.trim()) return items;
@@ -424,7 +427,10 @@ function CertificateCanvas({ nama, tier, tanggal }: { nama: string; tier: string
 export default function DashboardPage() {
   const { event: promoEvent } = usePromoEvent();
   const [member, setMember]           = useState<Member | null>(null);
-  const [active, setActive]           = useState(() => window.location.pathname === '/trading-plan' ? 'trading-plan' : 'dashboard');
+  // Tab aktif ikut disimpan di URL (#jurnal) supaya reload tetap di tab yang sama.
+  const [active, setActive]           = useState(() =>
+    tabDariHash(window.location.hash, TAB_MEMBER) ?? (window.location.pathname === '/trading-plan' ? 'trading-plan' : 'dashboard'));
+  useEffect(() => { simpanTabDiUrl(active, 'dashboard'); }, [active]);
   const [videos, setVideos]           = useState<any[]>([]);
   const [files, setFiles]             = useState<any[]>([]);
   const [progress, setProgress]       = useState<Record<string, string>>({});

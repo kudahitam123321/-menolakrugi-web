@@ -146,7 +146,7 @@ Four primary membership tiers: **Trial**, **Bronze**, **Gold**, **Platinum**. A 
 
 ### Member Dashboard Tabs
 
-`DashboardPage` (`src/pages/member/DashboardPage.tsx`) is a sidebar-driven SPA-within-a-SPA. The sidebar IDs determine which tab renders — there is no URL change:
+`DashboardPage` (`src/pages/member/DashboardPage.tsx`) is a sidebar-driven SPA-within-a-SPA. The sidebar IDs determine which tab renders; the active tab is mirrored in the URL hash (`/member#jurnal`, same for `/admin/panel#<id>`) so a reload stays on it — `src/lib/tabUrl.ts`, checked by `node scripts/check-tab-url.mjs`:
 
 `dashboard` · `kelas` · `materi` · `news` (Chart) · `jurnal` · `trading-plan` · `komunitas` · `tools` (Broker) · `produk` (Produk Indikator) · `funded` · `1on1` (1-on-1 Mentoring) · `peringkat` · `competition` · `sertifikat` · `ulasan` · `referral` · `pengaturan` · `bantuan` · `logout`
 

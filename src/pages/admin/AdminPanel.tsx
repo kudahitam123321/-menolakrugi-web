@@ -3,6 +3,7 @@ import { supabase } from '../../lib/supabase';
 import AdminPage from '../AdminPage';
 import AdminTradingPlan from './AdminTradingPlan';
 import AdminCompetitionPage from './AdminCompetitionPage';
+import { tabDariHash, simpanTabDiUrl } from '../../lib/tabUrl';
 
 const G = { gold: 'var(--mr-gold)', gold2: 'var(--mr-gold2)', cyan: '#00d4ff', cyanDim: 'rgba(0,212,255,0.13)' };
 const C = { bg: 'var(--mr-bg)', sidebar: 'var(--mr-sidebar)', panel: 'var(--mr-panel)', border: 'var(--mr-border)', border2: 'var(--mr-border2)', dim: 'var(--mr-dim)', text: 'var(--mr-text)', muted: 'var(--mr-muted)', up: 'var(--mr-up)', down: 'var(--mr-down)', mono: '"Geist Mono",monospace', sans: '"Geist",system-ui,sans-serif' };
@@ -706,12 +707,16 @@ function LogActivityTab() {
 }
 
 export default function AdminPanel() {
+  // Tab aktif ikut disimpan di URL (#member) supaya reload tetap di tab yang sama.
   const [active, setActive] = useState(() => {
+    const dariHash = tabDariHash(window.location.hash, SIDEBAR_SECTIONS.flatMap((s) => s.items.map((i) => i.id)));
+    if (dariHash) return dariHash;
     const p = window.location.pathname;
     if (p === '/admin/trading-plan') return 'trading-plan';
     if (p === '/admin/competition')  return 'competition';
     return 'dashboard';
   });
+  useEffect(() => { simpanTabDiUrl(active, 'dashboard'); }, [active]);
   const [fundedModal, setFundedModal] = useState<{status:string;color:string;label:string;k:string}|null>(null);
   const [fundedMembers, setFundedMembers] = useState<any[]>([]);
   const [dash, setDash] = useState({
