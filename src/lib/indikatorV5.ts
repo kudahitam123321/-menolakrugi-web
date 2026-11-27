@@ -76,14 +76,17 @@ export function fmtTanggalRilis(d: Date | null): string {
  * aktif sebelum batas, dan lifetime atau jatuh tempo >= batas. Sudah punya v5 aktif → null.
  * Mengembalikan order dasar klaim (yang terkuat), atau null.
  */
-export function berhakKlaimV5<T extends OrderIndikator>(orders: T[], v5Id: string | null, batas: Date | null): T | null {
-  if (!v5Id || !batas) return null;
+export function berhakKlaimV5<T extends OrderIndikator>(orders: T[], v5Id: string | null, batas: Date | null, memberKelas = false): T | null {
+  if (!v5Id || (!batas && !memberKelas)) return null;
   const aktif = orders.filter((o) => isIndikator(o) && o.status === 'aktif');
   if (aktif.some((o) => o.product_id === v5Id)) return null;
   const layak = aktif.filter((o) => {
-    // Pesanan lama (sebelum kolom activated_at ada) tidak punya activated_at → pakai created_at.
-    const mulai = o.activated_at || o.created_at;
-    if (!mulai || new Date(mulai).getTime() >= batas.getTime()) return false;
+    // Member kelas: tanpa batas tanggal beli (keputusan pemilik, 27/11/2026).
+    if (!memberKelas) {
+      // Pesanan lama (sebelum kolom activated_at ada) tidak punya activated_at → pakai created_at.
+      const mulai = o.activated_at || o.created_at;
+      if (!mulai || !batas || new Date(mulai).getTime() >= batas.getTime()) return false;
+    }
     // Klaim v5 gratis hanya untuk pemilik paket Lifetime (keputusan pemilik, 25/11/2026).
     return o.plan_type === 'lifetime';
   });

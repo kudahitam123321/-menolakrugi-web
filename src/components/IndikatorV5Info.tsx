@@ -2,7 +2,7 @@
 // Isi menyesuaikan status langganan indikator member (lihat statusPreorder di lib/indikatorV5).
 import { useState } from 'react';
 import { useProdukIndikator, useProdukRilis } from '../hooks';
-import { berhakKlaimV5, fmtTanggalRilis, sisaWaktu, statusPreorder, type OrderIndikator } from '../lib/indikatorV5';
+import { berhakKlaimV5, memberKelasBerbayar, fmtTanggalRilis, sisaWaktu, statusPreorder, type OrderIndikator } from '../lib/indikatorV5';
 
 const LP = {
   surface: 'var(--lp-surface)', text: 'var(--lp-text)', muted: 'var(--lp-muted)', border: 'var(--lp-border)',
@@ -14,7 +14,7 @@ const WA_ADMIN = 'https://wa.me/6281242224939';
 const LABEL_PAKET: Record<string, string> = { bulanan: 'Bulanan', tahunan: 'Tahunan', lifetime: 'Lifetime' };
 
 export default function IndikatorV5Info({ orders, onBeli, member }: {
-  orders: OrderIndikator[]; onBeli: () => void; member?: { nama?: string; email?: string } | null;
+  orders: OrderIndikator[]; onBeli: () => void; member?: { nama?: string; email?: string; tier?: string } | null;
 }) {
   const { preorder, tanggalRilis } = useProdukIndikator();
   const rilis = useProdukRilis();
@@ -73,11 +73,12 @@ export default function IndikatorV5Info({ orders, onBeli, member }: {
 /** Setelah rilis: tombol klaim selalu tampil. Pemilik indikator lama (sebelum tanggal rilis) diteruskan ke
  *  WhatsApp admin; yang tidak memenuhi syarat melihat pesan penolakan beserta daftar syaratnya. */
 function KlaimV5({ orders, produk, batas, member }: {
-  orders: OrderIndikator[]; produk: { id: string; nama: string } | null; batas: Date | null; member?: { nama?: string; email?: string } | null;
+  orders: OrderIndikator[]; produk: { id: string; nama: string } | null; batas: Date | null; member?: { nama?: string; email?: string; tier?: string } | null;
 }) {
   const [ditolak, setDitolak] = useState(false);
   if (!produk || !batas) return null;
-  const dasar = berhakKlaimV5(orders, produk.id, batas);
+  // Member kelas mentoring: v4.2 Lifetime yang dibeli kapan pun tetap boleh klaim (keputusan pemilik 27/11/2026).
+  const dasar = berhakKlaimV5(orders, produk.id, batas, memberKelasBerbayar(member?.tier));
   const tgl = fmtTanggalRilis(batas);
   if (!dasar) {
     return (
@@ -86,7 +87,7 @@ function KlaimV5({ orders, produk, batas, member }: {
           <div style={{ width: 42, height: 42, borderRadius: 12, background: LP.primaryTint, display: 'grid', placeItems: 'center', fontSize: 20, flexShrink: 0 }}>🎁</div>
           <div style={{ flex: '1 1 200px', minWidth: 0 }}>
             <div style={{ fontWeight: 700, fontSize: 14, color: LP.text }}>Klaim {produk.nama} gratis</div>
-            <div style={{ fontSize: 12, color: LP.muted, marginTop: 2, lineHeight: 1.5 }}>Khusus pemilik indikator versi sebelumnya yang membeli sebelum v5 rilis.</div>
+            <div style={{ fontSize: 12, color: LP.muted, marginTop: 2, lineHeight: 1.5 }}>Khusus pemilik v4.2 Lifetime yang membeli sebelum v5 rilis (member kelas mentoring: kapan pun).</div>
           </div>
           <button onClick={() => setDitolak(true)} style={{ marginLeft: 'auto', fontFamily: LP.sans, fontSize: 13, fontWeight: 700, color: '#fff', background: LP.primary, border: 'none', padding: '9px 14px', borderRadius: 8, cursor: 'pointer', whiteSpace: 'nowrap' as const }}>
             Klaim v5 Gratis →
@@ -98,7 +99,7 @@ function KlaimV5({ orders, produk, batas, member }: {
             <div style={{ fontSize: 12, color: '#7f1d1d', marginTop: 6 }}>Syarat klaim {produk.nama} gratis:</div>
             <ol style={{ fontSize: 12, color: '#7f1d1d', margin: '4px 0 0', paddingLeft: 18, lineHeight: 1.6, listStyle: 'decimal' }}>
               <li>Memiliki indikator SMC versi sebelumnya (v4.2) dengan status aktif.</li>
-              <li>Indikator tersebut dibeli sebelum v5 rilis ({tgl}).</li>
+              <li>Indikator tersebut dibeli sebelum v5 rilis ({tgl}). Khusus member kelas mentoring (Bronze/Gold/Platinum): tanpa batas tanggal beli.</li>
               <li>Paket Lifetime. Paket Bulanan/Tahunan tidak termasuk klaim gratis.</li>
               <li>Belum memiliki {produk.nama}.</li>
             </ol>
@@ -121,7 +122,7 @@ function KlaimV5({ orders, produk, batas, member }: {
       <div style={{ width: 42, height: 42, borderRadius: 12, background: LP.primaryTint, display: 'grid', placeItems: 'center', fontSize: 20, flexShrink: 0 }}>🎁</div>
       <div style={{ flex: '1 1 200px', minWidth: 0 }}>
         <div style={{ fontWeight: 700, fontSize: 14, color: LP.text }}>Kamu dapat {produk.nama} gratis</div>
-        <div style={{ fontSize: 12, color: LP.muted, marginTop: 2, lineHeight: 1.5 }}>Kamu pemilik indikator sebelum rilis. Klaim lalu admin kirim link-nya lewat WhatsApp.</div>
+        <div style={{ fontSize: 12, color: LP.muted, marginTop: 2, lineHeight: 1.5 }}>Kamu memenuhi syarat sebagai pemilik v4.2 Lifetime. Klaim lalu admin kirim link-nya lewat WhatsApp.</div>
       </div>
       <button onClick={klaim} style={{ marginLeft: 'auto', fontFamily: LP.sans, fontSize: 13, fontWeight: 700, color: '#fff', background: LP.primary, border: 'none', padding: '9px 14px', borderRadius: 8, cursor: 'pointer', whiteSpace: 'nowrap' as const }}>
         Klaim v5 Gratis →

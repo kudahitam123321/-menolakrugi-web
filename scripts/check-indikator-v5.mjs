@@ -65,6 +65,12 @@ assert.equal(L.berhakKlaimV5([ok('lifetime', 'pending', '2026-05-01', 'v4')], 'v
 assert.equal(L.berhakKlaimV5([ok('lifetime', 'aktif', '2026-05-01', 'v4')], null, batas), null, 'tanpa v5');
 assert.equal(L.berhakKlaimV5([ok('lifetime', 'aktif', '2026-05-01', 'v4')], 'v5', null), null, 'tanpa batas');
 assert.equal(L.berhakKlaimV5([ok('tahunan', 'aktif', '2026-03-01T10:00:00+07:00', 'v4'), ok('lifetime', 'aktif', '2026-05-01', 'v4')], 'v5', batas).plan_type, 'lifetime', 'yang lolos hanya order Lifetime');
+// Member kelas: v4.2 Lifetime yang dibeli setelah rilis tetap boleh klaim (keputusan pemilik 27/11/2026).
+assert.notEqual(L.berhakKlaimV5([ok('lifetime', 'aktif', '2026-11-27T10:00:00+07:00', 'v4')], 'v5', batas, true), null, 'member kelas, lifetime dibeli setelah rilis');
+assert.equal(L.berhakKlaimV5([ok('lifetime', 'aktif', '2026-11-27T10:00:00+07:00', 'v4')], 'v5', batas, false), null, 'bukan member kelas, dibeli setelah rilis');
+assert.equal(L.berhakKlaimV5([ok('bulanan', 'aktif', '2026-11-27T10:00:00+07:00', 'v4')], 'v5', batas, true), null, 'member kelas tetap hanya Lifetime');
+assert.equal(L.berhakKlaimV5([ok('lifetime', 'aktif', '2026-11-27T10:00:00+07:00', 'v4'), ok('lifetime', 'aktif', '2026-11-27', 'v5')], 'v5', batas, true), null, 'member kelas yang sudah punya v5');
+assert.notEqual(L.berhakKlaimV5([ok('lifetime', 'aktif', '2026-11-27T10:00:00+07:00', 'v4')], 'v5', null, true), null, 'member kelas tidak butuh tanggal batas');
 
 // paketDariProduk
 const pr = (h) => ({ id: 'p', nama: 'P', harga_bulanan: h[0], diskon_bulanan: h[1], harga_tahunan: h[2], diskon_tahunan: h[3], harga_lifetime: h[4], diskon_lifetime: h[5] });

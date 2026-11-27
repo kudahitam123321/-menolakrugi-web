@@ -165,11 +165,11 @@ export const TOPIK: TopikPanduan[] = [
   },
   {
     id: 'klaim-v5', grup: 'indikator', judul: 'Klaim v5 gratis',
-    ringkas: 'Khusus pemilik v4.2 Lifetime yang dibeli sebelum 20 November 2026.',
+    ringkas: 'Khusus pemilik v4.2 Lifetime yang dibeli sebelum 20 November 2026 — member kelas mentoring tanpa batas tanggal.',
     blok: [
       { jenis: 'poin', judul: 'Syarat', isi: [
         'Punya indikator SMC v4.2 dengan status aktif.',
-        'Dibeli sebelum v5 rilis (20 November 2026).',
+        'Dibeli sebelum v5 rilis (20 November 2026). Khusus member kelas mentoring (Bronze/Gold/Platinum): kapan pun dibeli tetap bisa klaim.',
         'Paket Lifetime. Paket Bulanan/Tahunan tidak termasuk.',
         'Belum punya SMC v5.',
       ] },
